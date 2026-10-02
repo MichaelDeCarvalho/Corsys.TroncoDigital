@@ -37,3 +37,10 @@ Branch de trabalho: `feat/v35-dev-gate-20261002`; PR incremental destinado a `fe
 
 ## Branch preexistente preservada
 Ao conferir branches foi identificado `feat/v35-foundation@d1aa2540c6c5506fb8ec3cdb0b61b630ed935872`, com estrutura React/Vite/TypeScript e cliente Supabase. Esta entrega deriva dessa revisão e preserva o frontend sem alterações. A arquitetura Next.js do pacote é alvo histórico, não stack atual nem decisão de migração. Testes/build do frontend herdado NÃO EXECUTADOS nesta etapa.
+
+## Referências desta entrega
+- PR incremental: https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/pull/4
+- Commit de implementação: `7d04fc663c65fe90cd6b00729c15e66fe317a47b`.
+- Preservação remota verificada: 16 arquivos da estrutura frontend/configuração mantêm os SHAs da branch de origem.
+
+- CI inicial do commit de implementação: execução 36965906504 concluída com success; outra execução estava em andamento na conferência.
