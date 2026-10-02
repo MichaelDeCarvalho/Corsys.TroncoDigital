@@ -7,7 +7,9 @@
 - Revisão inspecionada: `92960ef866bdb9009c73634fa23f943a9f358150`
 - Estado observado: repositório contém apenas `README.md`
 - Fonte metodológica: `GUIA_RECURSOS_ECC.md` v1.0, baseado no snapshot ECC 2.2.2
-- PR da implantação: `#1`\n- commit inicial da implantação: `9b8a5b40639f7625ce4ff505dfc8e97847fcecf0`\n- Runtime ECC copiado: não
+- PR da implantação: `#1`
+- commit inicial da implantação: `9b8a5b40639f7625ce4ff505dfc8e97847fcecf0`
+- Runtime ECC copiado: não
 - Código ECC copiado: não
 - Estratégia: adaptação nativa da metodologia, sem afirmar instalação integral
 

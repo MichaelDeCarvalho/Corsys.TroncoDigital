@@ -80,4 +80,6 @@ não deployado nesta implantação
 
 - branch: `chore/ecc-selective-adoption`
 - base: `main@92960ef866bdb9009c73634fa23f943a9f358150`
-- PR: `#1` — https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/pull/1\n- commit inicial da implantação: `9b8a5b40639f7625ce4ff505dfc8e97847fcecf0`\n- ADR: `docs/adr/0001-selective-ecc-adoption.md`
+- PR: `#1` — https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/pull/1
+- commit inicial da implantação: `9b8a5b40639f7625ce4ff505dfc8e97847fcecf0`
+- ADR: `docs/adr/0001-selective-ecc-adoption.md`
