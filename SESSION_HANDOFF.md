@@ -31,3 +31,7 @@ npm ci --ignore-scripts; npm run check; npm run check --prefix dev-gate; python 
 ## Evidência local deste incremento
 
 Typecheck dos projetos app/node PASS; 13 testes frontend PASS; 4 testes guard DEV PASS; gramática de 19 migrations + quatro verificações SQL PASS. Vite build PASS; Wrangler 4.147.0 dry-run PASS, sem upload. npm audit: zero vulnerabilidades. Inspeção visual no navegador e login real ainda não executados. CI remota desta revisão deve ser consultada após o commit.
+
+## Continuidade Cloudflare — 2026-10-02
+
+CI do commit 04436e78c5116c550bff88ac4a905f3ddf083263: run 37077478804 success. Painel Cloudflare no navegador remoto permanece na verificação contra bots após um reload; tarefa de painel bloqueada e tentativa encerrada. Nenhum login ou deploy executado. Parâmetros para publicação independente pelo proprietário em docs/engineering/cloudflare-dev-deployment.md. Plano/uso Cloudflare da conta ainda não verificados; preços oficiais consultados, sem upgrade. Próxima dependência: publicação pelo proprietário ou acesso autenticado suportado; não solicitar secrets no chat.

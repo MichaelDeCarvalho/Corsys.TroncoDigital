@@ -19,7 +19,7 @@
 - [ ] Suspensão e RPCs exercitados com JWT real.
 - [ ] Concorrência, sobrealocação e idempotência.
 - [ ] Correção das views administrativas comprovada em runtime.
-- [ ] CI remota aprovada na revisão do PR.
+- [x] CI remota aprovada para o incremento frontend: commit 04436e78c5116c550bff88ac4a905f3ddf083263, run 37077478804.
 
 ## Produto e deploy
 - [ ] Frontend responsivo e integrações reais.
@@ -33,3 +33,10 @@
 - [x] Auth users confirmados e vinculados a duas Lojas DEV.
 - [x] RLS e RPCs com SET ROLE/claims simuladas aprovados, incluindo negação cross-tenant.
 - [ ] HTTP/Data API com JWT assinado real (separado do teste SQL).
+
+## Frontend DEV e publicação
+- [x] Typecheck app/node, 13 testes frontend, build Vite e Wrangler dry-run aprovados.
+- [x] npm audit completo: zero vulnerabilidades após atualização Wrangler 4.147.0.
+- [x] Build sem configuração pública falha de forma explícita.
+- [ ] Conta/plano/consumo Cloudflare verificados (painel bloqueado por verificação contra bots).
+- [ ] Deploy e inspeção visual desktop/mobile — ainda não executados.
