@@ -1,8 +1,8 @@
 # RELEASE CHECKLIST — V35
 
 ## Verificado nesta etapa
-- [x] 16 migrations originais preservadas byte a byte e hashes registrados.
-- [x] 17 migrations e 3 scripts passam por parser de gramática SQL.
+- [x] Hashes históricos das 16 migrations originais registrados; baselines 009/014 corrigidas antes da primeira aplicação.
+- [x] Gramática SQL verificada na entrega inicial; revisão atual acompanhada pela CI.
 - [x] Sintaxe dos scripts JS e quatro testes do guard DEV aprovados.
 - [x] Dependências fixadas e lockfile gerado.
 - [x] `npm audit --omit=dev --audit-level=high`: zero findings retornados.
@@ -11,7 +11,7 @@
 
 ## Gates de runtime — não aprovados
 - [x] Projeto existente DEV selecionado pelo usuário; plano Free verificado, sem nova infraestrutura paga.
-- [x] 18 migrations aplicadas do zero e histórico local alinhado.
+- [x] 19 migrations aplicadas do zero e histórico local alinhado.
 - [x] Catálogo de segurança e invariantes SQL executados.
 - [ ] JWT/RLS cross-user e cross-tenant positivo/negativo.
 - [ ] Master/Billing/Support e AAL1/AAL2 exercitados.
@@ -29,3 +29,7 @@
 
 ## Resultado
 **BLOCKED para release.** Checks estáticos aprovados não comprovam runtime, segurança ou deploy.
+
+- [x] Auth users confirmados e vinculados a duas Lojas DEV.
+- [x] RLS e RPCs com SET ROLE/claims simuladas aprovados, incluindo negação cross-tenant.
+- [ ] HTTP/Data API com JWT assinado real (separado do teste SQL).

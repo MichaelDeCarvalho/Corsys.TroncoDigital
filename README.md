@@ -3,7 +3,7 @@
 SaaS de tesouraria para Lojas Maçônicas, com aplicação web responsiva planejada para desktop e mobile.
 
 ## Estado
-Implementação iniciada: fundação SQL e kit de validação DEV. **Supabase DEV com 18 migrations aplicadas e invariantes SQL aprovadas; estrutura React/Vite herdada, sem integração financeira ou deploy.**
+Implementação iniciada: fundação SQL e kit de validação DEV. **Supabase DEV com 19 migrations aplicadas e invariantes SQL aprovadas; estrutura React/Vite herdada, sem integração financeira ou deploy.**
 
 ## Validar localmente
 Node.js 22+ e Python 3.12:

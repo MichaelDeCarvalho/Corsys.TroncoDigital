@@ -129,6 +129,13 @@
       "source_path": "supabase/migrations/20261002202432_harden_anonymous_rpc_permissions.sql",
       "path": "supabase/migrations/20261002202518_harden_anonymous_rpc_permissions.sql",
       "sha256": "771b046d172d2839adbca051dfe5c6f170042272e5270c8fc1f7ad17feb8480a"
+    },
+    {
+      "version": "20261002230031",
+      "name": "support_policy_helper_permissions",
+      "source_path": "supabase/migrations/20261002225950_support_policy_helper_permissions.sql",
+      "path": "supabase/migrations/20261002230031_support_policy_helper_permissions.sql",
+      "sha256": "dcb11fa71c1753db551ead2e457427a07cd8832b74d757d0451afc2f9569c5f0"
     }
   ],
   "baseline_patches": {

@@ -35,6 +35,12 @@ begin
   ) then
     raise exception 'Anonymous public SECURITY DEFINER execution must be denied';
   end if;
+  if not has_function_privilege('authenticated','private.is_tenant_user(uuid)','EXECUTE')
+    or not has_function_privilege('authenticated','private.has_aal2()','EXECUTE')
+    or has_function_privilege('anon','private.is_tenant_user(uuid)','EXECUTE')
+    or has_function_privilege('anon','private.has_aal2()','EXECUTE') then
+    raise exception 'Private policy predicate grants do not match least privilege';
+  end if;
   raise notice 'PASS: security catalog checks; JWT/RLS behavior still requires integration tests';
 end;
 $$;
