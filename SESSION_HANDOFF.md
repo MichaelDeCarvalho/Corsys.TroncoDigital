@@ -21,3 +21,6 @@ Branch `feat/v35-dev-gate-20261002`, PR draft https://github.com/MichaelDeCarval
 
 ## Variáveis
 Somente nomes: SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SECRET_KEY, SUPABASE_DEV_PROJECT_REF, CORSYS_DEV_FIXTURE_ACK, TEST_ADMIN_A_EMAIL, TEST_ADMIN_A_PASSWORD, TEST_ADMIN_B_EMAIL, TEST_ADMIN_B_PASSWORD.
+
+## Atualização das fixtures — 2026-10-02
+Usuário autorizou dois e-mails para login de teste (mantidos no ambiente, não registrados aqui), criação de duas Lojas e continuidade DEV. Criadas CORSYS DEV TENANT A (DEV-A) e B (DEV-B), cada uma com um integrante fictício e roles ADMIN/TREASURER/VIEWER/MEMBER. Seed reproduzível em dev-gate/seed-dev-organizations.sql. Consulta confirmou que ambos os usuários Auth ainda não existem; nenhum login ou vínculo de usuário criado. Conector não possui criação de usuários Auth; secret administrativa não disponível. Necessário acesso Auth admin seguro ou autorização de fallback para painel Supabase no navegador. CI do commit f3498ba9521855793447090ed57a9b37ca5dbca3: ambas as execuções concluídas com success.
