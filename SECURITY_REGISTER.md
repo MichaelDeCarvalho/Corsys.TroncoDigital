@@ -68,3 +68,11 @@ NÃO AVALIADO: login com senha, assinatura JWT e HTTP/Data API, MFA real, concor
  
 ## Advisor Auth observado — 2026-10-02
 Aviso auth_leaked_password_protection: proteção contra senhas vazadas desabilitada no Auth cloud. Não significa que as senhas de teste estejam comprometidas. Remediação e eventual dependência de plano/custo devem ser verificadas antes de ativar; nenhum upgrade autorizado ou executado. Permanecem 37 avisos de RPCs definer autenticadas e três tabelas backend sem policies.
+
+## Incremento frontend DEV
+
+SEC-007: respostas atrasadas de auth/tenant e logout testados com client simulado; validação de configuração rejeita secrets e URL insegura. RLS real via JWT ainda pendente. Session persistente e CSP requerem revisão no preview.
+SEC-008: RPC de suporte sem idempotência; UI impede envio simultâneo e orienta atualizar lista em erro ambíguo. Não declarar exatamente uma vez.
+SEC-009: auditoria npm inicial encontrou undici/miniflare na ferramenta Wrangler; atualizar Wrangler para correção e registrar resultado audit após instalação. Nenhum secret novo no repo.
+
+SEC-009 remediado: Wrangler 4.147.0 instalado e lockfile atualizado; npm audit retornou zero vulnerabilidades (não substitui revisão de segurança).

@@ -1,36 +1,22 @@
-import { AppShell } from './components/AppShell'
+import { useState } from 'react'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { getSupabaseClient } from './lib/supabase'
+import { useAuth } from './auth/useAuth'
+import { Login } from './auth/Login'
+import { Workspace } from './components/Workspace'
 
-const foundations = [
-  ['Interface', 'Web responsiva preparada para computador e celular'],
-  ['Dados', 'Supabase preparado como camada de Auth, PostgreSQL e RLS'],
-  ['Deploy', 'Cloudflare Workers + Static Assets'],
-  ['Entrega', 'GitHub com verificação automatizada da base técnica'],
-]
+export function ConnectedApp({ client }: { client: SupabaseClient }) {
+  const auth = useAuth(client)
+  if (auth.status === 'checking') return <main className="session-screen"><p role="status">Validando acesso…</p></main>
+  if (auth.status === 'error') return <main className="session-screen"><div className="panel"><h1>Acesso indisponível</h1><p role="alert" className="message error">{auth.error}</p><button className="primary" onClick={() => { void auth.retry() }}>Tentar novamente</button></div></main>
+  if (auth.status === 'authenticated' && auth.user) return <Workspace key={auth.user.id} client={client} user={auth.user} onSignOut={() => { void auth.signOut() }} />
+  return <Login client={client} />
+}
 
 export default function App() {
-  return (
-    <AppShell>
-      <section className="mx-auto max-w-6xl">
-        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-7 md:p-9">
-          <p className="text-sm font-medium text-cyan-300">Fundação V35</p>
-          <h2 className="mt-2 max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl">
-            Corsys.TroncoDigital
-          </h2>
-          <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-400 sm:text-base">
-            Base técnica inicial do sistema de tesouraria, preparada para receber os módulos funcionais
-            da V35 sem expor segredos nem misturar responsabilidades de frontend e backend.
-          </p>
-        </div>
-
-        <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {foundations.map(([title, description]) => (
-            <article key={title} className="rounded-2xl border border-white/10 bg-slate-900/60 p-5">
-              <h3 className="font-semibold text-slate-100">{title}</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-400">{description}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-    </AppShell>
-  )
+  const [configuration] = useState(() => {
+    try { return { client: getSupabaseClient(), error: false } } catch { return { client: null, error: true } }
+  })
+  if (!configuration.client) return <main className="session-screen"><div className="panel"><h1>Tronco Digital</h1><p role="alert">O ambiente ainda não está configurado. Solicite a configuração ao responsável pela aplicação.</p></div></main>
+  return <ConnectedApp client={configuration.client} />
 }

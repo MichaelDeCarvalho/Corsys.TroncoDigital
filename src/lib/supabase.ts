@@ -8,10 +8,16 @@ export function getSupabaseClient(): SupabaseClient {
 
   const env = readPublicEnv()
   client = createClient(env.supabaseUrl, env.supabasePublishableKey, {
+    global: {
+      fetch: (url, options) => fetch(url, {
+        ...options,
+        signal: AbortSignal.any([AbortSignal.timeout(15000), ...(options?.signal ? [options.signal] : [])]),
+      }),
+    },
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: true,
+      detectSessionInUrl: false,
     },
   })
 

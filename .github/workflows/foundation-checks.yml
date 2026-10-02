@@ -2,7 +2,7 @@ name: Foundation checks
 on:
   pull_request:
   push:
-    branches: [main, feat/v35-dev-gate-20261002]
+    branches: [main, feat/v35-foundation]
 permissions:
   contents: read
 concurrency:
@@ -33,3 +33,22 @@ jobs:
       - name: SQL grammar
         run: python scripts/check_sql.py
 
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      VITE_SUPABASE_URL: https://szqkdekwhzxsoxorgvaz.supabase.co
+      VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm run check
+      - name: Validate Cloudflare static bundle without uploading
+        run: npx wrangler deploy --config wrangler.dev.jsonc --dry-run

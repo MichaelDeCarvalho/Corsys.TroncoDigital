@@ -1,49 +1,25 @@
 # CURRENT ARCHITECTURE
 
-## Estado real — 2026-10-02
-Fundação SQL V35 e gate de validação versionados nesta branch; estrutura inicial frontend React/Vite herdada da branch existente, sem integração financeira real e sem backend HTTP. Não há deploy.
+React 19 + Vite 6 + TypeScript, cliente supabase-js browser com chave publicável. PostgreSQL/Supabase Auth em DEV. Não há servidor HTTP próprio; consultas usam Data API com RLS, chamados usam RPC autorizada. Sem Storage/billing provider integrados.
 
-## Banco aplicado em DEV
-`supabase/migrations/`: 16 baselines (009 e 014 corrigidas antes de aplicação) + 2 correções de permissões. Domínios: organizações/roles/integrantes, financeiro imutável, planos contábeis por vigência, AP/AR institucional, conciliação/orçamento/documentos/LGPD, SaaS billing/control plane, suporte/onboarding e catálogo V35.
+src/auth: login e ciclo de sessão. src/lib/tenant-data.ts: selects limitados e RPC de suporte. Workspace é recriado ao trocar tenant; abort e revisão impedem exposição por respostas atrasadas. Busca de integrantes local sobre até 200; chamados mostram até 100 recentes. Valores exibidos são contagens carregadas, não totais globais.
 
-As tabelas, views, policies, triggers e RPCs estão descritos em SQL. Existência em Supabase DEV: VERIFICADA. Bootstrap está em `docs/BOOTSTRAP.md`.
+Persistência de sessão usa SDK; secrets administrativos ficam fora do browser. CSP permite apenas o projeto DEV. wrangler.dev.jsonc publica somente assets, sem Worker dinâmico, domínio ou configuração de produção. Build exige URL HTTPS e chave sb_publishable; .env.local é ignorado.
 
-## Ferramentas executáveis
-- `dev-gate/`: fixtures Auth/admin em servidor local e testes usando chaves publicáveis/JWT de usuários normais.
-- Guard: alvo cloud DEV exato, acknowledgement DEV_ONLY, identidades/tenants distintos e fixture vinculada ao projeto.
-- `scripts/check_sql.py`: gramática SQL; não valida corpos PL/pgSQL, dependências, RLS ou concorrência.
-- `scripts/verify_*`: verificações de banco executadas em DEV; invariantes financeiras com rollback.
-- `supabase/config.toml`: configuração local gerada pela CLI; não sincronizada com cloud. Signups públicos desabilitados, MFA TOTP habilitado.
+Ferramentas: dev-gate (Node ESM), scripts/check_sql.py (gramática apenas), scripts/verify_* (banco). supabase/config.toml é configuração local, não comprova Auth cloud. Workflow foundation-checks.yml possui jobs static e frontend, contents:read, actions fixadas por SHA, sem deploy/secrets.
 
-## Segurança prevista e correção
-RLS, views security_invoker, grants mínimos e comandos financeiros server-side fazem parte do schema preparado. A migration adicional permite execução dos helpers administrativos apenas para usuários autenticados e verifica MASTER/BILLING + AAL2 dentro das funções; views filtram esse público. Comportamento real ainda não comprovado.
+## Estado verificado em 2026-10-02
 
-## GitHub / CI
-Workflow `foundation-checks.yml`: syntax JS, testes do guard e gramática SQL; somente contents:read; actions fixadas por SHA; sem secrets ou deploy. CI inicial 36965906504 aprovada; revisão após esta atualização pendente. Resultado estático aprovado não libera release.
+Supabase DEV autorizado: `szqkdekwhzxsoxorgvaz`, organização Michael - jobmcc, plano Free. 19 migrations aplicadas; 138 tabelas públicas com RLS. Dois usuários Auth confirmados, cada um ADMIN de sua própria Loja DEV, com um integrante fictício em cada Loja. Senhas não acessadas ou alteradas.
 
-## Arquitetura alvo
-Next.js/React/TypeScript responsivo, Supabase e Cloudflare. A aplicação existente usa React/Vite/TypeScript; Next.js é referência histórica, sem decisão de migração. Configuração Cloudflare ainda pendente. Referência anexada em `docs/engineering/cloudflare-engineering.md`; ela não é configuração aplicada.
+Catálogo de permissões, invariantes financeiras e pós-V31 aprovados. Isolamento via SET ROLE authenticated/anon e claims simuladas aprovado: leitura própria, ocultação cruzada, chamado próprio, criação cruzada negada, helpers administrativos negados em AAL1. Escritas transacionais dos testes revertidas. Essa evidência não substitui login/JWT real pela Data API.
 
-## Limitações
-DEV preparado e testes financeiros SQL aprovados; sem JWT real, MFA ou concorrência executados; Storage privado e provedor de billing pendentes; sem URL de preview/produção.
+Frontend React/Vite/TypeScript conectado ao Supabase: login por senha, validação de sessão por getUser, logout local, seleção de Loja, integrantes com busca e criação/listagem de chamados. Auth callback síncrono; respostas atrasadas descartadas; dados removidos ao trocar usuário/tenant. RLS e RPCs são a fronteira de autorização. Sem lançamentos financeiros na interface.
 
-## Branch preexistente preservada
-Ao conferir branches foi identificado `feat/v35-foundation@d1aa2540c6c5506fb8ec3cdb0b61b630ed935872`, com estrutura React/Vite/TypeScript e cliente Supabase. Esta entrega deriva dessa revisão e preserva o frontend sem alterações. A arquitetura Next.js do pacote é alvo histórico, não stack atual nem decisão de migração. Testes/build do frontend herdado NÃO EXECUTADOS nesta etapa.
+Dependências fixadas, lockfile raiz, configuração exclusiva Cloudflare DEV de assets estáticos e headers de segurança. CI separa testes frontend dos testes do guard DEV; usa chave publicável fictícia para build, sem Auth real ou deploy.
 
-## Supabase DEV verificado — 2026-10-02
-Projeto existente `szqkdekwhzxsoxorgvaz`, organização Michael - jobmcc, região sa-east-1, plano Free, ACTIVE_HEALTHY. Usuário autorizou preparo DEV, migrations, dados fictícios e desenvolvimento com preview; cobranças devem ser apresentadas antes e produção depende de aprovação posterior. Nenhum projeto/branch pago criado.
+## Pendências
 
-19 migrations aplicadas. Histórico e nomes locais alinhados às versões atribuídas pelo conector; mapa e hashes de execução em `docs/engineering/v35-dev-runtime-manifest.json`. O manifesto da fonte conserva hashes originais históricos. As migrations 009 e 014 receberam correções antes da primeira aplicação bem-sucedida: chaves das tabelas de cancelamento e ordem de colunas da view de faturas. Migration posterior remove execução anônima de funções SECURITY DEFINER e restringe defaults de novos grants.
+Login real com os dois usuários, HTTP/JWT cross-tenant, MFA/AAL2, suspensão e concorrência/idempotência ainda não avaliados. Testes da interface usam client simulado. Preview remoto depende de autenticação Cloudflare: wrangler whoami informou sessão ausente. Nenhum deploy, upgrade, cobrança ou alteração em produção efetuado. Qualquer custo deve ser apresentado antes; produção depende de aprovação posterior.
 
-VERIFICADO: 138 tabelas públicas, todas com RLS; catálogo de views/helpers; invariantes financeiras com dados fictícios transacionais e rollback; pós-V31; quatro testes locais do guard DEV. Teste financeiro atualizado para publicar o plano contábil exigido pela V35. Advisor não aponta funções definer executáveis por anon. Permanecem 37 avisos de RPCs autenticadas (autorização interna requer teste comportamental) e três tabelas backend sem policies (negação por padrão).
-
-NÃO AVALIADO: login/JWT real, isolamento entre tenants com usuários reais, MFA/AAL2, concorrência/idempotência, configuração Auth cloud, build do frontend herdado, preview Cloudflare e produção. Dados fictícios do teste financeiro foram revertidos; usuários Auth e fixtures persistentes ainda não criados. Credencial administrativa Auth de DEV e dois usuários de teste devem ser provisionados em ambiente seguro; nunca colar secrets no chat ou commitá-los. Configuração TOML local não comprova configuração cloud.
-
-## Auth e isolamento SQL — 2026-10-02
-Dois usuários criados pelo usuário no painel Auth, e-mails confirmados, vinculados como ADMIN somente às respectivas Lojas DEV. Nenhuma senha acessada ou alterada. Seed de vínculo parametrizado por UUID em dev-gate/bind-existing-auth-users.sql.
-
-19 migrations aplicadas; nova support_policy_helper_permissions corrige falta de EXECUTE para authenticated em private.is_tenant_user(uuid), usado pelo RLS de chamados, e private.has_aal2(), usado pelas views administrativas. anon/PUBLIC continuam sem EXECUTE. Falha original reproduzida com papel authenticated; após correção, teste de leitura/escrita legítima e negação cruzada aprovado em ambos os tenants.
-
-VERIFICADO: scripts/verify_dev_role_isolation.sql (SET ROLE authenticated/anon + claims simuladas): organizações/integrantes próprios visíveis, outros ocultos; chamado próprio criado e lido; criação cruzada negada com 42501; configuração/staff/catálogos administrativos ocultos; helper administrativo bloqueado em AAL1; anônimo sem linhas. Escritas do teste revertidas. Catálogo de permissões aprovado.
-
-NÃO AVALIADO: login com senha, assinatura JWT e HTTP/Data API, MFA real, concorrência/idempotência e suspensão. SET ROLE/claims simuladas não substituem autenticação real. Próximo: testes de sessão real em ambiente seguro e aplicação/preview; nenhum secret deve ser colado no chat. Cloudflare e produção ainda pendentes.
+Advisors: 37 avisos de RPCs definer autenticadas, três tabelas backend sem policies (negação por padrão), proteção contra senhas vazadas desabilitada. Remediação Auth deve considerar eventual custo antes da ativação.

@@ -8,10 +8,18 @@ describe('parsePublicEnv', () => {
   it('accepts URL and publishable key', () => {
     expect(parsePublicEnv({
       VITE_SUPABASE_URL: 'https://example.supabase.co',
-      VITE_SUPABASE_PUBLISHABLE_KEY: 'public-key',
+      VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_test',
     })).toEqual({
       supabaseUrl: 'https://example.supabase.co',
-      supabasePublishableKey: 'public-key',
+      supabasePublishableKey: 'sb_publishable_test',
     })
+  })
+  it('rejects a server secret in frontend configuration', () => {
+    expect(() => parsePublicEnv({ VITE_SUPABASE_URL: 'https://example.supabase.co', VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_secret_test' })).toThrow('Only a publishable')
+  })
+  it('rejects credential-bearing, insecure or non-origin URLs', () => {
+    for (const url of ['http://example.supabase.co', 'https://user:password@example.supabase.co', 'https://example.supabase.co/rest/v1']) {
+      expect(() => parsePublicEnv({ VITE_SUPABASE_URL: url, VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_test' })).toThrow('HTTPS origin')
+    }
   })
 })
