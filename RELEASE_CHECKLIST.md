@@ -1,65 +1,30 @@
-# RELEASE CHECKLIST
+# RELEASE CHECKLIST — V35
 
-> Use somente itens aplicáveis à mudança. Item sem execução deve permanecer NÃO AVALIADO/BLOCKED.
+## Verificado nesta etapa
+- [x] 16 migrations originais preservadas byte a byte e hashes registrados.
+- [x] 17 migrations e 3 scripts passam por parser de gramática SQL.
+- [x] Sintaxe dos scripts JS e quatro testes do guard DEV aprovados.
+- [x] Dependências fixadas e lockfile gerado.
+- [x] `npm audit --omit=dev --audit-level=high`: zero findings retornados.
+- [x] Configuração TOML gerada pela CLI e parseada localmente.
+- [x] CI estática preparada com permissions: contents:read e actions por SHA.
 
-## Código
-- [ ] lint
-- [ ] typecheck
-- [ ] testes
-- [ ] build
-- [ ] regressão
+## Gates de runtime — não aprovados
+- [ ] Projeto Supabase DEV selecionado/criado com custo confirmado.
+- [ ] 17 migrations aplicadas do zero e histórico alinhado.
+- [ ] Catálogo de segurança e invariantes SQL executados.
+- [ ] JWT/RLS cross-user e cross-tenant positivo/negativo.
+- [ ] Master/Billing/Support e AAL1/AAL2 exercitados.
+- [ ] Financeiro, fechamento, imutabilidade e suspensão.
+- [ ] Concorrência, sobrealocação e idempotência.
+- [ ] Correção das views administrativas comprovada em runtime.
+- [ ] CI remota aprovada na revisão do PR.
 
-## Banco
-- [ ] migration versionada
-- [ ] backup se necessário
-- [ ] RLS revisada
-- [ ] cross-user/cross-tenant testado
-- [ ] rollback/forward-fix
-
-## Segurança
-- [ ] auth
-- [ ] autorização
-- [ ] fail-closed
-- [ ] secrets
-- [ ] CORS
-- [ ] webhooks
-- [ ] inputs
-- [ ] logs
-- [ ] insecure defaults quando aplicável
-
-## IA
-- [ ] API key server-side
-- [ ] output validado
-- [ ] tools autorizadas
-- [ ] prompt injection considerado
-- [ ] dados minimizados
-- [ ] tamanho de arquivos avaliado
-
-## Jobs assíncronos
-- [ ] status persistido
-- [ ] retry seguro
-- [ ] idempotência
-- [ ] timeouts
-- [ ] correlation/job ID
-- [ ] falha de etapa não repete etapas concluídas
-
-## GitHub / CI
-- [ ] PR revisado
-- [ ] Actions least privilege
-- [ ] secrets protegidos
-- [ ] dependências revisadas
-- [ ] deploy protegido
-
-## Produção
-- [ ] env vars
-- [ ] observabilidade
-- [ ] rollback
-- [ ] documentação atualizada
+## Produto e deploy
+- [ ] Frontend responsivo e integrações reais.
+- [ ] Storage privado, auth, observabilidade e rollback.
+- [ ] Preview Cloudflare e revisão desktop/mobile.
+- [ ] Produção configurada e verificada.
 
 ## Resultado
-- [ ] PASS
-- [ ] BLOCKED
-
-### Estado inicial ECC — 2026-10-02
-
-BLOCKED para release do produto: não há código/runtime versionado para executar os checks acima.
+**BLOCKED para release.** Checks estáticos aprovados não comprovam runtime, segurança ou deploy.

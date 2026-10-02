@@ -1,0 +1,14 @@
+{
+  "status": "STATIC_REVIEW_PASS",
+  "runtime_postgresql_executed": false,
+  "migration_count": 7,
+  "saas_tables": 17,
+  "rls_enable_count": 17,
+  "security_definer_search_path_locked": true,
+  "service_role_literal_in_sql": false,
+  "provider_agnostic": true,
+  "tenant_write_gate_present": true,
+  "support_session_present": true,
+  "invoice_payment_separation": true,
+  "files": 38
+}

@@ -1,0 +1,30 @@
+{
+  "status": "STATIC_REVIEW_PASS",
+  "scope": "Static SQL/schema/security contract review only. PostgreSQL/Supabase runtime was not executed.",
+  "checks": {
+    "migration_count": 15,
+    "public_table_count": 137,
+    "rls_enabled_table_count": 137,
+    "missing_rls_tables": [],
+    "public_view_count": 26,
+    "views_without_security_invoker": [],
+    "security_definer_function_count": 91,
+    "security_definer_without_locked_search_path": [],
+    "missing_fk_target_tables": [],
+    "float_real_double_detected": false,
+    "v34_markers": {
+      "onboarding_runs": true,
+      "onboarding_step_events": true,
+      "plan_create_command": true,
+      "plan_publish_command": true,
+      "promotion_successor_command": true,
+      "promotion_publish_command": true,
+      "support_metrics": true,
+      "internal_ticket_scope": true,
+      "invoice_charge_breakdown": true,
+      "tenant_ticket_scope_policy": true,
+      "auth_invite_job_minimized": true
+    },
+    "runtime_postgresql_executed": false
+  }
+}

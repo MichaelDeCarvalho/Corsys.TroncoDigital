@@ -24,3 +24,4 @@ Cada ADR deve registrar:
 - PR/commit relacionado.
 
 Decisões substituídas devem ser marcadas como `superseded`, preservando histórico.
+

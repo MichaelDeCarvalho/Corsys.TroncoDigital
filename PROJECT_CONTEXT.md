@@ -1,106 +1,36 @@
-# PROJECT CONTEXT
+# PROJECT CONTEXT — Corsys.TroncoDigital
 
-> Fonte viva do contexto deste software. Atualizar somente com fatos observados ou decisões confirmadas.
+## Produto e usuários
+SaaS multi-tenant de tesouraria, gestão financeira e DRE para Lojas Maçônicas. Papéis: Master, Support/Billing, administrador da Loja, tesoureiro, consulta e integrante.
 
-## 1. Nome do sistema
+## Estado observado — 2026-10-02
+Base anterior: `main@4142ff1c63855d71bbf94bdf3f61ec8bdcde3d9a`, documentação ECC sem código de produto. Esta etapa incorpora fundação SQL V35 e ferramentas de validação em `feat/v35-dev-gate-20261002`.
 
-Corsys.TroncoDigital
+## Fonte funcional
+`corsys-v35-supabase-dev-gate.zip`, identificado e recuperado nesta sessão. 16 migrations originais preservadas byte a byte; hashes em `docs/engineering/v35-source-manifest.json`. Documentos de domínio em `docs/`; ADRs herdados em `docs/adr/v35/`. Relatórios herdados descrevem revisões históricas, não execução atual.
 
-## 2. Objetivo
+## Stack
+- Implementado nesta etapa: PostgreSQL SQL/migrations, Node.js ESM para gate DEV, parser Python para gramática SQL.
+- Dependências fixadas e lockfile: `dev-gate/package.json` e `package-lock.json`.
+- Arquitetura alvo herdada: Next.js/React/TypeScript; aplicação web responsiva/PWA-ready para desktop e mobile; Supabase Auth/Postgres/Storage; Cloudflare para deploy.
+- Frontend: estrutura inicial React/Vite/TypeScript observada em branch existente; backend HTTP/Storage/billing provider ainda não implementados ou configurados.
+- Nenhuma escrita financeira offline no MVP.
 
-Sistema para tesouraria de L:.S:.
+## Regras críticas
+`organization_id` delimita tenant. Obrigação não é pagamento; recebível não é caixa. Fatos postados não são sobrescritos. Valores financeiros são exatos. Saldos são derivados. Comandos exigem autorização determinística; suspensão bloqueia escritas. Billing SaaS permanece separado da tesouraria. Master exige AAL2.
 
-## 3. Problema resolvido
+## Ambientes e repositório
+- Repositório privado: `MichaelDeCarvalho/Corsys.TroncoDigital`.
+- Principal: `main`; mudanças relevantes via branch e PR.
+- Local: checks estáticos e unitários executados; Docker/Postgres indisponíveis nesta sessão.
+- Supabase DEV: nenhum projeto TroncoDigital encontrado na conexão; organização disponível `MICHAEL CARVALHO`, aguardando seleção explícita exigida pelo conector.
+- Cloudflare/produção: nenhuma alteração executada.
 
-NÃO AVALIADO no repositório atual. O código e as regras de negócio ainda não estão versionados neste GitHub.
+## Próximo marco e critério de pronto
+Aplicar 17 migrations em DEV dedicado; executar catálogo de segurança, invariantes financeiras, JWT/RLS cross-tenant, MFA e concorrência/idempotência. Somente então integrar UI financeira real. A interface React/Vite preexistente não foi reescrita. Checks estáticos não aprovam produção.
 
-## 4. Usuários
+## Continuidade
+Ler `CURRENT_ARCHITECTURE.md`, `SECURITY_REGISTER.md`, `RELEASE_CHECKLIST.md` e `SESSION_HANDOFF.md`. Metodologia ECC permanece seletiva.
 
-NÃO AVALIADO.
-
-## 5. Escopo atual
-
-### Incluído
-- governança de engenharia;
-- adoção seletiva ECC;
-- registro de contexto, arquitetura, segurança, release e handoff.
-
-### Fora de escopo nesta implantação
-- implementação de funcionalidades do produto;
-- CI executável;
-- testes do produto;
-- hooks/MCP/runtime ECC;
-- deploy;
-- banco/migrations.
-
-## 6. Stack
-
-- Frontend: NÃO AVALIADO
-- Backend: NÃO AVALIADO
-- Banco: NÃO AVALIADO
-- Auth: NÃO AVALIADO
-- Storage: NÃO AVALIADO
-- IA: NÃO AVALIADO
-- Deploy: NÃO AVALIADO
-- E-mail: NÃO AVALIADO
-- GitHub: repositório privado `MichaelDeCarvalho/Corsys.TroncoDigital`
-- Observabilidade: NÃO AVALIADO
-
-## 7. Ambientes
-
-- Local: NÃO AVALIADO
-- Preview/Staging: NÃO AVALIADO
-- Production: NÃO AVALIADO
-
-## 8. Repositório
-
-- URL/nome: `MichaelDeCarvalho/Corsys.TroncoDigital`
-- branch principal: `main`
-- estratégia de branches: branch + PR para mudanças relevantes
-- revisão inspecionada: `92960ef866bdb9009c73634fa23f943a9f358150`
-- estado observado em 2026-10-02: apenas `README.md` na raiz
-
-## 9. Serviços externos
-
-Nenhum serviço externo foi comprovado pelo conteúdo versionado atual.
-
-## 10. Convenções
-
-- package manager: NÃO AVALIADO
-- linguagem: NÃO AVALIADO
-- lint: NÃO AVALIADO
-- formatter: NÃO AVALIADO
-- testes: NÃO AVALIADO
-- commit convention: usar mensagens curtas e descritivas; não havia convenção versionada observável
-
-## 11. Regras de negócio críticas
-
-NÃO AVALIADO até entrada do código/documentação funcional real.
-
-## 12. Restrições
-
-- Não inventar stack ou comandos.
-- Não declarar segurança, testes ou deploy aprovados sem evidência.
-- Não instalar runtime ECC completo sem necessidade comprovada.
-
-## 13. Riscos conhecidos
-
-- Repositório sem código impede validação de arquitetura e controles do produto.
-- Ausência de testes/CI não pode ser interpretada como aprovação.
-- Contexto histórico do sistema pode existir fora do GitHub e precisa ser incorporado quando disponibilizado.
-
-## 14. Dívida técnica
-
-- Versionar o código real do produto.
-- Mapear regras de negócio, auth, dados e deploy assim que o código estiver disponível.
-
-## 15. Próximo marco
-
-- objetivo: incorporar o código real do Corsys.TroncoDigital ao repositório e executar diagnóstico ECC da stack.
-- critério de pronto: stack, comandos, fluxos críticos, auth, dados e deploy identificados por evidência.
-- blockers: código da aplicação ausente neste GitHub.
-
-## 16. Última atualização
-
-- Data: 2026-10-02
-- Motivo: implantação inicial seletiva do ECC.
+## Branch preexistente preservada
+Ao conferir branches foi identificado `feat/v35-foundation@d1aa2540c6c5506fb8ec3cdb0b61b630ed935872`, com estrutura React/Vite/TypeScript e cliente Supabase. Esta entrega deriva dessa revisão e preserva o frontend sem alterações. A arquitetura Next.js do pacote é alvo histórico, não stack atual nem decisão de migração. Testes/build do frontend herdado NÃO EXECUTADOS nesta etapa.

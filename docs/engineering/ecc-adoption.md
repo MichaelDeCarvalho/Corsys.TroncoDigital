@@ -163,3 +163,18 @@ Revisar este documento quando:
 ## Reversão
 
 Esta fase é essencialmente documental. Reversão consiste em remover as referências ECC e os documentos adicionados por um commit posterior. Nenhum banco, secret, serviço externo ou produção foi alterado.
+
+
+## Segunda fase — entrada da fundação V35 (2026-10-02)
+
+A primeira implantação acima é histórica. A branch `feat/v35-dev-gate-20261002` introduz migrations PostgreSQL e scripts Node/Python.
+- Checks reproduzíveis: IMPLEMENTADO para sintaxe JS, guard DEV e gramática SQL.
+- CI: IMPLEMENTADA em arquivo; execução remota PENDENTE.
+- Segurança, contratos, migrations e testes de integração: PARCIAL; controles declarados em SQL, runtime NÃO AVALIADO.
+- Mobile/desktop: aplicação web responsiva é requisito do produto; frontend PENDENTE, nenhum app nativo nesta etapa.
+- Não há instalação integral ECC, multiagentes, hooks, vault ou serviços extras.
+
+Critério de ativação do frontend financeiro: cumprir os gates de runtime em `RELEASE_CHECKLIST.md`.
+
+## Branch preexistente preservada
+Ao conferir branches foi identificado `feat/v35-foundation@d1aa2540c6c5506fb8ec3cdb0b61b630ed935872`, com estrutura React/Vite/TypeScript e cliente Supabase. Esta entrega deriva dessa revisão e preserva o frontend sem alterações. A arquitetura Next.js do pacote é alvo histórico, não stack atual nem decisão de migração. Testes/build do frontend herdado NÃO EXECUTADOS nesta etapa.

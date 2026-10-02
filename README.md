@@ -1,19 +1,29 @@
-# Corsys.TroncoDigital
+# Corsys.TroncoDigital — V35
 
-Sistema para tesouraria de L:.S:.
+SaaS de tesouraria para Lojas Maçônicas, com aplicação web responsiva planejada para desktop e mobile.
 
-## Engenharia do projeto
+## Estado
+Implementação iniciada: fundação SQL e kit de validação DEV. **Banco não aplicado; estrutura inicial React/Vite herdada, sem integração financeira; sem deploy observado.**
 
-Este repositório adota seletivamente práticas do ECC conforme a utilidade real do sistema.
+## Validar localmente
+Node.js 22+ e Python 3.12:
 
-Fontes operacionais:
-- `AGENTS.md` — regras concisas para agentes;
-- `PROJECT_CONTEXT.md` — contexto vivo do sistema;
-- `CURRENT_ARCHITECTURE.md` — arquitetura observada;
-- `docs/engineering/ecc-adoption.md` — registro de adoção ECC;
-- `SECURITY_REGISTER.md` — riscos e controles;
-- `RELEASE_CHECKLIST.md` — gate de release;
-- `SESSION_HANDOFF.md` — continuidade entre sessões;
-- `docs/adr/` — decisões arquiteturais.
+```bash
+npm ci --prefix dev-gate
+npm run check --prefix dev-gate
+python3 -m pip install -r scripts/requirements-checks.txt
+python3 scripts/check_sql.py
+```
 
-Nenhum runtime ECC completo foi instalado nesta implantação. Recursos executáveis dependentes da stack permanecem bloqueados até o código real estar versionado e poder ser validado.
+Esses comandos validam sintaxe/gramática e guardas DEV. Não validam runtime do banco ou RLS.
+
+## Próximo gate
+Projeto Supabase DEV exclusivo; aplicar migrations preservadas 001–016 e a correção adicional. Executar `scripts/verify_security_catalog.sql`, invariantes financeiras, JWT/RLS, MFA e concorrência/idempotência. Consulte `docs/RUNBOOK_SUPABASE_DEV.md` e `dev-gate/README.md`.
+
+## Continuidade
+`AGENTS.md` → `PROJECT_CONTEXT.md` → `CURRENT_ARCHITECTURE.md` → código/ADRs → `SESSION_HANDOFF.md`.
+
+Metodologia ECC: `docs/engineering/ecc-adoption.md`. Decisão desta etapa: `docs/adr/0002-v35-foundation-import.md`. ADRs históricos V35: `docs/adr/v35/`.
+
+## Branch preexistente preservada
+Ao conferir branches foi identificado `feat/v35-foundation@d1aa2540c6c5506fb8ec3cdb0b61b630ed935872`, com estrutura React/Vite/TypeScript e cliente Supabase. Esta entrega deriva dessa revisão e preserva o frontend sem alterações. A arquitetura Next.js do pacote é alvo histórico, não stack atual nem decisão de migração. Testes/build do frontend herdado NÃO EXECUTADOS nesta etapa.

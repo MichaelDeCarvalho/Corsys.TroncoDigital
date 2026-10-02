@@ -8,3 +8,15 @@ dist/
 .wrangler/
 coverage/
 .DS_Store
+
+node_modules/
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+fixture.ids.json
+dist/
+.next/
+supabase/.temp/
+supabase/.branches/

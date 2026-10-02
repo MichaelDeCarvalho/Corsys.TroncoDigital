@@ -1,101 +1,31 @@
 # CURRENT ARCHITECTURE
 
-> Arquitetura real observada, não arquitetura desejada.
+## Estado real — 2026-10-02
+Fundação SQL V35 e gate de validação versionados nesta branch; estrutura inicial frontend React/Vite herdada da branch existente, sem integração financeira real e sem backend HTTP. Não há deploy.
 
-## Visão geral
+## Banco preparado
+`supabase/migrations/`: 16 originais + 1 forward fix. Domínios: organizações/roles/integrantes, financeiro imutável, planos contábeis por vigência, AP/AR institucional, conciliação/orçamento/documentos/LGPD, SaaS billing/control plane, suporte/onboarding e catálogo V35.
 
-```text
-GitHub
-└── README.md
-```
+As tabelas, views, policies, triggers e RPCs estão descritos em SQL. Existência em ambiente Supabase real: NÃO AVALIADA. Bootstrap está em `docs/BOOTSTRAP.md`.
 
-Na revisão inspecionada, não há código de frontend, backend, banco, funções, workflows ou infraestrutura versionada. Portanto nenhuma arquitetura de execução do produto pode ser afirmada.
+## Ferramentas executáveis
+- `dev-gate/`: fixtures Auth/admin em servidor local e testes usando chaves publicáveis/JWT de usuários normais.
+- Guard: alvo cloud DEV exato, acknowledgement DEV_ONLY, identidades/tenants distintos e fixture vinculada ao projeto.
+- `scripts/check_sql.py`: gramática SQL; não valida corpos PL/pgSQL, dependências, RLS ou concorrência.
+- `scripts/verify_*`: verificações transacionais de banco; ainda não executadas.
+- `supabase/config.toml`: configuração local gerada pela CLI; não sincronizada com cloud. Signups públicos desabilitados, MFA TOTP habilitado.
 
-## Frontend
+## Segurança prevista e correção
+RLS, views security_invoker, grants mínimos e comandos financeiros server-side fazem parte do schema preparado. A migration adicional permite execução dos helpers administrativos apenas para usuários autenticados e verifica MASTER/BILLING + AAL2 dentro das funções; views filtram esse público. Comportamento real ainda não comprovado.
 
-- framework: NÃO AVALIADO
-- rotas: NÃO AVALIADO
-- estado: NÃO AVALIADO
-- auth: NÃO AVALIADO
-- principais módulos: NÃO AVALIADO
+## GitHub / CI
+Workflow `foundation-checks.yml`: syntax JS, testes do guard e gramática SQL; somente contents:read; actions fixadas por SHA; sem secrets ou deploy. CI remota ainda não observada nesta etapa. Resultado estático aprovado não libera release.
 
-## Backend
+## Arquitetura alvo
+Next.js/React/TypeScript responsivo, Supabase e Cloudflare. Framework, adaptador Cloudflare e configuração de build precisam ser confirmados quando o frontend existir. Referência anexada em `docs/engineering/cloudflare-engineering.md`; ela não é configuração aplicada.
 
-- runtime: NÃO AVALIADO
-- endpoints: NÃO AVALIADO
-- funções: NÃO AVALIADO
-- auth: NÃO AVALIADO
-- autorização: NÃO AVALIADO
+## Limitações
+Sem projeto Supabase DEV selecionado/criado; sem runtime PostgreSQL/Docker; sem JWT real, MFA, testes financeiros ou concorrência executados; Storage privado e provedor de billing pendentes; sem URL de preview/produção.
 
-## Banco / Persistência
-
-- produto/engine: NÃO AVALIADO
-- schemas: NÃO AVALIADO
-- tabelas críticas: NÃO AVALIADO
-- RLS: NÃO AVALIADO
-- Storage: NÃO AVALIADO
-- Realtime: NÃO AVALIADO
-- funções server-side: NÃO AVALIADO
-
-## IA
-
-- casos de uso: NÃO AVALIADO
-- modelo(s): NÃO AVALIADO
-- prompts: NÃO AVALIADO
-- schemas: NÃO AVALIADO
-- tool calls: NÃO AVALIADO
-- dados enviados: NÃO AVALIADO
-
-## Deploy
-
-- plataforma: NÃO AVALIADO
-- build: NÃO AVALIADO
-- publish/output: NÃO AVALIADO
-- funções/edge: NÃO AVALIADO
-- env contexts: NÃO AVALIADO
-
-## E-mail
-
-- provedor: NÃO AVALIADO
-- tipos: NÃO AVALIADO
-- webhooks: NÃO AVALIADO
-- idempotência: NÃO AVALIADO
-- persistência de eventos: NÃO AVALIADO
-
-## GitHub
-
-- repositório: `MichaelDeCarvalho/Corsys.TroncoDigital`
-- branch principal: `main`
-- CI: ausente na revisão inspecionada
-- CD: ausente na revisão inspecionada
-- protections: branch `main` observada sem proteção ativa em 2026-10-02
-
-## Fluxos críticos
-
-NÃO AVALIADO. O código do produto não está presente.
-
-## Jobs assíncronos
-
-Nenhum job foi observado.
-
-## Boundaries de segurança
-
-Não podem ser definidos por evidência ainda.
-
-## Dados sensíveis
-
-Nenhum armazenamento de dados foi observado no repositório atual.
-
-## Secrets
-
-Nenhum nome de secret foi inferido. Registrar apenas nomes e locais quando a stack real for incorporada; nunca valores.
-
-## Pontos de falha conhecidos
-
-- ausência do código real impede análise arquitetural;
-- ausência de CI/testes impede verificação automatizada;
-- ausência de configuração de runtime impede avaliar secrets, auth e deploy.
-
-## Última atualização
-
-2026-10-02 — diagnóstico ECC inicial da revisão `92960ef866bdb9009c73634fa23f943a9f358150`.
+## Branch preexistente preservada
+Ao conferir branches foi identificado `feat/v35-foundation@d1aa2540c6c5506fb8ec3cdb0b61b630ed935872`, com estrutura React/Vite/TypeScript e cliente Supabase. Esta entrega deriva dessa revisão e preserva o frontend sem alterações. A arquitetura Next.js do pacote é alvo histórico, não stack atual nem decisão de migração. Testes/build do frontend herdado NÃO EXECUTADOS nesta etapa.

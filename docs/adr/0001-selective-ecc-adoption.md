@@ -69,3 +69,4 @@ Reverter o commit/PR da implantação documental. Não há efeito em banco, secr
 
 - PR: `#1` — https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/pull/1
 - commit inicial da implantação: `9b8a5b40639f7625ce4ff505dfc8e97847fcecf0`
+

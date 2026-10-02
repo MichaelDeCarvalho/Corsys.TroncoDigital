@@ -34,3 +34,14 @@ Nenhuma exceção aceita registrada.
 ## Regra
 
 Ausência de finding não significa ausência de vulnerabilidade. Scanners, buscas textuais e checklists são sinais; autorização, isolamento, persistência e comportamento devem ser testados no sistema real.
+
+
+## Atualização V35 — 2026-10-02
+
+| ID | Severidade | Estado | Evidência / ação |
+|---|---|---|---|
+| SEC-003 | média funcional | correção preparada; runtime pendente | Views V35 chamam helpers privados com EXECUTE revogado; forward fix concede execução a authenticated e verifica staff/AAL2 internamente, com filtro administrativo nas views |
+| SEC-004 | alta para release | aberto | RLS, financeiro, MFA e concorrência nunca executados nesta sessão; gate bloqueia release/UI financeira integrada |
+| SEC-005 | preventiva | verificado somente local | Kit de fixture exige projeto DEV exato e identidades distintas; 4 testes locais aprovados |
+
+SEC-001 evolui: fundação SQL incorporada; estrutura inicial frontend existe na branch herdada; backend HTTP e integrações continuam pendentes. SEC-002 evolui: CI estática adicionada na branch, resultado remoto pendente. Não foi realizada auditoria completa de segurança nesta etapa.

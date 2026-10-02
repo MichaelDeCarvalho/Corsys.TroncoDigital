@@ -1,0 +1,20 @@
+{
+  "name": "corsys-v35-supabase-dev-gate",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "fixture": "node --env-file=.env.dev tools/create-test-fixture.mjs",
+    "test:tenant-isolation": "node --env-file=.env.dev tests/tenant-isolation.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "check": "node tools/check.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.117.2"
+  },
+  "devDependencies": {
+    "supabase": "2.119.0"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
