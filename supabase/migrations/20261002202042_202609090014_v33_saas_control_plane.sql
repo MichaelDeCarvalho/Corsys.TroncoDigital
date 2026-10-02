@@ -874,8 +874,6 @@ select
   i.service_period_end,
   i.issue_date,
   i.due_date,
-  i.amount_due as original_amount,
-  coalesce(ad.adjustment_amount, 0)::numeric(14,2) as adjustment_amount,
   (i.amount_due + coalesce(ad.adjustment_amount, 0))::numeric(14,2) as amount_due,
   coalesce(al.amount_paid, 0)::numeric(14,2) as amount_paid,
   case
@@ -891,6 +889,8 @@ select
     when i.due_date < current_date then 'overdue'
     else 'open'
   end as derived_status,
+  i.amount_due as original_amount,
+  coalesce(ad.adjustment_amount, 0)::numeric(14,2) as adjustment_amount,
   (
     coalesce(al.amount_paid, 0)
     <= i.amount_due + coalesce(ad.adjustment_amount, 0)

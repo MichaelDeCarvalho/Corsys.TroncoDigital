@@ -1,0 +1,139 @@
+{
+  "project_ref": "szqkdekwhzxsoxorgvaz",
+  "organization": "Michael - jobmcc",
+  "environment": "DEV",
+  "applied_at": "2026-10-02",
+  "migrations": [
+    {
+      "version": "20261002201615",
+      "name": "202609040001_foundation",
+      "source_path": "supabase/migrations/202609040001_foundation.sql",
+      "path": "supabase/migrations/20261002201615_202609040001_foundation.sql",
+      "sha256": "a9809cfb3878067754684d427416a41d4c7f0eb8d5b9a639ee5df3f6cd3b6150"
+    },
+    {
+      "version": "20261002201625",
+      "name": "202609040002_financial_core",
+      "source_path": "supabase/migrations/202609040002_financial_core.sql",
+      "path": "supabase/migrations/20261002201625_202609040002_financial_core.sql",
+      "sha256": "314ea1cfde196f89fdc567bf0de1823bc456b8cad2aba51af97a65704d736088"
+    },
+    {
+      "version": "20261002201633",
+      "name": "202609040003_financial_views",
+      "source_path": "supabase/migrations/202609040003_financial_views.sql",
+      "path": "supabase/migrations/20261002201633_202609040003_financial_views.sql",
+      "sha256": "3703b1fc87f45ee3aa1a337d5ab80855ceaed136441e67cf3dec38f2d071be66"
+    },
+    {
+      "version": "20261002201644",
+      "name": "202609040004_security_rls",
+      "source_path": "supabase/migrations/202609040004_security_rls.sql",
+      "path": "supabase/migrations/20261002201644_202609040004_security_rls.sql",
+      "sha256": "e27ad546d800b7b9116d86bd386f493906d9adcd13556b855e9f3faf847ae0be"
+    },
+    {
+      "version": "20261002201702",
+      "name": "202609040005_financial_commands",
+      "source_path": "supabase/migrations/202609040005_financial_commands.sql",
+      "path": "supabase/migrations/20261002201702_202609040005_financial_commands.sql",
+      "sha256": "2c0346bb2146f210b1d882a194beb18170a5f80811343ea613db3a3730ac4ffc"
+    },
+    {
+      "version": "20261002201717",
+      "name": "202609080006_saas_platform",
+      "source_path": "supabase/migrations/202609080006_saas_platform.sql",
+      "path": "supabase/migrations/20261002201717_202609080006_saas_platform.sql",
+      "sha256": "ba6c86d0c58945b2f37663e01f067f1ef1560004ed04b74c60e6fcafb5cc6853"
+    },
+    {
+      "version": "20261002201731",
+      "name": "202609080007_saas_security",
+      "source_path": "supabase/migrations/202609080007_saas_security.sql",
+      "path": "supabase/migrations/20261002201731_202609080007_saas_security.sql",
+      "sha256": "e7788a7f49ccba0a0f25bb24a90bef240fa71c3f5640b63e4f376438d8af3ee3"
+    },
+    {
+      "version": "20261002201750",
+      "name": "202609080008_post_v31_accounting_domain",
+      "source_path": "supabase/migrations/202609080008_post_v31_accounting_domain.sql",
+      "path": "supabase/migrations/20261002201750_202609080008_post_v31_accounting_domain.sql",
+      "sha256": "c825f13a40672159f62c3a922dba9d821c32aaca17cfc8c9db98ee0d72a406e2"
+    },
+    {
+      "version": "20261002201851",
+      "name": "202609080009_institutional_finance",
+      "source_path": "supabase/migrations/202609080009_institutional_finance.sql",
+      "path": "supabase/migrations/20261002201851_202609080009_institutional_finance.sql",
+      "sha256": "fcd3d3e866d4d3ca40640e96f975b063b00bd8d840f0887fc7f729ed9374ba77"
+    },
+    {
+      "version": "20261002201902",
+      "name": "202609080010_operational_controls",
+      "source_path": "supabase/migrations/202609080010_operational_controls.sql",
+      "path": "supabase/migrations/20261002201902_202609080010_operational_controls.sql",
+      "sha256": "b43062b822c58e61a31dabde62fd0c1566f0f517012414b37503ee1d3ec03e00"
+    },
+    {
+      "version": "20261002201915",
+      "name": "202609080011_saas_commercial_refinements",
+      "source_path": "supabase/migrations/202609080011_saas_commercial_refinements.sql",
+      "path": "supabase/migrations/20261002201915_202609080011_saas_commercial_refinements.sql",
+      "sha256": "0f919346bb1b86e3d15f32d82ad164de80cd7dcc6aebcf304908adc26def2622"
+    },
+    {
+      "version": "20261002201927",
+      "name": "202609080012_post_v31_views_security",
+      "source_path": "supabase/migrations/202609080012_post_v31_views_security.sql",
+      "path": "supabase/migrations/20261002201927_202609080012_post_v31_views_security.sql",
+      "sha256": "5f02fd2fc04f9f9f9273a52ad18a42d5fbe521a8bac6109e8a12d49edad59260"
+    },
+    {
+      "version": "20261002201945",
+      "name": "202609080013_post_v31_commands",
+      "source_path": "supabase/migrations/202609080013_post_v31_commands.sql",
+      "path": "supabase/migrations/20261002201945_202609080013_post_v31_commands.sql",
+      "sha256": "28c766eda5247f4f14bbb13104c3be5d4936c1a3a917db1623e3efb367895011"
+    },
+    {
+      "version": "20261002202042",
+      "name": "202609090014_v33_saas_control_plane",
+      "source_path": "supabase/migrations/202609090014_v33_saas_control_plane.sql",
+      "path": "supabase/migrations/20261002202042_202609090014_v33_saas_control_plane.sql",
+      "sha256": "c6055db890300383532b0dc0bce8ea455ca76b5a8f6dcc422477df63ef034aa8"
+    },
+    {
+      "version": "20261002202054",
+      "name": "202609100015_v34_master_operations",
+      "source_path": "supabase/migrations/202609100015_v34_master_operations.sql",
+      "path": "supabase/migrations/20261002202054_202609100015_v34_master_operations.sql",
+      "sha256": "63f941890208f533bdb181612372e0e6bea9d5b6a99974ded532871f4b2e86ed"
+    },
+    {
+      "version": "20261002202107",
+      "name": "202609100016_v35_plan_promotion_lifecycle",
+      "source_path": "supabase/migrations/202609100016_v35_plan_promotion_lifecycle.sql",
+      "path": "supabase/migrations/20261002202107_202609100016_v35_plan_promotion_lifecycle.sql",
+      "sha256": "7e268fc97cfab8ce28056d26f2c8be3a034d5f20494c3b886dbed9cf8d0381c0"
+    },
+    {
+      "version": "20261002202116",
+      "name": "20261002043647_v35_admin_view_permissions",
+      "source_path": "supabase/migrations/20261002043647_v35_admin_view_permissions.sql",
+      "path": "supabase/migrations/20261002202116_20261002043647_v35_admin_view_permissions.sql",
+      "sha256": "4cb0902ec4cc376f40280d6f7f29beafcaaee387604de0e68ffa72b95f391721"
+    },
+    {
+      "version": "20261002202518",
+      "name": "harden_anonymous_rpc_permissions",
+      "source_path": "supabase/migrations/20261002202432_harden_anonymous_rpc_permissions.sql",
+      "path": "supabase/migrations/20261002202518_harden_anonymous_rpc_permissions.sql",
+      "sha256": "771b046d172d2839adbca051dfe5c6f170042272e5270c8fc1f7ad17feb8480a"
+    }
+  ],
+  "baseline_patches": {
+    "009": "Replace invalid unique(organization_id,id) in cancellation tables with payable_id / receivable_id before first successful application.",
+    "014": "Preserve existing invoice balance view column order and append new columns before first successful application."
+  },
+  "source_manifest": "v35-source-manifest.json (original package hashes; historical, not deployed checksum)"
+}

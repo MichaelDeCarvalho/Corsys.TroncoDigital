@@ -548,7 +548,7 @@ create table public.institutional_payable_cancellations (
   reason text not null check (length(btrim(reason)) > 0),
   created_by uuid references auth.users(id),
   created_at timestamptz not null default now(),
-  unique (organization_id, id),
+  unique (organization_id, payable_id),
   foreign key (organization_id, payable_id)
     references public.institutional_payables(organization_id, id),
   foreign key (organization_id, accounting_plan_id, accounting_account_id)
@@ -568,7 +568,7 @@ create table public.institutional_receivable_cancellations (
   reason text not null check (length(btrim(reason)) > 0),
   created_by uuid references auth.users(id),
   created_at timestamptz not null default now(),
-  unique (organization_id, id),
+  unique (organization_id, receivable_id),
   foreign key (organization_id, receivable_id)
     references public.institutional_receivables(organization_id, id),
   foreign key (organization_id, accounting_plan_id, accounting_account_id)

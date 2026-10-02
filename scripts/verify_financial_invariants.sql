@@ -11,6 +11,8 @@ declare
   v_category uuid;
   v_method uuid;
   v_account uuid;
+  v_plan uuid;
+  v_revenue_account uuid;
   v_charge uuid;
   v_payment uuid;
   v_allocation uuid;
@@ -32,6 +34,22 @@ begin
   insert into public.financial_accounts(organization_id, name, account_type)
   values (v_org, 'Conta Teste', 'bank')
   returning id into v_account;
+
+  -- V35 requires a published accounting mapping before recording charges.
+  insert into public.accounting_plans(organization_id,name,valid_from,valid_to)
+  values (v_org,'Plano teste',date '2026-01-01',date '2026-12-31')
+  returning id into v_plan;
+
+  insert into public.accounting_accounts(
+    organization_id,accounting_plan_id,code,description,row_type,nature,operational_classification
+  ) values (v_org,v_plan,'1','Mensalidades','analytic','revenue','recurring')
+  returning id into v_revenue_account;
+
+  insert into public.financial_category_account_mappings(
+    organization_id,accounting_plan_id,category_id,accounting_account_id
+  ) values (v_org,v_plan,v_category,v_revenue_account);
+
+  update public.accounting_plans set status='published',published_at=now() where id=v_plan;
 
   insert into public.charges(
     organization_id, member_id, category_id, source_kind,
@@ -200,5 +218,7 @@ begin
   raise notice 'PASS: base financial invariants validated in transaction';
 end;
 $$;
+
+select 'FINANCIAL_INVARIANTS_PASS' as result;
 
 rollback;

@@ -42,3 +42,6 @@ Se o projeto remoto já possuir alterações manuais que não existem nas migrat
 
 ## Gate
 Falha de migration, RLS ou isolamento cross-tenant bloqueia a próxima fase.
+
+## Projeto aplicado nesta sessão
+18 migrations já aplicadas no DEV autorizado. Os arquivos locais usam versões retornadas pelo conector: conferir `docs/engineering/v35-dev-runtime-manifest.json` antes de qualquer push. Não reaplicar baselines com os antigos nomes do ZIP. Usar CLI fixada em dev-gate; sempre conferir dry-run e alvo DEV. Preparação do banco está autorizada; qualquer custo e produção dependem do usuário.

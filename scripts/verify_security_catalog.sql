@@ -28,6 +28,13 @@ begin
     or pg_catalog.has_function_privilege('anon','private.saas_promotion_delete_block_reason(uuid)','EXECUTE') then
     raise exception 'Anonymous catalog helper execution must be denied';
   end if;
+  if exists (
+    select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+    where n.nspname='public' and p.prosecdef and p.prokind='f'
+      and has_function_privilege('anon',p.oid,'EXECUTE')
+  ) then
+    raise exception 'Anonymous public SECURITY DEFINER execution must be denied';
+  end if;
   raise notice 'PASS: security catalog checks; JWT/RLS behavior still requires integration tests';
 end;
 $$;

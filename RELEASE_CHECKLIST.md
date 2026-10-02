@@ -10,12 +10,13 @@
 - [x] CI estática preparada com permissions: contents:read e actions por SHA.
 
 ## Gates de runtime — não aprovados
-- [ ] Projeto Supabase DEV selecionado/criado com custo confirmado.
-- [ ] 17 migrations aplicadas do zero e histórico alinhado.
-- [ ] Catálogo de segurança e invariantes SQL executados.
+- [x] Projeto existente DEV selecionado pelo usuário; plano Free verificado, sem nova infraestrutura paga.
+- [x] 18 migrations aplicadas do zero e histórico local alinhado.
+- [x] Catálogo de segurança e invariantes SQL executados.
 - [ ] JWT/RLS cross-user e cross-tenant positivo/negativo.
 - [ ] Master/Billing/Support e AAL1/AAL2 exercitados.
-- [ ] Financeiro, fechamento, imutabilidade e suspensão.
+- [x] Financeiro, fechamento e imutabilidade em teste SQL com rollback.
+- [ ] Suspensão e RPCs exercitados com JWT real.
 - [ ] Concorrência, sobrealocação e idempotência.
 - [ ] Correção das views administrativas comprovada em runtime.
 - [ ] CI remota aprovada na revisão do PR.

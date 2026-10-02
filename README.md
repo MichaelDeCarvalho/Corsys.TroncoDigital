@@ -3,7 +3,7 @@
 SaaS de tesouraria para Lojas Maçônicas, com aplicação web responsiva planejada para desktop e mobile.
 
 ## Estado
-Implementação iniciada: fundação SQL e kit de validação DEV. **Banco não aplicado; estrutura inicial React/Vite herdada, sem integração financeira; sem deploy observado.**
+Implementação iniciada: fundação SQL e kit de validação DEV. **Supabase DEV com 18 migrations aplicadas e invariantes SQL aprovadas; estrutura React/Vite herdada, sem integração financeira ou deploy.**
 
 ## Validar localmente
 Node.js 22+ e Python 3.12:
@@ -18,7 +18,7 @@ python3 scripts/check_sql.py
 Esses comandos validam sintaxe/gramática e guardas DEV. Não validam runtime do banco ou RLS.
 
 ## Próximo gate
-Projeto Supabase DEV exclusivo; aplicar migrations preservadas 001–016 e a correção adicional. Executar `scripts/verify_security_catalog.sql`, invariantes financeiras, JWT/RLS, MFA e concorrência/idempotência. Consulte `docs/RUNBOOK_SUPABASE_DEV.md` e `dev-gate/README.md`.
+Projeto DEV `szqkdekwhzxsoxorgvaz` já preparado. Concluir testes com usuários Auth reais. Executar `scripts/verify_security_catalog.sql`, invariantes financeiras, JWT/RLS, MFA e concorrência/idempotência. Consulte `docs/RUNBOOK_SUPABASE_DEV.md` e `dev-gate/README.md`.
 
 ## Continuidade
 `AGENTS.md` → `PROJECT_CONTEXT.md` → `CURRENT_ARCHITECTURE.md` → código/ADRs → `SESSION_HANDOFF.md`.
