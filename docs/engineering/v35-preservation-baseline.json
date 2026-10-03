@@ -2,120 +2,149 @@
   "source_sha256": "2679c70bcf64b4c914d30fdd84778f13bae915e1ae278d71b7b0d684db8ef98b",
   "decisions": [
     {
-      "path": "docs/adr/0001-financial-source-of-truth.md",
-      "sha256": "9474b51f30686adc9ec3912b06fae10db51c38eaa31961bedfff91c178337419"
+      "path": "docs/adr/v35/0001-financial-source-of-truth.md",
+      "sha256": "9474b51f30686adc9ec3912b06fae10db51c38eaa31961bedfff91c178337419",
+      "source_path": "docs/adr/0001-financial-source-of-truth.md"
     },
     {
-      "path": "docs/adr/0002-derived-balances.md",
-      "sha256": "0cd363912e9945af4d9e2ec44afb25a7a0828a55f14beb2e8f22d414dae7e89b"
+      "path": "docs/adr/v35/0002-derived-balances.md",
+      "sha256": "0cd363912e9945af4d9e2ec44afb25a7a0828a55f14beb2e8f22d414dae7e89b",
+      "source_path": "docs/adr/0002-derived-balances.md"
     },
     {
-      "path": "docs/adr/0003-financial-immutability.md",
-      "sha256": "5011e2ff596bb4b7eccef1b88487b1b5c0688ffdd0d1643d307d07fcd0dd4185"
+      "path": "docs/adr/v35/0003-financial-immutability.md",
+      "sha256": "5011e2ff596bb4b7eccef1b88487b1b5c0688ffdd0d1643d307d07fcd0dd4185",
+      "source_path": "docs/adr/0003-financial-immutability.md"
     },
     {
-      "path": "docs/adr/0004-charge-payment-separation.md",
-      "sha256": "b140f11e8f3d5ce979bd4aeeaca09198af2a8c2e9153ed9d27844f9684f3b9d0"
+      "path": "docs/adr/v35/0004-charge-payment-separation.md",
+      "sha256": "b140f11e8f3d5ce979bd4aeeaca09198af2a8c2e9153ed9d27844f9684f3b9d0",
+      "source_path": "docs/adr/0004-charge-payment-separation.md"
     },
     {
-      "path": "docs/adr/0005-receivable-cash-separation.md",
-      "sha256": "e633fdabcd2b03658868eef08f7279117aac01a74e9b2c6dfbf879ab227ac41b"
+      "path": "docs/adr/v35/0005-receivable-cash-separation.md",
+      "sha256": "e633fdabcd2b03658868eef08f7279117aac01a74e9b2c6dfbf879ab227ac41b",
+      "source_path": "docs/adr/0005-receivable-cash-separation.md"
     },
     {
-      "path": "docs/adr/0006-payment-single-fact.md",
-      "sha256": "d5ce39d906f11b2425ea1bcabd93aac90c4d92cff3d0efa22fc913ba0f2bd7e5"
+      "path": "docs/adr/v35/0006-payment-single-fact.md",
+      "sha256": "d5ce39d906f11b2425ea1bcabd93aac90c4d92cff3d0efa22fc913ba0f2bd7e5",
+      "source_path": "docs/adr/0006-payment-single-fact.md"
     },
     {
-      "path": "docs/adr/0007-versioned-recurring-rules.md",
-      "sha256": "254fd98b903b1943411137a1a8b9a5a728f6269a9c02a35279f146bd8fe29011"
+      "path": "docs/adr/v35/0007-versioned-recurring-rules.md",
+      "sha256": "254fd98b903b1943411137a1a8b9a5a728f6269a9c02a35279f146bd8fe29011",
+      "source_path": "docs/adr/0007-versioned-recurring-rules.md"
     },
     {
-      "path": "docs/adr/0008-idempotency.md",
-      "sha256": "def31b4b6864e30d79401aada09e9afd6361aef14fd4fc3eebe54ca82e74d41c"
+      "path": "docs/adr/v35/0008-idempotency.md",
+      "sha256": "def31b4b6864e30d79401aada09e9afd6361aef14fd4fc3eebe54ca82e74d41c",
+      "source_path": "docs/adr/0008-idempotency.md"
     },
     {
-      "path": "docs/adr/0009-period-closing.md",
-      "sha256": "52736d45a93b06c50420701bf99823a7b56ae93ef6dd6ab4ea9f8e3a4082761e"
+      "path": "docs/adr/v35/0009-period-closing.md",
+      "sha256": "52736d45a93b06c50420701bf99823a7b56ae93ef6dd6ab4ea9f8e3a4082761e",
+      "source_path": "docs/adr/0009-period-closing.md"
     },
     {
-      "path": "docs/adr/0010-transactional-commands.md",
-      "sha256": "aa7bddbe7dd9e41fc3822eeb44c404e829b42a6a9d9a67b463ea909965f3389c"
+      "path": "docs/adr/v35/0010-transactional-commands.md",
+      "sha256": "aa7bddbe7dd9e41fc3822eeb44c404e829b42a6a9d9a67b463ea909965f3389c",
+      "source_path": "docs/adr/0010-transactional-commands.md"
     },
     {
-      "path": "docs/adr/0011-legacy-non-posting.md",
-      "sha256": "29348a68db1bd7ff5ea937079cd1dd491ae57cebd1918ab7b0537be08dbe20d5"
+      "path": "docs/adr/v35/0011-legacy-non-posting.md",
+      "sha256": "29348a68db1bd7ff5ea937079cd1dd491ae57cebd1918ab7b0537be08dbe20d5",
+      "source_path": "docs/adr/0011-legacy-non-posting.md"
     },
     {
-      "path": "docs/adr/0012-saas-multitenancy.md",
-      "sha256": "0af2354210bc5b5c80effade8c21af5d7e53a5ddb36636c0b75908035801b2f6"
+      "path": "docs/adr/v35/0012-saas-multitenancy.md",
+      "sha256": "0af2354210bc5b5c80effade8c21af5d7e53a5ddb36636c0b75908035801b2f6",
+      "source_path": "docs/adr/0012-saas-multitenancy.md"
     },
     {
-      "path": "docs/adr/0013-saas-billing-separation.md",
-      "sha256": "3b93da0689b2120256a61800f0c02c3cfcb22069d05cadd64773ad07a434d49d"
+      "path": "docs/adr/v35/0013-saas-billing-separation.md",
+      "sha256": "3b93da0689b2120256a61800f0c02c3cfcb22069d05cadd64773ad07a434d49d",
+      "source_path": "docs/adr/0013-saas-billing-separation.md"
     },
     {
-      "path": "docs/adr/0014-master-support-boundary.md",
-      "sha256": "2f69c867eb53f011224127df9b1447f823a7dbc1af5a3122405d0c24dbb47151"
+      "path": "docs/adr/v35/0014-master-support-boundary.md",
+      "sha256": "2f69c867eb53f011224127df9b1447f823a7dbc1af5a3122405d0c24dbb47151",
+      "source_path": "docs/adr/0014-master-support-boundary.md"
     },
     {
-      "path": "docs/adr/0015-web-mobile-delivery.md",
-      "sha256": "65812ba1ee193b720b063c57ebb9344b5e85a0af3c7b600e01c0a8e63fc39668"
+      "path": "docs/adr/v35/0015-web-mobile-delivery.md",
+      "sha256": "65812ba1ee193b720b063c57ebb9344b5e85a0af3c7b600e01c0a8e63fc39668",
+      "source_path": "docs/adr/0015-web-mobile-delivery.md"
     },
     {
-      "path": "docs/adr/0016-accounting-plans-effective-dating.md",
-      "sha256": "481f5469965ba11a4499dca6ff7566e83057c8bf6a8b6c5e4bd061166b48a3dc"
+      "path": "docs/adr/v35/0016-accounting-plans-effective-dating.md",
+      "sha256": "481f5469965ba11a4499dca6ff7566e83057c8bf6a8b6c5e4bd061166b48a3dc",
+      "source_path": "docs/adr/0016-accounting-plans-effective-dating.md"
     },
     {
-      "path": "docs/adr/0017-institutional-obligation-cash-separation.md",
-      "sha256": "16c177b42b1cd69e84ff23e9ea139b21928a1c2fd6fbeac4d8a529d3f17e23e6"
+      "path": "docs/adr/v35/0017-institutional-obligation-cash-separation.md",
+      "sha256": "16c177b42b1cd69e84ff23e9ea139b21928a1c2fd6fbeac4d8a529d3f17e23e6",
+      "source_path": "docs/adr/0017-institutional-obligation-cash-separation.md"
     },
     {
-      "path": "docs/adr/0018-posted-financial-corrections.md",
-      "sha256": "e9b64d709d445ca30c363bbb12b4681912ab4f891c7ab4bf4bc3ef430f3acfb9"
+      "path": "docs/adr/v35/0018-posted-financial-corrections.md",
+      "sha256": "e9b64d709d445ca30c363bbb12b4681912ab4f891c7ab4bf4bc3ef430f3acfb9",
+      "source_path": "docs/adr/0018-posted-financial-corrections.md"
     },
     {
-      "path": "docs/adr/0019-expense-approval-policy-snapshot.md",
-      "sha256": "620e75efd6ae30d8e31153472b6b97f737bf2f8b251d39791b035d034070cbc1"
+      "path": "docs/adr/v35/0019-expense-approval-policy-snapshot.md",
+      "sha256": "620e75efd6ae30d8e31153472b6b97f737bf2f8b251d39791b035d034070cbc1",
+      "source_path": "docs/adr/0019-expense-approval-policy-snapshot.md"
     },
     {
-      "path": "docs/adr/0020-reconciliation-budget-privacy.md",
-      "sha256": "6002289a629f56bbe1e919173e338facdc5ac15a2adf447e6ee7383eb3bfde17"
+      "path": "docs/adr/v35/0020-reconciliation-budget-privacy.md",
+      "sha256": "6002289a629f56bbe1e919173e338facdc5ac15a2adf447e6ee7383eb3bfde17",
+      "source_path": "docs/adr/0020-reconciliation-budget-privacy.md"
     },
     {
-      "path": "docs/adr/0021-saas-commercial-history.md",
-      "sha256": "4a0d21ae8be453b94e8acc53d1b07ac403e28a4b25b0ea33d2d76aad061a3785"
+      "path": "docs/adr/v35/0021-saas-commercial-history.md",
+      "sha256": "4a0d21ae8be453b94e8acc53d1b07ac403e28a4b25b0ea33d2d76aad061a3785",
+      "source_path": "docs/adr/0021-saas-commercial-history.md"
     },
     {
-      "path": "docs/adr/0022-saas-plan-versioning-and-promotions.md",
-      "sha256": "a29b6aca6ed461a351211b9cfb9614095fa337c9ffbfd64bf0c5f9e016f707ab"
+      "path": "docs/adr/v35/0022-saas-plan-versioning-and-promotions.md",
+      "sha256": "a29b6aca6ed461a351211b9cfb9614095fa337c9ffbfd64bf0c5f9e016f707ab",
+      "source_path": "docs/adr/0022-saas-plan-versioning-and-promotions.md"
     },
     {
-      "path": "docs/adr/0023-saas-dunning-late-fees-agreements.md",
-      "sha256": "ef3a62ad0b97bcb22b528aba9439892c956e174d6e8cab98d856ef8e1cc35aa2"
+      "path": "docs/adr/v35/0023-saas-dunning-late-fees-agreements.md",
+      "sha256": "ef3a62ad0b97bcb22b528aba9439892c956e174d6e8cab98d856ef8e1cc35aa2",
+      "source_path": "docs/adr/0023-saas-dunning-late-fees-agreements.md"
     },
     {
-      "path": "docs/adr/0024-support-kanban-and-tenant-isolation.md",
-      "sha256": "7c70724954575ae4bf32e508099dbf6420e822eb7a2b1386b8c5de3c423bb006"
+      "path": "docs/adr/v35/0024-support-kanban-and-tenant-isolation.md",
+      "sha256": "7c70724954575ae4bf32e508099dbf6420e822eb7a2b1386b8c5de3c423bb006",
+      "source_path": "docs/adr/0024-support-kanban-and-tenant-isolation.md"
     },
     {
-      "path": "docs/adr/0025-platform-settings-and-master-mfa.md",
-      "sha256": "ea2d2655e4b2ffb38ef2c3d90eff9c763bb5229b835f087a009d7c2de100a2f6"
+      "path": "docs/adr/v35/0025-platform-settings-and-master-mfa.md",
+      "sha256": "ea2d2655e4b2ffb38ef2c3d90eff9c763bb5229b835f087a009d7c2de100a2f6",
+      "source_path": "docs/adr/0025-platform-settings-and-master-mfa.md"
     },
     {
-      "path": "docs/adr/0026-controlled-onboarding.md",
-      "sha256": "222f1b36ec0514bba312d9094d629f9348c84f839a01cb1a7891d0571c2dfa00"
+      "path": "docs/adr/v35/0026-controlled-onboarding.md",
+      "sha256": "222f1b36ec0514bba312d9094d629f9348c84f839a01cb1a7891d0571c2dfa00",
+      "source_path": "docs/adr/0026-controlled-onboarding.md"
     },
     {
-      "path": "docs/adr/0026-safe-plan-promotion-lifecycle.md",
-      "sha256": "6e5254d3babffc004e9d77568aaf74bf1b316d0855f2df8d61e313f8f3f936ab"
+      "path": "docs/adr/v35/0026-safe-plan-promotion-lifecycle.md",
+      "sha256": "6e5254d3babffc004e9d77568aaf74bf1b316d0855f2df8d61e313f8f3f936ab",
+      "source_path": "docs/adr/0026-safe-plan-promotion-lifecycle.md"
     },
     {
-      "path": "docs/adr/0027-master-support-sla-metrics.md",
-      "sha256": "6c1d0df68d0a5f85fa6b49c763cfd534399d5374bfd4b35cc0f44c3ac15df290"
+      "path": "docs/adr/v35/0027-master-support-sla-metrics.md",
+      "sha256": "6c1d0df68d0a5f85fa6b49c763cfd534399d5374bfd4b35cc0f44c3ac15df290",
+      "source_path": "docs/adr/0027-master-support-sla-metrics.md"
     },
     {
-      "path": "docs/adr/0028-invoice-charge-breakdown.md",
-      "sha256": "a808066195a2622e2177832696173e90de8e5e3c5806f596688c761fa2473b00"
+      "path": "docs/adr/v35/0028-invoice-charge-breakdown.md",
+      "sha256": "a808066195a2622e2177832696173e90de8e5e3c5806f596688c761fa2473b00",
+      "source_path": "docs/adr/0028-invoice-charge-breakdown.md"
     }
   ],
   "required_documents": [
@@ -141,35 +170,35 @@
     "docs/V34_STATIC_REVIEW.json",
     "docs/V34_VALIDATION_MATRIX.md",
     "docs/V35_STATIC_REVIEW.json",
-    "docs/adr/0001-financial-source-of-truth.md",
-    "docs/adr/0002-derived-balances.md",
-    "docs/adr/0003-financial-immutability.md",
-    "docs/adr/0004-charge-payment-separation.md",
-    "docs/adr/0005-receivable-cash-separation.md",
-    "docs/adr/0006-payment-single-fact.md",
-    "docs/adr/0007-versioned-recurring-rules.md",
-    "docs/adr/0008-idempotency.md",
-    "docs/adr/0009-period-closing.md",
-    "docs/adr/0010-transactional-commands.md",
-    "docs/adr/0011-legacy-non-posting.md",
-    "docs/adr/0012-saas-multitenancy.md",
-    "docs/adr/0013-saas-billing-separation.md",
-    "docs/adr/0014-master-support-boundary.md",
-    "docs/adr/0015-web-mobile-delivery.md",
-    "docs/adr/0016-accounting-plans-effective-dating.md",
-    "docs/adr/0017-institutional-obligation-cash-separation.md",
-    "docs/adr/0018-posted-financial-corrections.md",
-    "docs/adr/0019-expense-approval-policy-snapshot.md",
-    "docs/adr/0020-reconciliation-budget-privacy.md",
-    "docs/adr/0021-saas-commercial-history.md",
-    "docs/adr/0022-saas-plan-versioning-and-promotions.md",
-    "docs/adr/0023-saas-dunning-late-fees-agreements.md",
-    "docs/adr/0024-support-kanban-and-tenant-isolation.md",
-    "docs/adr/0025-platform-settings-and-master-mfa.md",
-    "docs/adr/0026-controlled-onboarding.md",
-    "docs/adr/0026-safe-plan-promotion-lifecycle.md",
-    "docs/adr/0027-master-support-sla-metrics.md",
-    "docs/adr/0028-invoice-charge-breakdown.md"
+    "docs/adr/v35/0001-financial-source-of-truth.md",
+    "docs/adr/v35/0002-derived-balances.md",
+    "docs/adr/v35/0003-financial-immutability.md",
+    "docs/adr/v35/0004-charge-payment-separation.md",
+    "docs/adr/v35/0005-receivable-cash-separation.md",
+    "docs/adr/v35/0006-payment-single-fact.md",
+    "docs/adr/v35/0007-versioned-recurring-rules.md",
+    "docs/adr/v35/0008-idempotency.md",
+    "docs/adr/v35/0009-period-closing.md",
+    "docs/adr/v35/0010-transactional-commands.md",
+    "docs/adr/v35/0011-legacy-non-posting.md",
+    "docs/adr/v35/0012-saas-multitenancy.md",
+    "docs/adr/v35/0013-saas-billing-separation.md",
+    "docs/adr/v35/0014-master-support-boundary.md",
+    "docs/adr/v35/0015-web-mobile-delivery.md",
+    "docs/adr/v35/0016-accounting-plans-effective-dating.md",
+    "docs/adr/v35/0017-institutional-obligation-cash-separation.md",
+    "docs/adr/v35/0018-posted-financial-corrections.md",
+    "docs/adr/v35/0019-expense-approval-policy-snapshot.md",
+    "docs/adr/v35/0020-reconciliation-budget-privacy.md",
+    "docs/adr/v35/0021-saas-commercial-history.md",
+    "docs/adr/v35/0022-saas-plan-versioning-and-promotions.md",
+    "docs/adr/v35/0023-saas-dunning-late-fees-agreements.md",
+    "docs/adr/v35/0024-support-kanban-and-tenant-isolation.md",
+    "docs/adr/v35/0025-platform-settings-and-master-mfa.md",
+    "docs/adr/v35/0026-controlled-onboarding.md",
+    "docs/adr/v35/0026-safe-plan-promotion-lifecycle.md",
+    "docs/adr/v35/0027-master-support-sla-metrics.md",
+    "docs/adr/v35/0028-invoice-charge-breakdown.md"
   ],
   "schema_objects": [
     {

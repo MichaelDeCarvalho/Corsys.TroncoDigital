@@ -4,7 +4,7 @@
 
 A V35 é o escopo mínimo do produto, por instrução do proprietário em 2026-10-02. Implementar por etapas não remove telas, parâmetros, regras ou ideias do escopo. Não substituir funções do banco por regras inventadas no frontend. Mudanças incompatíveis exigem decisão explícita registrada; fatos financeiros e histórico comercial permanecem preservados.
 
-Fonte: `corsys-v35-supabase-dev-gate.zip`, SHA-256 `2679c70bcf64b4c914d30fdd84778f13bae915e1ae278d71b7b0d684db8ef98b`. O ZIP reenviado é idêntico à fonte importada. Contém 16 migrations, 29 ADRs, dicionários e matrizes de testes; **não contém HTML/CSS/JS nem capturas das telas do piloto**. Assim, a preservação das especificações documentadas é verificável, mas a equivalência visual/funcional integral com o piloto continua NÃO AVALIADA. Incorporar o HTML original quando disponibilizado, sem tratá-lo como autorização de backend.
+Fonte: `corsys-v35-supabase-dev-gate.zip`, SHA-256 `2679c70bcf64b4c914d30fdd84778f13bae915e1ae278d71b7b0d684db8ef98b`. O ZIP reenviado é idêntico à fonte importada. Contém 16 migrations, 29 ADRs (versionadas em docs/adr/v35/), dicionários e matrizes de testes; **não contém HTML/CSS/JS nem capturas das telas do piloto**. Assim, a preservação das especificações documentadas é verificável, mas a equivalência visual/funcional integral com o piloto continua NÃO AVALIADA. Incorporar o HTML original quando disponibilizado, sem tratá-lo como autorização de backend.
 
 A base foi importada para 19 migrations DEV: 16 baselines, correções 009/014 pré-aplicação e três migrations adicionais de segurança. Os hashes históricos e aplicados têm manifestos separados. Nenhuma migration, grant, policy ou função do banco foi alterada neste incremento.
 
@@ -67,32 +67,32 @@ Cada decisão continua obrigatória para o módulo correspondente, inclusive as 
 
 | Decisão | Fonte |
 |---|---|
-| ADR-001 — Fonte única da verdade financeira | [0001-financial-source-of-truth.md](../docs/adr/0001-financial-source-of-truth.md) |
-| ADR-002 — Saldos derivados | [0002-derived-balances.md](../docs/adr/0002-derived-balances.md) |
-| ADR-003 — Imutabilidade financeira | [0003-financial-immutability.md](../docs/adr/0003-financial-immutability.md) |
-| ADR-004 — Cobrança e pagamento são fatos independentes | [0004-charge-payment-separation.md](../docs/adr/0004-charge-payment-separation.md) |
-| ADR-005 — Recebíveis e caixa separados | [0005-receivable-cash-separation.md](../docs/adr/0005-receivable-cash-separation.md) |
-| ADR-006 — Pagamento é um único fato financeiro | [0006-payment-single-fact.md](../docs/adr/0006-payment-single-fact.md) |
-| ADR-007 — Regras recorrentes versionadas | [0007-versioned-recurring-rules.md](../docs/adr/0007-versioned-recurring-rules.md) |
-| ADR-008 — Idempotência no backend e banco | [0008-idempotency.md](../docs/adr/0008-idempotency.md) |
-| ADR-009 — Fechamento append-only | [0009-period-closing.md](../docs/adr/0009-period-closing.md) |
-| ADR-010 — Comandos financeiros transacionais | [0010-transactional-commands.md](../docs/adr/0010-transactional-commands.md) |
-| ADR-011 — Histórico legado não reconciliado é non-posting | [0011-legacy-non-posting.md](../docs/adr/0011-legacy-non-posting.md) |
-| ADR-0012 — SaaS multi-tenant por organização | [0012-saas-multitenancy.md](../docs/adr/0012-saas-multitenancy.md) |
-| ADR-0013 — Billing SaaS separado do financeiro das Lojas | [0013-saas-billing-separation.md](../docs/adr/0013-saas-billing-separation.md) |
-| ADR-0014 — Master e suporte não são papéis de tenant | [0014-master-support-boundary.md](../docs/adr/0014-master-support-boundary.md) |
-| ADR-0015 — Web responsiva e PWA-ready | [0015-web-mobile-delivery.md](../docs/adr/0015-web-mobile-delivery.md) |
-| ADR-0016 — Plano de Contas por vigência | [0016-accounting-plans-effective-dating.md](../docs/adr/0016-accounting-plans-effective-dating.md) |
-| ADR-0017 — Obrigações institucionais separadas de caixa | [0017-institutional-obligation-cash-separation.md](../docs/adr/0017-institutional-obligation-cash-separation.md) |
-| ADR-0018 — Edição de lançamento postado vira correção auditável | [0018-posted-financial-corrections.md](../docs/adr/0018-posted-financial-corrections.md) |
-| ADR-0019 — Aprovação de despesas por política versionada | [0019-expense-approval-policy-snapshot.md](../docs/adr/0019-expense-approval-policy-snapshot.md) |
-| ADR-0020 — Conciliação, orçamento, importação e privacidade como domínios explícitos | [0020-reconciliation-budget-privacy.md](../docs/adr/0020-reconciliation-budget-privacy.md) |
-| ADR-0021 — Histórico comercial SaaS separado dos tenants | [0021-saas-commercial-history.md](../docs/adr/0021-saas-commercial-history.md) |
-| ADR-0022 — Versionamento de Planos SaaS e Promoções | [0022-saas-plan-versioning-and-promotions.md](../docs/adr/0022-saas-plan-versioning-and-promotions.md) |
-| ADR-0023 — Inadimplência, encargos, suspensão e acordos | [0023-saas-dunning-late-fees-agreements.md](../docs/adr/0023-saas-dunning-late-fees-agreements.md) |
-| ADR-0024 — Suporte Kanban e isolamento de tenant | [0024-support-kanban-and-tenant-isolation.md](../docs/adr/0024-support-kanban-and-tenant-isolation.md) |
-| ADR-0025 — Configuração da Plataforma e MFA Master | [0025-platform-settings-and-master-mfa.md](../docs/adr/0025-platform-settings-and-master-mfa.md) |
-| ADR-0026 — Onboarding controlado e retomável | [0026-controlled-onboarding.md](../docs/adr/0026-controlled-onboarding.md) |
-| ADR-0026 — Lifecycle seguro de Planos SaaS e Ofertas | [0026-safe-plan-promotion-lifecycle.md](../docs/adr/0026-safe-plan-promotion-lifecycle.md) |
-| ADR-0027 — Chamados, SLA operacional e chamados internos | [0027-master-support-sla-metrics.md](../docs/adr/0027-master-support-sla-metrics.md) |
-| ADR-0028 — Encargos separados do valor-base da fatura | [0028-invoice-charge-breakdown.md](../docs/adr/0028-invoice-charge-breakdown.md) |
+| ADR-001 — Fonte única da verdade financeira | [0001-financial-source-of-truth.md](adr/v35/0001-financial-source-of-truth.md) |
+| ADR-002 — Saldos derivados | [0002-derived-balances.md](adr/v35/0002-derived-balances.md) |
+| ADR-003 — Imutabilidade financeira | [0003-financial-immutability.md](adr/v35/0003-financial-immutability.md) |
+| ADR-004 — Cobrança e pagamento são fatos independentes | [0004-charge-payment-separation.md](adr/v35/0004-charge-payment-separation.md) |
+| ADR-005 — Recebíveis e caixa separados | [0005-receivable-cash-separation.md](adr/v35/0005-receivable-cash-separation.md) |
+| ADR-006 — Pagamento é um único fato financeiro | [0006-payment-single-fact.md](adr/v35/0006-payment-single-fact.md) |
+| ADR-007 — Regras recorrentes versionadas | [0007-versioned-recurring-rules.md](adr/v35/0007-versioned-recurring-rules.md) |
+| ADR-008 — Idempotência no backend e banco | [0008-idempotency.md](adr/v35/0008-idempotency.md) |
+| ADR-009 — Fechamento append-only | [0009-period-closing.md](adr/v35/0009-period-closing.md) |
+| ADR-010 — Comandos financeiros transacionais | [0010-transactional-commands.md](adr/v35/0010-transactional-commands.md) |
+| ADR-011 — Histórico legado não reconciliado é non-posting | [0011-legacy-non-posting.md](adr/v35/0011-legacy-non-posting.md) |
+| ADR-0012 — SaaS multi-tenant por organização | [0012-saas-multitenancy.md](adr/v35/0012-saas-multitenancy.md) |
+| ADR-0013 — Billing SaaS separado do financeiro das Lojas | [0013-saas-billing-separation.md](adr/v35/0013-saas-billing-separation.md) |
+| ADR-0014 — Master e suporte não são papéis de tenant | [0014-master-support-boundary.md](adr/v35/0014-master-support-boundary.md) |
+| ADR-0015 — Web responsiva e PWA-ready | [0015-web-mobile-delivery.md](adr/v35/0015-web-mobile-delivery.md) |
+| ADR-0016 — Plano de Contas por vigência | [0016-accounting-plans-effective-dating.md](adr/v35/0016-accounting-plans-effective-dating.md) |
+| ADR-0017 — Obrigações institucionais separadas de caixa | [0017-institutional-obligation-cash-separation.md](adr/v35/0017-institutional-obligation-cash-separation.md) |
+| ADR-0018 — Edição de lançamento postado vira correção auditável | [0018-posted-financial-corrections.md](adr/v35/0018-posted-financial-corrections.md) |
+| ADR-0019 — Aprovação de despesas por política versionada | [0019-expense-approval-policy-snapshot.md](adr/v35/0019-expense-approval-policy-snapshot.md) |
+| ADR-0020 — Conciliação, orçamento, importação e privacidade como domínios explícitos | [0020-reconciliation-budget-privacy.md](adr/v35/0020-reconciliation-budget-privacy.md) |
+| ADR-0021 — Histórico comercial SaaS separado dos tenants | [0021-saas-commercial-history.md](adr/v35/0021-saas-commercial-history.md) |
+| ADR-0022 — Versionamento de Planos SaaS e Promoções | [0022-saas-plan-versioning-and-promotions.md](adr/v35/0022-saas-plan-versioning-and-promotions.md) |
+| ADR-0023 — Inadimplência, encargos, suspensão e acordos | [0023-saas-dunning-late-fees-agreements.md](adr/v35/0023-saas-dunning-late-fees-agreements.md) |
+| ADR-0024 — Suporte Kanban e isolamento de tenant | [0024-support-kanban-and-tenant-isolation.md](adr/v35/0024-support-kanban-and-tenant-isolation.md) |
+| ADR-0025 — Configuração da Plataforma e MFA Master | [0025-platform-settings-and-master-mfa.md](adr/v35/0025-platform-settings-and-master-mfa.md) |
+| ADR-0026 — Onboarding controlado e retomável | [0026-controlled-onboarding.md](adr/v35/0026-controlled-onboarding.md) |
+| ADR-0026 — Lifecycle seguro de Planos SaaS e Ofertas | [0026-safe-plan-promotion-lifecycle.md](adr/v35/0026-safe-plan-promotion-lifecycle.md) |
+| ADR-0027 — Chamados, SLA operacional e chamados internos | [0027-master-support-sla-metrics.md](adr/v35/0027-master-support-sla-metrics.md) |
+| ADR-0028 — Encargos separados do valor-base da fatura | [0028-invoice-charge-breakdown.md](adr/v35/0028-invoice-charge-breakdown.md) |
