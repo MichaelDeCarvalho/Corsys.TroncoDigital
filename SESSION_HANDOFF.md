@@ -35,3 +35,9 @@ Typecheck dos projetos app/node PASS; 13 testes frontend PASS; 4 testes guard DE
 ## Continuidade Cloudflare — 2026-10-02
 
 CI do commit 04436e78c5116c550bff88ac4a905f3ddf083263: run 37077478804 success. Painel Cloudflare no navegador remoto permanece na verificação contra bots após um reload; tarefa de painel bloqueada e tentativa encerrada. Nenhum login ou deploy executado. Parâmetros para publicação independente pelo proprietário em docs/engineering/cloudflare-dev-deployment.md. Plano/uso Cloudflare da conta ainda não verificados; preços oficiais consultados, sem upgrade. Próxima dependência: publicação pelo proprietário ou acesso autenticado suportado; não solicitar secrets no chat.
+
+## Primeiro build Cloudflare DEV — 2026-10-03 UTC / 2026-10-02 Brasil
+
+Captura fornecida pelo proprietário confirma Worker corsys-tronco-digital-dev criado, com uma versão manual (94b71ef8) e mensagem No builds exist yet for this worker. A publicação da aplicação V35 ainda não está comprovada. O proprietário informou ter concluído a conexão GitHub após orientação para branch feat/v35-dev-gate-20261002; configurações salvas e token não foram inspecionados diretamente.
+
+Este commit registra a evidência e gera push na branch DEV para disparar o primeiro build, condicionado à integração configurada. Após o push, verificar Recent builds / Go to build history e logs; sem execução, conferir Settings > Builds e branch. Aguardar URL pública e validação real antes de declarar preview pronto. Nenhum merge ou produção autorizado nesta etapa.
