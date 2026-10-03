@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Users, MessagesSquare, Building2, ArrowUpRight, RefreshCw } from 'lucide-react'
 import type { SupabaseClient, User } from '@supabase/supabase-js'
 import { AppShell, type Page } from './AppShell'
+import { Finance } from './Finance'
 import { loadOrganizations, loadTenantData, openTicket, type Organization, type TenantData } from '../lib/tenant-data'
 
 const statuses: Record<string, string> = { active: 'Ativo', inactive: 'Inativo', new: 'Novo', triage: 'Em triagem', working: 'Em atendimento', waiting_client: 'Aguardando retorno', resolved: 'Resolvido', closed: 'Fechado' }
@@ -24,7 +25,7 @@ export function Workspace({ client, user, onSignOut }: { client: SupabaseClient;
   }, [client, user.id, retry])
   const organization = organizations.find(row => row.id === selected)
   return <AppShell page={page} onNavigate={setPage} onSignOut={onSignOut} email={user.email ?? 'Minha conta'}>
-    <section className="workspace-heading"><div><p className="eyebrow">Área da Loja</p><h1>{page === 'home' ? 'Visão geral' : page === 'members' ? 'Integrantes' : 'Atendimento'}</h1><p className="subtle">Acompanhe as informações da sua organização.</p></div>
+    <section className="workspace-heading"><div><p className="eyebrow">Área da Loja</p><h1>{page === 'home' ? 'Visão geral' : page === 'members' ? 'Integrantes' : page === 'finance' ? 'Financeiro' : 'Atendimento'}</h1><p className="subtle">Acompanhe as informações da sua organização.</p></div>
       {!!organizations.length && <div className="org-selector"><label htmlFor="organization">Loja</label><select id="organization" value={selected} onChange={e => setSelected(e.target.value)}>{organizations.map(row => <option key={row.id} value={row.id}>{row.name}</option>)}</select></div>}
     </section>
     {loading ? <p role="status" className="message">Carregando suas Lojas…</p> : error ? <div className="panel"><p role="alert" className="message error">{error}</p><button className="secondary" onClick={() => setRetry(value => value + 1)}>Tentar novamente</button></div> : !organization ? <div className="empty panel"><Building2 size={32} aria-hidden="true" /><h2>Nenhuma Loja vinculada</h2><p>Solicite ao administrador o vínculo da sua conta a uma Loja.</p></div> : <TenantPanel key={organization.id} client={client} organization={organization} page={page} onNavigate={setPage} />}
@@ -50,6 +51,7 @@ function TenantPanel({ client, organization, page, onNavigate }: { client: Supab
   const open = data.tickets.filter(ticket => !['resolved', 'closed'].includes(ticket.status))
   const filtered = data.members.filter(member => member.full_name.toLocaleLowerCase('pt-BR').includes(search.toLocaleLowerCase('pt-BR')))
   return <>
+    {page === 'finance' && <Finance key={organization.id} client={client} organizationId={organization.id} />}
     {sent && page === 'support' && <p role="status" className="message">Chamado enviado. A lista foi atualizada.</p>}
     {page === 'home' && <>
       <section className="hero-card"><div><span className="pill">{organization.status === 'active' ? 'Loja ativa' : 'Loja inativa'}</span><h2>{organization.name}</h2><p>Um espaço para cuidar da sua Loja, dos seus integrantes e do seu atendimento.</p></div><Building2 size={58} strokeWidth={1.2} aria-hidden="true" /></section>

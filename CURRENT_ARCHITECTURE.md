@@ -1,25 +1,23 @@
 # CURRENT ARCHITECTURE
 
-React 19 + Vite 6 + TypeScript, cliente supabase-js browser com chave publicável. PostgreSQL/Supabase Auth em DEV. Não há servidor HTTP próprio; consultas usam Data API com RLS, chamados usam RPC autorizada. Sem Storage/billing provider integrados.
+React 19 + Vite 6 + TypeScript, cliente supabase-js com chave publicável. Supabase PostgreSQL/Auth DEV. Cloudflare Worker corsys-tronco-digital-dev serve assets estáticos; não há servidor HTTP próprio ou segredo administrativo no browser. Consultas passam pela Data API/RLS; chamado usa RPC autorizada.
 
-src/auth: login e ciclo de sessão. src/lib/tenant-data.ts: selects limitados e RPC de suporte. Workspace é recriado ao trocar tenant; abort e revisão impedem exposição por respostas atrasadas. Busca de integrantes local sobre até 200; chamados mostram até 100 recentes. Valores exibidos são contagens carregadas, não totais globais.
+## Componentes
 
-Persistência de sessão usa SDK; secrets administrativos ficam fora do browser. CSP permite apenas o projeto DEV. wrangler.dev.jsonc publica somente assets, sem Worker dinâmico, domínio ou configuração de produção. Build exige URL HTTPS e chave sb_publishable; .env.local é ignorado.
+- src/auth: login, getUser, descarte de respostas antigas de identidade e logout local.
+- src/lib/tenant-data.ts: organizações, até 200 integrantes, até 100 chamados, RPC create_saas_support_ticket.
+- src/components/Workspace.tsx: seleção de Loja; recriação do painel por tenant.
+- src/lib/finance-data.ts e components/Finance.tsx: consultas independentes a v_charge_balances, v_institutional_payable_effective e v_institutional_receivable_effective. Ordem por vencimento e ID, páginas de 25 com um registro adicional para detectar próxima página. Dados efetivos/em aberto vêm do backend; sem totais de página apresentados como saldo global. Retorno de tenant inesperado, integrity_ok inválido ou valor monetário inválido provoca erro explícito. Abort/recriação descartam resposta atrasada ao trocar tenant/tipo de consulta.
+- src/styles.css: layout adaptativo; navegação móvel e tabela com scroll interno/foco por teclado. Celular real ainda não revisado.
 
-Ferramentas: dev-gate (Node ESM), scripts/check_sql.py (gramática apenas), scripts/verify_* (banco). supabase/config.toml é configuração local, não comprova Auth cloud. Workflow foundation-checks.yml possui jobs static e frontend, contents:read, actions fixadas por SHA, sem deploy/secrets.
+## Fronteiras
 
-## Estado verificado em 2026-10-02
+RLS/RPCs são autorização; filtros no browser são defesa adicional. Nenhuma alteração de schema/permissão neste incremento. Nenhuma escrita financeira, Storage, billing provider, chamada IA ou e-mail integrada. Consulta vazia não demonstra total global; RLS pode restringir registros conforme o papel.
 
-Supabase DEV autorizado: `szqkdekwhzxsoxorgvaz`, organização Michael - jobmcc, plano Free. 19 migrations aplicadas; 138 tabelas públicas com RLS. Dois usuários Auth confirmados, cada um ADMIN de sua própria Loja DEV, com um integrante fictício em cada Loja. Senhas não acessadas ou alteradas.
+SDK persiste a sessão; getUser valida identidade. Chave sb_publishable é pública. Build exige URL HTTPS e configuração pública válidas; secrets, .env.local e .wrangler não versionados. CSP só autoriza conexão com o Supabase DEV. wrangler.dev.jsonc é exclusivo DEV.
 
-Catálogo de permissões, invariantes financeiras e pós-V31 aprovados. Isolamento via SET ROLE authenticated/anon e claims simuladas aprovado: leitura própria, ocultação cruzada, chamado próprio, criação cruzada negada, helpers administrativos negados em AAL1. Escritas transacionais dos testes revertidas. Essa evidência não substitui login/JWT real pela Data API.
+## Validação e continuidade
 
-Frontend React/Vite/TypeScript conectado ao Supabase: login por senha, validação de sessão por getUser, logout local, seleção de Loja, integrantes com busca e criação/listagem de chamados. Auth callback síncrono; respostas atrasadas descartadas; dados removidos ao trocar usuário/tenant. RLS e RPCs são a fronteira de autorização. Sem lançamentos financeiros na interface.
+CI foundation-checks: jobs static e frontend, permissions contents:read, actions por SHA, sem deploy/secrets pelo GitHub Actions. Cloudflare tem integração de build da branch DEV configurada pelo proprietário. Gate adicional scripts/check_v35_preservation.py verifica hashes/presença dos artefatos históricos; não avalia semântica SQL ou UI.
 
-Dependências fixadas, lockfile raiz, configuração exclusiva Cloudflare DEV de assets estáticos e headers de segurança. CI separa testes frontend dos testes do guard DEV; usa chave publicável fictícia para build, sem Auth real ou deploy.
-
-## Pendências
-
-Login real com os dois usuários, HTTP/JWT cross-tenant, MFA/AAL2, suspensão e concorrência/idempotência ainda não avaliados. Testes da interface usam client simulado. Preview remoto depende de autenticação Cloudflare: wrangler whoami informou sessão ausente. Nenhum deploy, upgrade, cobrança ou alteração em produção efetuado. Qualquer custo deve ser apresentado antes; produção depende de aprovação posterior.
-
-Advisors: 37 avisos de RPCs definer autenticadas, três tabelas backend sem policies (negação por padrão), proteção contra senhas vazadas desabilitada. Remediação Auth deve considerar eventual custo antes da ativação.
+Requisitos canônicos e módulos pendentes: docs/V35_COVERAGE.md e os 29 ADRs originais. Estado/evidência de entrega: SESSION_HANDOFF.md. Produção depende de autorização posterior.

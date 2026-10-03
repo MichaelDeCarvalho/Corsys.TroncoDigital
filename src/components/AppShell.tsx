@@ -1,8 +1,8 @@
-import { Home, Users, MessagesSquare, LogOut } from 'lucide-react'
+import { Home, Users, MessagesSquare, LogOut, Wallet } from 'lucide-react'
 import type { ReactNode } from 'react'
 
-export type Page = 'home' | 'members' | 'support'
-const navigation = [{ id: 'home' as const, label: 'Início', Icon: Home }, { id: 'members' as const, label: 'Integrantes', Icon: Users }, { id: 'support' as const, label: 'Chamados', Icon: MessagesSquare }]
+export type Page = 'home' | 'members' | 'finance' | 'support'
+const navigation = [{ id: 'home' as const, label: 'Início', Icon: Home }, { id: 'members' as const, label: 'Integrantes', Icon: Users }, { id: 'finance' as const, label: 'Financeiro', Icon: Wallet }, { id: 'support' as const, label: 'Chamados', Icon: MessagesSquare }]
 
 export function AppShell({ children, page, onNavigate, onSignOut, email }: { children: ReactNode; page: Page; onNavigate: (page: Page) => void; onSignOut: () => void; email: string }) {
   function links() {

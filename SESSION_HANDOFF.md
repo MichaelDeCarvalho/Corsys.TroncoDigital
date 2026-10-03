@@ -1,43 +1,34 @@
-# SESSION HANDOFF
+# SESSION HANDOFF — 2026-10-03 UTC / 2026-10-02 Brasil
 
-Branch feat/v35-dev-gate-20261002; PR https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/pull/4. Base feat/v35-foundation. Não fazer merge/deploy produção sem aprovação.
+Repo MichaelDeCarvalho/Corsys.TroncoDigital, branch feat/v35-dev-gate-20261002, PR draft #4: https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/pull/4 . Base feat/v35-foundation. HEAD anterior a este incremento: 271e4277603f306be5608a7bc6e3837dfd6c1057. Sem merge/produção autorizados.
 
-## Estado verificado em 2026-10-02
+## Marco confirmado
 
-Supabase DEV autorizado: `szqkdekwhzxsoxorgvaz`, organização Michael - jobmcc, plano Free. 19 migrations aplicadas; 138 tabelas públicas com RLS. Dois usuários Auth confirmados, cada um ADMIN de sua própria Loja DEV, com um integrante fictício em cada Loja. Senhas não acessadas ou alteradas.
+Preview DEV https://corsys-tronco-digital-dev.corsys1.workers.dev/ abriu no navegador; HTTP 200 e JS/CSS 200. Proprietário confirmou login real dos dois usuários e visibilidade Michael/TENANT A, jobmcc/TENANT B, em 2026-10-02. Senhas não obtidas. Este teste manual não é teste negativo de segurança.
 
-Catálogo de permissões, invariantes financeiras e pós-V31 aprovados. Isolamento via SET ROLE authenticated/anon e claims simuladas aprovado: leitura própria, ocultação cruzada, chamado próprio, criação cruzada negada, helpers administrativos negados em AAL1. Escritas transacionais dos testes revertidas. Essa evidência não substitui login/JWT real pela Data API.
+Proprietário determinou preservar no mínimo todo o piloto V35. ZIP reenviado coincide com SHA da fonte previamente importada. Contém schema/documentação, sem HTML do piloto. docs/V35_COVERAGE.md registra domínios, regras, 29 ADRs e pendências de interface. scripts/check_v35_preservation.py acrescentado à CI: 29 ADRs, 19 migrations aplicadas, 51 documentos e 263 declarações SQL preservados. Não equivale a teste semântico ou prova de paridade visual.
 
-Frontend React/Vite/TypeScript conectado ao Supabase: login por senha, validação de sessão por getUser, logout local, seleção de Loja, integrantes com busca e criação/listagem de chamados. Auth callback síncrono; respostas atrasadas descartadas; dados removidos ao trocar usuário/tenant. RLS e RPCs são a fronteira de autorização. Sem lançamentos financeiros na interface.
+## Incremento
 
-Dependências fixadas, lockfile raiz, configuração exclusiva Cloudflare DEV de assets estáticos e headers de segurança. CI separa testes frontend dos testes do guard DEV; usa chave publicável fictícia para build, sem Auth real ou deploy.
+Financeiro no menu desktop/mobile: cobranças de integrantes, contas a pagar e contas a receber, por Loja; páginas de 25, refresh e anterior/próxima. Valores efetivos/em aberto derivados no banco; cancelamento e aprovação exibidos conforme views. Sem novas migrations, grants ou escritas. Integrantes, Auth e chamados preservados.
 
-## Pendências
+Consulta SQL das três views sob authenticated e claims simuladas AAL1 foi executada; todas retornaram zero linhas próprias/cruzadas. Demonstra acesso às views, não isolamento negativo com fatos presentes nem HTTP/JWT assinado. Nenhum fato financeiro criado neste incremento.
 
-Login real com os dois usuários, HTTP/JWT cross-tenant, MFA/AAL2, suspensão e concorrência/idempotência ainda não avaliados. Testes da interface usam client simulado. Preview remoto depende de autenticação Cloudflare: wrangler whoami informou sessão ausente. Nenhum deploy, upgrade, cobrança ou alteração em produção efetuado. Qualquer custo deve ser apresentado antes; produção depende de aprovação posterior.
+## Verificação
 
-Advisors: 37 avisos de RPCs definer autenticadas, três tabelas backend sem policies (negação por padrão), proteção contra senhas vazadas desabilitada. Remediação Auth deve considerar eventual custo antes da ativação.
+npm run check: typecheck app/node PASS, 23 testes frontend PASS e build Vite PASS. Testes cobrem navegação financeira, precisão de exibição, separação de domínios, paginação, resposta tardia, tenant inesperado, inconsistência/valor inválido, erro e retry. Testes de componentes usam client simulado; não são teste de autorização real. Gate de preservação PASS.
 
-## Próxima execução
+Build e aprovação CI deste novo commit / deploy devem ser consultados após push. Não marcar publicação do incremento como verificada antes da evidência dos assets correspondentes. Inspeção autenticada desktop/mobile ainda pendente por ausência de sessão de teste neste navegador.
 
-1. Conectar conta Cloudflare adequada, confirmar plano/custos e publicar preview DEV autorizado.
-2. Testar login/logout e visibilidade de Loja com as duas contas através do preview; entrada de senhas somente em ambiente seguro, nunca chat/commit.
-3. Executar kit dev-gate com JWT real; MFA, suspensão e concorrência antes de integrar lançamentos financeiros.
+## Pendências e próxima etapa
+
+1. Validar HTTP/JWT positivo/negativo, MFA/AAL2, suspensão e concorrência/idempotência antes de liberar comandos financeiros.
+2. Completar integrantes e configurações; comandos financeiros por RPCs existentes, com invariantes/versionamento.
+3. Completar Master SaaS, planos/promoções V35, onboarding, suporte/SLA, billing, DRE/orçamento/conciliação e demais domínios da matriz.
+4. Receber HTML original do piloto para confrontar telas, navegação e parâmetros visuais sem apagar requisitos documentados.
+
+Advisors históricos: 37 avisos de RPCs definer autenticadas, três tabelas backend sem policies por negação padrão, proteção contra senhas vazadas desabilitada. Nenhum upgrade/custo novo ativado. DEV autorizado; toda cobrança deve ser apresentada antes, produção aprovada depois.
 
 ## Comandos
 
-npm ci --ignore-scripts; npm run check; npm run check --prefix dev-gate; python scripts/check_sql.py. Build real precisa VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY em .env.local ignorado. npm run deploy:dev somente após conta/plano verificados. Não usar build CI com chave placeholder como preview funcional.
-
-## Evidência local deste incremento
-
-Typecheck dos projetos app/node PASS; 13 testes frontend PASS; 4 testes guard DEV PASS; gramática de 19 migrations + quatro verificações SQL PASS. Vite build PASS; Wrangler 4.147.0 dry-run PASS, sem upload. npm audit: zero vulnerabilidades. Inspeção visual no navegador e login real ainda não executados. CI remota desta revisão deve ser consultada após o commit.
-
-## Continuidade Cloudflare — 2026-10-02
-
-CI do commit 04436e78c5116c550bff88ac4a905f3ddf083263: run 37077478804 success. Painel Cloudflare no navegador remoto permanece na verificação contra bots após um reload; tarefa de painel bloqueada e tentativa encerrada. Nenhum login ou deploy executado. Parâmetros para publicação independente pelo proprietário em docs/engineering/cloudflare-dev-deployment.md. Plano/uso Cloudflare da conta ainda não verificados; preços oficiais consultados, sem upgrade. Próxima dependência: publicação pelo proprietário ou acesso autenticado suportado; não solicitar secrets no chat.
-
-## Primeiro build Cloudflare DEV — 2026-10-03 UTC / 2026-10-02 Brasil
-
-Captura fornecida pelo proprietário confirma Worker corsys-tronco-digital-dev criado, com uma versão manual (94b71ef8) e mensagem No builds exist yet for this worker. A publicação da aplicação V35 ainda não está comprovada. O proprietário informou ter concluído a conexão GitHub após orientação para branch feat/v35-dev-gate-20261002; configurações salvas e token não foram inspecionados diretamente.
-
-Este commit registra a evidência e gera push na branch DEV para disparar o primeiro build, condicionado à integração configurada. Após o push, verificar Recent builds / Go to build history e logs; sem execução, conferir Settings > Builds e branch. Aguardar URL pública e validação real antes de declarar preview pronto. Nenhum merge ou produção autorizado nesta etapa.
+npm ci --ignore-scripts; npm run check; npm run check --prefix dev-gate; python scripts/check_v35_preservation.py; python scripts/check_sql.py (requer scripts/requirements-checks.txt). Build funcional usa .env.local ignorado; placeholder CI não autentica. Apenas configuração wrangler.dev.jsonc. Não pedir senhas/tokens no chat.

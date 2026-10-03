@@ -24,7 +24,8 @@
 ## Produto e deploy
 - [ ] Frontend responsivo e integrações reais.
 - [ ] Storage privado, auth, observabilidade e rollback.
-- [ ] Preview Cloudflare e revisão desktop/mobile.
+- [x] Preview Cloudflare inicial publicado e verificado.
+- [ ] Revisão desktop/mobile autenticada completa.
 - [ ] Produção configurada e verificada.
 
 ## Resultado
@@ -39,4 +40,15 @@
 - [x] npm audit completo: zero vulnerabilidades após atualização Wrangler 4.147.0.
 - [x] Build sem configuração pública falha de forma explícita.
 - [ ] Conta/plano/consumo Cloudflare verificados (painel bloqueado por verificação contra bots).
-- [ ] Deploy e inspeção visual desktop/mobile — ainda não executados.
+- [x] Preview inicial publicado e tela de login/assets verificados.
+- [x] Proprietário confirmou dois logins reais e visualização somente da Loja própria.
+- [ ] Fluxo autenticado desktop/mobile e teste negativo HTTP/JWT completo.
+
+## Preservação e consulta financeira
+- [x] Escopo mínimo V35 obrigatório e módulos pendentes registrados em docs/V35_COVERAGE.md.
+- [x] ZIP reenviado é idêntico por hash à fonte importada.
+- [x] Gate de preservação: 29 ADRs, 19 migrations, 51 documentos, 263 declarações.
+- [x] Typecheck, 23 testes frontend e build aprovados neste incremento.
+- [x] Consultas SQL das três views sob role authenticated executadas (vazias; não prova de isolamento positivo/negativo).
+- [ ] Publicação remota da nova consulta financeira verificada após push.
+- [ ] Paridade funcional/visual com HTML original do piloto (não fornecido no ZIP).

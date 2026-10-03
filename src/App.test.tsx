@@ -25,6 +25,7 @@ function mockClient(options: { user?: User | null; orgs?: typeof orgA[]; respond
       select: (_: string) => chain,
       order: (_: string, __?: unknown) => chain,
       limit: (_: number) => chain,
+      range: (_: number, __: number) => chain,
       eq: (_: string, value: string) => { id = value; return chain },
       abortSignal: (_: AbortSignal) => options.respond?.(table, id) ?? Promise.resolve({ data: table === 'organizations' ? (options.orgs ?? [orgA]) : table === 'members' ? [member(id, id === orgB.id ? 'Integrante B' : 'Integrante A')] : [], error: null }),
     }
@@ -85,6 +86,14 @@ describe('Login and session boundary', () => {
 })
 
 describe('Tenant workspace', () => {
+  it('opens the financial consultation through the application navigation', async () => {
+    const mock = mockClient()
+    render(<Workspace client={mock.client} user={userA} onSignOut={vi.fn()} />)
+    await screen.findByText('Integrante A')
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Navegação principal' })).getByRole('button', { name: 'Financeiro' }))
+    await screen.findByText('Nenhum registro nesta página.')
+    expect(mock.from).toHaveBeenCalledWith('v_charge_balances')
+  })
   it('navigates to members and searches the loaded data', async () => {
     const mock = mockClient()
     render(<Workspace client={mock.client} user={userA} onSignOut={vi.fn()} />)
