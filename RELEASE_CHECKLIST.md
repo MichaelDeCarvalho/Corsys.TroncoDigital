@@ -53,3 +53,7 @@
 - [ ] Publicação remota da nova consulta financeira verificada após push.
 - [x] HTML do piloto recebido e inventariado: 21 telas, Cliente 360º, campos/ações/abas e formulários dinâmicos; referência versionada e integridade no gate.
 - [ ] Paridade funcional/visual com HTML original do piloto: cliques e homologação desktop/mobile das duas Lojas e Master pendentes.
+
+## Fonte V35 recebida e layout comum — 2026-10-03
+
+O HTML V35 foi recebido e preservado separadamente do histórico V34. Consultar docs/V35_PILOT_RECONCILIATION.md e docs/V35_PILOT_V35_INVENTORY.md: 21 telas, 132 campos estáticos, três compartilhados e 301 ocorrências em 132 fragmentos. Todas as lojas usam um único layout reutilizável, conforme confirmação do proprietário; dados, identidade, papel e situação comercial variam por organização. Nove vídeos revisados; Ricardo/segunda loja e aviso de atraso agora têm amostra visual. Não exigir repetição integral das telas por cliente. Recebimento da fonte resolvido; paridade React/Supabase, mobile, comandos persistidos e autorização real permanecem pendentes. Nenhuma mudança de frontend/banco/deploy neste incremento.

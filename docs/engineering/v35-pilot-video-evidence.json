@@ -2,7 +2,7 @@
   "review_date": "2026-10-03",
   "method": "Periodic frames + detailed visual inspection of selected scenes; no application execution or backend verification.",
   "recorded_source_name": "corsys-tesouraria-preview-v35-planos-ofertas.html",
-  "recorded_html_source_received": false,
+  "recorded_html_source_received": true,
   "videos": [
     {
       "name": "Corsys Tesouraria — Protótipo - Pessoal — Microsoft​ Edge 2026-10-03 00-36-58.mp4",
@@ -52,6 +52,24 @@
       "duration_seconds": 112.882933,
       "width": 1920,
       "height": 1032
+    },
+    {
+      "name": "Corsys Tesouraria — Protótipo - Pessoal — Microsoft​ Edge 2026-10-03 01-05-44.mp4",
+      "sha256": "7368fe98d8df143339451b344b79da06ac6bc84c089a4460a2342a5abe7ba2a5",
+      "duration_seconds": 56.566467,
+      "width": 1920,
+      "height": 1020
+    },
+    {
+      "name": "Corsys Tesouraria — Protótipo - Pessoal — Microsoft​ Edge 2026-10-03 01-07-00.mp4",
+      "sha256": "ef2d81933bfa91b0be821f8684fc343b92dd09c3ed4849672faef9e3e7fb2a79",
+      "duration_seconds": 39.066567,
+      "width": 1920,
+      "height": 1020
     }
-  ]
+  ],
+  "recorded_source_sha256": "8b22ee9738f9a5173b1941960ebe16be3c813d5f38a8a16557cf087418250a5b",
+  "recorded_source_reference_path": "docs/pilot/v35-planos-ofertas.reference.html",
+  "total_duration_seconds": 613.448133,
+  "tenant_layout_contract": "One shared customer layout; independent organization data, permissions and subscription state."
 }

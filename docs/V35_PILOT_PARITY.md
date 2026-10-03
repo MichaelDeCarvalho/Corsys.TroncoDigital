@@ -105,3 +105,7 @@ O gate `scripts/check_v35_preservation.py` verifica referências V35 e a integri
 ## Evidência visual recebida
 
 [Revisão de sete vídeos](V35_PILOT_VIDEO_REVIEW.md): seis áreas Master e quatorze áreas da Loja Aurora/André observadas parcialmente no desktop. HTML gravado identifica V35 planos/ofertas, diferente da fonte V34 recebida; capacidades adicionais confirmam requisitos V35. Receber esse HTML para conciliação campo a campo. Segunda Loja, mobile, temas aplicados, Financeiro dos Integrantes e fluxos completos permanecem pendentes. O inventário estático não foi substituído e nenhuma simulação foi marcada como comando de backend verificado.
+
+## Fonte V35 recebida e layout comum — 2026-10-03
+
+O HTML V35 foi recebido e preservado separadamente do histórico V34. Consultar docs/V35_PILOT_RECONCILIATION.md e docs/V35_PILOT_V35_INVENTORY.md: 21 telas, 132 campos estáticos, três compartilhados e 301 ocorrências em 132 fragmentos. Todas as lojas usam um único layout reutilizável, conforme confirmação do proprietário; dados, identidade, papel e situação comercial variam por organização. Nove vídeos revisados; Ricardo/segunda loja e aviso de atraso agora têm amostra visual. Não exigir repetição integral das telas por cliente. Recebimento da fonte resolvido; paridade React/Supabase, mobile, comandos persistidos e autorização real permanecem pendentes. Nenhuma mudança de frontend/banco/deploy neste incremento.

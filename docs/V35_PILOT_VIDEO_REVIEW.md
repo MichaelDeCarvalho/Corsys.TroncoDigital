@@ -102,11 +102,25 @@ São recomendações de implementação, não alterações aplicadas nem vulnera
 
 ## Pendências para encerrar a revisão do piloto
 
-1. Receber o HTML V35 usado nos sete vídeos. Fonte V34 já preservada permanece válida como referência histórica.
-2. Registrar a segunda Loja / Ricardo Tesoureiro: assinatura em atraso, avisos, próprias telas/chamados e limitações do papel. Gravação visual não substitui JWT/RLS negativo.
+1. RESOLVIDO: HTML V35 recebido, inventariado e preservado; V34 permanece histórico.
+2. AMOSTRA RECEBIDA: V9 mostra Ricardo na segunda Loja com o mesmo layout e aviso de assinatura em atraso. Falta verificar permissões/bloqueios reais; não exigir gravação duplicada de todas as telas. Gravação visual não substitui JWT/RLS negativo.
 3. Registrar mobile e os quatro temas aplicados; conferir menus, foco, campos/modais, gráficos e scroll.
 4. Complementar Financeiro dos Integrantes, três subabas restantes da estrutura, cadastro de integrante e cinco ações rápidas; onboarding etapas 2–5; mudanças/ciclo do Cliente 360º.
 5. Homologar resultados de salvar/confirmar/gerar/importar/exportar, bloqueios de exclusão com histórico, correções, suporte temporário e contratos. Uma gravação cancelada ou toast “simulado” não comprova conclusão real.
 6. Executar a mesma matriz no aplicativo React/Supabase DEV com dados persistidos e autorização real. Não promover protótipo local a aplicativo final por aparência.
 
 A revisão das gravações recebidas está registrada. A homologação integral visual/funcional das duas lojas, do Master, do mobile e do sistema real permanece aberta. Nenhuma funcionalidade ou requisito foi removido por falta de gravação.
+
+## Complemento — V8/V9 e fonte V35 recebida
+
+Agora são nove vídeos, 613,45 segundos (aproximadamente 10min13s). Os dois novos têm 1920×1020; revisão por quadros a cada três segundos e detalhes selecionados, sem revisão de cada frame, áudio, execução do app ou prova de persistência. Fonte V35 recebida e conciliada em V35_PILOT_RECONCILIATION.md. Pendências anteriores de recebimento/segunda amostra visual foram resolvidas; os limites funcionais continuam.
+
+| Vídeo / trecho | Observado | Limite |
+|---|---|---|
+| V8 01-05-44, 00:10–00:16 | Busca CAR mostra Carlos; L mostra Carlos/Marcos; limpar recupera quatro linhas e totais | Implementar filtros reais; dados demonstrativos |
+| V8 00:20–00:42 | Extratos Carlos e Marcos, períodos e saldos distintos; Marcos tem mensalidade 150 e mútuas 9×50=450, saldo 600 | Botões de PDF/Excel visíveis; arquivo exportado não inspecionado |
+| V8 00:47–00:56 | Seleção de faixas até 30, 31–60 e acima de 90 dias altera detalhes e destaque | Não afirmar todas as faixas executadas; validar cálculo real por posição |
+| V9 01-07-00, 00:00–00:10 | Ricardo/Tesoureiro, Fraternidade do Oriente, mesmo dashboard; aviso de atraso/tolerância | Não prova bloqueio de escrita; revisar quebra de valores monetários nos cards |
+| V9 00:12–00:39 | Inadimplência, Fluxo de Caixa, Integrantes, Relatórios/Fechamento mensal, DRE e Configurações DRE | Navegação e conteúdo visíveis; sem gravações reais ou tela mobile |
+
+A segunda loja usa o mesmo template, conforme proprietário. Comparar estados/papéis e isolamento no app real, sem repetir o inventário de layout por loja. Financeiro dos Integrantes continua sem evidência visual suficiente de seus fluxos; seu código/funções e requisitos permanecem preservados.

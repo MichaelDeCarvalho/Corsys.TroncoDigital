@@ -23,3 +23,7 @@ Frontend: Auth verificada por getUser, logout, seleção de Loja, integrantes co
 Catálogo/invariantes SQL e isolamento com roles/claims simuladas anteriormente aprovados. Nesta etapa as três views financeiras puderam ser consultadas sob role authenticated, retornando zero registros; isso não comprova leitura positiva de fatos nem isolamento cruzado com dados existentes/JWT real. A confirmação manual do proprietário também não substitui testes negativos HTTP/JWT.
 
 Gates restantes: JWT/RLS positivo/negativo, AAL2/MFA, suspensão, concorrência/idempotência, revisão desktop/mobile do fluxo autenticado e paridade com o HTML original. Nenhuma liberação de produção.
+
+## Fonte V35 recebida e layout comum — 2026-10-03
+
+O HTML V35 foi recebido e preservado separadamente do histórico V34. Consultar docs/V35_PILOT_RECONCILIATION.md e docs/V35_PILOT_V35_INVENTORY.md: 21 telas, 132 campos estáticos, três compartilhados e 301 ocorrências em 132 fragmentos. Todas as lojas usam um único layout reutilizável, conforme confirmação do proprietário; dados, identidade, papel e situação comercial variam por organização. Nove vídeos revisados; Ricardo/segunda loja e aviso de atraso agora têm amostra visual. Não exigir repetição integral das telas por cliente. Recebimento da fonte resolvido; paridade React/Supabase, mobile, comandos persistidos e autorização real permanecem pendentes. Nenhuma mudança de frontend/banco/deploy neste incremento.
