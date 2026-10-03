@@ -4,7 +4,7 @@
 
 A V35 é o escopo mínimo do produto, por instrução do proprietário em 2026-10-02. Implementar por etapas não remove telas, parâmetros, regras ou ideias do escopo. Não substituir funções do banco por regras inventadas no frontend. Mudanças incompatíveis exigem decisão explícita registrada; fatos financeiros e histórico comercial permanecem preservados.
 
-Fonte: `corsys-v35-supabase-dev-gate.zip`, SHA-256 `2679c70bcf64b4c914d30fdd84778f13bae915e1ae278d71b7b0d684db8ef98b`. O ZIP reenviado é idêntico à fonte importada. Contém 16 migrations, 29 ADRs (versionadas em docs/adr/v35/), dicionários e matrizes de testes; **não contém HTML/CSS/JS nem capturas das telas do piloto**. Assim, a preservação das especificações documentadas é verificável, mas a equivalência visual/funcional integral com o piloto continua NÃO AVALIADA. Incorporar o HTML original quando disponibilizado, sem tratá-lo como autorização de backend.
+Fonte documental: `corsys-v35-supabase-dev-gate.zip`, SHA-256 `2679c70bcf64b4c914d30fdd84778f13bae915e1ae278d71b7b0d684db8ef98b`. O ZIP contém 16 migrations, 29 ADRs e dicionários/matrizes. O HTML foi recebido separadamente em 2026-10-03: `corsys-tesouraria-preview-v34-master-operacional.html`. A [matriz de paridade](V35_PILOT_PARITY.md) e o [inventário campo a campo](V35_PILOT_INVENTORY.md) incorporam 6 telas Master, 15 telas de cliente, Cliente 360º e formulários dinâmicos ao escopo mínimo. A V35 evolui o HTML V34 sem retirar suas capacidades. Análise estática realizada; homologação visual e teste dos cliques permanecem pendentes.
 
 A base foi importada para 19 migrations DEV: 16 baselines, correções 009/014 pré-aplicação e três migrations adicionais de segurança. Os hashes históricos e aplicados têm manifestos separados. Nenhuma migration, grant, policy ou função do banco foi alterada neste incremento.
 
@@ -35,7 +35,7 @@ A base foi importada para 19 migrations DEV: 16 baselines, correções 009/014 p
 | Onboarding controlado | Runs/eventos e retomada por etapa | Pendente | Cinco etapas; convites Auth apenas por backend autorizado |
 | Suporte e SLA | Chamados tenant/internos, mensagens, métricas e sessões | Abertura/listagem de chamados próprios | Conversas, Kanban Master, primeira resposta, SLA e sessões auditadas |
 | Configuração da plataforma e equipe | Settings tipadas, platform_staff, proteção último Master | Pendente | MFA, administração e operações privilegiadas |
-| Web/mobile | ADR-0015, mesma autorização, sem escrita offline | Layout adaptativo, navegação móvel, consulta com scroll interno | Revisão visual em celular real; piloto visual ainda ausente |
+| Web/mobile | ADR-0015, mesma autorização, sem escrita offline | Layout adaptativo, navegação móvel, consulta com scroll interno | Revisão visual em celular real; HTML inventariado; cliques/visualização ainda pendentes |
 | Arquivos e integrações | Responsabilidades definidas na arquitetura | Pendente | Storage privado e providers; custos apresentados antes |
 
 ## Regras que a interface deve respeitar
@@ -51,7 +51,7 @@ A base foi importada para 19 migrations DEV: 16 baselines, correções 009/014 p
 
 ## Verificação de preservação
 
-`python scripts/check_v35_preservation.py` verifica presença de 51 documentos, hashes de 29 ADRs e 19 migrations aplicadas, além de 263 declarações SQL originais. A CI executa o mesmo gate. Ele detecta alterações/remoções dessas referências; **não prova comportamento das funções, ausência de DROP posterior, paridade de telas ou completude de todas as regras**. Testes funcionais e de autorização continuam obrigatórios. Novas evoluções devem ser aditivas; mudança intencional das referências exige reconciliação registrada.
+`python scripts/check_v35_preservation.py` verifica presença de 51 documentos, hashes de 29 ADRs e 19 migrations aplicadas, além de 263 declarações SQL originais, além da integridade/presença do HTML de referência, inventário e 21 telas. A CI executa o mesmo gate. Ele detecta alterações/remoções dessas referências; **não prova comportamento das funções, ausência de DROP posterior, paridade de telas ou completude de todas as regras**. Testes funcionais e de autorização continuam obrigatórios. Novas evoluções devem ser aditivas; mudança intencional das referências exige reconciliação registrada.
 
 ## Sequência de evolução
 
@@ -59,7 +59,7 @@ A base foi importada para 19 migrations DEV: 16 baselines, correções 009/014 p
 2. Validar HTTP/JWT positivo/negativo, MFA, suspensão, idempotência e concorrência, antes de liberar comandos financeiros.
 3. Completar integrantes/parametrizações e fluxos financeiros conforme dicionários e matrizes, sem perder os domínios acima.
 4. Entregar control plane Master com a matriz V35 de planos/promoções, onboarding e suporte/SLA.
-5. Confrontar o HTML original do piloto e homologar desktop/mobile e todos os fluxos antes da aprovação de produção.
+5. Cumprir o inventário recebido do piloto e homologar desktop/mobile e todos os fluxos antes da aprovação de produção.
 
 ## Decisões originais rastreáveis
 

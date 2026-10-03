@@ -4,7 +4,7 @@ SaaS multi-tenant de tesouraria e gestão financeira para Lojas Maçônicas. org
 
 ## Escopo mínimo obrigatório
 
-Preservar no mínimo todas as funcionalidades, parâmetros e ideias documentadas na V35, backend e frontend, conforme determinação do proprietário em 2026-10-02. Consultar docs/V35_COVERAGE.md antes de implementar cada módulo. Entrega incremental não é redução de escopo. O pacote reenviado coincide por SHA-256 com a fonte importada e não contém o HTML do piloto; paridade visual integral ainda não avaliada.
+Preservar no mínimo todas as funcionalidades, parâmetros e ideias documentadas na V35, backend e frontend, conforme determinação do proprietário em 2026-10-02. Consultar docs/V35_COVERAGE.md antes de implementar cada módulo. Entrega incremental não é redução de escopo. O HTML V34 operacional foi recebido separadamente: docs/V35_PILOT_PARITY.md e docs/V35_PILOT_INVENTORY.md registram 21 telas e os controles dinâmicos como mínimo obrigatório junto com a V35. Análise estática realizada; paridade visual/cliques ainda pendentes.
 
 Fontes: docs/engineering/v35-source-manifest.json (origem histórica), v35-dev-runtime-manifest.json (19 migrations efetivamente aplicadas) e v35-preservation-baseline.json (ADRs/documentos/declarações originais). Next.js é alvo histórico; stack atual mantém React/Vite/TypeScript da branch foundation.
 

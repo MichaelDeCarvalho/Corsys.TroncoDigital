@@ -21,3 +21,7 @@ SDK persiste a sessão; getUser valida identidade. Chave sb_publishable é públ
 CI foundation-checks: jobs static e frontend, permissions contents:read, actions por SHA, sem deploy/secrets pelo GitHub Actions. Cloudflare tem integração de build da branch DEV configurada pelo proprietário. Gate adicional scripts/check_v35_preservation.py verifica hashes/presença dos artefatos históricos; não avalia semântica SQL ou UI.
 
 Requisitos canônicos e módulos pendentes: docs/V35_COVERAGE.md e os 29 ADRs originais. Estado/evidência de entrega: SESSION_HANDOFF.md. Produção depende de autorização posterior.
+
+## Referência do piloto
+
+HTML V34 operacional recebido em 2026-10-03. docs/V35_PILOT_PARITY.md reconcilia o mínimo do HTML com a V35; docs/V35_PILOT_INVENTORY.md lista todos os controles extraídos por DOM/AST. A referência em docs/pilot/ mantém código de produto e linhas originais, removendo somente tags externas de antivírus; não é servida no app. Gate verifica hashes/21 telas, sem provar runtime. Master/duas lojas/Cliente 360º devem ser homologados visualmente e por cliques; abertura local foi bloqueada no navegador desta revisão.

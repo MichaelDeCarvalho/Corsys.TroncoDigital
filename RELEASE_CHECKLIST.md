@@ -51,4 +51,5 @@
 - [x] Typecheck, 23 testes frontend e build aprovados neste incremento.
 - [x] Consultas SQL das três views sob role authenticated executadas (vazias; não prova de isolamento positivo/negativo).
 - [ ] Publicação remota da nova consulta financeira verificada após push.
-- [ ] Paridade funcional/visual com HTML original do piloto (não fornecido no ZIP).
+- [x] HTML do piloto recebido e inventariado: 21 telas, Cliente 360º, campos/ações/abas e formulários dinâmicos; referência versionada e integridade no gate.
+- [ ] Paridade funcional/visual com HTML original do piloto: cliques e homologação desktop/mobile das duas Lojas e Master pendentes.
