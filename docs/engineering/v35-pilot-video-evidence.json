@@ -1,0 +1,57 @@
+{
+  "review_date": "2026-10-03",
+  "method": "Periodic frames + detailed visual inspection of selected scenes; no application execution or backend verification.",
+  "recorded_source_name": "corsys-tesouraria-preview-v35-planos-ofertas.html",
+  "recorded_html_source_received": false,
+  "videos": [
+    {
+      "name": "Corsys Tesouraria — Protótipo - Pessoal — Microsoft​ Edge 2026-10-03 00-36-58.mp4",
+      "sha256": "a504ad3d5bcc40ff4fbbde49240d02ebd323f47c2b20da06506ab283999fd9f9",
+      "duration_seconds": 124.982933,
+      "width": 1920,
+      "height": 1032
+    },
+    {
+      "name": "Corsys Tesouraria — Protótipo - Pessoal — Microsoft​ Edge 2026-10-03 00-40-46.mp4",
+      "sha256": "44b3d9c1660dadd1b4c7c4ba55924a4286eaac4caa98e7af89f9cd1754255b49",
+      "duration_seconds": 134.749533,
+      "width": 1920,
+      "height": 1032
+    },
+    {
+      "name": "Corsys Tesouraria — Protótipo - Pessoal — Microsoft​ Edge 2026-10-03 00-43-11.mp4",
+      "sha256": "c28d475cbc4c0a93ac94d28163d7861b9ee1849b85af0a078e1879213ab30eb0",
+      "duration_seconds": 26.183267,
+      "width": 1920,
+      "height": 1032
+    },
+    {
+      "name": "Corsys Tesouraria — Protótipo - Pessoal — Microsoft​ Edge 2026-10-03 00-44-49.mp4",
+      "sha256": "166ee4c1a41102cd31fc1ff2662b1eb02e8536e79a951284673b8af39814d22b",
+      "duration_seconds": 25.0833,
+      "width": 1920,
+      "height": 1032
+    },
+    {
+      "name": "Corsys Tesouraria — Protótipo - Pessoal — Microsoft​ Edge 2026-10-03 00-45-26.mp4",
+      "sha256": "4cc10df669e04e6d35a6ab57bfe0da6e10080af4b6f8ee1031b026960101ba14",
+      "duration_seconds": 50.2332,
+      "width": 1920,
+      "height": 1032
+    },
+    {
+      "name": "Corsys Tesouraria — Protótipo - Pessoal — Microsoft​ Edge 2026-10-03 00-46-22.mp4",
+      "sha256": "987397cdbdf97e66574cb6a1a1a4cda9462fbba45b80365ee0a8c220b17113bb",
+      "duration_seconds": 43.699933,
+      "width": 1920,
+      "height": 1032
+    },
+    {
+      "name": "Corsys Tesouraria — Protótipo - Pessoal — Microsoft​ Edge 2026-10-03 00-47-14.mp4",
+      "sha256": "366256bcbb681d208f3344f44ba88b57f90385829dbf549cdccf25c468e441c7",
+      "duration_seconds": 112.882933,
+      "width": 1920,
+      "height": 1032
+    }
+  ]
+}

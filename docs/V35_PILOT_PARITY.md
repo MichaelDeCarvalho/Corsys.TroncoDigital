@@ -101,3 +101,7 @@ O gate `scripts/check_v35_preservation.py` verifica referências V35 e a integri
 4. Completar plano contábil, caixa/fundos, conciliação, DRE/orçamento/relatórios/importação.
 5. Implementar Master, clientes/onboarding, catálogo/ofertas, billing, operação/SLA/configurações; pode avançar em incrementos independentes quando autorização e contratos estiverem definidos.
 6. Homologar todos os contextos e itens de inventário antes de produção. Não ativar cobrança/provider/plano pago sem apresentar custo ao proprietário.
+
+## Evidência visual recebida
+
+[Revisão de sete vídeos](V35_PILOT_VIDEO_REVIEW.md): seis áreas Master e quatorze áreas da Loja Aurora/André observadas parcialmente no desktop. HTML gravado identifica V35 planos/ofertas, diferente da fonte V34 recebida; capacidades adicionais confirmam requisitos V35. Receber esse HTML para conciliação campo a campo. Segunda Loja, mobile, temas aplicados, Financeiro dos Integrantes e fluxos completos permanecem pendentes. O inventário estático não foi substituído e nenhuma simulação foi marcada como comando de backend verificado.
