@@ -36,3 +36,8 @@ Autorização: proprietário em 2026-10-05 Brasil. Executar oito etapas incremen
 Não liberar comandos financeiros ao cliente com gates críticos abertos. Desenvolvimento/testes DEV podem continuar sem promover cenários não avaliados a aprovação.
 
 Decisões comerciais: config/commercial-decisions.json e docs/adr/0005-commercial-launch-decisions.md. Interface e ADRs financeiras continuam em vigor, inclusive layout único das lojas.
+
+
+## Continuidade da etapa 1 — 2026-10-06 UTC
+
+Ver docs/V35_STAGE_1_EVIDENCE.md. Invariantes financeiras e pós-V31 passaram. Novos roteiros verify_dev_financial_commands.sql e verify_dev_roles_and_support.sql passaram no DEV: RPCs nas duas lojas, idempotência sequencial/auditoria, leituras próprias/cruzadas, sobrealocação e IDs alheios, suspensão, perfis e suporte temporário/revogação/expiração. Claims simuladas; tudo revertido, zero fixtures temporárias conferidas. Oito testes locais PASS. Etapa 1 permanece em execução: JWT real, MFA real, matriz HTTP e concorrência simultânea ainda não comprovados. Nenhuma alteração de schema, grants, senhas, frontend, produção ou cobrança.
