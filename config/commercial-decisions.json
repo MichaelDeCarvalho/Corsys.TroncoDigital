@@ -1,0 +1,13 @@
+{
+  "decision_date": "2026-10-05",
+  "source": "Owner authorization in project conversation",
+  "scope": "Approved commercial configuration; not yet published in the SaaS catalog",
+  "currency": "BRL",
+  "plans": [
+    {"code": "plan_125", "provisional_name": "Plano 1", "monthly_price_cents": 12500, "entitlements_status": "pending_definition"},
+    {"code": "plan_180", "provisional_name": "Plano 2", "monthly_price_cents": 18000, "entitlements_status": "pending_definition"}
+  ],
+  "billing": {"initial_provider": "manual", "preferred_future_provider": "stripe", "automatic_charging_enabled": false},
+  "support": {"initial_channels": ["in_app", "whatsapp_manual"], "future_channel": "whatsapp_automation", "automation_enabled": false, "whatsapp_number_status": "not_provided"},
+  "production_domain": null
+}

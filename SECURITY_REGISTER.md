@@ -76,3 +76,10 @@ SEC-008: RPC de suporte sem idempotência; UI impede envio simultâneo e orienta
 SEC-009: auditoria npm inicial encontrou undici/miniflare na ferramenta Wrangler; atualizar Wrangler para correção e registrar resultado audit após instalação. Nenhum secret novo no repo.
 
 SEC-009 remediado: Wrangler 4.147.0 instalado e lockfile atualizado; npm audit retornou zero vulnerabilidades (não substitui revisão de segurança).
+
+
+## Etapa 1 iniciada — 2026-10-05 Brasil / 2026-10-06 UTC
+
+Proprietário autorizou avançar pela sequência de oito etapas. docs/V35_DELIVERY_PLAN.md registra estado/evidência e pendências. Decisões comerciais em docs/adr/0005-commercial-launch-decisions.md e config/commercial-decisions.json: dois planos BRL 125/180 mensais, cobrança manual e futura Stripe preferencial; suporte interno/WhatsApp manual, automação futura; domínio pendente. Configuração registrada, catálogo/integrações ainda não ativados.
+
+SQL de catálogo e isolamento reexecutado com sucesso. Novo scripts/verify_dev_subscription_and_staff.sql passou após corrigir fixture publicada sem timestamp: tolerância/suspensão/override, limites de staff/AAL e proteção do último Master; claims simuladas, helpers/triggers, rollback conferido sem dados temporários. Não equivale a HTTP/JWT/MFA reais ou comandos financeiros completos. dev-gate possui roteiro HTTP reforçado e exemplo dos UUIDs existentes, sem necessidade de chave administrativa. Oito testes locais passaram; roteiro HTTP autenticado ainda não executado por ausência das senhas em ambiente seguro. Não solicitar senhas/tokens pelo chat nem alterar credenciais existentes. Nenhuma migration, grant, schema, frontend, produção ou serviço pago alterado.

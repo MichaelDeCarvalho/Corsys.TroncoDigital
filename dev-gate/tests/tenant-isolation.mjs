@@ -1,6 +1,8 @@
 import { assertDevEnvironment } from '../tools/dev-environment.mjs'
 import { createClient } from '@supabase/supabase-js'
 import fs from 'node:fs/promises'
+import { randomUUID } from 'node:crypto'
+import { validateFixture, assertHidden, assertPermissionDenied } from '../tools/isolation-assertions.mjs'
 
 const required = [
   'SUPABASE_URL','SUPABASE_PUBLISHABLE_KEY',
@@ -14,7 +16,7 @@ for (const key of required) {
 const projectRef = assertDevEnvironment()
 const fixture = JSON.parse(await fs.readFile('fixture.ids.json', 'utf8'))
 
-assert(fixture.project_ref === projectRef, 'fixture must belong to selected DEV project')
+validateFixture(fixture, projectRef)
 assert(fixture.tenant_a.organization_id !== fixture.tenant_b.organization_id, 'distinct organizations required')
 assert(fixture.tenant_a.admin_user_id !== fixture.tenant_b.admin_user_id, 'distinct users required')
 
@@ -24,10 +26,12 @@ function client() {
   })
 }
 
-async function signIn(email, password) {
+async function signIn(email, password, expectedId, label) {
   const c = client()
   const { data, error } = await c.auth.signInWithPassword({ email, password })
-  if (error || !data.session) throw new Error(`sign in failed for ${email}: ${error?.message}`)
+  if (error || !data.session) throw new Error(`sign in failed for ${label}`)
+  const verified = await c.auth.getUser()
+  assert(!verified.error && verified.data.user?.id === expectedId, `${label}: Auth identity differs from fixture`)
   return c
 }
 
@@ -42,7 +46,8 @@ async function assertTenant(c, own, other, label) {
   if (orgError) throw orgError
 
   assert(orgs.some(x => x.id === own.organization_id), `${label} must see own organization`)
-  assert(!orgs.some(x => x.id === other.organization_id), `${label} MUST NOT see other organization`)
+  assert(orgs.every(x => x.id === own.organization_id), `${label} MUST NOT see unexpected organizations`)
+  assertHidden(await c.from('organizations').select('id').eq('id',other.organization_id), `${label} explicit cross organization read`)
 
   const { data: members, error: memberError } = await c
     .from('members')
@@ -50,7 +55,15 @@ async function assertTenant(c, own, other, label) {
   if (memberError) throw memberError
 
   assert(members.some(x => x.organization_id === own.organization_id), `${label} must see own member`)
-  assert(!members.some(x => x.organization_id === other.organization_id), `${label} MUST NOT see other members`)
+  assert(members.every(x => x.organization_id === own.organization_id), `${label} MUST NOT see unexpected members`)
+  assertHidden(await c.from('members').select('id').eq('organization_id',other.organization_id), `${label} explicit cross members read`)
+  for (const view of ['v_charge_balances','v_institutional_payable_effective','v_institutional_receivable_effective']) {
+    assertHidden(await c.from(view).select('organization_id').eq('organization_id',other.organization_id), `${label} cross financial view ${view}`)
+  }
+  for (const view of ['v_saas_plan_version_admin','v_saas_promotion_series_admin']) {
+    assertHidden(await c.from(view).select('*').limit(1), `${label} Master view ${view}`)
+  }
+  assertPermissionDenied(await c.rpc('set_saas_plan_active',{p_plan_id:randomUUID(),p_active:false,p_reason:'DEV unauthorized Master check'}), `${label} tenant cannot execute Master command`)
 
   const { data: masterConfig, error: masterError } = await c
     .from('saas_platform_configuration')
@@ -66,7 +79,7 @@ async function assertTenant(c, own, other, label) {
 }
 
 async function assertCrossTenantTicketBlocked(c, own, other, label) {
-  const subject = `RLS DEV TEST ${Date.now()}`
+  const subject = `RLS DEV TEST ${randomUUID()}`
   const ownResult = await c.rpc('create_saas_support_ticket', {
     p_organization_id: own.organization_id,
     p_subject: subject,
@@ -94,8 +107,8 @@ async function assertCrossTenantTicketBlocked(c, own, other, label) {
   assert(tickets.every(t => t.organization_id === own.organization_id), `${label} MUST only read own tenant tickets`)
 }
 
-const a = await signIn(process.env.TEST_ADMIN_A_EMAIL, process.env.TEST_ADMIN_A_PASSWORD)
-const b = await signIn(process.env.TEST_ADMIN_B_EMAIL, process.env.TEST_ADMIN_B_PASSWORD)
+const a = await signIn(process.env.TEST_ADMIN_A_EMAIL, process.env.TEST_ADMIN_A_PASSWORD, fixture.tenant_a.admin_user_id, 'ADMIN A')
+const b = await signIn(process.env.TEST_ADMIN_B_EMAIL, process.env.TEST_ADMIN_B_PASSWORD, fixture.tenant_b.admin_user_id, 'ADMIN B')
 
 await assertTenant(a, fixture.tenant_a, fixture.tenant_b, 'ADMIN A')
 await assertTenant(b, fixture.tenant_b, fixture.tenant_a, 'ADMIN B')
@@ -108,4 +121,13 @@ for (const table of ['organizations', 'members', 'platform_staff', 'saas_platfor
   assert(error ? error.code === '42501' : Array.isArray(data) && data.length === 0, `anonymous access must be denied for ${table}`)
 }
 
-console.log('PASS: tenant isolation smoke tests; financial/MFA/concurrency gates remain separate.')
+const invalidJwt = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_PUBLISHABLE_KEY, {
+  auth: { autoRefreshToken:false, persistSession:false, detectSessionInUrl:false },
+  global: { headers: { Authorization:'Bearer invalid-dev-jwt' } }
+})
+const invalid = await invalidJwt.from('organizations').select('id').limit(1)
+assert(invalid.error && invalid.status === 401, 'invalid JWT must be rejected with HTTP 401')
+await a.auth.signOut({scope:'local'})
+await b.auth.signOut({scope:'local'})
+console.log('PASS: real Auth identities, tenant reads/RPCs, tenant-to-Master denial and invalid JWT. Financial positive fixtures, MFA, suspension and concurrency remain separate gates.')
+
