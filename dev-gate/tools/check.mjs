@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 const root = fileURLToPath(new URL('../', import.meta.url));
-for (const file of ['tools/dev-environment.mjs', 'tools/create-test-fixture.mjs', 'tests/tenant-isolation.mjs', 'tests/dev-environment.test.mjs', 'tools/isolation-assertions.mjs', 'tests/isolation-assertions.test.mjs', 'tools/financial-assertions.mjs', 'tests/financial-assertions.test.mjs', 'tests/financial-http.mjs']) {
+for (const file of ['tools/dev-environment.mjs', 'tools/create-test-fixture.mjs', 'tests/tenant-isolation.mjs', 'tests/dev-environment.test.mjs', 'tools/isolation-assertions.mjs', 'tests/isolation-assertions.test.mjs', 'tools/financial-assertions.mjs', 'tests/financial-assertions.test.mjs', 'tests/financial-http.mjs', 'tests/suspension-http.mjs', 'tests/mfa-posture.mjs']) {
   const result = spawnSync(process.execPath, ['--check', path.join(root, file)], { stdio: 'inherit' });
   if (result.error || result.status !== 0) process.exit(result.status || 1);
 }

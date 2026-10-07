@@ -7,7 +7,10 @@
     "test:tenant-isolation": "node --env-file=.env.dev tests/tenant-isolation.mjs",
     "test": "node --test tests/*.test.mjs",
     "check": "node tools/check.mjs",
-    "test:financial-http": "node --env-file=.env.dev tests/financial-http.mjs"
+    "test:financial-http": "node --env-file=.env.dev tests/financial-http.mjs",
+    "test:suspension-http": "node --env-file=.env.dev tests/suspension-http.mjs blocked",
+    "test:restoration-http": "node --env-file=.env.dev tests/suspension-http.mjs restored",
+    "check:mfa-posture": "node --env-file=.env.dev tests/mfa-posture.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.117.2"

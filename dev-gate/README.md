@@ -52,3 +52,10 @@ npm run test:financial-http
 ```
 
 O roteiro cria fatos fictícios persistentes em ambas as lojas. Não repetir após falha sem inspecionar o tag. Não executar seed/fixture novamente. NÃO aprova MFA real, suspensão ou toda a matriz V35.
+
+## Próximo gate: suspensão / retomada / postura MFA
+Ver ../docs/DEV_SUSPENSION_MFA_GATE.md para a sequência completa e restauração obrigatória.
+`npm run check:mfa-posture` é somente inventário INFO, não MFA PASS e não cadastra fator.
+`npm run test:suspension-http` exige B suspended/A active antes de probes.
+`npm run test:restoration-http` exige ambas active e cria pagamento fictício 1 na B.
+Não suspender loja sem conseguir executar a restauração na mesma janela de teste.
