@@ -72,3 +72,8 @@ simultânea. Etapa 1 continua EM EXECUÇÃO. A recuperação real por e-mail nã
 homologada: o proprietário encontrou a senha existente. Manter credenciais somente
 no .env.dev privado local, sem commit/upload. Chamados legítimos do smoke permanecem
 no DEV com prefixo RLS DEV TEST, conforme roteiro.
+
+
+## Próximo gate preparado — 2026-10-07
+
+Ver docs/DEV_FINANCIAL_HTTP_GATE.md. Estrutura financeira fictícia persistida nas duas lojas e plano DEV de valor zero com assinaturas active, sem cobrança, Auth/grants/schema alterados. Comandos SQL com claims simuladas despachados em paralelo: saldo disputado preservou uma alocação de 100 e crédito zero; mesma chave preservou uma cobrança/audit. Sobreposição exata não instrumentada; não equivale a HTTP real. Novo npm run test:financial-http preparado para credenciais privadas locais; 10 testes locais PASS e sintaxe PASS. Roteiro HTTP financeiro e MFA/suspensão/matriz ainda pendentes. Não apagar ledger nem repetir seed/roteiro após falha sem inspeção. Scripts antigos com precondição de zero planos/assinaturas agora bloqueiam por fixture alterada, esperado.

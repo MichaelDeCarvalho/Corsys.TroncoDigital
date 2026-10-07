@@ -6,7 +6,8 @@
     "fixture": "node --env-file=.env.dev tools/create-test-fixture.mjs",
     "test:tenant-isolation": "node --env-file=.env.dev tests/tenant-isolation.mjs",
     "test": "node --test tests/*.test.mjs",
-    "check": "node tools/check.mjs"
+    "check": "node tools/check.mjs",
+    "test:financial-http": "node --env-file=.env.dev tests/financial-http.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.117.2"

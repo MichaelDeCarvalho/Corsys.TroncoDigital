@@ -19,7 +19,7 @@ npm run test:tenant-isolation
 
 Cross-tenant exige erro 42501, criação legítima bem-sucedida e leitura do próprio chamado. Falhas de rede/schema não contam como negação válida. Acesso anônimo também é testado.
 
-Este smoke test não substitui concorrência/idempotência, MFA real e testes financeiros negativos. Execute as matrizes em `docs/` e checks SQL. `npm run check` roda somente sintaxe JS e quatro testes locais do guard.
+Este smoke test não substitui concorrência/idempotência, MFA real e testes financeiros negativos. Execute as matrizes em `docs/` e checks SQL. `npm run check` roda somente sintaxe JS e dez testes locais do guard/assertions.
 
 Para validar migrations em Supabase local, usar a CLI da dependência fixada na raiz do projeto e runtime Docker; este script de fixture está intencionalmente restrito a DEV cloud e não aceita localhost.
 
@@ -41,3 +41,14 @@ O teste confirma getUser com o UUID esperado, leituras próprias positivas, cons
 Views financeiras sem dados próprios não demonstram isolamento positivo financeiro. Este smoke não aprova MFA real, suspensão via HTTP, perfis Consulta/Integrante, expiração de suporte ou concorrência. Só imprimir PASS após toda a execução. Erro de rede/schema não equivale a negação autorizada.
 
 Referências oficiais consultadas em 2026-10-06 UTC: https://supabase.com/docs/reference/javascript/auth-signinwithpassword e https://supabase.com/docs/reference/javascript/auth-getuser.
+
+
+## Financeiro HTTP e concorrência
+
+Fixtures financeiras persistidas em DEV; ver ../docs/DEV_FINANCIAL_HTTP_GATE.md antes de executar. Usuários/senhas já existentes, sem chave administrativa.
+
+```bash
+npm run test:financial-http
+```
+
+O roteiro cria fatos fictícios persistentes em ambas as lojas. Não repetir após falha sem inspecionar o tag. Não executar seed/fixture novamente. NÃO aprova MFA real, suspensão ou toda a matriz V35.
