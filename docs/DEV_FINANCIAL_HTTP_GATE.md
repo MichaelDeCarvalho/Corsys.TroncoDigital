@@ -1,6 +1,6 @@
 # Etapa 1 — financeiro HTTP e concorrência DEV (2026-10-07)
 ## Estado
-Preparação concluída. Roteiro HTTP real ainda não executado pelo proprietário.
+Roteiro HTTP real executado pelo proprietário com PASS apresentado em 2026-10-07; ver evidência abaixo.
 A etapa 1 permanece aberta: MFA real, suspensão/revogação HTTP e matriz completa.
 
 ## Fixtures persistidas
@@ -58,3 +58,8 @@ Cria fatos fictícios persistentes de 2026-09: três cobranças, dois pagamentos
 alocações por loja, valores 100/150 de teste; sem dinheiro real/envio externo.
 Somente dados públicos/IDs fictícios integram a branch; senhas ficam locais.
 
+
+
+## HTTP financeiro aprovado pelo proprietário — 2026-10-07, 18:51 Brasil
+
+Execução Windows/Node v24.20.0 pelo proprietário; saída PASS apresentada no chat, não executada pelo agente com credenciais. npm ci: 0 vulnerabilidades no dev-gate; npm run check: 10 testes PASS. npm run test:financial-http: Tenant A e Tenant B PASS; HTTP/JWT real, views próprias positivas/cruzadas ocultas, auditoria, idempotência com requisições simultâneas e disputa de alocação aprovados no escopo do roteiro. Tag: DEV HTTP 428ce717-21fa-41cc-a7b5-47512ef83bfe. Fatos fictícios permanecem no DEV; não repetir sem necessidade nem apagar ledger. Tentativas anteriores pararam antes de escritas por dependência ausente, project ref e identidade inesperada; configuração corrigida localmente, nenhuma senha/token recebido. CI Foundation checks do código c39de3a: run 37690001216 success. Não é teste de carga em escala nem cobertura de todas as RPCs. Etapa 1 continua aberta: MFA real, suspensão/revogação/perfis por HTTP, recuperação por e-mail e matriz restante. Produção e merge não aprovados.
