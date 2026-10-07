@@ -10,7 +10,7 @@ Estado: EM EXECUÇÃO. Não liberar produção nem comandos financeiros ao clien
 | Comandos financeiros nas duas lojas | DEV_FINANCIAL_RPC_PASS | Claims simuladas; repetição sequencial |
 | Tesoureiro, Consulta e Integrante | DEV_ROLES_SUPPORT_PASS | Permissões/RLS no banco; sem login desses perfis |
 | Suporte temporário | DEV_ROLES_SUPPORT_PASS | AAL simulado; sessão ativa, expirada, encerrada e staff inativo |
-| Guard/assertions do roteiro HTTP | 8 testes locais PASS | Roteiro autenticado não executado |
+| Guard/assertions do roteiro HTTP | 8 testes locais PASS | Smoke autenticado aprovado posteriormente pelo proprietário; ver atualização |
 
 Comandos testados: create_manual_charge, register_payment e allocate_payment_to_charge.
 Na mesma chave/payload retornam o mesmo UUID, sem duplicar as três entradas de auditoria.
@@ -53,3 +53,29 @@ A revisão humana do projeto DEV continua necessária antes de executar.
 Smoke HTTP existente: seguir dev-gate/README.md, seção de usuários já criados.
 Esse smoke não encerra todos os bloqueios acima, mesmo se aprovado.
 
+
+
+## Smoke HTTP autenticado aprovado — 2026-10-07, 18:20 Brasil
+
+Evidência: saída integral fornecida pelo proprietário, execução local Windows/Node
+v24.20.0 na cópia da branch DEV. O agente não executou este comando com as credenciais;
+a classificação é execução pelo proprietário com resultado PASS apresentado.
+Nenhuma senha, token ou arquivo .env foi recebido.
+
+Comando: npm run test:tenant-isolation.
+Resultado:
+PASS: real Auth identities, tenant reads/RPCs, tenant-to-Master denial and invalid JWT. Financial positive fixtures, MFA, suspension and concurrency remain separate gates.
+
+Baseline HTTP aprovado: login/getUser dos dois UUIDs esperados, consultas próprias
+positivas de organização/integrantes, consultas cruzadas explícitas ocultas,
+views financeiras cruzadas, catálogo/configuração/staff Master ocultos,
+RPC Master negada, chamado próprio criado/lido e chamado cruzado negado,
+acesso anônimo restrito e JWT inválido rejeitado com HTTP 401.
+
+Limites: views financeiras sem fatos próprios não comprovam isolamento financeiro
+positivo por HTTP; os fatos SQL anteriores foram revertidos. Não aprova MFA real,
+perfis/expiração/revogação/suspensão por HTTP, matriz completa de RPCs ou concorrência
+simultânea. Etapa 1 continua EM EXECUÇÃO. A recuperação real por e-mail não foi
+homologada: o proprietário encontrou a senha existente. Manter credenciais somente
+no .env.dev privado local, sem commit/upload. Chamados legítimos do smoke permanecem
+no DEV com prefixo RLS DEV TEST, conforme roteiro.

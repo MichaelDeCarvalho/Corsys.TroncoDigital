@@ -63,3 +63,29 @@ Ver docs/V35_STAGE_1_EVIDENCE.md. Invariantes financeiras e pós-V31 passaram. N
 ## Recuperação de senha DEV — 2026-10-07
 
 Implementado Esqueci minha senha, solicitação resetPasswordForEmail com redirectTo da origem atual, tratamento PASSWORD_RECOVERY e formulário autenticado updateUser. SDK detectSessionInUrl=true; flag de recuperação é somente apresentação, identidade validada por getUser e RLS continua server-side. Formulário compara identidade antes de trocar senha, exige confirmação/12 caracteres, bloqueia duplicidade e limpa campos após tentativa; resposta de solicitação não confirma existência de conta. Recuperação mantém workspace oculto até retorno explícito ao login. Site URL/Redirect URLs DEV configurados conforme relato do proprietário, não conferidos via API. Reenvio e recuperação reais por e-mail dependem de homologação do proprietário; nenhum e-mail enviado pelo agente, nenhuma senha/token lido, nenhum grant ou schema alterado. Não declarar etapa 1 concluída. Ver docs/DEV_PASSWORD_RECOVERY.md.
+
+
+## Smoke HTTP autenticado aprovado — 2026-10-07, 18:20 Brasil
+
+Evidência: saída integral fornecida pelo proprietário, execução local Windows/Node
+v24.20.0 na cópia da branch DEV. O agente não executou este comando com as credenciais;
+a classificação é execução pelo proprietário com resultado PASS apresentado.
+Nenhuma senha, token ou arquivo .env foi recebido.
+
+Comando: npm run test:tenant-isolation.
+Resultado:
+PASS: real Auth identities, tenant reads/RPCs, tenant-to-Master denial and invalid JWT. Financial positive fixtures, MFA, suspension and concurrency remain separate gates.
+
+Baseline HTTP aprovado: login/getUser dos dois UUIDs esperados, consultas próprias
+positivas de organização/integrantes, consultas cruzadas explícitas ocultas,
+views financeiras cruzadas, catálogo/configuração/staff Master ocultos,
+RPC Master negada, chamado próprio criado/lido e chamado cruzado negado,
+acesso anônimo restrito e JWT inválido rejeitado com HTTP 401.
+
+Limites: views financeiras sem fatos próprios não comprovam isolamento financeiro
+positivo por HTTP; os fatos SQL anteriores foram revertidos. Não aprova MFA real,
+perfis/expiração/revogação/suspensão por HTTP, matriz completa de RPCs ou concorrência
+simultânea. Etapa 1 continua EM EXECUÇÃO. A recuperação real por e-mail não foi
+homologada: o proprietário encontrou a senha existente. Manter credenciais somente
+no .env.dev privado local, sem commit/upload. Chamados legítimos do smoke permanecem
+no DEV com prefixo RLS DEV TEST, conforme roteiro.

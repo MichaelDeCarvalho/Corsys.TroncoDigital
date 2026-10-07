@@ -26,7 +26,7 @@ Autorização: proprietário em 2026-10-05 Brasil. Executar oito etapas incremen
 
 ## Pendências da etapa 1
 
-1. Executar npm run test:tenant-isolation em ambiente seguro com senhas existentes; não enviar segredos pelo chat. Sem credenciais disponíveis, não declarar PASS HTTP.
+1. Baseline npm run test:tenant-isolation CONCLUÍDO pelo proprietário em 2026-10-07: PASS informado; ver atualização abaixo. Demais gates HTTP continuam pendentes.
 2. Criar fatos financeiros fictícios por comandos autorizados e validar leituras positivas/negativas; views vazias não são prova positiva.
 3. Exercitar perfis Tesoureiro/Consulta/Integrante, vínculo próprio e revogação real.
 4. Exercitar Master/Support/Billing com MFA real, sessões de suporte, expiração/revogação e isolamento.
@@ -41,3 +41,29 @@ Decisões comerciais: config/commercial-decisions.json e docs/adr/0005-commercia
 ## Continuidade da etapa 1 — 2026-10-06 UTC
 
 Ver docs/V35_STAGE_1_EVIDENCE.md. Invariantes financeiras e pós-V31 passaram. Novos roteiros verify_dev_financial_commands.sql e verify_dev_roles_and_support.sql passaram no DEV: RPCs nas duas lojas, idempotência sequencial/auditoria, leituras próprias/cruzadas, sobrealocação e IDs alheios, suspensão, perfis e suporte temporário/revogação/expiração. Claims simuladas; tudo revertido, zero fixtures temporárias conferidas. Oito testes locais PASS. Etapa 1 permanece em execução: JWT real, MFA real, matriz HTTP e concorrência simultânea ainda não comprovados. Nenhuma alteração de schema, grants, senhas, frontend, produção ou cobrança.
+
+
+## Smoke HTTP autenticado aprovado — 2026-10-07, 18:20 Brasil
+
+Evidência: saída integral fornecida pelo proprietário, execução local Windows/Node
+v24.20.0 na cópia da branch DEV. O agente não executou este comando com as credenciais;
+a classificação é execução pelo proprietário com resultado PASS apresentado.
+Nenhuma senha, token ou arquivo .env foi recebido.
+
+Comando: npm run test:tenant-isolation.
+Resultado:
+PASS: real Auth identities, tenant reads/RPCs, tenant-to-Master denial and invalid JWT. Financial positive fixtures, MFA, suspension and concurrency remain separate gates.
+
+Baseline HTTP aprovado: login/getUser dos dois UUIDs esperados, consultas próprias
+positivas de organização/integrantes, consultas cruzadas explícitas ocultas,
+views financeiras cruzadas, catálogo/configuração/staff Master ocultos,
+RPC Master negada, chamado próprio criado/lido e chamado cruzado negado,
+acesso anônimo restrito e JWT inválido rejeitado com HTTP 401.
+
+Limites: views financeiras sem fatos próprios não comprovam isolamento financeiro
+positivo por HTTP; os fatos SQL anteriores foram revertidos. Não aprova MFA real,
+perfis/expiração/revogação/suspensão por HTTP, matriz completa de RPCs ou concorrência
+simultânea. Etapa 1 continua EM EXECUÇÃO. A recuperação real por e-mail não foi
+homologada: o proprietário encontrou a senha existente. Manter credenciais somente
+no .env.dev privado local, sem commit/upload. Chamados legítimos do smoke permanecem
+no DEV com prefixo RLS DEV TEST, conforme roteiro.
