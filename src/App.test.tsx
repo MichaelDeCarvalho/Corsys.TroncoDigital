@@ -149,3 +149,24 @@ describe('Tenant workspace', () => {
     expect(mock.rpc).not.toHaveBeenCalled()
   })
 })
+
+
+describe('Recovery session boundary', () => {
+  afterEach(() => window.history.replaceState(null, '', '/'))
+  it('handles PASSWORD_RECOVERY without opening tenant queries', async () => {
+    const mock = mockClient()
+    render(<ConnectedApp client={mock.client} />)
+    mock.emit('PASSWORD_RECOVERY', { user: userA })
+    await screen.findByRole('heading', { name: 'Definir nova senha' })
+    expect(mock.from).not.toHaveBeenCalled()
+  })
+  it('does not accept a recovery URL as proof of identity', async () => {
+    window.history.replaceState(null, '', '/?auth=recovery')
+    const mock = mockClient({ user: null })
+    render(<ConnectedApp client={mock.client} />)
+    await screen.findByRole('heading', { name: 'Link de recuperação indisponível' })
+    expect(mock.from).not.toHaveBeenCalled()
+    expect(screen.queryByRole('form', { name: 'Nova senha' })).not.toBeInTheDocument()
+  })
+})
+

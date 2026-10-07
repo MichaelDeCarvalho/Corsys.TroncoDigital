@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { LockKeyhole, ArrowRight } from 'lucide-react'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { RecoveryRequest } from './PasswordRecovery'
 
 export function Login({ client }: { client: SupabaseClient }) {
+  const [recovering, setRecovering] = useState(false)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -25,6 +27,7 @@ export function Login({ client }: { client: SupabaseClient }) {
       setPending(false)
     }
   }
+  if (recovering) return <RecoveryRequest client={client} onBack={() => setRecovering(false)} />
   return <div className="login-layout">
     <section className="login-story" aria-label="Tronco Digital">
       <a className="brand" href="#main"><span className="brand-mark">T</span><span>CORSYS <strong>Tronco Digital</strong></span></a>
@@ -41,8 +44,10 @@ export function Login({ client }: { client: SupabaseClient }) {
           {error && <p role="alert" className="message error">{error}</p>}
           <button className="primary wide" type="submit" disabled={pending}>{pending ? 'Entrando…' : 'Entrar'}<ArrowRight size={18} aria-hidden="true" /></button>
         </form>
+        <button type="button" disabled={pending} onClick={() => setRecovering(true)}>Esqueci minha senha</button>
         <p className="login-note">Precisa de acesso? Entre em contato com o administrador da sua Loja.</p>
       </div>
     </main>
   </div>
 }
+

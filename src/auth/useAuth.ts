@@ -5,6 +5,11 @@ type AuthState = { status: 'checking' | 'anonymous' | 'authenticated' | 'error';
 const anonymous: AuthState = { status: 'anonymous', user: null, error: '' }
 
 export function useAuth(client: SupabaseClient) {
+  // This flag controls presentation only. getUser still validates identity.
+  const recovery = useRef(typeof window !== 'undefined' && (
+    new URLSearchParams(window.location.hash.slice(1)).get('type') === 'recovery'
+    || new URLSearchParams(window.location.search).get('auth') === 'recovery'
+  ))
   const [state, setState] = useState<AuthState>({ status: 'checking', user: null, error: '' })
   const revision = useRef(0)
   const mounted = useRef(false)
@@ -33,6 +38,8 @@ export function useAuth(client: SupabaseClient) {
       // Supabase calls stay outside this callback to avoid the Auth lock deadlock.
       clearTimeout(timer.current)
       ++revision.current
+      if (event === 'PASSWORD_RECOVERY') recovery.current = true
+      if (event === 'SIGNED_OUT') recovery.current = false
       if (event === 'SIGNED_OUT' || !session) {
         setState(anonymous)
       } else {
@@ -56,6 +63,7 @@ export function useAuth(client: SupabaseClient) {
     try {
       const { error } = await client.auth.signOut({ scope: 'local' })
       if (error) throw error
+      recovery.current = false
       if (mounted.current) setState(anonymous)
     } catch {
       if (mounted.current) {
@@ -65,5 +73,6 @@ export function useAuth(client: SupabaseClient) {
     }
   }, [client])
 
-  return { ...state, retry: logoutFailed ? signOut : verify, signOut }
+  return { ...state, recovery: recovery.current, retry: logoutFailed ? signOut : verify, signOut }
 }
+
