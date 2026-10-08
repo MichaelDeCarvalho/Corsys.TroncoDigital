@@ -111,3 +111,10 @@ Ver docs/DEV_SUSPENSION_MFA_GATE.md. Roteiros test:suspension-http (seis RPCs/42
 Proprietário executou check:mfa-posture no Windows com logins reais: A current=aal1 next=aal1 verified_factors=0; B current=aal1 next=aal1 verified_factors=0. Inventário INFO, NÃO aprovação MFA; sem alteração de fatores/Auth. npm ci: zero vulnerabilidades dev-gate; 10 testes locais PASS apresentados. Código de preparação 933d6eb: Foundation checks run 37693053151 success.
 
 JANELA ABERTA: agente executou scripts/suspend_dev_tenant_b_http.sql no DEV autorizado; consulta confirmou B suspended e A active. Aguardar resultado do proprietário para npm run test:suspension-http. Restaurar B com scripts/restore_dev_tenant_b_http.sql imediatamente ao receber resultado, inclusive se FAIL, ou se proprietário interromper os testes. Em seguida validar npm run test:restoration-http com login real. Não marcar suspensão HTTP como PASS antes da saída. Nenhum ledger/Auth/grant/schema/produção alterado; status temporário somente assinatura fictícia zero-price B. Notas anteriores de ambas active referem-se à preparação, não à janela atual.
+
+
+## Suspensão HTTP aprovada e janela encerrada — 2026-10-07, 21:54 Brasil
+
+Proprietário executou npm run test:suspension-http com logins/JWT reais. Seis negativas 42501 PASS: create_manual_charge, register_payment, allocate_payment_to_charge, allocate_payment_fifo, cancel_charge, reverse_payment. Próprias views financeiras positivas e saldos preservados; A active. Tag DEV SUSPENSION 7cb919d9-81de-402a-b708-9404af5c5e3c. Saída apresentada pelo proprietário; agente não recebeu credenciais nem executou HTTP autenticado.
+
+JANELA ENCERRADA: imediatamente após saída, agente executou scripts/restore_dev_tenant_b_http.sql no projeto DEV e consulta confirmou A active e B active. Isto supera o registro anterior de B suspended. Pendente npm run test:restoration-http para provar retomada positiva com JWT real. Suspensão validada somente B, status suspended e seis RPCs; canceled/past_due/security_hold, demais RPCs/perfis/revogação e MFA real não aprovados. Sem alterações em Auth, ledger, schema/grants, cobrança ou produção; etapa 1 segue aberta.
