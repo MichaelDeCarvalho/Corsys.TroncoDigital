@@ -6,7 +6,7 @@ import {randomUUID} from 'node:crypto'
 import {createClient} from '@supabase/supabase-js'
 import {qrDataUrl} from '../tools/mfa-local.mjs'
 import {assertDevEnvironment} from '../tools/dev-environment.mjs'
-import {assertHidden,assertPermissionDenied,requireRows} from '../tools/isolation-assertions.mjs'
+import {assertPermissionDenied,requireRows} from '../tools/isolation-assertions.mjs'
 assert.equal(assertDevEnvironment(),'szqkdekwhzxsoxorgvaz')
 const email='michael.c.carvalho+corsys-dev-master@gmail.com',id=process.env.TEST_MASTER_USER_ID
 assert.match(id||'',/^[0-9a-f-]{36}$/i,'Fill TEST_MASTER_USER_ID from the dedicated Auth account')
@@ -40,7 +40,9 @@ try {
  assert.equal(aal.currentLevel,'aal1')
  const args={p_plan_id:planId,p_active:true,p_reason:tag}
  assertPermissionDenied(await c.rpc('set_saas_plan_active',args),'Master password-only operation')
- assertHidden(await c.from('platform_staff').select('user_id').eq('user_id',id),'AAL1 staff RLS')
+ const ownBefore=requireRows(await c.from('platform_staff').select('user_id,role,active'),'AAL1 staff self scope')
+ assert.equal(ownBefore.length,1,'AAL1 must expose only the dedicated own staff row')
+ assert.equal(ownBefore[0].user_id,id);assert.equal(ownBefore[0].role,'MASTER');assert.equal(ownBefore[0].active,true)
  console.log('PASS: dedicated identity, signed password session and privileged AAL1 denial')
  const factors=demand(await c.auth.mfa.listFactors(),'Factor list')
  assert.ok(Array.isArray(factors.all),'Missing factor inventory')
