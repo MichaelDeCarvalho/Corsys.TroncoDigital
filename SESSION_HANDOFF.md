@@ -1,3 +1,13 @@
+## Retomada sem Work — 2026-10-08, Etapa 2 / incremento 5
+
+- Base: `feat/v35-dev-gate-20261002`, PR draft #4; migração 24 aplicada somente DEV: `20261008211155_member_term_transition`.
+- Implementação: transição atômica de termo mensal aberto, validação de competência futura, lock, idempotência, auditoria, autorização `settings.manage`, sem escrita direta nem alteração de ledger.
+- UI: substituir ou encerrar condição individual/isenção na ficha do integrante, tratamento de conflito `40001` e atualização de histórico.
+- Evidência: SQL DEV executado para A/B com testes positivos/negativos, exceções financeiras e `ROLLBACK`, `DEV_MEMBER_TERM_TRANSITION_ROLLBACK_PASS`. Integridade histórica e 24 migrations no manifesto.
+- Não avaliado nesta verificação: HTTP/JWT real da nova RPC, concorrência de clientes simultâneos, preview visual desktop/mobile, paridade V35 integral. Não declarar produção pronta.
+- Próximo incremento: contas financeiras, fundos, meios de pagamento, parâmetros e plano de contas, preservando piloto e ACLs. Nova UI precisa ser validada pela CI no commit efetivo.
+- Sem merge, deploy de produção, novo provider ou custo pago.
+
 # SESSION HANDOFF — 2026-10-03 UTC / 2026-10-02 Brasil
 
 ## Etapa 2 — catálogo mensal entregue, 2026-10-08

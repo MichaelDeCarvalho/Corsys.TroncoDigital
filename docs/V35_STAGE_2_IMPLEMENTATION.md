@@ -1,3 +1,13 @@
+## Incremento 5 — sucessão/encerramento de termos futuros, 2026-10-08
+
+Implementado o comando `transition_member_term`: ADMIN/`settings.manage`; usa idempotência, validação de escopo, lock de integrante e linha, auditoria, requisito de competência futura e encerramento inclusivo na competência anterior. Escolha de término sem sucessor retorna ao valor da regra geral; sucessor pode ser `standard`, `exempt` ou `override_amount`. O tipo/valor do termo anterior, cobrança e pagamento já registrados permanecem intactos. Não substitui geração de cobranças.
+
+Schema aplicado somente no Supabase DEV, migração `20261008211155_member_term_transition`; fonte e sha256 versionados no manifesto. UI `MemberConfiguration` acrescenta a substituição/encerramento de termo sem fim, seleção da competência, valor/isenção, motivo e botão de atualização após conflito. O formulário usa o retry idempotente e a autorização do banco; `40001` é conflito definitivo, não resultado ambíguo.
+
+Testes SQL reais com `ROLLBACK` executados no DEV para organizações A/B: cenário positivo, retry idempotente, vigência/sucessor, fechamento puro, valores inválidos (NaN, Infinity, precisão, overflow), período inválido, referência cruzada, `40001`, auditoria, cargos TREASURER/VIEWER e assinatura suspensa negados, anon sem EXECUTE e contagens de charges/payments preservadas: `DEV_MEMBER_TERM_TRANSITION_ROLLBACK_PASS`. Script versionado em `scripts/verify_dev_member_term_transition.sql`. SQL com claims AAL1 simuladas não equivale a HTTP/JWT real ou corrida simultânea; novo frontend/CI, preview e paridade integral requerem homologação separada.
+
+Próximo: contas/fundos/meios, parâmetros da Loja, plano/mapeamentos, regras especiais e operações financeiras, sem perder o escopo do HTML V35.
+
 # V35 — etapa 2: integrantes, parâmetros e estrutura financeira
 
 ## Incremento 4 — categorias e regras mensais, 2026-10-08

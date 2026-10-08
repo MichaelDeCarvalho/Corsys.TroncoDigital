@@ -116,3 +116,11 @@ no DEV com prefixo RLS DEV TEST, conforme roteiro.
 
 Ver docs/DEV_FINANCIAL_HTTP_GATE.md. Estrutura financeira fictícia persistida nas duas lojas e plano DEV de valor zero com assinaturas active, sem cobrança, Auth/grants/schema alterados. Comandos SQL com claims simuladas despachados em paralelo: saldo disputado preservou uma alocação de 100 e crédito zero; mesma chave preservou uma cobrança/audit. Sobreposição exata não instrumentada; não equivale a HTTP real. Novo npm run test:financial-http preparado para credenciais privadas locais; 10 testes locais PASS e sintaxe PASS. Roteiro HTTP financeiro e MFA/suspensão/matriz ainda pendentes. Não apagar ledger nem repetir seed/roteiro após falha sem inspeção. Scripts antigos com precondição de zero planos/assinaturas agora bloqueiam por fixture alterada, esperado.
 
+
+## Marco DEV — 2026-10-08
+
+- Etapa 2 ganhou comando transacional e UI de sucessão/encerramento de mensalidade individual, com migração `20261008211155_member_term_transition`.
+- Transição só em competência futura, com `settings.manage`, auditoria, idempotência, isolamento de tenant e sem alterações em cobranças passadas.
+- Os fluxos do piloto V35 ainda não estão integralmente implementados; pagamentos/recorrência/planos/relatórios e paridade de todas as telas continuam backlog.
+- Produção não autorizada; CI/HTTP real novos e homologação visual permanecem gates de aceite.
+

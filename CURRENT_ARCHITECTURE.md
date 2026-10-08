@@ -118,3 +118,8 @@ no DEV com prefixo RLS DEV TEST, conforme roteiro.
 
 Ver docs/DEV_FINANCIAL_HTTP_GATE.md. Estrutura financeira fictícia persistida nas duas lojas e plano DEV de valor zero com assinaturas active, sem cobrança, Auth/grants/schema alterados. Comandos SQL com claims simuladas despachados em paralelo: saldo disputado preservou uma alocação de 100 e crédito zero; mesma chave preservou uma cobrança/audit. Sobreposição exata não instrumentada; não equivale a HTTP real. Novo npm run test:financial-http preparado para credenciais privadas locais; 10 testes locais PASS e sintaxe PASS. Roteiro HTTP financeiro e MFA/suspensão/matriz ainda pendentes. Não apagar ledger nem repetir seed/roteiro após falha sem inspeção. Scripts antigos com precondição de zero planos/assinaturas agora bloqueiam por fixture alterada, esperado.
 
+
+## Incremento DEV 2026-10-08 — configuração individual versionada
+
+`recurring_member_terms` registra `effective_from`, `effective_to` inclusivo, `term_type` e `override_amount`. A nova RPC autenticada `public.transition_member_term` exige `settings.manage` e assinatura elegível, fecha uma linha aberta com lock e opcionalmente cria sucessor em única transação. Também suporta apenas encerrar o termo, retornando à regra geral. Preserva lançamentos existentes. O frontend `MemberConfiguration` chama a RPC com idempotency key e não recebe grants de escrita direta. Alteração apenas DEV, migração `20261008211155`. Segurança exercitada via SQL/claims simuladas A/B; HTTP/JWT real permanece obrigatório antes de homologar.
+
