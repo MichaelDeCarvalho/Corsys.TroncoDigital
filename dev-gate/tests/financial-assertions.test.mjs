@@ -16,3 +16,11 @@ test('competition requires one success and an exact balance constraint failure',
  assert.throws(() => oneWinner([{data:null,error:{code:'23514'}},{data:null,error:{code:'23514'}}]))
 })
 
+test('lifecycle concurrency rejects duplicate successes and unrelated failures', async () => {
+ const {oneLifecycleEvent}=await import('../tools/financial-assertions.mjs')
+ assert.equal(oneLifecycleEvent([win,{data:null,error:{code:'23505'}}]),id)
+ assert.equal(oneLifecycleEvent([{data:null,error:{code:'23505'}},win]),id)
+ for(const code of ['NETWORK','42501','23514','P0002']) assert.throws(()=>oneLifecycleEvent([win,{data:null,error:{code}}]))
+ assert.throws(()=>oneLifecycleEvent([win,win]))
+ assert.throws(()=>oneLifecycleEvent([{data:null,error:{code:'23505'}},{data:null,error:{code:'23505'}}]))
+})

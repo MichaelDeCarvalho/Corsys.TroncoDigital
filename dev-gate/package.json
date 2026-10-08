@@ -10,7 +10,8 @@
     "test:financial-http": "node --env-file=.env.dev tests/financial-http.mjs",
     "test:suspension-http": "node --env-file=.env.dev tests/suspension-http.mjs blocked",
     "test:restoration-http": "node --env-file=.env.dev tests/suspension-http.mjs restored",
-    "check:mfa-posture": "node --env-file=.env.dev tests/mfa-posture.mjs"
+    "check:mfa-posture": "node --env-file=.env.dev tests/mfa-posture.mjs",
+    "test:financial-lifecycle": "node --env-file=.env.dev tests/financial-lifecycle.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.117.2"

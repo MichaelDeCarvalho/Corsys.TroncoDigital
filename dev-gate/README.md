@@ -59,3 +59,10 @@ Ver ../docs/DEV_SUSPENSION_MFA_GATE.md para a sequência completa e restauraçã
 `npm run test:suspension-http` exige B suspended/A active antes de probes.
 `npm run test:restoration-http` exige ambas active e cria pagamento fictício 1 na B.
 Não suspender loja sem conseguir executar a restauração na mesma janela de teste.
+
+## Estornos/cancelamentos HTTP
+`npm run test:financial-lifecycle`: ver ../docs/DEV_FINANCIAL_LIFECYCLE_GATE.md.
+Novo gate de 11 testes locais (substitui a contagem de 10 dos incrementos anteriores).
+Somente fatos novos fictícios são corrigidos por eventos, sem apagar ledger anterior.
+Exige ambas assinaturas active e verifica concorrência de eventos (um sucesso/23505),
+saldos, auditoria, motivos/períodos e recursos alheios. Não é MFA/revogação/full matrix PASS.

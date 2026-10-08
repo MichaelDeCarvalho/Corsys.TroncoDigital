@@ -17,3 +17,13 @@ export function oneWinner(results) {
   return wins[0].data
 }
 
+export function oneLifecycleEvent(results) {
+ assert.equal(results.length,2)
+ const wins=results.filter(r=>r.error===null)
+ const losses=results.filter(r=>r.error!==null)
+ assert.equal(wins.length,1,'Expected exactly one lifecycle event')
+ assert.equal(losses.length,1)
+ assert.equal(losses[0].error?.code,'23505','Only an exact duplicate event rejection counts')
+ assert.match(wins[0].data||'',/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
+ return wins[0].data
+}
