@@ -100,6 +100,11 @@ p { line-height: 1.6; }
 .member-details { min-width: 220px; margin-top: 16px; font-weight: normal; }
 .member-details dt { color: #aabfce; font-size: .8rem; margin-top: 12px; }
 .member-details dd { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.member-editor { margin-bottom: 24px; }
+.member-editor fieldset { border: 0; margin: 0; padding: 0; }
+.member-editor legend { margin-bottom: 16px; color: #aabfce; }
+.member-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 16px; }
+.member-form-actions { display: flex; flex-wrap: wrap; gap: 12px; }
 .list-note { margin-bottom: 0; margin-top: 20px; font-size: .75rem; }
 .support-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 23px; }
 .ticket-list li { display: flex; justify-content: space-between; align-items: flex-start; gap: 13px; border-bottom: 1px solid #203446; padding: 20px 0; }
