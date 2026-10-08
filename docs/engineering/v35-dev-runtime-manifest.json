@@ -163,6 +163,15 @@
       "sha256": "a32b3a985418074a72f1a46f2e8010eab1d218b6e56959c5d40a50658387b797",
       "applied_at": "2026-10-08",
       "note": "Forward-only server validation: finite numeric amount bounded to numeric(14,2); preserves grants, RLS and existing data."
+    },
+    {
+      "version": "20261008203643",
+      "name": "tenant_monthly_rule_catalog",
+      "source_path": "supabase/migrations/20261008203110_tenant_monthly_rule_catalog.sql",
+      "path": "supabase/migrations/20261008203643_tenant_monthly_rule_catalog.sql",
+      "sha256": "c7e75db76ffee24bef74090996cb93531c7286915dc45fb0bacb8f04514d26a4",
+      "applied_at": "2026-10-08",
+      "note": "Three authorized catalog/price RPCs; no change to existing category flags, RLS, grants on tables or financial facts."
     }
   ],
   "baseline_patches": {

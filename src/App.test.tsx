@@ -86,6 +86,15 @@ describe('Login and session boundary', () => {
 })
 
 describe('Tenant workspace', () => {
+  it('opens the connected financial structure from the application navigation', async () => {
+    const mock = mockClient()
+    render(<Workspace client={mock.client} user={userA} onSignOut={vi.fn()} />)
+    await screen.findByText('Integrante A')
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Navegação principal' })).getByRole('button', { name: 'Plano de Contas' }))
+    await screen.findByRole('form', { name: 'Cadastrar categoria financeira' })
+    expect(mock.from).toHaveBeenCalledWith('financial_categories')
+    expect(mock.from).toHaveBeenCalledWith('recurring_rules')
+  })
   it('opens the financial consultation through the application navigation', async () => {
     const mock = mockClient()
     render(<Workspace client={mock.client} user={userA} onSignOut={vi.fn()} />)

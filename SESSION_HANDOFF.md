@@ -1,5 +1,11 @@
 # SESSION HANDOFF — 2026-10-03 UTC / 2026-10-02 Brasil
 
+## Etapa 2 — catálogo mensal entregue, 2026-10-08
+
+Implementado FinancialStructure em navegação Plano de Contas; cria categoria, regra mensal/preço inicial futuro e programa preço sucessor. MigrationCLI2.119.0 alinhada ao DEV20261008203643, total23no manifesto. Ver ADR0008 e docs/V35_STAGE_2_IMPLEMENTATION.md. Typecheck/45 testes/build PASS; placeholder público de build, sem publicação. SQL DEV_MONTHLY_RULE_CATALOG_ROLLBACK_PASS antes/depois DDL; teste final ampliado suspensão3RPCs PASS. Claims simuladas, sem credenciais/HTTPnovo. Pós-teste8categorias originais, regras/preços/termos0, doisADMIN e subscriptionsactive, flags originaisallow_recurrencefalse. Ledger não modificado. Advisors43/3/1. Nenhuma produção/custo/merge.
+Próximo: sucessão/encerramento de termos individuais; catálogos de contas/fundos/meios, parâmetros Loja e plano/mapeamentos. Preservar natureza neutra/repasse e regras especiais do piloto; regras anuais/institucionais e geração/previsão não implementadas aqui. Consolidação HTTP real e paridade visual/mobile ainda pendentes. CI após push; preview não publicado por esta sessão.
+
+
 ## Validação final de valores individuais — 2026-10-08
 
 Migration20261008202409 rejeita NaN/Infinity/-Infinity, valores acima de999999999999.99, negativos e precisão maior que2casas com22023 antes de qualquer persistência. Correção aditiva da RPC, sem editar migration já aplicada; mesmo catálogo/permissões/idem/audit. PostgreSQL aceita NaN em comparação não negativa; validação explícita necessária no servidor, além do formulário. Teste rollback ampliado NaN/Infinity/overflow passou antes/depois de aplicação. Nenhum valor não finito persistido pelo teste. Total22migrations alinhadas ao manifesto. Advisors permanecem40/3/1.

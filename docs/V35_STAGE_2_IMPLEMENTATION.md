@@ -1,5 +1,21 @@
 # V35 — etapa 2: integrantes, parâmetros e estrutura financeira
 
+## Incremento 4 — categorias e regras mensais, 2026-10-08
+
+Implementados cadastro de categoria (nome, descrição, domínio, ativa/inativa, recorrência de integrante e parcelamento), regra mensal (descrição, categoria elegível, valor positivo, competência inicial futura, dia1..31) e preço sucessor futuro. Integração na área Plano de Contas/Categorias e Regras, layout comum por Loja. Não homologar o Plano de Contas completo.
+
+RPCs settings.manage: IDs próprios, allow_recurrence/active/member_receivable obrigatórios para regra, idempotência, auditoria, rejeição de nomes duplicados, preços finitos de2casas até999999999999.99. Reajuste serializa pela regra, exige UUID da última versão (stale40001), encerra período anterior no mês antes do sucessor e acrescenta preço. Valor original preservado; charges/payments não recebem UPDATE/INSERT. Alteração futura não muda cobranças postadas.
+
+UI consulta até200categorias/regras/preços; preços limitados aos IDs de regras próprias. Erro/empty/retry explícitos, resposta ambígua mantém envio e bloqueia campos, conflito requer atualização. Última versão exibida pode ser uma programação futura. Limite200não é paginação completa; se amostra não inclui última versão, backend nega versão obsoleta. Históricos/cargas maiores exigem paginação.
+
+Verificação: DEV_MONTHLY_RULE_CATALOG_ROLLBACK_PASS antes/depois migration20261008203643; positivosA/B categoria/regra/preço, retrymesmoUUID/semduplo audit, payload alterado22023, duplicado23505, futuro/precisão/NaN/Infinity22023, IDs estrangeiros23503, staleness40001, leitura cruzada oculta, escrita direta negada, TREASURER e assinatura suspensa3RPCs42501, anon semEXECUTE, termo isento em nova regra positivo; counts charges/payments preservados. Claims SQL simuladas, NÃO HTTP/JWT real ou corrida simultânea. TudoROLLBACK;8categorias originais, regras/preços/termos0, ADMIN A/B/assinaturasactive/flagsallow_recurrencefalse conferidos.
+Typecheck,45testes frontend e build PASS, sem auth/deploy com placeholder. CI registrar no PR após push. Advisors43/3/1, sem nova política/grant de tabela. Changelog/documentação oficial consultados; PostgreSQL17.11 e nenhum índice público gistfloat/ltree encontrado na inspeção restrita relevante. Não é auditoria integral das alterações da plataforma.
+
+Paridade parcial obrigatória: DYN-008 natureza neutra/repasse e vínculo contábil DRE ainda pendentes; domínio operacional não substitui natureza contábil. DYN-009 mensal implementado, regras especiais/anuais/institucionais, edição/ativação e geração/prévia ainda pendentes. Flags de parcelamento configuradas não homologam a jornada de parcelamento. Não concluir etapa2 nem perder mútuas710–721/722–745, GLP, ágapes, joia e demais regras documentadas. Reajuste não executa cobrança/Stripe.
+
+Recuperação: forward-fix; se falha operacional, revogar EXECUTE das três RPCs e manter leituras/histórico. Sem reset/drop/backfill/produção. Migração23 no manifesto com hash alinhado. Próximo: sucessão de termos individuais e catálogos/estrutura contábil restantes.
+
+
 ## Validação final de valores individuais — 2026-10-08
 
 Migration20261008202409 rejeita NaN/Infinity/-Infinity, valores acima de999999999999.99, negativos e precisão maior que2casas com22023 antes de qualquer persistência. Correção aditiva da RPC, sem editar migration já aplicada; mesmo catálogo/permissões/idem/audit. PostgreSQL aceita NaN em comparação não negativa; validação explícita necessária no servidor, além do formulário. Teste rollback ampliado NaN/Infinity/overflow passou antes/depois de aplicação. Nenhum valor não finito persistido pelo teste. Total22migrations alinhadas ao manifesto. Advisors permanecem40/3/1.

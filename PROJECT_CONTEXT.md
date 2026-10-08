@@ -1,5 +1,10 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Etapa 2 — categorias/regras mensais implementadas, 2026-10-08
+
+Cadastro de categoria por domínio/estado/recorrência/parcelamento, regra mensal com preço inicial futuro e preço sucessor conectados ao backend; migração23 aplicada DEV20261008203643. O catálogo vivo permanece com8categorias originais e nenhuma regra/preço novo persistido pelos testes. Não alterar elegibilidade existente nem semear valores de negócio sem revisão do piloto. CI anterior a301a83f/37839360346success; entrega atual conferir depois do push. Etapa2 EM EXECUÇÃO. Ver docs/V35_STAGE_2_IMPLEMENTATION.md para escopo/testes/limitações; campos/fluxos V35 pendentes permanecem obrigatórios.
+
+
 ## Validação final de valores individuais — 2026-10-08
 
 Migration20261008202409 rejeita NaN/Infinity/-Infinity, valores acima de999999999999.99, negativos e precisão maior que2casas com22023 antes de qualquer persistência. Correção aditiva da RPC, sem editar migration já aplicada; mesmo catálogo/permissões/idem/audit. PostgreSQL aceita NaN em comparação não negativa; validação explícita necessária no servidor, além do formulário. Teste rollback ampliado NaN/Infinity/overflow passou antes/depois de aplicação. Nenhum valor não finito persistido pelo teste. Total22migrations alinhadas ao manifesto. Advisors permanecem40/3/1.

@@ -1,5 +1,10 @@
 # CURRENT ARCHITECTURE
 
+## Categorias e regras mensais — 2026-10-08
+
+FinancialStructure.tsx conecta a área Plano de Contas → categorias/regras mensais. financial-structure.ts consulta categorias/regras por organization_id e preços somente dos IDs dessas regras, com abort/rejeição de escopo. Novas RPCs create_tenant_financial_category, create_tenant_monthly_rule e schedule_tenant_monthly_price usam settings.manage, idempotência/audit e search_path vazio, sem escrita direta/RLS alterada. Preço sucessor bloqueia regra, compara último UUID e encerra sua vigência em competência anterior; nunca altera unit_amount anterior ou charges/payments. Ver docs/V35_STAGE_2_IMPLEMENTATION.md e ADR0008.
+
+
 ## Validação final de valores individuais — 2026-10-08
 
 Migration20261008202409 rejeita NaN/Infinity/-Infinity, valores acima de999999999999.99, negativos e precisão maior que2casas com22023 antes de qualquer persistência. Correção aditiva da RPC, sem editar migration já aplicada; mesmo catálogo/permissões/idem/audit. PostgreSQL aceita NaN em comparação não negativa; validação explícita necessária no servidor, além do formulário. Teste rollback ampliado NaN/Infinity/overflow passou antes/depois de aplicação. Nenhum valor não finito persistido pelo teste. Total22migrations alinhadas ao manifesto. Advisors permanecem40/3/1.

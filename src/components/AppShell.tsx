@@ -1,8 +1,8 @@
-import { Home, Users, MessagesSquare, LogOut, Wallet } from 'lucide-react'
+import { Home, Users, MessagesSquare, LogOut, Wallet, Settings } from 'lucide-react'
 import type { ReactNode } from 'react'
 
-export type Page = 'home' | 'members' | 'finance' | 'support'
-const navigation = [{ id: 'home' as const, label: 'Início', Icon: Home }, { id: 'members' as const, label: 'Integrantes', Icon: Users }, { id: 'finance' as const, label: 'Financeiro', Icon: Wallet }, { id: 'support' as const, label: 'Chamados', Icon: MessagesSquare }]
+export type Page = 'home' | 'members' | 'finance' | 'support' | 'structure'
+const navigation = [{ id: 'home' as const, label: 'Início', Icon: Home }, { id: 'members' as const, label: 'Integrantes', Icon: Users }, { id: 'finance' as const, label: 'Financeiro', Icon: Wallet }, { id: 'support' as const, label: 'Chamados', Icon: MessagesSquare }, { id: 'structure' as const, label: 'Plano de Contas', Icon: Settings }]
 
 export function AppShell({ children, page, onNavigate, onSignOut, email }: { children: ReactNode; page: Page; onNavigate: (page: Page) => void; onSignOut: () => void; email: string }) {
   function links() {
@@ -22,3 +22,4 @@ export function AppShell({ children, page, onNavigate, onSignOut, email }: { chi
     <nav className="mobile-nav" aria-label="Navegação móvel">{links()}</nav>
   </div>
 }
+

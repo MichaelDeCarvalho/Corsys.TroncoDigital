@@ -1,5 +1,11 @@
 # SECURITY REGISTER
 
+## RPCs de catálogo/preço — 2026-10-08
+
+Três novas RPCs definer intencionais sob settings.manage/require_permission (ADMIN no catálogo atual), assinatura ativa e IDs próprios; anon semEXECUTE, tabelas sem novos grants, RLS preservada. Nomes duplicados normalizados protegidos por advisory lock; preço finito/positivo/decimal limitado numeric(14,2). Preço sucessor usa lock da regra e UUID esperado; conflito40001, IDs estrangeiros23503. Nenhuma edição direta de valor histórico, category.default_behavior ou fatos financeiros.
+SQL rollback A/B positivo/negativo, auditoria/retry, TREASURER, suspensão e leitura cruzada PASS; não equivale a HTTP/JWT real nem concorrência simultânea. UI mantém mesmo payload/chave quando resultado ambíguo e exige atualização em conflito. Advisors43RPC autenticadas definer (40anteriores+3),3backendsem policies e aviso de senha vazada preexistente. Documentar controles em vez de abrir grants/RLS para reduzir avisos.
+
+
 ## Validação final de valores individuais — 2026-10-08
 
 Migration20261008202409 rejeita NaN/Infinity/-Infinity, valores acima de999999999999.99, negativos e precisão maior que2casas com22023 antes de qualquer persistência. Correção aditiva da RPC, sem editar migration já aplicada; mesmo catálogo/permissões/idem/audit. PostgreSQL aceita NaN em comparação não negativa; validação explícita necessária no servidor, além do formulário. Teste rollback ampliado NaN/Infinity/overflow passou antes/depois de aplicação. Nenhum valor não finito persistido pelo teste. Total22migrations alinhadas ao manifesto. Advisors permanecem40/3/1.
