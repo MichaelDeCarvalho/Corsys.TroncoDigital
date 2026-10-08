@@ -8,6 +8,6 @@ export function qrDataUrl(qr) {
   if(header.includes(';base64'))svg=Buffer.from(body,'base64').toString('utf8')
   else {try{svg=decodeURIComponent(body)}catch{svg=body}}
  }
- if(!/^\s*(?:<\?xml[^>]*>\s*)?<svg[\s>]/i.test(svg))throw Error('Only local SVG QR accepted')
+ if(!/^\s*(?:<\?xml[^>]*>\s*)?(?:<!--[\s\S]*?-->\s*)*<svg[\s>]/i.test(svg))throw Error('Only local SVG QR accepted')
  return 'data:image/svg+xml;base64,'+Buffer.from(svg).toString('base64')
 }
