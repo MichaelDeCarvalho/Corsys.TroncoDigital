@@ -3,6 +3,7 @@ import { Users, MessagesSquare, Building2, ArrowUpRight, RefreshCw } from 'lucid
 import type { SupabaseClient, User } from '@supabase/supabase-js'
 import { AppShell, type Page } from './AppShell'
 import { Finance } from './Finance'
+import { Members } from './Members'
 import { loadOrganizations, loadTenantData, openTicket, type Organization, type TenantData } from '../lib/tenant-data'
 
 const statuses: Record<string, string> = { active: 'Ativo', inactive: 'Inativo', new: 'Novo', triage: 'Em triagem', working: 'Em atendimento', waiting_client: 'Aguardando retorno', resolved: 'Resolvido', closed: 'Fechado' }
@@ -37,7 +38,6 @@ function TenantPanel({ client, organization, page, onNavigate }: { client: Supab
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [revision, setRevision] = useState(0)
-  const [search, setSearch] = useState('')
   const [sent, setSent] = useState(false)
   useEffect(() => {
     const controller = new AbortController()
@@ -49,7 +49,6 @@ function TenantPanel({ client, organization, page, onNavigate }: { client: Supab
   if (loading) return <p role="status" className="message">Carregando dados da Loja…</p>
   if (error || !data) return <div className="panel"><p role="alert" className="message error">{error}</p><button className="secondary" onClick={() => setRevision(value => value + 1)}>Tentar novamente</button></div>
   const open = data.tickets.filter(ticket => !['resolved', 'closed'].includes(ticket.status))
-  const filtered = data.members.filter(member => member.full_name.toLocaleLowerCase('pt-BR').includes(search.toLocaleLowerCase('pt-BR')))
   return <>
     {page === 'finance' && <Finance key={organization.id} client={client} organizationId={organization.id} />}
     {sent && page === 'support' && <p role="status" className="message">Chamado enviado. A lista foi atualizada.</p>}
@@ -58,7 +57,7 @@ function TenantPanel({ client, organization, page, onNavigate }: { client: Supab
       <div className="metric-grid"><article className="panel metric"><Users size={23} aria-hidden="true" /><p>Integrantes carregados</p><strong>{data.members.length}</strong><button className="text-button" onClick={() => onNavigate('members')}>Ver integrantes <ArrowUpRight size={16} aria-hidden="true" /></button></article><article className="panel metric"><MessagesSquare size={23} aria-hidden="true" /><p>Chamados abertos carregados</p><strong>{open.length}</strong><button className="text-button" onClick={() => onNavigate('support')}>Acompanhar chamados <ArrowUpRight size={16} aria-hidden="true" /></button></article><article className="panel info-card"><p className="eyebrow">Atendimento</p><h3>Precisa de ajuda?</h3><p>Abra um chamado para acompanhar sua solicitação junto ao suporte.</p><button className="secondary" onClick={() => onNavigate('support')}>Ir para atendimento</button></article></div>
       <section className="panel"><div className="section-title"><h2>Integrantes da Loja</h2><button className="text-button" onClick={() => onNavigate('members')}>Ver lista</button></div><MemberList members={data.members.slice(0, 5)} /></section>
     </>}
-    {page === 'members' && <section className="panel"><div className="section-title"><h2>Cadastro de integrantes</h2><span className="pill">{data.members.length} carregados</span></div><label htmlFor="member-search">Buscar integrante</label><input className="search-input" id="member-search" value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar pelo nome" type="search" /><MemberList members={filtered} /><p className="subtle list-note">Exibindo até 200 integrantes. Cadastro e edição serão disponibilizados nas próximas etapas.</p></section>}
+    {page === 'members' && <Members members={data.members} />}
     {page === 'support' && <div className="support-grid"><section className="panel"><div className="section-title"><h2>Meus chamados</h2><button className="quiet" onClick={() => setRevision(value => value + 1)} aria-label="Atualizar chamados"><RefreshCw size={18} aria-hidden="true" /></button></div>{!data.tickets.length ? <div className="empty"><MessagesSquare size={30} aria-hidden="true" /><h3>Nenhum chamado por aqui</h3><p>Suas solicitações aparecerão nesta lista.</p></div> : <ul className="ticket-list">{data.tickets.map(ticket => <li key={ticket.id}><div><span className="subtle">#{ticket.ticket_seq} · {new Date(ticket.opened_at).toLocaleDateString('pt-BR')}</span><h3>{ticket.subject}</h3></div><span className="pill">{statuses[ticket.status] ?? ticket.status}</span></li>)}</ul>}<p className="subtle list-note">Até 100 chamados mais recentes desta Loja.</p></section><section className="panel"><h2>Novo chamado</h2><p className="subtle">Conte como podemos ajudar.</p><TicketForm client={client} organizationId={organization.id} onCreated={() => { setSent(true); setRevision(value => value + 1) }} /></section></div>}
   </>
 }

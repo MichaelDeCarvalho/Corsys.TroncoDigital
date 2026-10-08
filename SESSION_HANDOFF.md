@@ -1,5 +1,9 @@
 # SESSION HANDOFF — 2026-10-03 UTC / 2026-10-02 Brasil
 
+## Etapa 2 — primeiro incremento de consulta cadastral
+
+Busca por nome/contato, quatro situações e ficha dos campos existentes implementadas; ver docs/V35_STAGE_2_IMPLEMENTATION.md. Typecheck/32 testes/build PASS; SQL A/B dos campos ampliados isolados PASS com claims simuladas. Sem writes/schema/grants. Cadastro/edição, cargos/termos com vigência, mensalidade/isenção e estrutura configurável continuam pendentes. Build placeholder não prova deploy; conferir CI após push e não declarar paridade/etapa2 concluída. CI do encerramento etapa1 0bb69d7: run37833762180success.
+
 ## Estado atual — 2026-10-08 Brasil
 
 Etapa 1 CONCLUÍDA no DEV; etapa 2 EM EXECUÇÃO, começando pela conciliação de integrantes, parâmetros e estrutura financeira com o piloto V35. Evidência consolidada e limites: [V35_STAGE_1_CLOSURE_REPORT.md](docs/V35_STAGE_1_CLOSURE_REPORT.md).

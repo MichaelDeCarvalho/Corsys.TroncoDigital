@@ -1,7 +1,12 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 export type Organization = { id: string; name: string; number: string | null; status: string }
-export type Member = { id: string; organization_id: string; full_name: string; status: string }
+export type Member = {
+  id: string; organization_id: string; full_name: string; status: string
+  preferred_name?: string | null; degree_or_office?: string | null
+  phone?: string | null; whatsapp?: string | null; email?: string | null
+  initiation_date?: string | null; admission_date?: string | null; notes?: string | null
+}
 export type Ticket = { id: string; organization_id: string; ticket_seq: number; subject: string; status: string; priority: string; opened_at: string }
 export type TenantData = { members: Member[]; tickets: Ticket[] }
 
@@ -13,7 +18,7 @@ export async function loadOrganizations(client: SupabaseClient, signal: AbortSig
 
 export async function loadTenantData(client: SupabaseClient, organizationId: string, signal: AbortSignal): Promise<TenantData> {
   const [members, tickets] = await Promise.all([
-    client.from('members').select('id,organization_id,full_name,status').eq('organization_id', organizationId).order('full_name').limit(200).abortSignal(signal),
+    client.from('members').select('id,organization_id,full_name,status,preferred_name,degree_or_office,phone,whatsapp,email,initiation_date,admission_date,notes').eq('organization_id', organizationId).order('full_name').limit(200).abortSignal(signal),
     client.from('saas_support_tickets').select('id,organization_id,ticket_seq,subject,status,priority,opened_at').eq('organization_id', organizationId).order('opened_at', { ascending: false }).limit(100).abortSignal(signal),
   ])
   if (members.error) throw members.error

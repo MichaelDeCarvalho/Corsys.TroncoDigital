@@ -91,6 +91,15 @@ p { line-height: 1.6; }
 .avatar { display: grid; place-items: center; width: 37px; height: 37px; border-radius: 50%; background: #1f3d4c; color: #a8cdda; flex-shrink: 0; }
 .member-name { flex: 1; overflow-wrap: anywhere; }
 .search-input { margin-bottom: 22px; max-width: 420px; }
+.member-filters { display: flex; align-items: end; flex-wrap: wrap; gap: 16px; }
+.member-filters > div:first-child { flex: 1; min-width: 220px; }
+.member-filters > div { min-width: 180px; }
+.member-filters input, .member-filters select { margin-bottom: 0; }
+.member-table summary { cursor: pointer; color: var(--accent); padding: 6px 0; }
+.member-table td { white-space: normal; overflow-wrap: anywhere; }
+.member-details { min-width: 220px; margin-top: 16px; font-weight: normal; }
+.member-details dt { color: #aabfce; font-size: .8rem; margin-top: 12px; }
+.member-details dd { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .list-note { margin-bottom: 0; margin-top: 20px; font-size: .75rem; }
 .support-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 23px; }
 .ticket-list li { display: flex; justify-content: space-between; align-items: flex-start; gap: 13px; border-bottom: 1px solid #203446; padding: 20px 0; }
