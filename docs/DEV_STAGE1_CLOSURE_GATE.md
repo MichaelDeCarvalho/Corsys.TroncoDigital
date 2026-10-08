@@ -88,7 +88,7 @@ Fator verificado permanece no autenticador/conta. Operações enrollment podem i
 outras sessões dessa conta dedicada; contas tenant não afetadas.
 Depois challengeAndVerify: assuranceaal2/getUser, staff MASTER ativo/positivo, RPC
 set_saas_plan_active no plano DEV fixo zero-price já ativo, mantendo active=true;
-um evento audit com tag e previous/new_active=true. Não ativa catálogo comercial/cobrança.
+leitura direta da auditoria backend negada42501; operador confere separadamente um evento audit com tag e previous/new_active=true. Não ativa catálogo comercial/cobrança.
 Isso ainda não comprova sessões Support/Billing/expiração/revogação da matriz inteira.
 APIs oficiais consultadas 2026-10-08 UTC:
 https://supabase.com/docs/reference/javascript/auth-mfa-enroll
@@ -132,3 +132,12 @@ Proprietário confirmou criação oficial da conta no painel. Consulta Auth conf
 ## Correção do contrato AAL1 no teste Master — 2026-10-07, 23:11 Brasil
 
 Primeira execução Master pelo proprietário interrompeu em AAL1 staff RLS: private rows exposed (1 != 0), antes de enrollment. Login/UUID/AAL1 e RPC privilegiada negada42501 já passaram pelas assertions anteriores. Inspeção da política real platform_staff_select_self_or_master confirmou SELECT user_id=auth.uid() OR private.is_platform_staff('MASTER'); helpers privilegiados exigem AAL2. A leitura do próprio vínculo em AAL1 é permitida pela política existente; a expectativa zero-row do teste estava errada. Corrigido test:master-mfa para consultar o escopo staff inteiro e exigir exatamente a própria linha MASTER ativa (UUID conferido), mantendo a negação42501 da RPC em AAL1 e a prova TOTP/AAL2/RPC/audit positiva posterior. Não alterar RLS/grants/helpers para satisfazer teste incorreto. 12 testes locais e sintaxe PASS; reexecução HTTP/MFA ainda pendente. Nenhum fator criado pela tentativa que falhou. Não classificar MFA como PASS.
+
+
+## MFA Master comprovado; expectativa de leitura da auditoria corrigida — 2026-10-07, 23:26 Brasil
+
+Execução local do proprietário alcançou a consulta de auditoria após passar enrollment/challengeAndVerify real, currentLevel=aal2, getUser UUID conferido, vínculo MASTER ativo positivo, plano fixo price0 já active=true e RPC set_saas_plan_active retornando UUID esperado. Interrompeu por42501 permission denied for table saas_master_audit_logs; roteiro integral encerrou com FAIL e NÃO deve ser descrito como saída final PASS. Etapas anteriores comprovadas pelo ponto de falha, mais inventário administrativo factor_type=totp/status=verified. Nenhum secret/OTP/QR/token recebido pelo agente.
+
+Inspeção de contrato: tabela saas_master_audit_logs RLS=true, sem policies e sem SELECT authenticated, backend-only. Não adicionar grant/policy para satisfazer expectativa errada. Consulta administrativa encontrou exatamente um evento saas_plan.reactivate/resource_type saas_plan/recurso7c71fda8-13b9-4bd4-999a-7df06937666d, actor71e27b4c-f0ba-46f7-832f-4faf29e8603d, reason DEV MASTER MFA fb5a5b74-00b4-45c8-9a6b-0565c2b69f56, previous_active=true e new_active=true. Evidência combinada: MFA/AAL1 negativo/AAL2 positivo/RPC e auditoria backend comprovados nesta execução; saída integral corrigida ainda não executada. Sem cobrança comercial ativada.
+
+Roteiro corrigido exige42501 para leitura direta backend-audit e informa que operador precisa conferir evento único pela tag; não converte qualquer erro em PASS nem declara auditoria positiva via HTTP. 12 testes/sintaxe locais PASS. Não repetir cadastro TOTP: fator verificado permanece para próximas autenticações. Reexecução desnecessária desta operação comprovada; futura execução corrigida reutiliza fator. Support/Billing, suporte temporário/expiração/revogação e ciclo Auth permanecem OPEN, etapa1 em execução, etapa2 pendente.

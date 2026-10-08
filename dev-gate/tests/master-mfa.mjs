@@ -74,10 +74,9 @@ try {
  const plans=requireRows(await c.from('saas_plans').select('id,code,price,active').eq('id',planId),'DEV plan')
  assert.equal(plans.length,1);assert.equal(plans[0].code,'dev_http_financial_20261007');assert.equal(Number(plans[0].price),0);assert.equal(plans[0].active,true)
  assert.equal(demand(await c.rpc('set_saas_plan_active',args),'Master AAL2 positive RPC'),planId)
- const audit=requireRows(await c.from('saas_master_audit_logs').select('staff_user_id,metadata').eq('resource_id',planId).eq('staff_user_id',id),'Master audit')
- const own=audit.filter(x=>x.metadata?.reason===tag)
- assert.equal(own.length,1);assert.equal(own[0].metadata.previous_active,true);assert.equal(own[0].metadata.new_active,true)
- console.log('PASS: real TOTP verification, signed AAL2, dedicated Master positive RLS/RPC and audit; DEV zero-price plan remains active. Support/Billing/expiry/revocation/full stage remain separate.')
+ assertPermissionDenied(await c.from('saas_master_audit_logs').select('staff_user_id').eq('resource_id',planId),'Backend-only Master audit direct read')
+ console.log('INFO: operator must verify exactly one backend audit for the fixture tag; direct browser read is intentionally denied')
+ console.log('PASS: real TOTP verification, signed AAL2, dedicated Master positive RLS/RPC and backend-audit read denial; DEV zero-price plan remains active. Support/Billing/expiry/revocation/full stage remain separate.')
  console.log('Fixture run: '+tag+'; verified authenticator remains enrolled. No secrets printed.')
 } finally {
  if(qrPath)await fs.unlink(qrPath).catch(()=>{})
