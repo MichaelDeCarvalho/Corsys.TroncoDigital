@@ -1,5 +1,16 @@
 # SESSION HANDOFF — 2026-10-03 UTC / 2026-10-02 Brasil
 
+## Etapa 2 — cargos e termos futuros, 2026-10-08
+
+Implementados catálogo de cargos (criação), atribuição com vigência e programação de mensalidade individual/isenta/geral. Migration CLI2.119.0 alinhada ao DEV20261008201550, duas RPCs idempotentes/auditadas com search_path vazio, require_permission antes de consultas e sem grants diretos ou alterações de RLS. settings.manage (ADMIN) para catálogo/termos; members.write (ADMIN/TREASURER) para atribuição de cargo. Motivo de programação obrigatório.
+Termos começam em competência futura, cargos hoje ou depois; exclusões existentes rejeitam sobreposição. Vários cargos diferentes simultâneos continuam permitidos pelo contrato existente. Configurações não reescrevem ledger nem geram cobranças. Sucessão/encerramento de vigência aberta, ativação/desativação de catálogo e regras/preços versionados ainda pendentes.
+Tela conectada lê quatro tabelas com organização/integrante explícitos, AbortSignal e rejeição de escopo inesperado. Mostra históricos, vazio real e até200registros. Falha ambígua bloqueia edição e repete mesma chave/payload até confirmação. Catálogo de regras mensais permanece vazio no DEV; fluxo mensal depende do próximo incremento de regras/categorias/preços, sem catálogo fictício persistido para aparentar funcionamento.
+
+DEV_MEMBER_CONFIGURATION_ROLLBACK_PASS antes/depois de DDL; após aplicação também ADMIN A/B positivos, retries, sobreposição23P01, IDs estrangeiros23503, precisão/retroatividade22023, auditoria, TREASURER cargo positivo/configuração financeira negada, VIEWER e suspensão42501, anon sem EXECUTE. Claims SQL simuladas; NÃO nova prova HTTP/JWT ou corrida simultânea. Todos fixtures e mudanças de papel/assinatura/eligibilidade revertidos por ROLLBACK.
+Typecheck/39 testes frontend/build PASS, chave pública placeholder só para build, sem publicação/homologação visual. CI desta entrega conferir no commit remoto. Advisors:40RPC definer autenticadas (38 anteriores +2 novas intencionais),3backend RLS sem policy e aviso preexistente de senha vazada; não declarar scanner limpo.
+Próximo: categorias elegíveis e regras mensais/preços com vigência; depois sucessão de termos e estruturas financeiras. Etapa2 EM EXECUÇÃO. Paridade integral do HTML V35 continua obrigatória, inclusive campos ainda ausentes no banco. Produção e entrada em operação não autorizadas.
+
+
 ## Etapa 2 — cadastro/edição cadastral implementados, 2026-10-08
 
 Novo comando public.save_member_profile usa members.write (ADMIN/TREASURER no catálogo existente), require_permission e bloqueio de assinatura. Payload permitido limitado a dados cadastrais; desconhecidos/CPF/organization_id/roles/valores financeiros rejeitados. Criação/edição transacionais por RPC, sem INSERT/UPDATE/DELETE direto para authenticated, sem alteração de RLS.
@@ -233,3 +244,4 @@ Agente aplicou sete transições guardadas entre WAITs. SQL final: A/B ADMIN pr�
 ## Matriz final recursos/views preparada — 2026-10-07, após staff PASS
 
 Ver docs/DEV_FINAL_AUTHORIZATION_GATE.md. Staff/MFA/expiração/revogação/refresh concluídos. Revisão mantém etapa1 aberta pela pendência explícita de IDs elegíveis estrangeiros com own organization e views diretas/DRE. Novo test:authorization-final preparado: oito negativas por loja para plano/source/policy/request/payable/receivable, 28views (dez com fatos próprios financeiros/DRE obrigatórios), positivos de duplicação própria/policy2030off/decisão manual/audit. Duas policies draft2030off e duas solicitações MANUAIS fictícias seedadas sobre payables DEV100; não altera valores originais/current policy nem afirma fluxo automático completo de aprovação. SQL verify_dev_final_authorization.sql passou com claims simuladas/ROLLBACK; 12 testes locais/sintaxe PASS. HTTP real do novo roteiro ainda PENDENTE. Preparar pacote dev-gate público sem .env real/node_modules/QR para owner; não repetir gates já aprovados. Após PASS revisar estado final e critérios antes de encerrar1/promover2. Sem produção/custos/Auth/grants/schema.
+

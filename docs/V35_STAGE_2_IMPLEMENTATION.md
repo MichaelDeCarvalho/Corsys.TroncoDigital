@@ -1,12 +1,23 @@
 # V35 — etapa 2: integrantes, parâmetros e estrutura financeira
 
+## Etapa 2 — cargos e termos futuros, 2026-10-08
+
+Implementados catálogo de cargos (criação), atribuição com vigência e programação de mensalidade individual/isenta/geral. Migration CLI2.119.0 alinhada ao DEV20261008201550, duas RPCs idempotentes/auditadas com search_path vazio, require_permission antes de consultas e sem grants diretos ou alterações de RLS. settings.manage (ADMIN) para catálogo/termos; members.write (ADMIN/TREASURER) para atribuição de cargo. Motivo de programação obrigatório.
+Termos começam em competência futura, cargos hoje ou depois; exclusões existentes rejeitam sobreposição. Vários cargos diferentes simultâneos continuam permitidos pelo contrato existente. Configurações não reescrevem ledger nem geram cobranças. Sucessão/encerramento de vigência aberta, ativação/desativação de catálogo e regras/preços versionados ainda pendentes.
+Tela conectada lê quatro tabelas com organização/integrante explícitos, AbortSignal e rejeição de escopo inesperado. Mostra históricos, vazio real e até200registros. Falha ambígua bloqueia edição e repete mesma chave/payload até confirmação. Catálogo de regras mensais permanece vazio no DEV; fluxo mensal depende do próximo incremento de regras/categorias/preços, sem catálogo fictício persistido para aparentar funcionamento.
+
+DEV_MEMBER_CONFIGURATION_ROLLBACK_PASS antes/depois de DDL; após aplicação também ADMIN A/B positivos, retries, sobreposição23P01, IDs estrangeiros23503, precisão/retroatividade22023, auditoria, TREASURER cargo positivo/configuração financeira negada, VIEWER e suspensão42501, anon sem EXECUTE. Claims SQL simuladas; NÃO nova prova HTTP/JWT ou corrida simultânea. Todos fixtures e mudanças de papel/assinatura/eligibilidade revertidos por ROLLBACK.
+Typecheck/39 testes frontend/build PASS, chave pública placeholder só para build, sem publicação/homologação visual. CI desta entrega conferir no commit remoto. Advisors:40RPC definer autenticadas (38 anteriores +2 novas intencionais),3backend RLS sem policy e aviso preexistente de senha vazada; não declarar scanner limpo.
+Próximo: categorias elegíveis e regras mensais/preços com vigência; depois sucessão de termos e estruturas financeiras. Etapa2 EM EXECUÇÃO. Paridade integral do HTML V35 continua obrigatória, inclusive campos ainda ausentes no banco. Produção e entrada em operação não autorizadas.
+
+
 ## Etapa 2 — cadastro/edição cadastral implementados, 2026-10-08
 
 Novo comando public.save_member_profile usa members.write (ADMIN/TREASURER no catálogo existente), require_permission e bloqueio de assinatura. Payload permitido limitado a dados cadastrais; desconhecidos/CPF/organization_id/roles/valores financeiros rejeitados. Criação/edição transacionais por RPC, sem INSERT/UPDATE/DELETE direto para authenticated, sem alteração de RLS.
 Reutiliza idempotency_begin/complete; mesmo envio retorna UUID sem novo audit, chave com payload diferente22023. Edição bloqueia a linha e compara updated_at exato, stale40001; ID estrangeiro23503, org/perfil/status não permitido42501. Trigger específico de members avança updated_at com clock_timestamp/maior que anterior, inclusive dentro da mesma transação; demais tabelas mantêm trigger original.
 Audit registra ator, entidade, situação e nomes dos campos alterados; não copia contatos/observações para snapshots. Motivo livre deve evitar dados sensíveis desnecessários.
 Formulário conectado ao Workspace: nome/preferencial, quatro situações, texto de grau/cargo, telefone/WhatsApp/e-mail, datas e observações; motivo obrigatório, duplicidade bloqueada, conflito pede reload. Falha ambígua mantém payload/chave e campos bloqueados até confirmação por retry; callback tardio não atualiza outra Loja.
-Grau/cargo textual não substitui catálogo/cargo vigente. Mensalidade individual/isenção versionadas, criação de login, CPF, vínculos, cargos com vigência e paridade integral continuam pendentes; não concluir etapa2.
+Grau/cargo textual não substitui catálogo/cargo vigente. Termos futuros e cargos com vigência implementados no incremento seguinte; regras/preços, sucessão de termos, criação de login, CPF, vínculos e paridade integral continuam pendentes; não concluir etapa2.
 
 Migration gerada pela CLI2.119.0 e aplicada no DEV com versão20261008195936; fonte/hash no manifesto. Recuperação: forward-fix aditivo; se houver falha operacional, revogar EXECUTE da novaRPC e manter leituras/dados, sem apagar integrantes/ledger. Não aplicada produção.
 DEV_MEMBER_PROFILE_COMMANDS_ROLLBACK_PASS antes e depois da aplicação: positivosA/B, retry, payload divergente, mass-assignment/date/name inválidos, estrangeiros, escrita direta, stale, VIEWER, suspensão e Master sem papeltenant. Claims simuladas/SQL, NÃO HTTP/JWT real novo. Zero integrantes temporários remanescentes; A/B ADMIN e assinaturasactive conferidos.
@@ -27,7 +38,7 @@ Fonte obrigatória: V35_PILOT_V35_INVENTORY.md, HTML V35, ADRs e matrizes de cob
 |---|---|---|
 | Busca de integrantes e situação cadastral | view-integrantes-F001/F003; members tem active/away/inactive/disconnected | Implementados busca por nome/preferencial/telefone/WhatsApp/e-mail, filtro, reset e contagem da amostra |
 | Ficha cadastral | members possui nomes, degree_or_office, contatos, iniciação/admissão e notes | Consulta implementada dos campos existentes, sem CPF; cadastro/edição ainda pendentes |
-| Cargo com vigência | member_offices referencia office_type_id com effective_from/to | Não tratar texto degree_or_office como cargo vigente; catálogo e histórico ainda precisam de UI/comandos |
+| Cargo com vigência | member_offices referencia office_type_id com effective_from/to | Não tratar texto degree_or_office como cargo vigente; catálogo (criação), histórico e programação futura conectados; sucessão/encerramento e catálogo completo pendentes |
 | Isenção e valor individual | DYN-015-F007/F008; recurring_member_terms contém term_type/override_amount/effective_from/to | Implementar edição versionada vinculada à regra; individual prevalece sobre geral e isenção ativa impede geração. Sem valor fixo na ficha |
 | Status/saldo por período | view-integrantes-F002, A001/A002 e tabela piloto | Consulta financeira atual separada; filtro de período, status derivado, mensalidade, isenção, saldo/crédito e último pagamento ainda obrigatórios |
 | Cadastro/edição de integrantes | DYN-015-F001..F008 | members tem somente policy SELECT; nenhuma RPC pública de member encontrada. Criar contratos validados/auditados, proteção de ID e concorrência; não abrir INSERT/UPDATE direto por conveniência |
@@ -53,3 +64,4 @@ Visual autenticado desktop/mobile e deploy deste incremento ainda não verificad
 
 Contratos de criação/edição de integrante e termos, com validação server-side, autorização members.write, ID estrangeiro negado, auditoria e vigência. Conferir permissões/ADRs antes de escolher contrato; members.write foi conferida no catálogo e utilizada no incremento acima; o texto abaixo preserva a conciliação inicial.
 Mensalidade/isenção não devem ser campos soltos que alteram valores históricos. Manter layout único entre todas as lojas.
+

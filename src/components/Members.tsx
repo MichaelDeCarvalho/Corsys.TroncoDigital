@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Member } from '../lib/tenant-data'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { MemberForm } from './MemberForm'
+import { MemberConfiguration } from './MemberConfiguration'
 
 const situations: Record<string, string> = { active: 'Ativo', away: 'Afastado', inactive: 'Inativo', disconnected: 'Desligado' }
 const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').trim()
@@ -20,12 +21,14 @@ export function Members({ members, client, organizationId, onSaved, onReload }: 
   const [query, setQuery] = useState('')
   const [situation, setSituation] = useState('all')
   const [editing, setEditing] = useState<Member | null | undefined>(undefined)
+  const [configuration, setConfiguration] = useState<Member | null>(null)
   const filtered = members.filter(member => (situation === 'all' || member.status === situation) && matches(member, query))
   return <>
+    {configuration && client && organizationId && <MemberConfiguration key={configuration.id} client={client} organizationId={organizationId} member={configuration} onClose={() => setConfiguration(null)} />}
     {editing !== undefined && client && organizationId && <MemberForm key={editing?.id ?? 'new'} client={client} organizationId={organizationId} member={editing} onCancel={() => setEditing(undefined)} onSaved={() => { setEditing(undefined); onSaved?.() }} onReload={() => { setEditing(undefined); onReload?.() }} />}
     <section className="panel">
     <div className="section-title"><h2>Cadastro de integrantes</h2><span className="pill">{members.length} carregados</span></div>
-    {client && organizationId && <button className="primary" type="button" disabled={editing !== undefined} onClick={() => setEditing(null)}>Cadastrar integrante</button>}
+    {client && organizationId && <button className="primary" type="button" disabled={editing !== undefined || !!configuration} onClick={() => setEditing(null)}>Cadastrar integrante</button>}
     <div className="member-filters">
       <div><label htmlFor="member-search">Buscar integrante</label><input id="member-search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Nome, telefone, WhatsApp ou e-mail" type="search" /></div>
       <div><label htmlFor="member-situation">Situação cadastral</label><select id="member-situation" value={situation} onChange={event => setSituation(event.target.value)}><option value="all">Todas as situações</option>{Object.entries(situations).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></div>
@@ -44,7 +47,7 @@ export function Members({ members, client, organizationId, onSaved, onReload }: 
           <dt>WhatsApp</dt><dd>{member.whatsapp || 'Não informado'}</dd>
           <dt>E-mail</dt><dd>{member.email || 'Não informado'}</dd>
           <dt>Observações</dt><dd>{member.notes || 'Não informado'}</dd>
-        </dl>{client && organizationId && member.updated_at && <button type="button" className="secondary" disabled={editing !== undefined} onClick={() => setEditing(member)}>Editar {member.full_name}</button>}</details></th>
+        </dl>{client && organizationId && <><button type="button" className="secondary" disabled={editing !== undefined || !!configuration || !member.updated_at} onClick={() => setEditing(member)}>Editar {member.full_name}</button><button type="button" className="secondary" disabled={editing !== undefined || !!configuration} onClick={() => setConfiguration(member)}>Cargos e mensalidade de {member.full_name}</button></>}</details></th>
         <td><span className="pill">{situations[member.status] ?? 'Situação não reconhecida'}</span></td>
         <td>{member.degree_or_office || 'Não informado'}</td>
         <td>{member.email || member.whatsapp || member.phone || 'Não informado'}</td>
