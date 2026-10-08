@@ -59,3 +59,10 @@ DEV_SUSPENSION_TRANSITIONS_ROLLBACK_PASS. São claims simuladas, não JWT real.
 Primeira verificação usou permissão inexistente payments.register e falhou com 42501;
 transação revertida e ambas active conferidas. Corrigida para payments.create, aprovada.
 Nenhuma alteração persistente de assinatura feita nesta preparação.
+
+
+## Diagnóstico MFA real e janela de suspensão — 2026-10-07, 21:52 Brasil
+
+Proprietário executou check:mfa-posture no Windows com logins reais: A current=aal1 next=aal1 verified_factors=0; B current=aal1 next=aal1 verified_factors=0. Inventário INFO, NÃO aprovação MFA; sem alteração de fatores/Auth. npm ci: zero vulnerabilidades dev-gate; 10 testes locais PASS apresentados. Código de preparação 933d6eb: Foundation checks run 37693053151 success.
+
+JANELA ABERTA: agente executou scripts/suspend_dev_tenant_b_http.sql no DEV autorizado; consulta confirmou B suspended e A active. Aguardar resultado do proprietário para npm run test:suspension-http. Restaurar B com scripts/restore_dev_tenant_b_http.sql imediatamente ao receber resultado, inclusive se FAIL, ou se proprietário interromper os testes. Em seguida validar npm run test:restoration-http com login real. Não marcar suspensão HTTP como PASS antes da saída. Nenhum ledger/Auth/grant/schema/produção alterado; status temporário somente assinatura fictícia zero-price B. Notas anteriores de ambas active referem-se à preparação, não à janela atual.
