@@ -172,6 +172,15 @@
       "sha256": "c7e75db76ffee24bef74090996cb93531c7286915dc45fb0bacb8f04514d26a4",
       "applied_at": "2026-10-08",
       "note": "Three authorized catalog/price RPCs; no change to existing category flags, RLS, grants on tables or financial facts."
+    },
+    {
+      "version": "20261008211155",
+      "name": "member_term_transition",
+      "source_path": "supabase/migrations/20261008211155_member_term_transition.sql",
+      "path": "supabase/migrations/20261008211155_member_term_transition.sql",
+      "sha256": "334b7c4b2fb9edf21990f1fe567b5c99eaa20d9a1ce3e4e3030147b14866451c",
+      "applied_at": "2026-10-08",
+      "note": "Future-only member term succession/closing RPC. Applied DEV; returns to general rule when closed. Only term boundaries/history changed, no ledger. Tested with SQL ROLLBACK; HTTP/JWT and concurrent live clients pending."
     }
   ],
   "baseline_patches": {
