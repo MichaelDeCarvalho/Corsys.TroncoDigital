@@ -15,3 +15,5 @@ Falha de transporte tem resultado ambíguo: manter campos bloqueados e retry com
 Verificação: verify_dev_member_configuration.sql com rollback, claims simuladas ADMIN/TREASURER/VIEWER/suspensão e IDs estrangeiros; 39 testes frontend/types/build. Não substitui HTTP/JWT real, concorrência simultânea, homologação visual do HTML V35 ou operação de recorrência.
 
 Recuperação: forward-fix aditivo; diante de falha operacional, revogar EXECUTE das duas RPCs novas e manter SELECT/histórico. Não apagar ledger ou abrir escrita direta. Migration aplicada somente no DEV20261008201550.
+
+Validação financeira servidor: somente valores finitos, não negativos, até999999999999.99 e até duas casas, compatível numeric(14,2). Forward-fix DEV20261008202409; sem reescrever migration20261008201550.
