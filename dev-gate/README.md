@@ -66,3 +66,12 @@ Novo gate de 11 testes locais (substitui a contagem de 10 dos incrementos anteri
 Somente fatos novos fictícios são corrigidos por eventos, sem apagar ledger anterior.
 Exige ambas assinaturas active e verifica concorrência de eventos (um sucesso/23505),
 saldos, auditoria, motivos/períodos e recursos alheios. Não é MFA/revogação/full matrix PASS.
+
+## Encerramento da etapa 1 — pacote consolidado
+Ver ../docs/DEV_STAGE1_CLOSURE_GATE.md. Gate local atualizado: **12 testes**.
+`npm run test:stage1-remaining`: catálogo20 negativas, FIFO isolado, institucional e períodos.
+`npm run test:profiles-live`: sessão/JWT retido durante cinco mudanças de perfil; exige
+coordenação SQL por fase e restauração de ADMIN mesmo em erro/cancelamento.
+`npm run test:master-mfa`: conta dedicada/UUID conferido, TOTP local mascarado e Master
+positivo AAL2. QR temporário .mfa-local nunca deve ser enviado; ver pré-requisitos no relatório.
+Nenhum desses comandos isoladamente representa PASS da etapa inteira.

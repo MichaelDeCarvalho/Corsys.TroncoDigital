@@ -10,3 +10,7 @@ dist/
 .next/
 supabase/.temp/
 supabase/.branches/
+
+
+# Local TOTP enrollment QR (private, ephemeral)
+.mfa-local/

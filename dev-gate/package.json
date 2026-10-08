@@ -11,7 +11,10 @@
     "test:suspension-http": "node --env-file=.env.dev tests/suspension-http.mjs blocked",
     "test:restoration-http": "node --env-file=.env.dev tests/suspension-http.mjs restored",
     "check:mfa-posture": "node --env-file=.env.dev tests/mfa-posture.mjs",
-    "test:financial-lifecycle": "node --env-file=.env.dev tests/financial-lifecycle.mjs"
+    "test:financial-lifecycle": "node --env-file=.env.dev tests/financial-lifecycle.mjs",
+    "test:stage1-remaining": "node --env-file=.env.dev tests/stage1-remaining.mjs",
+    "test:master-mfa": "node --env-file=.env.dev tests/master-mfa.mjs",
+    "test:profiles-live": "node --env-file=.env.dev tests/profiles-live.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.117.2"
