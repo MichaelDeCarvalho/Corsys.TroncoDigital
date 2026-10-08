@@ -38,7 +38,8 @@ Cria fatos fictícios 2027 identificados DEV STAGE1 REMAINING UUID. Não modific
 FIFO faz duas requisições e pode auditar as duas tentativas: saldo/alocações não duplicam;
 NÃO afirmar idempotência de eventos audit FIFO. Institucional exige UUID único/audit único.
 Fechamento protegido por finally com reabertura antes de saída, inclusive em erro.
-Se processo for encerrado à força ou reabertura falhar, conferir períodos/reabrir por SQL
+Se fechamento tiver erro de transporte (resultado incerto), processo for encerrado à força
+ou reabertura falhar, conferir períodos/reabrir por SQL
 DEV antes de continuar. Em FAIL informar tag/erro, não repetir ou apagar ledger.
 O script encerra com MFA/staff/perfis/revogação OPEN; PASS não conclui etapa inteira.
 

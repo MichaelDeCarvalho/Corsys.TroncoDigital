@@ -73,14 +73,16 @@ async function financial(x) {
 }
 async function periods(x) {
  const {c,t}=x,args={p_organization_id:t.organization_id,p_period:f.period,p_reason:tag}
- let closed=false
+ let closed=false,closeAttempted=false
  try {
+  closeAttempted=true
   ok(await c.rpc('close_financial_period',args),'Close isolated 2027 period');closed=true
   assert.equal((await c.rpc('close_financial_period',args)).error?.code,'55000','Duplicate close rejection')
   assert.equal((await c.rpc('register_payment',payment(x,'closed period blocked',1))).error?.code,'55000','Closed period posting rejection')
   const blocked=requireRows(await c.from('payments').select('id').eq('reference',tag).eq('amount',1),'Failed payment must leave no fact')
   assert.equal(blocked.length,0)
  } finally {
+  if(closeAttempted&&!closed)console.error('STATE CHECK REQUIRED: close request failed; operator must inspect DEV period 2027-01-01 for Tenant '+x.label)
   if(closed) {
    const r=await c.rpc('reopen_financial_period',args)
    if(r.error) console.error('RESTORATION REQUIRED: DEV period 2027-01-01 for Tenant '+x.label)

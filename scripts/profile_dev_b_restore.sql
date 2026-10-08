@@ -10,8 +10,8 @@ begin
  if (select count(*) from public.user_roles where user_id='559ba052-c408-4418-b806-0c0c4b8e3603')>1
  or exists(select 1 from public.user_roles ur join public.roles r on r.id=ur.role_id where ur.user_id='559ba052-c408-4418-b806-0c0c4b8e3603' and r.code not in ('ADMIN','TREASURER','VIEWER'))
  or exists(select 1 from public.member_user_links where user_id='559ba052-c408-4418-b806-0c0c4b8e3603' and (member_id<>'20ec239c-36b4-46b3-af72-0f583a02cd93' or organization_id<>'b112d600-bf1a-4bfd-bc1c-e9e9b749b539')) then raise exception 'Unexpected privileges/links; inspect'; end if;
- if not exists(select 1 from public.user_roles ur join public.roles r on r.id=ur.role_id where ur.user_id='559ba052-c408-4418-b806-0c0c4b8e3603' and r.code='ADMIN') then
   delete from public.member_user_links where user_id='559ba052-c408-4418-b806-0c0c4b8e3603' and member_id='20ec239c-36b4-46b3-af72-0f583a02cd93' and organization_id='b112d600-bf1a-4bfd-bc1c-e9e9b749b539';
+ if not exists(select 1 from public.user_roles ur join public.roles r on r.id=ur.role_id where ur.user_id='559ba052-c408-4418-b806-0c0c4b8e3603' and r.code='ADMIN') then
   delete from public.user_roles where user_id='559ba052-c408-4418-b806-0c0c4b8e3603' and organization_id='b112d600-bf1a-4bfd-bc1c-e9e9b749b539';
   insert into public.user_roles(organization_id,user_id,role_id,created_at)
   values('b112d600-bf1a-4bfd-bc1c-e9e9b749b539','559ba052-c408-4418-b806-0c0c4b8e3603','f41fdb04-9e2e-4eed-a974-1affd92e6912','2026-10-02 22:58:27.201308+00');
