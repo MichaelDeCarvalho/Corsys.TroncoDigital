@@ -52,3 +52,8 @@ Duas requisições por cenário, não teste de carga ou prova de sobreposição 
 Se FAIL: parar e informar tag/erro, não repetir automaticamente. Pode haver fatos
 parciais persistidos. Inspecionar antes de correção/repetição, nunca apagar ledger.
 MFA não é configurado por esse roteiro. Nenhum schema, grant, papel, Auth ou produção alterado.
+
+
+## Lifecycle HTTP aprovado pelo proprietário — 2026-10-07, 22:10 Brasil
+
+Execução Windows/Node pelo proprietário, npm ci zero vulnerabilidades dev-gate e 11 testes locais PASS apresentados. npm run test:financial-lifecycle: Tenant A PASS, Tenant B PASS e conclusão HTTP/JWT PASS. Tag DEV LIFECYCLE 8b67cd58-6f78-4f70-b3e7-d3e07f287653. Estorno/cancelamento nos dois encadeamentos, operações simultâneas com evento único/rejeição exata de duplicata, efeitos nos saldos, auditoria/ator, reversão de alocações, originais preservados e negativas de recursos estrangeiros aprovados no escopo do roteiro. Fatos fictícios corrigidos permanecem no DEV. Saída fornecida pelo proprietário; agente não executou HTTP com credenciais, não recebeu senha/token/env. CI do código preparado: Foundation checks run 37710839313 success. Novo gate deixa de ser somente preparado; HTTP positivo/negativo dessa matriz está aprovado, sem inferir cobertura integral. Ambas lojas ativas, nenhuma suspensão pendente. Etapa 1 continua aberta: MFA real/staff, revogação/perfis/sessões, FIFO positivo, financeiro institucional e matriz restante. Não repetir comandos já aprovados sem motivo, não apagar ledger. Produção/merge/cobranças novas não aprovadas.
