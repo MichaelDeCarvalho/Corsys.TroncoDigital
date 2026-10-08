@@ -1,11 +1,18 @@
 # V35 — sequência autorizada até operação
 
+## Estado atual — 2026-10-08 Brasil
+
+Etapa 1 CONCLUÍDA no DEV; etapa 2 EM EXECUÇÃO, começando pela conciliação de integrantes, parâmetros e estrutura financeira com o piloto V35. Evidência consolidada e limites: [V35_STAGE_1_CLOSURE_REPORT.md](V35_STAGE_1_CLOSURE_REPORT.md).
+Último HTTP: DEV FINAL AUTHORIZATION 09fcfa34-48ad-4c19-ac60-b2c173b2648b, PASS nas duas lojas; 28 views e oito negativas adicionais por recurso em cada loja. Estados finais e saldos conferidos administrativamente. CI do código f467d8e6: run 37720733935 success.
+Produção/release comercial continuam bloqueados pelo escopo restante V35, homologação, recuperação e aprovação. Os registros datados abaixo são históricos; suas pendências da etapa 1 são superadas somente no escopo discriminado no relatório, sem converter cenários não avaliados em PASS.
+
+
 Autorização: proprietário em 2026-10-05 Brasil. Executar oito etapas incrementalmente, preservando HTML V35, documentação, ADRs e inventário. Etapa iniciada não equivale a concluída. DEV/preview já autorizados; custos apresentados antes; produção depende de aprovação final.
 
 | Etapa | Objetivo | Estado | Evidência de conclusão necessária |
 |---|---|---|---|
-| 1 | Autorização real, isolamento e comandos seguros | Em execução | JWT positivo/negativo, MFA real, perfis, suporte temporário, suspensão, invariantes e concorrência |
-| 2 | Integrantes, parâmetros e estrutura financeira | Pendente | Cadastro e configuração persistidos, validação e regras vigentes |
+| 1 | Autorização real, isolamento e comandos seguros | Concluída no DEV; escopo no relatório de encerramento | JWT positivo/negativo, MFA real, perfis, suporte temporário, suspensão, invariantes e concorrência |
+| 2 | Integrantes, parâmetros e estrutura financeira | Em execução: conciliação de escopo | Cadastro e configuração persistidos, validação e regras vigentes |
 | 3 | Cobranças, pagamentos, contas e aprovações | Pendente | Comandos transacionais, saldos e trilhas consistentes |
 | 4 | Caixa, conciliação, orçamento, DRE e relatórios | Pendente | Cálculos conferidos, importação/exportação e fechamento real |
 | 5 | Master, onboarding, planos, billing e suporte | Pendente | Ciclos completos e limite Master/tenant comprovado |
@@ -24,7 +31,7 @@ Autorização: proprietário em 2026-10-05 Brasil. Executar oito etapas incremen
 - Roteiro HTTP reforçado: identidade getUser, IDs distintos/alvo DEV fixo, consultas explícitas cruzadas, views, comando Master negado e JWT inválido. Exemplo de fixtures existentes elimina necessidade de chave administrativa/criação de usuários.
 - Oito testes locais passaram. Testam o roteiro e seus falsos positivos; não são execução HTTP autenticada.
 
-## Pendências da etapa 1
+## Pendências históricas da etapa 1 (superadas conforme relatório de encerramento)
 
 1. Baseline npm run test:tenant-isolation CONCLUÍDO pelo proprietário em 2026-10-07: PASS informado; ver atualização abaixo. Demais gates HTTP continuam pendentes.
 2. Criar fatos financeiros fictícios por comandos autorizados e validar leituras positivas/negativas; views vazias não são prova positiva.

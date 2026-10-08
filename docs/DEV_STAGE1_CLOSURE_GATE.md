@@ -1,5 +1,12 @@
 # Etapa 1 — gates restantes e fechamento (2026-10-07 Brasil)
 
+## Estado atual — 2026-10-08 Brasil
+
+Etapa 1 CONCLUÍDA no DEV; etapa 2 EM EXECUÇÃO, começando pela conciliação de integrantes, parâmetros e estrutura financeira com o piloto V35. Evidência consolidada e limites: [V35_STAGE_1_CLOSURE_REPORT.md](V35_STAGE_1_CLOSURE_REPORT.md).
+Último HTTP: DEV FINAL AUTHORIZATION 09fcfa34-48ad-4c19-ac60-b2c173b2648b, PASS nas duas lojas; 28 views e oito negativas adicionais por recurso em cada loja. Estados finais e saldos conferidos administrativamente. CI do código f467d8e6: run 37720733935 success.
+Produção/release comercial continuam bloqueados pelo escopo restante V35, homologação, recuperação e aprovação. Os registros datados abaixo são históricos; suas pendências da etapa 1 são superadas somente no escopo discriminado no relatório, sem converter cenários não avaliados em PASS.
+
+
 ## Estado verdadeiro
 Etapa 1 EM EXECUÇÃO. Não avançar para etapa 2 nem marcar concluída com CI ou claims simuladas.
 Proprietário pediu continuidade até fechamento. Gates que exigem JWT/senha/OTP reais

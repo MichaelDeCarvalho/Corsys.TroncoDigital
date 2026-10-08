@@ -1,5 +1,12 @@
 # RELEASE CHECKLIST — V35
 
+## Estado atual — 2026-10-08 Brasil
+
+Etapa 1 CONCLUÍDA no DEV; etapa 2 EM EXECUÇÃO, começando pela conciliação de integrantes, parâmetros e estrutura financeira com o piloto V35. Evidência consolidada e limites: [V35_STAGE_1_CLOSURE_REPORT.md](docs/V35_STAGE_1_CLOSURE_REPORT.md).
+Último HTTP: DEV FINAL AUTHORIZATION 09fcfa34-48ad-4c19-ac60-b2c173b2648b, PASS nas duas lojas; 28 views e oito negativas adicionais por recurso em cada loja. Estados finais e saldos conferidos administrativamente. CI do código f467d8e6: run 37720733935 success.
+Produção/release comercial continuam bloqueados pelo escopo restante V35, homologação, recuperação e aprovação. Os registros datados abaixo são históricos; suas pendências da etapa 1 são superadas somente no escopo discriminado no relatório, sem converter cenários não avaliados em PASS.
+
+
 ## Verificado nesta etapa
 - [x] Hashes históricos das 16 migrations originais registrados; baselines 009/014 corrigidas antes da primeira aplicação.
 - [x] Gramática SQL verificada na entrega inicial; revisão atual acompanhada pela CI.
@@ -9,16 +16,16 @@
 - [x] Configuração TOML gerada pela CLI e parseada localmente.
 - [x] CI estática preparada com permissions: contents:read e actions por SHA.
 
-## Gates de runtime — não aprovados
+## Gates de runtime — aprovados no escopo DEV do relatório
 - [x] Projeto existente DEV selecionado pelo usuário; plano Free verificado, sem nova infraestrutura paga.
 - [x] 19 migrations aplicadas do zero e histórico local alinhado.
 - [x] Catálogo de segurança e invariantes SQL executados.
-- [ ] JWT/RLS cross-user e cross-tenant positivo/negativo.
-- [ ] Master/Billing/Support e AAL1/AAL2 exercitados.
+- [x] JWT/RLS cross-user e cross-tenant positivo/negativo. Escopo e limites no relatório de encerramento.
+- [x] Master/Billing/Support e AAL1/AAL2 exercitados. Escopo e limites no relatório de encerramento.
 - [x] Financeiro, fechamento e imutabilidade em teste SQL com rollback.
-- [ ] Suspensão e RPCs exercitados com JWT real.
-- [ ] Concorrência, sobrealocação e idempotência.
-- [ ] Correção das views administrativas comprovada em runtime.
+- [x] Suspensão e RPCs exercitados com JWT real. Escopo e limites no relatório de encerramento.
+- [x] Concorrência, sobrealocação e idempotência. Escopo e limites no relatório de encerramento.
+- [x] Correção das views administrativas comprovada em runtime. Escopo e limites no relatório de encerramento.
 - [x] CI remota aprovada para o incremento frontend: commit 04436e78c5116c550bff88ac4a905f3ddf083263, run 37077478804.
 
 ## Produto e deploy
@@ -33,7 +40,7 @@
 
 - [x] Auth users confirmados e vinculados a duas Lojas DEV.
 - [x] RLS e RPCs com SET ROLE/claims simuladas aprovados, incluindo negação cross-tenant.
-- [ ] HTTP/Data API com JWT assinado real (separado do teste SQL).
+- [x] HTTP/Data API com JWT assinado real (separado do teste SQL). Escopo e limites no relatório de encerramento.
 
 ## Frontend DEV e publicação
 - [x] Typecheck app/node, 13 testes frontend, build Vite e Wrangler dry-run aprovados.
