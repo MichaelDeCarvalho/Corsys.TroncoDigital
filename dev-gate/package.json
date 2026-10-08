@@ -14,7 +14,8 @@
     "test:financial-lifecycle": "node --env-file=.env.dev tests/financial-lifecycle.mjs",
     "test:stage1-remaining": "node --env-file=.env.dev tests/stage1-remaining.mjs",
     "test:master-mfa": "node --env-file=.env.dev tests/master-mfa.mjs",
-    "test:profiles-live": "node --env-file=.env.dev tests/profiles-live.mjs"
+    "test:profiles-live": "node --env-file=.env.dev tests/profiles-live.mjs",
+    "test:staff-live": "node --env-file=.env.dev tests/staff-live.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.117.2"
