@@ -1,11 +1,8 @@
 # CURRENT ARCHITECTURE
 
-## Publicação contábil validada — 2026-10-09 (Incremento 10)
+## Publicação transacional contábil — 2026-10-09
 
-`publish_validated_accounting_plan` tornou-se a única RPC de publicação disponível a usuários autenticados. O endpoint legado `publish_accounting_plan` foi explicitamente revogado dos roles de API e permanece como função interna. Novo fluxo no DEV: `accounting.manage` => idempotência => lock da Loja/rascunho => validação da vigência informada => locks SHARE temporários sobre categorias, contas e mapeamentos => pré-validação completa => publicação existente (immutability/EXCLUDE) => auditoria com motivo => result UUID. Toda operação ocorre numa transação PostgreSQL; erro desfaz o conjunto. UI somente oferece ação após `ready`, motivo e confirmação de imutabilidade, mas não é boundary de segurança. Script SQL A/B com ROLLBACK PASS; frontend/CI verificar pela SHA final. 31 migrations DEV, produção inalterada.
-
-**Atenção:** SHARE locks são globais entre tenants enquanto a publicação executa; plano de timeout e testes de concorrência em sessões independentes continuam pendentes. Endpoint legado deixa de ser compatível com clientes que o invocassem diretamente. Novas categorias criadas após publicação ainda precisam de regra de sucessão/cobertura para não introduzir fatos sem classificação.
-
+A RPC `publish_validated_accounting_plan` confere `accounting.manage` e assinatura, recupera/chaveia a solicitação idempotente, trava organização e rascunho, valida vigência informada, protege transitoriamente 5 tabelas de categorias, contas e mapeamentos com SHARE lock e executa a pré-validação completa dentro da mesma transação. Quando pronta, utiliza a função interna V35 `publish_accounting_plan`, respeitando triggers de imutabilidade e constraint EXCLUDE contra sobreposição, e audita motivo e resultado. A UI exige confirmação explícita; readiness anterior nunca substitui validação servidor. EXECUTE de `publish_accounting_plan` foi revogado para authenticated, anon e PUBLIC. Migration31 só DEV. Locks SHARE são globais aos tenants e requerem teste de concorrência/latência; novos catálogos depois da publicação exigem controle separado de sucessão.
 
 ## Pré-publicação contábil em diagnóstico, 2026-10-09
 
