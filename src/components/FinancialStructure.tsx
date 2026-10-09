@@ -34,9 +34,9 @@ export function FinancialStructure({ client, organizationId }: { client: Supabas
     } catch (failure) {
       if (!mounted.current) return
       const code = (failure as { code?: string } | null)?.code
-      if (['22023', '23503', '23505', '40001', '42501', '28000'].includes(code ?? '')) {
+      if (['22023', '23503', '23505', '23514', '40001', '42501', '28000'].includes(code ?? '')) {
         command.current = null; setUncertain(false); setConflict(code === '40001')
-        setError(code === '40001' ? 'A vigência foi alterada por outra operação. Atualize os dados antes de programar outro preço.' : code === '23505' ? 'Já existe um cadastro com esse nome.' : code === '42501' || code === '28000' ? 'Seu acesso ou a situação da Loja não permite esta configuração.' : 'Confira a categoria, o valor e as datas. A configuração não foi salva.')
+        setError(code === '40001' ? 'A vigência foi alterada por outra operação. Atualize os dados antes de programar outro preço.' : code === '23505' ? 'Já existe um cadastro com esse nome.' : code === '23514' ? 'Uma categoria ativa precisa estar mapeada em todos os planos contábeis publicados aplicáveis. Cadastre-a inativa e prepare um plano sucessor.' : code === '42501' || code === '28000' ? 'Seu acesso ou a situação da Loja não permite esta configuração.' : 'Confira a categoria, o valor e as datas. A configuração não foi salva.')
       } else { setUncertain(true); setError('Resultado não confirmado. Verifique o envio para repetir a mesma solicitação sem duplicá-la.') }
     } finally { guard.current = false; if (mounted.current) setPending(false) }
   }
@@ -67,7 +67,8 @@ export function FinancialStructure({ client, organizationId }: { client: Supabas
       <label htmlFor="category-name">Nome da categoria</label><input id="category-name" name="name" required maxLength={120} placeholder="Ex.: Mensalidade" />
       <label htmlFor="category-description">Descrição (opcional)</label><input id="category-description" name="description" maxLength={1000} />
       <label htmlFor="category-domain">Aplicação</label><select id="category-domain" name="domain">{Object.entries(domainLabels).map(([id, label]) => <option value={id} key={id}>{label}</option>)}</select>
-      <label htmlFor="category-active">Status</label><select id="category-active" name="active"><option value="true">Ativa</option><option value="false">Inativa</option></select>
+      <label htmlFor="category-active">Status</label><select id="category-active" name="active"><option value="false">Inativa</option><option value="true">Ativa</option></select>
+      <p className="subtle">Categorias novas devem começar inativas enquanto houver planos publicados sem seu mapeamento. Prepare um sucessor antes de ativá-las.</p>
       <label><input type="checkbox" name="recurrence" />Permitir recorrência para integrantes</label><label><input type="checkbox" name="installments" />Permitir parcelamento</label>
       <label htmlFor="category-reason">Motivo da nova categoria</label><input id="category-reason" name="reason" required minLength={3} maxLength={500} /><button type="submit" className="primary">Cadastrar categoria</button>
     </fieldset></form>

@@ -4,9 +4,9 @@ import { vi } from 'vitest'
 import { TreasuryCatalogs } from './TreasuryCatalogs'
 
 const id = 'faaf76e4-d796-430f-929f-71df5beaf832'
-function fixture(foreign = false) {
+function fixture(foreign = false, accountActive = true) {
   const rows: Record<string, unknown[]> = {
-    financial_accounts: [{ id, organization_id: foreign ? 'foreign' : 'org', name: 'Caixa', account_type: 'cash', institution: null, identification: null, active: true }],
+    financial_accounts: [{ id, organization_id: foreign ? 'foreign' : 'org', name: 'Caixa', account_type: 'cash', institution: null, identification: null, active: accountActive }],
     funds: [],
     payment_methods: [],
   }
@@ -46,6 +46,21 @@ describe('Treasury catalogs', () => {
       p_description: 'Apoio a membros', p_account_type: null, p_institution: null,
       p_identification: null, p_reason: 'Aprovado em reunião',
     }))
+  })
+  it('denies activation of an inactive financial account without chart coverage', async () => {
+    const { client, rpc } = fixture(false, false)
+    rpc.mockResolvedValueOnce({data:null,error:{code:'23514'}})
+    render(<TreasuryCatalogs client={client} organizationId="org" />)
+    await screen.findByRole('button',{name:'Ativar'})
+    fireEvent.change(screen.getByLabelText('Motivo para ativar ou desativar um cadastro'),{
+      target:{value:'Solicitar ativação da conta'},
+    })
+    fireEvent.click(screen.getByRole('button',{name:'Ativar'}))
+    await screen.findByText(/A conta financeira só pode ser ativada/)
+    expect(rpc).toHaveBeenCalledWith('set_treasury_catalog_status',expect.objectContaining({
+      p_kind:'account',p_expected_active:false,p_new_active:true,
+    }))
+    expect(screen.queryByRole('button',{name:'Verificar envio'})).not.toBeInTheDocument()
   })
   it('resubmits the exact same status command after ambiguous network failure', async () => {
     const { client, rpc } = fixture()

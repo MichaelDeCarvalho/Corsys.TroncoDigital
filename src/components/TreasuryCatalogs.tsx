@@ -55,13 +55,14 @@ export function TreasuryCatalogs({ client, organizationId }: { client: SupabaseC
     } catch (cause) {
       if (!mounted.current) return
       const code = (cause as { code?: string } | null)?.code
-      if (['22023', '23503', '23505', '40001', '42501', '28000'].includes(code ?? '')) {
+      if (['22023', '23503', '23505', '23514', '40001', '42501', '28000'].includes(code ?? '')) {
         command.current = null
         setUncertain(false)
         setConflict(code === '40001')
         setError(
           code === '40001' ? 'A situação do cadastro mudou. Atualize os dados antes de alterar novamente.' :
           code === '23505' ? 'Já existe um cadastro com esse nome nesta Loja.' :
+          code === '23514' ? 'A conta financeira só pode ser ativada quando existir mapeamento contábil em todos os planos publicados aplicáveis. Prepare um sucessor.' :
           code === '42501' || code === '28000' ? 'Seu acesso ou a assinatura da Loja não permite esta alteração.' :
           code === '23503' ? 'Cadastro não encontrado nesta Loja.' :
           'Verifique os dados e o motivo. Nenhuma alteração foi confirmada.',
@@ -147,6 +148,7 @@ export function TreasuryCatalogs({ client, organizationId }: { client: SupabaseC
             {kind === 'fund' && <div><label htmlFor="treasury-description">Finalidade do fundo (opcional)</label><input id="treasury-description" name="description" maxLength={1000} /></div>}
             <div><label htmlFor="treasury-create-reason">Motivo do cadastro</label><input id="treasury-create-reason" name="reason" minLength={3} maxLength={500} required /></div>
           </div>
+          {kind === 'account' && <p className="subtle">Novas contas financeiras são cadastradas inativas. Para ativar, precisam de classificação patrimonial compatível nos planos publicados aplicáveis.</p>}
           <button type="submit" className="primary">Cadastrar {kindNames[kind].toLowerCase()}</button>
         </fieldset>
       </form>
