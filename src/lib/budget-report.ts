@@ -54,7 +54,7 @@ export async function loadBudgetLines(client:SupabaseClient,org:string,cycle:str
  if(error)throw error
  if(!Array.isArray(data)||data.length>400)throw Error('Budget result truncated')
  for(const raw of data){
-  const row=raw as BudgetRow
+  const row=raw as unknown as BudgetRow
   if(!row||row.organization_id!==org||row.budget_cycle_id!==cycle||row.period!==period||
     (isAccount?!accountIds.has(row.accounting_account_id??''):!fundIds.has(row.fund_id??'')))
    throw Error('Unexpected budget scope or account')
@@ -63,5 +63,5 @@ export async function loadBudgetLines(client:SupabaseClient,org:string,cycle:str
   if(budget<0||actual<0||Math.abs(budget-actual-remaining)>0.01)
    throw Error('Budget amounts inconsistent')
  }
- return data as BudgetRow[]
+ return data as unknown as BudgetRow[]
 }

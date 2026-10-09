@@ -19,7 +19,7 @@ function fixture(options:{foreign?:boolean;balance?:string;many?:boolean}={}){
   const chain={select:()=>chain,eq:()=>chain,order:()=>chain,limit:()=>chain,
    range:(a:number)=>{page=a;return chain},
    abortSignal:()=>Promise.resolve({data:table==='v_financial_account_movements'&&options.many?
-    (page===0?Array.from({length:26},(_,i)=>({...rows[table][0],source_id:`${source.slice(0,35)}${i%10}`}))
+    (page===0?Array.from({length:26},(_,i)=>({...(rows[table][0] as Record<string,unknown>),source_id:`${source.slice(0,35)}${i%10}`}))
       :[rows[table][0]]):rows[table],error:null})}
   return chain
  })
