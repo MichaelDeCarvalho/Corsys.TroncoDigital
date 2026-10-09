@@ -14,7 +14,7 @@ export function FinancialPeriods({client,organizationId}:{client:SupabaseClient;
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false}},[])
  useEffect(()=>{
   let live=true;const controller=new AbortController()
-  setState(null);setError('');setSaved(false);setConfirmed(false)
+  setState(null);setError('');setConfirmed(false)
   if(month){
    loadPeriodState(client,organizationId,month,controller.signal)
     .then(s=>{if(live)setState(s)})
