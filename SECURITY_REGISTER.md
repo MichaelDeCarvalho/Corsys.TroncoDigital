@@ -1,5 +1,10 @@
 # SECURITY REGISTER
 
+## Operações financeiras institucionais no frontend — 2026-10-09
+
+`InstitutionalOperations` reutiliza apenas quatro RPCs de backend com `institutional.manage` e idempotência server-side, sem ampliar EXECUTE/grants/RLS de tabelas e sem armazenar chaves financeiras no navegador. A leitura de obrigações consulta views efetivas sob filtro `organization_id` e falha fechada para `integrity_ok=false`, tenant inesperado ou mais de 150 registros. O cliente oculta liquidação de obrigação pendente de aprovação, porém isso **não substitui validação do banco**. A cobrança institucional não é pagamento de integrante nem assinatura SaaS. SQL de criação, pagamento e recebimento parcial em A/B com `ROLLBACK` PASS, incluindo teste de ID estrangeiro. Faltam HTTP/JWT real, múltiplas sessões simultâneas, fluxos de aprovação/correção/cancelamento do piloto e paridade visual desktop/mobile.
+
+
 ## Incremento 12 — pagamentos e DRE, 2026-10-09
 
 Duas RPC `SECURITY DEFINER` adicionais, exclusivamente `authenticated`, `search_path=''`, sem novos grants em tabelas. `reverse_member_payment_idempotent` exige `payments.reverse`, competência mensal, motivo e chave idempotente; utiliza `private.idempotency_begin/complete` e invoca a `reverse_payment` original sob a mesma transação (que também exige permissão e registra evento/auditoria). `read_tenant_dre` exige `reports.read` antes de agregar `v_dre_entries` tenant-scoped, limita 12 competências, exclui patrimonial/caixa e não expõe linhas de outra organização. Anon sem EXECUTE nas duas funções. Nenhum segredo/configuração nova no frontend.

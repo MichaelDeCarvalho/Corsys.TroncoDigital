@@ -1,5 +1,10 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Etapa 2 — obrigações institucionais operacionais, 2026-10-09
+
+O Financeiro possui cadastro e liquidação parcial/total de contas a pagar e a receber, consumindo RPCs auditadas/idempotentes já existentes; não cria regras contábeis alternativas no navegador. O painel distingue obrigação de liquidação, verifica aprovação de despesas, integridade e escopo tenant. Testes SQL DEV A/B com ROLLBACK aprovados, CI 101/101 teste no último commit funcional. Etapa 2 permanece incompleta diante da paridade do piloto V35 e homologações HTTP/JWT e de concorrência.
+
+
 ## Etapa 2 — pagamentos de integrantes e DRE (2026-10-09)
 
 Supabase DEV tem 34 migrations. Foram acrescentados no Financeiro os fluxos de registrar pagamento de integrante, alocar manualmente em cobrança e estornar com idempotência/auditoria, além de DRE por competência com dados efetivamente contabilizados. Os gates SQL A/B foram executados com ROLLBACK e mantiveram 17 cobranças e 16 pagamentos existentes. A Etapa 2 continua significativamente incompleta: faltam telas/integridade HTTP, módulos institucionais, relatórios/planilhas, Master SaaS e paridade V35.

@@ -1,3 +1,12 @@
+## Incremento 13 — tesouraria institucional com cadastro e liquidação (2026-10-09)
+
+- Branch DEV `feat/v35-dev-gate-20261002`, PR #4. Sem migrations adicionais além das 34 existentes.
+- UI `InstitutionalOperations.tsx` e loader `institutional-operations.ts` em Financeiro. Reutiliza RPCs existentes idempotentes: payable/receivable create e payable-payment/receipt, sem duplicar lógica monetária em React. Bloqueia liquidação de despesas sem aprovação e de valores superiores ao saldo; resultados com `integrity_ok` obrigatório e filtro tenant.
+- SQL A/B `scripts/verify_dev_institutional_lifecycle.sql`: `DEV_INSTITUTIONAL_LIFECYCLE_ROLLBACK_PASS`, inclusive create/retry e pagamento parcial, tudo revertido. `verify_dev_institutional_foreign_id.sql` PASS. Scripts `verify_dev_financial_lifecycle.sql` PASS. `verify_dev_financial_commands.sql` foi interrompido por precondição histórica incompatível `Fixture changed`, não por divergência testada de valores; atualizar fixture separadamente.
+- CI `37971091914` testou commit `69d4d5a4` e aprovou 101 testes/15 arquivos e build. A próxima revisão documental deve ter seu próprio CI validado.
+- PENDENTE: autorizar/decidir aprovações, correções e cancelamentos de obrigação, periodicidade institucional, conciliação, contas/fundos, relatórios comparativos, Master SaaS, 21 telas completas HTML V35, HTTP/JWT real e concorrência independente.
+- Não executar merge/deploy PROD. Nenhum trabalho em background depois deste turno.
+
 ## Incremento 12 — pagamentos e DRE realizados (2026-10-09)
 
 - Branch DEV `feat/v35-dev-gate-20261002`, PR #4, Supabase DEV migrations #33/#34 aplicadas e versionadas.

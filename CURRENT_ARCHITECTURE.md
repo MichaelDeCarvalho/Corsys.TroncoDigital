@@ -1,5 +1,10 @@
 # CURRENT ARCHITECTURE
 
+## Ciclo institucional de obrigações e liquidação — 2026-10-09
+
+O frontend `InstitutionalOperations` opera em abas contas a pagar e contas a receber por `organizationId` autenticado. A leitura usa as views financeiras efetivas `v_institutional_payable_effective` e `v_institutional_receivable_effective`, validando integridade e isolação de tenant; nenhuma consulta parcial é somada como saldo de caixa. Registros de obrigação são criados pelas RPCs existentes `create_institutional_payable`/`create_institutional_receivable` (idempotentes, com snapshot contábil), e liquidações por `register_institutional_payable_payment`/`register_institutional_receipt` (evento financeiro separado com alocação). A UI exige aprovação prévia para despesas `approved` ou `not_required`, além da autorização final do servidor. O valor alocado neste incremento é igual ao recebido/pago, permitindo pagamento parcial por evento; excessos permanecem bloqueados. Nenhum schema/migration novo nem alteração de fatos históricos.
+
+
 ## Pagamentos operacionais e DRE por competência — 2026-10-09
 
 `Finance` inclui `MemberPayments` e `DreReport`. O frontend não executa UPDATE/DELETE de fatos; chama RPCs de pagamentos/alocações (idempotentes) e `reverse_member_payment_idempotent` (migração #33), que reaproveita os eventos de estorno existentes com permissão `payments.reverse`, reenvio idempotente e razão auditada. Leitura de saldo do integrante vem de `v_charge_balances`/`v_payment_balances`, com validação `integrity_ok`, escopo Loja/integrante e limites fail-closed para não tratar consulta parcial como completa. Pagamentos de integrantes e receitas institucionais não são equivalentes.
