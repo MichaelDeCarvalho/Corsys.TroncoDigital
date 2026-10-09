@@ -3,6 +3,7 @@ import { Users, MessagesSquare, Building2, ArrowUpRight, RefreshCw } from 'lucid
 import type { SupabaseClient, User } from '@supabase/supabase-js'
 import { AppShell, type Page } from './AppShell'
 import { Finance } from './Finance'
+import { FinancialDashboard } from './FinancialDashboard'
 import { FinancialStructure } from './FinancialStructure'
 import { Members } from './Members'
 import { loadOrganizations, loadTenantData, openTicket, type Organization, type TenantData } from '../lib/tenant-data'
@@ -57,6 +58,7 @@ function TenantPanel({ client, organization, page, onNavigate }: { client: Supab
     {sent && page === 'support' && <p role="status" className="message">Chamado enviado. A lista foi atualizada.</p>}
     {page === 'home' && <>
       <section className="hero-card"><div><span className="pill">{organization.status === 'active' ? 'Loja ativa' : 'Loja inativa'}</span><h2>{organization.name}</h2><p>Um espaço para cuidar da sua Loja, dos seus integrantes e do seu atendimento.</p></div><Building2 size={58} strokeWidth={1.2} aria-hidden="true" /></section>
+      <FinancialDashboard client={client} organizationId={organization.id} />
       <div className="metric-grid"><article className="panel metric"><Users size={23} aria-hidden="true" /><p>Integrantes carregados</p><strong>{data.members.length}</strong><button className="text-button" onClick={() => onNavigate('members')}>Ver integrantes <ArrowUpRight size={16} aria-hidden="true" /></button></article><article className="panel metric"><MessagesSquare size={23} aria-hidden="true" /><p>Chamados abertos carregados</p><strong>{open.length}</strong><button className="text-button" onClick={() => onNavigate('support')}>Acompanhar chamados <ArrowUpRight size={16} aria-hidden="true" /></button></article><article className="panel info-card"><p className="eyebrow">Atendimento</p><h3>Precisa de ajuda?</h3><p>Abra um chamado para acompanhar sua solicitação junto ao suporte.</p><button className="secondary" onClick={() => onNavigate('support')}>Ir para atendimento</button></article></div>
       <section className="panel"><div className="section-title"><h2>Integrantes da Loja</h2><button className="text-button" onClick={() => onNavigate('members')}>Ver lista</button></div><MemberList members={data.members.slice(0, 5)} /></section>
     </>}
