@@ -1,5 +1,12 @@
 # CURRENT ARCHITECTURE
 
+## Publicação contábil validada — 2026-10-09 (Incremento 10)
+
+`publish_validated_accounting_plan` tornou-se a única RPC de publicação disponível a usuários autenticados. O endpoint legado `publish_accounting_plan` foi explicitamente revogado dos roles de API e permanece como função interna. Novo fluxo no DEV: `accounting.manage` => idempotência => lock da Loja/rascunho => validação da vigência informada => locks SHARE temporários sobre categorias, contas e mapeamentos => pré-validação completa => publicação existente (immutability/EXCLUDE) => auditoria com motivo => result UUID. Toda operação ocorre numa transação PostgreSQL; erro desfaz o conjunto. UI somente oferece ação após `ready`, motivo e confirmação de imutabilidade, mas não é boundary de segurança. Script SQL A/B com ROLLBACK PASS; frontend/CI verificar pela SHA final. 31 migrations DEV, produção inalterada.
+
+**Atenção:** SHARE locks são globais entre tenants enquanto a publicação executa; plano de timeout e testes de concorrência em sessões independentes continuam pendentes. Endpoint legado deixa de ser compatível com clientes que o invocassem diretamente. Novas categorias criadas após publicação ainda precisam de regra de sucessão/cobertura para não introduzir fatos sem classificação.
+
+
 ## Pré-publicação contábil em diagnóstico, 2026-10-09
 
 O frontend `AccountingPrepublication` consulta `public.preview_accounting_plan_publication` somente por RPC; servidor exige `accounting.manage`, escopo e assinatura. Retorna snapshot JSON de impeditivos e contagens; painel exibe avisos, mas não habilita publicação. Inclui detecção recursiva de ciclos, naturezas/hierarquias indevidas e vigências sobrepostas aos planos publicados. RPC usa `SECURITY DEFINER` com search_path vazio, grants apenas authenticated, sem novos grants em tabelas nem mudanças RLS. Um resultado `ready=true` exige rechecagem sob lock no futuro comando de publicação; preview pode ficar obsoleto imediatamente após consulta. Banco DEV migration30, nenhuma postagem financeira nem atualização em published.

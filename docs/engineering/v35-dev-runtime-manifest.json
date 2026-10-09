@@ -235,6 +235,15 @@
       "sha256": "0b499ae41fe256ef250ac1896f10ed985e56f83619b85d9275048ef0909cd2a7",
       "applied_at": "2026-10-09",
       "note": "Read-only, accounting.manage-scoped prepublication diagnostics for draft/published status, future vigence, published overlaps, analytic hierarchy/cycles, completeness of active category and cash mappings and invalid inactive/wrong-nature links. No publishing/ledger modification. SQL A/B ROLLBACK."
+    },
+    {
+      "version": "20261009162535",
+      "name": "validated_accounting_plan_publication",
+      "source_path": "supabase/migrations/20261009162535_validated_accounting_plan_publication.sql",
+      "path": "supabase/migrations/20261009162535_validated_accounting_plan_publication.sql",
+      "sha256": "e7a02237ea8d42cdbeb29756c67bbacb501cc4a0e67bc3a14c48b8e876e5aa67",
+      "applied_at": "2026-10-09",
+      "note": "Atomic future-dated accounting publication validates readiness under tenant/plan row locks and five SHARE table locks. Idempotent authorized audited RPC; direct authenticated legacy publish revoked. SQL A/B ROLLBACK PASS. DEV only; HTTP JWT/concurrency/real visual not evaluated."
     }
   ],
   "baseline_patches": {

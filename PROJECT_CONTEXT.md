@@ -1,5 +1,10 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Incremento 10 — publicação de Plano Contábil DEV, 2026-10-09
+
+A V35 possui agora fluxo de publicação explicitamente confirmada do Plano de Contas, com rechecagem atômica no Supabase DEV, idempotência e auditoria. A migração DEV31 revogou a exposição direta do endpoint legado `publish_accounting_plan`, mantendo-o apenas como etapa interna da RPC validada. Teste SQL de duas Lojas com fixtures revertidos demonstrou publicação válida, proteção contra duplicidades e erros de escopo. Exigir validação HTTP/JWT, concorrência, preview/mobile e paridade integral antes de produção; Etapa 2 ainda não encerrada.
+
+
 ## Etapa 2 — pré-publicação contábil, 2026-10-09
 
 Pré-verificação de publicação do Plano de Contas integrada à tela, verificando obrigatoriedade de vínculos, natureza, hierarquia e vigência publicada. Migração DEV #30 e gate SQL A/B com ROLLBACK passaram. Ainda **não há publicação pelo frontend**, nem homologação HTTP/JWT, concorrência real ou paridade visual integral do piloto V35. Próxima etapa requer contrato de publicação atômica revalidado no servidor.
