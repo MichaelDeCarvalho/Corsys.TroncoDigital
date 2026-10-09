@@ -131,3 +131,18 @@ p { line-height: 1.6; }
  .app-layout { display: block; }.sidebar { display: none; }.topbar { padding: 12px 18px; justify-content: space-between; gap: 12px; }.account-email { display: none; }.mobile-brand { display: block; font-weight: 650; }.app-body main { padding: 23px 18px 112px; }.workspace-heading { display: block; }.org-selector { margin-top: 18px; width: 100%; }.hero-card { padding: 24px; }.hero-card > svg { display: none; }.metric-grid { gap: 12px; }.panel { padding: 21px; }.metric-grid .panel { padding: 20px 16px; }.metric .text-button { font-size: .77rem; }.support-grid { grid-template-columns: 1fr; }.ticket-list li { flex-wrap: wrap; }.mobile-nav { display: flex; position: fixed; bottom: 0; left: 0; right: 0; background: #0b2030; border-top: 1px solid #2a4253; padding: 8px 12px max(8px, env(safe-area-inset-bottom)); z-index: 20; }.mobile-nav button { flex: 1; background: transparent; color: #8baabc; display: grid; justify-items: center; gap: 6px; padding: 8px; font-size: .72rem; }.mobile-nav button[aria-current] { color: var(--accent); background: #14362f; }
 }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+
+
+.treasury-catalogs { margin-top: 32px; border-top: 1px solid var(--line); padding-top: 30px; }
+.treasury-catalogs fieldset { border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin: 0 0 18px; }
+.treasury-catalogs legend { color: #b8ccd9; padding: 0 8px; }
+.treasury-catalogs .member-form-grid { margin-bottom: 18px; }
+.treasury-status-controls { max-width: 520px; margin-bottom: 20px; }
+.treasury-catalog-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,300px),1fr)); gap: 16px; }
+.treasury-catalog-list { padding: 0; margin: 0; list-style: none; }
+.treasury-catalog-list li { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.treasury-catalog-list li:last-child { border-bottom: 0; }
+.treasury-catalog-list li > div { min-width: 0; overflow-wrap: anywhere; }
+.treasury-catalog-list li strong, .treasury-catalog-list li .subtle { display: block; }
+.treasury-catalog-list li .subtle { font-size: .78rem; margin-top: 5px; }
+.treasury-catalog-list li button { min-width: 88px; }

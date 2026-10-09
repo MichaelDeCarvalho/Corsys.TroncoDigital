@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { loadFinancialStructure } from '../lib/financial-structure'
 import { normalizedAmount } from '../lib/member-configuration'
 import { formatMoney } from '../lib/finance-data'
+import { TreasuryCatalogs } from './TreasuryCatalogs'
 
 type Command = { name: string; args: Record<string, unknown> }
 const domainLabels: Record<string, string> = { member_receivable: 'Cobrança de integrante', institutional_revenue: 'Receita institucional', institutional_expense: 'Despesa institucional' }
@@ -91,5 +92,6 @@ export function FinancialStructure({ client, organizationId }: { client: Supabas
     <h3>Categorias cadastradas</h3>{!data.categories.length ? <p>Nenhuma categoria cadastrada.</p> : <ul>{data.categories.map(row => <li key={row.id}>{row.name} — {domainLabels[row.domain] ?? 'Aplicação não reconhecida'} — {row.active ? 'Ativa' : 'Inativa'}{row.allow_recurrence ? ' — recorrência permitida' : ''}</li>)}</ul>}
     <h3>Histórico de preços</h3>{!data.prices.length ? <p>Nenhuma vigência de preço cadastrada.</p> : <ul>{data.prices.map(row => <li key={row.id}>{data.rules.find(rule => rule.id === row.recurring_rule_id)?.name} — {formatMoney(Number(row.unit_amount))} — {row.valid_from_competence.slice(0, 7)} até {row.valid_to_competence?.slice(0, 7) ?? 'sem término'}</li>)}</ul>}
     <p className="subtle">Até 200 registros por lista. Neutra/repasse, vínculo contábil DRE, recorrência institucional, regras especiais e demais abas do Plano de Contas serão disponibilizados nos próximos incrementos.</p>
+    <TreasuryCatalogs client={client} organizationId={organizationId} />
   </section>
 }
