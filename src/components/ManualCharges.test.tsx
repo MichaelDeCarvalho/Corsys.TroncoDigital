@@ -107,7 +107,6 @@ describe('Manual member charges',()=>{
  })
  it('rejects cross-member response in loader',async()=>{
   const {client}=mock()
-  const result=await loadMemberCharges(client,'org','different-member',new AbortController().signal)
-  expect(result).toHaveLength(1)
+  await expect(loadMemberCharges(client,'org','different-member',new AbortController().signal)).rejects.toThrow()
  })
 })
