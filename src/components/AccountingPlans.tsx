@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { endOfMonth, loadAccountingCatalog, loadAccountingDetail, type Catalog, type Detail } from '../lib/accounting-plans'
+import { AccountingPrepublication } from './AccountingPrepublication'
 type Command = { name:string; args:Record<string,unknown> }
 type Kind = 'category'|'financial_account'
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -129,6 +130,10 @@ export function AccountingPlans({client,organizationId}:{client:SupabaseClient;o
     <details className="accounting-accounts-list"><summary>Consultar códigos e hierarquia contábil</summary>
      <ul>{detail.accounts.map(a=><li key={a.id}><strong>{a.code}</strong> — {a.description} · {a.nature} · {a.row_type}{a.active?'':' (inativa)'}</li>)}</ul>
     </details>
+    {plan.status==='draft' && <AccountingPrepublication
+     key={`${organizationId}:${selected}:${revision}`}
+     client={client} organizationId={organizationId} planId={selected} disabled={blocked}
+    />}
     {plan.status==='draft'&&<form aria-label="Configurar vínculo contábil" onSubmit={saveMapping}>
      <fieldset disabled={blocked}><legend>Mapear categoria ou conta financeira</legend>
       <div className="member-form-grid">
