@@ -1,3 +1,13 @@
+## Incremento 6 — catálogos de tesouraria, 2026-10-08 Brasil / 2026-10-09 UTC
+
+Implementados cadastro, leitura, ativação e desativação de contas financeiras, fundos e formas de pagamento no módulo Plano de Contas. Duas RPCs servidor `create_treasury_catalog_item` e `set_treasury_catalog_status` exigem `settings.manage` e assinatura elegível, validam tipo/parametrização, têm idempotência, auditoria, lock e rejeição de duplicata de nome normalizado. Alterar status usa pré-condição `expected_active`, com erro `40001` para concorrência e atualização obrigatória; não há exclusão de linha nem lançamento de caixa/ledger. Leitura cliente segue grants SELECT/RLS existentes e verifica organização explicitamente. Formulários mostram falhas e permitem retry idempotente de resposta ambígua.
+
+Migrations DEV `20261009011416_tenant_treasury_catalog_commands` e correção aditiva `20261009011533_treasury_catalog_scope_error_fix`, ambas no manifesto com SHA. A segunda corrige retorno de item inexistente sob SQL dinâmico (`EXECUTE INTO` não altera `FOUND`) e preserva segurança fail-closed. Nenhuma alteração de tabela/RLS/grants de tabela, fatos financeiros ou produção.
+
+`scripts/verify_dev_treasury_catalog.sql` executado com `DEV_TREASURY_CATALOG_ROLLBACK_PASS` nas duas Lojas A/B: criar conta/fundo/meio, payload/retry idempotente, nomes duplicados, campos não permitidos, status/reativação/staleness, auditoria, IDs e leituras cruzadas negados, TREASURER/VIEWER/assinatura suspensa negados, anon sem EXECUTE, escrita direta negada e charges/payments preservados. Todos os fixtures foram revertidos. Claims SQL simuladas não equivalem a sessão HTTP/JWT real, concorrência simultânea ou aprovação de telas V35. Catálogo de fundo vazio no DEV permanece vazio até cadastro autorizado.
+
+**Paridade parcial:** contas/fundos/formas do `view-plano-contas`; pendem vínculos contábeis, status em operações posteriores, saldos, caixa/bancos, conciliação, meios adicionais do piloto, 91 códigos, parâmetros da Loja e testes visual/mobile.
+
 ## Incremento 5 — sucessão/encerramento de termos futuros, 2026-10-08
 
 Implementado o comando `transition_member_term`: ADMIN/`settings.manage`; usa idempotência, validação de escopo, lock de integrante e linha, auditoria, requisito de competência futura e encerramento inclusivo na competência anterior. Escolha de término sem sucessor retorna ao valor da regra geral; sucessor pode ser `standard`, `exempt` ou `override_amount`. O tipo/valor do termo anterior, cobrança e pagamento já registrados permanecem intactos. Não substitui geração de cobranças.

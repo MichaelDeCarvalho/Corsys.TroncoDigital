@@ -1,5 +1,10 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Etapa 2 — catálogos de contas/fundos/meios conectados, 2026-10-08 Brasil
+
+Plano de Contas agora permite contas financeiras (bank/pix/cash/other), fundos e formas de pagamento com cadastro e status, autorização exclusiva `settings.manage` e histórico preservado. Dados permanecem separados por Loja; migrações25/26 aplicadas DEV. SQL A/B em ROLLBACK aprovado; frontend CI e homologação autenticada visual devem ser conferidos. Ainda não há movimentos ou saldos gerados por esses cadastros. Próximo: parâmetros da Loja e plano contábil. Etapa 2 não concluída.
+
+
 ## Etapa 2 — categorias/regras mensais implementadas, 2026-10-08
 
 Cadastro de categoria por domínio/estado/recorrência/parcelamento, regra mensal com preço inicial futuro e preço sucessor conectados ao backend; migração23 aplicada DEV20261008203643. O catálogo vivo permanece com8categorias originais e nenhuma regra/preço novo persistido pelos testes. Não alterar elegibilidade existente nem semear valores de negócio sem revisão do piloto. CI anterior a301a83f/37839360346success; entrega atual conferir depois do push. Etapa2 EM EXECUÇÃO. Ver docs/V35_STAGE_2_IMPLEMENTATION.md para escopo/testes/limitações; campos/fluxos V35 pendentes permanecem obrigatórios.

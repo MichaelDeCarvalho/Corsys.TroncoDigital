@@ -1,3 +1,13 @@
+## Incremento 6 — contas/fundos/meios de pagamento (2026-10-08 Brasil)
+
+- Branch: `feat/v35-dev-gate-20261002` no PR draft #4.
+- Migrations DEV 25 e 26: `20261009011416_tenant_treasury_catalog_commands`, `20261009011533_treasury_catalog_scope_error_fix`. Fontes e hashes versionados.
+- RPCs protegidas: criação/ativação/desativação de financial_accounts, funds e payment_methods, sem DELETE, sem novos grants ou RLS e sem operações financeiras; permission `settings.manage`/assinatura. Correção de checagem explícita `v_old is null` após EXECUTE INTO.
+- Frontend: `TreasuryCatalogs.tsx` dentro de `FinancialStructure.tsx`; `treasury-catalogs.ts` carrega três catálogos com escopo explícito; testes de componente e CSS responsivo.
+- Gate SQL reexecutado A/B (claims simuladas, ROLLBACK): `DEV_TREASURY_CATALOG_ROLLBACK_PASS`; resultados reais positivos/negativos e contagens financeiras preservadas.
+- Validação CI do commit final: consultar GitHub Actions antes de classificar. E2E HTTP/JWT real, corrida simultânea, screenshot/mobile e paridade integral não avaliados.
+- Próximo: identidade/parâmetros da Loja, plano contábil e mapeamentos, regras especiais e geração/baixas, mantendo escopo do HTML V35. Sem merge/prod/pagamento contratado.
+
 ## Retomada sem Work — 2026-10-08, Etapa 2 / incremento 5
 
 - Base: `feat/v35-dev-gate-20261002`, PR draft #4; migração 24 aplicada somente DEV: `20261008211155_member_term_transition`.

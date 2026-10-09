@@ -1,5 +1,10 @@
 # CURRENT ARCHITECTURE
 
+## Catálogos de tesouraria — 2026-10-08 Brasil
+
+`src/components/TreasuryCatalogs.tsx` integra a área Plano de Contas, usando `src/lib/treasury-catalogs.ts` para SELECT/RLS escopado em financial_accounts, funds e payment_methods. Mutação exclusivamente por RPCs SECURITY DEFINER `create_treasury_catalog_item` e `set_treasury_catalog_status`; require_permission(settings.manage), idempotência, auditoria, lock, validação/escopo, suspensão fail-closed, grants EXECUTE só authenticated. Estado inativo preserva referências e dados existentes; não atualiza ledger, não gera movimentação nem saldo. 26 migrations no DEV; produção inalterada. Limite UI 200 por catálogo e sem paginação global. `scripts/verify_dev_treasury_catalog.sql` é teste SQL com ROLLBACK, não HTTP real.
+
+
 ## Categorias e regras mensais — 2026-10-08
 
 FinancialStructure.tsx conecta a área Plano de Contas → categorias/regras mensais. financial-structure.ts consulta categorias/regras por organization_id e preços somente dos IDs dessas regras, com abort/rejeição de escopo. Novas RPCs create_tenant_financial_category, create_tenant_monthly_rule e schedule_tenant_monthly_price usam settings.manage, idempotência/audit e search_path vazio, sem escrita direta/RLS alterada. Preço sucessor bloqueia regra, compara último UUID e encerra sua vigência em competência anterior; nunca altera unit_amount anterior ou charges/payments. Ver docs/V35_STAGE_2_IMPLEMENTATION.md e ADR0008.

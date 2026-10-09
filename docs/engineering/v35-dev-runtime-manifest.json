@@ -181,6 +181,24 @@
       "sha256": "334b7c4b2fb9edf21990f1fe567b5c99eaa20d9a1ce3e4e3030147b14866451c",
       "applied_at": "2026-10-08",
       "note": "Future-only member term succession/closing RPC. Applied DEV; returns to general rule when closed. Only term boundaries/history changed, no ledger. Tested with SQL ROLLBACK; HTTP/JWT and concurrent live clients pending."
+    },
+    {
+      "version": "20261009011416",
+      "name": "tenant_treasury_catalog_commands",
+      "source_path": "supabase/migrations/20261009011416_tenant_treasury_catalog_commands.sql",
+      "path": "supabase/migrations/20261009011416_tenant_treasury_catalog_commands.sql",
+      "sha256": "f2d4cfc8175d995a97eb8f3073fa1a0adef6eceddfeb2b689f88f69689db856d",
+      "applied_at": "2026-10-09",
+      "note": "Two tenant-safe RPCs create/status for accounts, funds and methods; settings.manage, idempotency and audit; only DEV, no ledger writes or table grants."
+    },
+    {
+      "version": "20261009011533",
+      "name": "treasury_catalog_scope_error_fix",
+      "source_path": "supabase/migrations/20261009011533_treasury_catalog_scope_error_fix.sql",
+      "path": "supabase/migrations/20261009011533_treasury_catalog_scope_error_fix.sql",
+      "sha256": "493773818ad015e586fabea836b3012ea7483a62c962addb984998e61294218a",
+      "applied_at": "2026-10-09",
+      "note": "Additive correction to distinguish absent/foreign item 23503 from stale status 40001 after dynamic EXECUTE; no other permission/data changes."
     }
   ],
   "baseline_patches": {

@@ -1,5 +1,12 @@
 # SECURITY REGISTER
 
+## Incremento de tesouraria — 2026-10-08 Brasil
+
+Duas RPCs SECURITY DEFINER autenticadas adicionais exigem `private.require_permission(p_organization_id,'settings.manage')` antes de acessar tabelas e validam organização/estado. Concessões nas tabelas continuam SELECT apenas para authenticated; nenhuma policy RLS ou tabela alterada. create usa `pg_advisory_xact_lock` e impede duplicação case-insensitive; status usa `FOR UPDATE` e `expected_active`. ID estrangeiro é 23503 após forward-fix: `EXECUTE ... INTO` não define `FOUND`, portanto usar `v_old is null` sobre coluna NOT NULL. Auditoria grava tipo/nome/status, sem copiar identificações bancárias. Campos com valores de conta permanecem protegidos pelas RLS existentes.
+
+Teste SQL DEV A/B com rollback: ações permitidas, negativas de outros tenants e cargos, suspended, anon, stale, input, escrita direta e preservação do ledger: PASS. HTTP/JWT real, testes de corrida simultânea, RLS E2E, revisão mobile e avaliação integral de advisors não executados nesta entrega. A nova superfície aumenta o número de functions definer; manter auditoria e revisão de privileges antes de produção.
+
+
 ## RPCs de catálogo/preço — 2026-10-08
 
 Três novas RPCs definer intencionais sob settings.manage/require_permission (ADMIN no catálogo atual), assinatura ativa e IDs próprios; anon semEXECUTE, tabelas sem novos grants, RLS preservada. Nomes duplicados normalizados protegidos por advisory lock; preço finito/positivo/decimal limitado numeric(14,2). Preço sucessor usa lock da regra e UUID esperado; conflito40001, IDs estrangeiros23503. Nenhuma edição direta de valor histórico, category.default_behavior ou fatos financeiros.
