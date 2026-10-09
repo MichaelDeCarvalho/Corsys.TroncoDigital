@@ -146,3 +146,14 @@ p { line-height: 1.6; }
 .treasury-catalog-list li strong, .treasury-catalog-list li .subtle { display: block; }
 .treasury-catalog-list li .subtle { font-size: .78rem; margin-top: 5px; }
 .treasury-catalog-list li button { min-width: 88px; }
+
+
+.accounting-plans { margin-top: 32px; border-top: 1px solid var(--line); padding-top: 30px; }
+.accounting-plans fieldset { border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin: 0 0 18px; }
+.accounting-plans legend { color: #b8ccd9; padding: 0 8px; }
+.accounting-plans .member-form-grid { margin-bottom: 18px; }
+.accounting-plans > select { max-width: 720px; }
+.accounting-accounts-list { margin: 20px 0; }
+.accounting-accounts-list summary { cursor: pointer; color: var(--accent); padding: 12px 0; }
+.accounting-accounts-list ul { max-height: 360px; overflow-y: auto; margin: 0 0 12px; padding: 4px 0; list-style: none; }
+.accounting-accounts-list li { padding: 8px 0; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
