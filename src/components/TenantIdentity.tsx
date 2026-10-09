@@ -24,9 +24,9 @@ export function TenantIdentity({ client, organizationId }: { client: SupabaseCli
     let live = true
     const abort = new AbortController()
     setSettings(undefined); setError('')
-    client.from('organization_settings')
+    Promise.resolve(client.from('organization_settings')
       .select('organization_id,updated_at,phone,email,pix_key,address,postal_code,city,state_code,country_code')
-      .eq('organization_id', organizationId).limit(1).abortSignal(abort.signal)
+      .eq('organization_id', organizationId).limit(1).abortSignal(abort.signal))
       .then(({ data, error: failure }) => {
         if (!live) return
         if (failure || !data || data.length > 1 || data.some(row => row.organization_id !== organizationId)) {
