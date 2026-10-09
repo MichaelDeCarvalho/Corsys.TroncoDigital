@@ -1,3 +1,13 @@
+## Incremento 9 — Pré-validação para publicação contábil (2026-10-09)
+
+- Contexto: V35 Etapa 2; GitHub PR draft #4 branch `feat/v35-dev-gate-20261002`.
+- DEV migration #30: `20261009041818_accounting_plan_prepublication_preview`, fonte/hashes no manifesto. RPC `preview_accounting_plan_publication` é somente leitura, `accounting.manage`, status draft/futuro, contagem de cobertura, incompatibilidades, ciclos e conflito com published.
+- UI `AccountingPrepublication.tsx` e testes, integrada em `AccountingPlans` para rascunhos; apenas mostra razões de bloqueio e quantidades. Prontidão no preview **não** publica nem torna o plano ativo.
+- SQL de integração A/B `DEV_ACCOUNTING_PREPUBLICATION_ROLLBACK_PASS` verificado; nenhuma mudança persistida nas fixtures e nenhuma alteração de ledger.
+- CI dos arquivos frontend/consolidação: verificar no GitHub Actions pela SHA final antes de declarar PASS. HTTP/JWT real, concorrência simultânea de publicação e homologação visual/mobile não executados.
+- Próximo passo crítico: definir comando transacional de publicação que reavalie o preview sob locks, com retry idempotente e prevenção de alterações pós-check; testar cenários concorrentes e evitar sobrescrever fatos históricos. Avaliar o endpoint legado `publish_accounting_plan` antes de liberar UI, preservando isolamento, publicações existentes e o HTML V35.
+- Sem merge, deploy de produção ou pagamento de provedores.
+
 ## Incremento 8 — Plano de Contas: drafts e mappings (2026-10-08 Brasil)
 
 - Branch `feat/v35-dev-gate-20261002`, PR draft #4, nova migration DEV29 `20261009014331_tenant_accounting_drafts_and_mappings`, fonte SHA256 no manifesto.

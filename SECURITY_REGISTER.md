@@ -1,5 +1,10 @@
 # SECURITY REGISTER
 
+## RPC de diagnóstico pré-publicação — 2026-10-09
+
+`preview_accounting_plan_publication` adicionada em `public` como SECURITY DEFINER sem `search_path`, com require_permission('accounting.manage') antes de consulta; `anon` sem EXECUTE, sem concessão de escrita em tabelas. Faz apenas SELECT e não retorna dados de outras Lojas. A classificação `ready` é um snapshot orientativo, **não é uma capacidade ou autorização para publicar**: revogação de papel, novas categorias, inativação de contas ou publicação concorrente podem invalidar resultado. Publicação deve revalidar todos os predicados atomicamente sob lock, não confiar no frontend ou preview armazenado. Gate SQL A/B simulando autenticação, ausência/invalidade de vínculos, ciclos, vigências, RLS, roles, assinatura suspensa e não alteração de ledger PASS com ROLLBACK. HTTPS/JWT real e concorrência de conexões independentes não avaliados; manter linter SECURITY DEFINER como observação não resolvida.
+
+
 ## Incremento 8 — RPCs de plano contábil draft, 2026-10-08 Brasil
 
 Duas RPC SECURITY DEFINER autenticadas novas em `public`, com `accounting.manage`, assinatura verificada por `private.require_permission`, `search_path` vazio, `anon` sem EXECUTE. Criação de plano restringe início a competência futura e reutiliza `create_accounting_plan` (não impede o uso do endpoint legado por quem já possua accounting.manage); idempotência e motivo auditado. Mapeamento exige tenant e draft com `FOR UPDATE`, associação FK dentro da mesma Loja/plano, tipo analítico ativo, natureza compatível, controle otimista via conta esperada e trilha de auditoria. Trigger legado torna planos publicados imutáveis. Testes SQL em duas Lojas: A/B positivos/negativos, RLS, suspensão, roles, anon, imutabilidade e invariantes financeiros PASS com ROLLBACK. Auditoria de segurança integral, JWT HTTP e concorrência simultânea permanecem não avaliados. Adicionadas duas funções definer ao inventário de risco, sem novos grants em tabelas.

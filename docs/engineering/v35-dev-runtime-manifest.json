@@ -226,6 +226,15 @@
       "sha256": "7d95c6476da37526224920f173a7468633c6ad9a7588bc8cc57bb00ad7eb8b8e",
       "applied_at": "2026-10-09",
       "note": "Future-only idempotent draft plan creation; maps categories/cash accounts only inside drafts with tenant scope, nature validation, lock, audit. Uses existing 91 account template; no published plan or ledger changes."
+    },
+    {
+      "version": "20261009041818",
+      "name": "accounting_plan_prepublication_preview",
+      "source_path": "supabase/migrations/20261009041818_accounting_plan_prepublication_preview.sql",
+      "path": "supabase/migrations/20261009041818_accounting_plan_prepublication_preview.sql",
+      "sha256": "0b499ae41fe256ef250ac1896f10ed985e56f83619b85d9275048ef0909cd2a7",
+      "applied_at": "2026-10-09",
+      "note": "Read-only, accounting.manage-scoped prepublication diagnostics for draft/published status, future vigence, published overlaps, analytic hierarchy/cycles, completeness of active category and cash mappings and invalid inactive/wrong-nature links. No publishing/ledger modification. SQL A/B ROLLBACK."
     }
   ],
   "baseline_patches": {

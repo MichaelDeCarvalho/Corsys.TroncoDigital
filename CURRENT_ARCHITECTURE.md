@@ -1,5 +1,10 @@
 # CURRENT ARCHITECTURE
 
+## Pré-publicação contábil em diagnóstico, 2026-10-09
+
+O frontend `AccountingPrepublication` consulta `public.preview_accounting_plan_publication` somente por RPC; servidor exige `accounting.manage`, escopo e assinatura. Retorna snapshot JSON de impeditivos e contagens; painel exibe avisos, mas não habilita publicação. Inclui detecção recursiva de ciclos, naturezas/hierarquias indevidas e vigências sobrepostas aos planos publicados. RPC usa `SECURITY DEFINER` com search_path vazio, grants apenas authenticated, sem novos grants em tabelas nem mudanças RLS. Um resultado `ready=true` exige rechecagem sob lock no futuro comando de publicação; preview pode ficar obsoleto imediatamente após consulta. Banco DEV migration30, nenhuma postagem financeira nem atualização em published.
+
+
 ## Plano contábil V35 — rascunhos e mapeamentos (2026-10-08 Brasil)
 
 `AccountingPlans.tsx` faz SELECT tenant-scoped via `accounting-plans.ts` de planos, modelo público ativo, contas e mapeamentos; valida organização/plano também no client como defesa em profundidade. RPC `create_tenant_accounting_draft` delega ao construtor V35 `create_accounting_plan` para gerar 91 códigos e hierarquia ou duplicar/blank, com idempotency wrapper, mês futuro e `accounting.manage`. RPC `set_draft_accounting_mapping` serializa no plano draft e verifica `expected_account_id`; exige natureza contábil adequada e trilha de auditoria. O esquema antigo impõe bloqueio de mudança no published e exclusão de vigências published sobrepostas, inclusive fora da UI. Não expor `publish_accounting_plan` na UI antes da cobertura de mapeamentos, revisão de 91 códigos e testes HTTP reais. Nenhuma atualização de ledger ou das tabelas históricas.

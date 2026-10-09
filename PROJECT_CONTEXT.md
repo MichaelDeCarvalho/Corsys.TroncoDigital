@@ -1,5 +1,10 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Etapa 2 — pré-publicação contábil, 2026-10-09
+
+Pré-verificação de publicação do Plano de Contas integrada à tela, verificando obrigatoriedade de vínculos, natureza, hierarquia e vigência publicada. Migração DEV #30 e gate SQL A/B com ROLLBACK passaram. Ainda **não há publicação pelo frontend**, nem homologação HTTP/JWT, concorrência real ou paridade visual integral do piloto V35. Próxima etapa requer contrato de publicação atômica revalidado no servidor.
+
+
 ## Etapa 2 — plano contábil com 91 códigos e mapeamentos, 2026-10-08 Brasil
 
 O template existente Corsys de 91 contas/86 pais foi reutilizado (não recriado). Planos draft futuros podem ser construídos de template, duplicata ou em branco; mapeamentos draft de categorias e contas financeiras agora têm UI e RPC auditada/idempotente. Supabase DEV alcançou 29 migrations. Plano publicado permanece somente leitura e imutável; publicação guiada e checagem integral de cobertura V35 pendentes. Gate SQL A/B com ROLLBACK passou. Não declarar Etapa 2 encerrada ou produção autorizada.
