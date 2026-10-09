@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { vi } from 'vitest'
 import { MemberPayments } from './MemberPayments'
@@ -51,7 +51,7 @@ describe('Member payment lifecycle',()=>{
   render(<MemberPayments client={client} organizationId="org"/>)
   await selectMember()
   set('Data do pagamento','2030-01-09')
-  set('Competência contábil','2030-01')
+  fireEvent.change(within(screen.getByRole('form',{name:'Registrar pagamento de integrante'})).getByLabelText('Competência contábil'),{target:{value:'2030-01'}})
   set('Valor recebido (R$)','125,50')
   set('Forma de pagamento',method)
   set('Conta de caixa/banco ativa',account)
@@ -71,7 +71,7 @@ describe('Member payment lifecycle',()=>{
   set('Pagamento com crédito disponível',payment)
   set('Cobrança em aberto',charge)
   set('Valor a alocar (R$)','45,50')
-  set('Competência contábil', '2030-01')
+  fireEvent.change(within(screen.getByRole('form',{name:'Alocar pagamento à cobrança'})).getByLabelText('Competência contábil'),{target:{value:'2030-01'}})
   fireEvent.submit(screen.getByRole('form',{name:'Alocar pagamento à cobrança'}))
   await screen.findByText('Operação confirmada. O extrato foi atualizado.')
   expect(rpc).toHaveBeenCalledWith('allocate_payment_to_charge',expect.objectContaining({
@@ -86,7 +86,7 @@ describe('Member payment lifecycle',()=>{
   set('Pagamento com crédito disponível',payment)
   set('Cobrança em aberto',charge)
   set('Valor a alocar (R$)','7,00')
-  set('Competência contábil','2030-01')
+  fireEvent.change(within(screen.getByRole('form',{name:'Alocar pagamento à cobrança'})).getByLabelText('Competência contábil'),{target:{value:'2030-01'}})
   fireEvent.submit(screen.getByRole('form',{name:'Alocar pagamento à cobrança'}))
   await screen.findByText('Valor maior que o crédito ou o saldo em aberto. Atualize antes de alocar.')
   expect(rpc).not.toHaveBeenCalled()
@@ -112,7 +112,7 @@ describe('Member payment lifecycle',()=>{
   render(<MemberPayments client={client} organizationId="org"/>)
   await selectMember()
   set('Data do pagamento','2030-01-09')
-  set('Competência contábil','2030-01')
+  fireEvent.change(within(screen.getByRole('form',{name:'Registrar pagamento de integrante'})).getByLabelText('Competência contábil'),{target:{value:'2030-01'}})
   set('Valor recebido (R$)','25,00')
   set('Forma de pagamento',method)
   set('Conta de caixa/banco ativa',account)
