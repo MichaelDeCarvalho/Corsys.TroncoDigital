@@ -271,6 +271,15 @@
       "sha256": "24a3c6e35ceae32705b1cbf5efab2b69e4617da654812280a149964acfc88a8a",
       "applied_at": "2026-10-09",
       "note": "Authorized reports.read only monthly DRE grouping from v_dre_entries, maximum 12 competencies, no cash/budget claims, read-only."
+    },
+    {
+      "version": "20261009181235",
+      "name": "payable_approval_idempotent_decisions",
+      "source_path": "supabase/migrations/20261009181235_payable_approval_idempotent_decisions.sql",
+      "path": "supabase/migrations/20261009181235_payable_approval_idempotent_decisions.sql",
+      "sha256": "37214fe24aa1db9114633211a0c7e08c5ad323699b70b70c95c9121160d68041",
+      "applied_at": "2026-10-09",
+      "note": "Authorization approvals.review, one-time immutable vote and idempotent retry; wraps existing decide_payable_approval. DEV only."
     }
   ],
   "baseline_patches": {

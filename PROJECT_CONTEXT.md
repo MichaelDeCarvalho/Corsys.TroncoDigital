@@ -1,5 +1,10 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Etapa 2 — fila de aprovação financeira (2026-10-09)
+
+Decisões de aprovação/rejeição de despesas institucionais adicionadas ao Financeiro utilizando a view existente e o backend `approvals.review`, com wrapper idempotente DEV35. SQL teste A/B com ROLLBACK aprovado; não alterou aprovações reais. Ainda faltam a configuração de políticas, histórico, fluxo completo de múltiplos aprovadores e a paridade integral V35.
+
+
 ## Etapa 2 — obrigações institucionais operacionais, 2026-10-09
 
 O Financeiro possui cadastro e liquidação parcial/total de contas a pagar e a receber, consumindo RPCs auditadas/idempotentes já existentes; não cria regras contábeis alternativas no navegador. O painel distingue obrigação de liquidação, verifica aprovação de despesas, integridade e escopo tenant. Testes SQL DEV A/B com ROLLBACK aprovados, CI 101/101 teste no último commit funcional. Etapa 2 permanece incompleta diante da paridade do piloto V35 e homologações HTTP/JWT e de concorrência.

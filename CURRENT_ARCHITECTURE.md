@@ -1,5 +1,10 @@
 # CURRENT ARCHITECTURE
 
+## Aprovação de despesas — fila e decisão idempotente (2026-10-09)
+
+O frontend `PayableApprovals` consulta `v_payable_approval_state` tenant-scoped para itens pendentes e chama exclusivamente `decide_payable_approval_idempotent`; o servidor exige `approvals.review`, chave idempotente e motivo, delegando ao comando já auditado que registra o voto imutável por usuário. A situação agregada continua calculada no banco, separada da liquidação institucional. Limite fail-closed 150, ainda sem paginação/rotina Master. Migration DEV35.
+
+
 ## Ciclo institucional de obrigações e liquidação — 2026-10-09
 
 O frontend `InstitutionalOperations` opera em abas contas a pagar e contas a receber por `organizationId` autenticado. A leitura usa as views financeiras efetivas `v_institutional_payable_effective` e `v_institutional_receivable_effective`, validando integridade e isolação de tenant; nenhuma consulta parcial é somada como saldo de caixa. Registros de obrigação são criados pelas RPCs existentes `create_institutional_payable`/`create_institutional_receivable` (idempotentes, com snapshot contábil), e liquidações por `register_institutional_payable_payment`/`register_institutional_receipt` (evento financeiro separado com alocação). A UI exige aprovação prévia para despesas `approved` ou `not_required`, além da autorização final do servidor. O valor alocado neste incremento é igual ao recebido/pago, permitindo pagamento parcial por evento; excessos permanecem bloqueados. Nenhum schema/migration novo nem alteração de fatos históricos.

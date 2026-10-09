@@ -1,3 +1,11 @@
+## Incremento 14 — fila e decisões de aprovações institucionais, 2026-10-09
+
+A base já tinha `payable_approval_requests`, `payable_approval_decisions`, view `v_payable_approval_state`, permissão `approvals.review` e a RPC `decide_payable_approval`. A migration DEV `20261009181235_payable_approval_idempotent_decisions` introduziu `decide_payable_approval_idempotent` para preservar a mesma chave/payload em retries após falhas de rede, sem permitir voto duplicado. Frontend `PayableApprovals`, acessível no Financeiro, mostra solicitações pendentes, exige confirmação de aprovar/rejeitar e motivo, sem efeito de pagamento. Seu read model vem da view agregada do PostgreSQL; erro, tenant divergente ou fila acima de 150 itens causam falha fechada.
+
+`scripts/verify_dev_payable_approvals.sql` executado A/B em SQL com `ROLLBACK`: obrigação temporária, request, voto aprovado único e retry idempotente; sem mutação persistida. Testes React cobrem aprovação, retry, bloqueio tenant e cargo não autorizado; confirmar CI final.
+
+O frontend Master de políticas de aprovação, múltiplos níveis, autoaprovação, filtros/status, timeline/ histórico, lista paginada e homologação HTTP/JWT real permanecem pendentes.
+
 ## Incremento 13 — operações institucionais de contas a pagar/receber, 2026-10-09
 
 A base já continha comandos de cadastro `create_institutional_payable`/`create_institutional_receivable` e de liquidação `register_institutional_payable_payment`/`register_institutional_receipt`, todos com permissão `institutional.manage`, chave idempotente e auditoria. **Nenhuma nova tabela ou migration foi necessária.**

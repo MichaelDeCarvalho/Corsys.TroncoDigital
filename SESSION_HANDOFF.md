@@ -1,3 +1,10 @@
+## Incremento 14 — decisões de aprovação de despesas (2026-10-09)
+
+- Migration DEV #35 `20261009181235_payable_approval_idempotent_decisions`, SQL/hash no manifesto. A RPC `decide_payable_approval_idempotent` valida `approvals.review`, decisão `approve/reject`, razão e chave de idempotência e chama a RPC auditada preexistente `decide_payable_approval`. A unicidade `(approval_request_id,actor_user_id)` e eventos imutáveis continuam válidos.
+- Interface `PayableApprovals.tsx` adicionada ao Financeiro; exibe apenas solicitações `pending` da Loja conforme `v_payable_approval_state`, com aprovação/rejeição e justificativa. A decisão não gera pagamento. Segurança fail closed para falha de RLS, tenant cruzado, consulta acima de 150 pedidos e replay incerto.
+- SQL DEV A/B `DEV_APPROVAL_IDEMPOTENCY_ROLLBACK_PASS`, incluindo criação temporária de obrigação, aprovação/replay e ROLLBACK. Testes React adicionados; CI da SHA final conferir. Visão de aprovação pendente de design completo V35 (políticas, múltiplos aprovadores, autorrevisão, histórico e decisão em casos complexos).
+- **Etapa 2 ainda NÃO encerrada.** Permanecem geração de recorrência, operações de correção/cancelamento, orçamento, conciliação, Master SaaS, 21 telas piloto e homologações JWT HTTP/concurrency/visual. Sem produção.
+
 ## Incremento 13 — tesouraria institucional com cadastro e liquidação (2026-10-09)
 
 - Branch DEV `feat/v35-dev-gate-20261002`, PR #4. Sem migrations adicionais além das 34 existentes.

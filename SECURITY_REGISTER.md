@@ -1,5 +1,10 @@
 # SECURITY REGISTER
 
+## Aprovações com replay seguro — 2026-10-09
+
+`decide_payable_approval_idempotent` SECURITY DEFINER/empty search_path, EXECUTE concedido apenas a authenticated, exige `approvals.review` e assinatura elegível antes de executar `private.idempotency_begin`. Valida request id, decisão e motivo, reutiliza `decide_payable_approval` (bloqueio da solicitação, auditoria e constraint de voto único por ator). RLS da view `v_payable_approval_state` e filtro de organização mantidos. SQL A/B simulando claims com transação revertida PASS; sem teste JWT HTTP real nem múltiplos aprovadores em sessões simultâneas. O RPC legado segue exposto a usuários com `approvals.review` mas rejeita voto duplicado pela constraint; consumidores anteriores precisam de revisão antes de revogar acesso. Nenhum deploy produção.
+
+
 ## Operações financeiras institucionais no frontend — 2026-10-09
 
 `InstitutionalOperations` reutiliza apenas quatro RPCs de backend com `institutional.manage` e idempotência server-side, sem ampliar EXECUTE/grants/RLS de tabelas e sem armazenar chaves financeiras no navegador. A leitura de obrigações consulta views efetivas sob filtro `organization_id` e falha fechada para `integrity_ok=false`, tenant inesperado ou mais de 150 registros. O cliente oculta liquidação de obrigação pendente de aprovação, porém isso **não substitui validação do banco**. A cobrança institucional não é pagamento de integrante nem assinatura SaaS. SQL de criação, pagamento e recebimento parcial em A/B com `ROLLBACK` PASS, incluindo teste de ID estrangeiro. Faltam HTTP/JWT real, múltiplas sessões simultâneas, fluxos de aprovação/correção/cancelamento do piloto e paridade visual desktop/mobile.
