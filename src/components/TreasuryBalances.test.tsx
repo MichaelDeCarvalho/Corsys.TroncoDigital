@@ -29,7 +29,7 @@ describe('Treasury financial balances',()=>{
  it('shows backend-accounted balance separate from bank reconciliation and signed movements',async()=>{
   const {client}=fixture()
   render(<TreasuryBalances client={client} organizationId="org"/>)
-  await screen.findByText('Banco TESTE')
+  await screen.findByRole('rowheader',{name:'Banco TESTE'})
   expect(screen.getByText(/R\$\s?125,10/)).toBeInTheDocument()
   const table=await screen.findByRole('region',{name:'Movimentações financeiras'})
   expect(within(table).getByText(/-R\$\s?42,10|R\$\s?-42,10/)).toBeInTheDocument()
