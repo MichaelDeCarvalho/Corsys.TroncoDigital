@@ -1,5 +1,10 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Etapa 2 — pagamentos de integrantes e DRE (2026-10-09)
+
+Supabase DEV tem 34 migrations. Foram acrescentados no Financeiro os fluxos de registrar pagamento de integrante, alocar manualmente em cobrança e estornar com idempotência/auditoria, além de DRE por competência com dados efetivamente contabilizados. Os gates SQL A/B foram executados com ROLLBACK e mantiveram 17 cobranças e 16 pagamentos existentes. A Etapa 2 continua significativamente incompleta: faltam telas/integridade HTTP, módulos institucionais, relatórios/planilhas, Master SaaS e paridade V35.
+
+
 ## Etapa 2 — bloqueios contábeis por Loja e novas categorias (2026-10-09)
 
 A migration DEV #32 removeu os SHARE locks globais da publicação, adicionou seis triggers de proteção das configurações por tenant e impede ativação de categoria/conta financeira sem cobertura nos planos contábeis publicados aplicáveis. Conta nova nasce inativa, permitindo planejamento de plano sucessor; categorias novas padrão inativas no formulário. SQL rollback/regressões A/B aprovados. Conexões simultâneas realmente independentes não foram validadas; produção permanece bloqueada.

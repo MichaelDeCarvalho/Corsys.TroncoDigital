@@ -1,5 +1,12 @@
 # CURRENT ARCHITECTURE
 
+## Pagamentos operacionais e DRE por competência — 2026-10-09
+
+`Finance` inclui `MemberPayments` e `DreReport`. O frontend não executa UPDATE/DELETE de fatos; chama RPCs de pagamentos/alocações (idempotentes) e `reverse_member_payment_idempotent` (migração #33), que reaproveita os eventos de estorno existentes com permissão `payments.reverse`, reenvio idempotente e razão auditada. Leitura de saldo do integrante vem de `v_charge_balances`/`v_payment_balances`, com validação `integrity_ok`, escopo Loja/integrante e limites fail-closed para não tratar consulta parcial como completa. Pagamentos de integrantes e receitas institucionais não são equivalentes.
+
+`read_tenant_dre` (migração #34) exige `reports.read` no servidor e retorna somente fatos de resultado contábil `v_dre_entries` agrupados por conta histórica e competência, sem considerar recebimento como nova receita. A UI apresenta valores assinados, até 12 competências e bloqueia dataset acima de 1500 linhas. Não implementa ainda orçamento vs realizado, DRE completa do piloto V35 nem classificação neutra/repasse. Nenhuma alteração de integridade contábil pré-existente.
+
+
 ## Coordenação de publicação por Loja (2026-10-09)
 
 Migration DEV #32 define `private.guard_tenant_accounting_change()`, SECURITY DEFINER em schema não exposto e EXECUTE revogado aos roles web. Triggers `BEFORE INSERT/UPDATE/DELETE` em `financial_categories`, `financial_accounts`, `accounting_accounts`, `financial_category_account_mappings`, `financial_account_accounting_mappings` e `accounting_plans` obtêm `SELECT FOR UPDATE` na linha `organizations` da própria Loja antes da mutação. A publicação `publish_validated_accounting_plan` usa a mesma linha e o rascunho, revalida todas as condições e dispensa os cinco bloqueios de tabela `SHARE`. A RPC `set_draft_accounting_mapping` recebe ordem determinística Loja→plano. Nenhuma nova concessão de escrita nas tabelas, RLS mantida.

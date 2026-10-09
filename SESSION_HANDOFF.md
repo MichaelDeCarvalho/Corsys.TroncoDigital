@@ -1,3 +1,12 @@
+## Incremento 12 — pagamentos e DRE realizados (2026-10-09)
+
+- Branch DEV `feat/v35-dev-gate-20261002`, PR #4, Supabase DEV migrations #33/#34 aplicadas e versionadas.
+- UI `MemberPayments`: registrar pagamentos de integrantes, alocação manual a cobrança e reversão auditada com replay seguro; consultas isoladas por Loja/integrante e `integrity_ok`. Reutiliza RPCs `register_payment` e `allocate_payment_to_charge`; wrapper novo `reverse_member_payment_idempotent` protege reversão e delega à RPC original.
+- UI `DreReport`: consulta até 12 competências da `v_dre_entries` agrupada por conta histórica e natureza, sem apresentar crédito/caixa como receita; relatório somente realizado, sem orçamento/comparativo V35.
+- GATES SQL executados: `DEV_MEMBER_PAYMENT_OPERATIONS_ROLLBACK_PASS` e `DEV_DRE_REPORT_ROLLBACK_PASS`, ambas as Lojas e ROLLBACK. Sem alteração em 17 cobranças / 16 pagamentos existentes. Componentes/testes de frontend precisam ter CI final confirmada (não inferir sucesso por SQL).
+- Risco: UI limita listagem de integrantes e extratos; revisão com volumes reais/paginação necessária. RPC antiga `reverse_payment` permanece acessível, embora a nova UI use wrapper idempotente. HTTP/JWT assinados, concorrência comprovada, visual desktop/mobile e dezenas de módulos V35 ainda pendentes.
+- Não realizar merge/PROD sem critérios de aceite e homologação.
+
 ## Incremento 11 — concorrência por Loja e cobertura contábil (2026-10-09 Brasil)
 
 - PR #4 / branch `feat/v35-dev-gate-20261002`, migration DEV #32 `20261009165809_tenant_scoped_accounting_publication_guard`, SHA256 no manifesto.

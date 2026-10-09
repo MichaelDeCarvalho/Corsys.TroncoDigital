@@ -253,6 +253,24 @@
       "sha256": "fa26e5428d04e30b5e44dc7046047b70f591a442efcd0fcd666ba967a6127a5b",
       "applied_at": "2026-10-09",
       "note": "Six before-row accounting/catalog triggers lock organization row per tenant, prevent unmapped account/category activation and published-structure mutation; removes 5 global SHARE locks, aligns mapping lock order, financial accounts default inactive. No production/ledger changes; SQL rollback tests pass; independent-session HTTP/DB lock test inconclusive."
+    },
+    {
+      "version": "20261009174649",
+      "name": "member_payment_reversal_idempotent",
+      "source_path": "supabase/migrations/20261009174649_member_payment_reversal_idempotent.sql",
+      "path": "supabase/migrations/20261009174649_member_payment_reversal_idempotent.sql",
+      "sha256": "6b39309eaa1b2438f08811e20a576df84bfce74d7569f46a7b5a74c592eee68b",
+      "applied_at": "2026-10-09",
+      "note": "Idempotent audited wrapper around reverse_payment, preserves allocation reversals; authenticated/payments.reverse only, no new facts unless called."
+    },
+    {
+      "version": "20261009175437",
+      "name": "tenant_dre_monthly_report",
+      "source_path": "supabase/migrations/20261009175437_tenant_dre_monthly_report.sql",
+      "path": "supabase/migrations/20261009175437_tenant_dre_monthly_report.sql",
+      "sha256": "24a3c6e35ceae32705b1cbf5efab2b69e4617da654812280a149964acfc88a8a",
+      "applied_at": "2026-10-09",
+      "note": "Authorized reports.read only monthly DRE grouping from v_dre_entries, maximum 12 competencies, no cash/budget claims, read-only."
     }
   ],
   "baseline_patches": {

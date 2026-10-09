@@ -1,5 +1,12 @@
 # SECURITY REGISTER
 
+## Incremento 12 — pagamentos e DRE, 2026-10-09
+
+Duas RPC `SECURITY DEFINER` adicionais, exclusivamente `authenticated`, `search_path=''`, sem novos grants em tabelas. `reverse_member_payment_idempotent` exige `payments.reverse`, competência mensal, motivo e chave idempotente; utiliza `private.idempotency_begin/complete` e invoca a `reverse_payment` original sob a mesma transação (que também exige permissão e registra evento/auditoria). `read_tenant_dre` exige `reports.read` antes de agregar `v_dre_entries` tenant-scoped, limita 12 competências, exclui patrimonial/caixa e não expõe linhas de outra organização. Anon sem EXECUTE nas duas funções. Nenhum segredo/configuração nova no frontend.
+
+Os gates SQL A/B simulando claims, reversão/rollback e reconciliação DRE passaram. Porém **JWT HTTP com token assinado, concorrência independente e fronteira de volume/RLS real ainda não avaliados**. `reverse_payment` original segue RPC publicamente alcançável para autenticados com permissão; sua duplicidade é bloqueada por eventos, mas seu protocolo não tem mesma chave idempotente; revisar consumidores antes de produção. Reforçar que a tela só valida números como defesa em profundidade: autorização/limites monetários precisam permanecer no PostgreSQL.
+
+
 ## Incremento 11 — exclusão mútua por tenant e cobertura de cadastros (2026-10-09)
 
 Controles críticos de escrita contábil passaram a usar `organizations FOR UPDATE` por tenant nos seis triggers `private.guard_tenant_accounting_change()` em vez de `LOCK TABLE SHARE` global na publicação. Trigger em schema `private`, SECURITY DEFINER e sem EXECUTE em `PUBLIC`/`anon`/`authenticated`; mudança do `organization_id` é rejeitada. O RPC de mapeamento trava tenant antes de plano, reduzindo inversão de locks. Configurações com destino publicado são rejeitadas na inserção/mutação independentemente de RPC. Nova categoria ativa sem mapeamento analítico compatível em **todos** os planos publicados vigentes/futuros aplicáveis falha `23514`; conta financeira ativa sem mapeamento patrimonial também falha. Conta nova começa inativa e auditoria reflete `active=false`.
