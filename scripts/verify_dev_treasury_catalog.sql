@@ -20,19 +20,23 @@ for t in select * from (values
  begin perform public.create_treasury_catalog_item(t.org::uuid,'method','DEV wrong','bank',null,null,null,'DEV cross-kind',gen_random_uuid()::text);raise exception 'cross-kind field accepted';exception when invalid_parameter_value then null;end;
  v_fund:=public.create_treasury_catalog_item(t.org::uuid,'fund','DEV GATE FUND',null,null,null,'Objetivo DEV','DEV temporary test',gen_random_uuid()::text);
  v_method:=public.create_treasury_catalog_item(t.org::uuid,'method','DEV GATE METHOD',null,null,null,null,'DEV temporary test',gen_random_uuid()::text);
- if not exists(select 1 from public.financial_accounts where id=v_account and organization_id=t.org::uuid and active and account_type='bank')
+ if not exists(select 1 from public.financial_accounts where id=v_account and organization_id=t.org::uuid and not active and account_type='bank')
  or not exists(select 1 from public.funds where id=v_fund and organization_id=t.org::uuid and active)
  or not exists(select 1 from public.payment_methods where id=v_method and organization_id=t.org::uuid and active) then raise exception 'catalog insert missing';end if;
+ -- New financial accounts are intentionally inactive until published-plan coverage exists.
+ begin perform public.set_treasury_catalog_status(t.org::uuid,'account',v_account,false,true,'DEV account activation must be denied',gen_random_uuid()::text);
+ raise exception 'unmapped account activation accepted';exception when check_violation then null;end;
  v_key:=gen_random_uuid()::text;
- if public.set_treasury_catalog_status(t.org::uuid,'account',v_account,true,false,'DEV status test',v_key)<>v_account then raise exception 'account status return invalid';end if;
- if public.set_treasury_catalog_status(t.org::uuid,'account',v_account,true,false,'DEV status test',v_key)<>v_account then raise exception 'status retry invalid';end if;
- begin perform public.set_treasury_catalog_status(t.org::uuid,'account',v_account,true,false,'DEV stale',gen_random_uuid()::text);raise exception 'stale status accepted';exception when serialization_failure then null;end;
- perform public.set_treasury_catalog_status(t.org::uuid,'account',v_account,false,true,'DEV reactivate',gen_random_uuid()::text);
- perform public.set_treasury_catalog_status(t.org::uuid,'fund',v_fund,true,false,'DEV fund status',gen_random_uuid()::text);
+ if public.set_treasury_catalog_status(t.org::uuid,'fund',v_fund,true,false,'DEV fund deactivation',v_key)<>v_fund then raise exception 'fund status return invalid';end if;
+ if public.set_treasury_catalog_status(t.org::uuid,'fund',v_fund,true,false,'DEV fund deactivation',v_key)<>v_fund then raise exception 'status retry invalid';end if;
+ begin perform public.set_treasury_catalog_status(t.org::uuid,'fund',v_fund,true,false,'DEV stale',gen_random_uuid()::text);raise exception 'stale status accepted';exception when serialization_failure then null;end;
+ perform public.set_treasury_catalog_status(t.org::uuid,'fund',v_fund,false,true,'DEV reactivate fund',gen_random_uuid()::text);
  perform public.set_treasury_catalog_status(t.org::uuid,'method',v_method,true,false,'DEV method status',gen_random_uuid()::text);
+ perform public.set_treasury_catalog_status(t.org::uuid,'method',v_method,false,true,'DEV reactivate method',gen_random_uuid()::text);
  begin insert into public.funds(organization_id,name) values(t.org::uuid,'DEV direct insert');raise exception 'direct table write allowed';exception when insufficient_privilege then null;end;
  execute 'reset role';
  if (select count(*) from public.audit_logs where organization_id=t.org::uuid and action='treasury_catalog.create' and entity_id in(v_account,v_fund,v_method))<>3 then raise exception 'catalog audit count invalid';end if;
+ if exists(select 1 from public.audit_logs where organization_id=t.org::uuid and action='treasury_catalog.create' and entity_id=v_account and after_data->>'active'<>'false') then raise exception 'incorrect inactive account audit';end if;
  if (select count(*) from public.audit_logs where organization_id=t.org::uuid and action='treasury_catalog.status' and entity_id in(v_account,v_fund,v_method))<>4 then raise exception 'status audit count invalid';end if;
 end loop;
 for t in select * from (values
