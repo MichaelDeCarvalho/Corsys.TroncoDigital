@@ -5,6 +5,7 @@ import { normalizedAmount } from '../lib/member-configuration'
 import { formatMoney } from '../lib/finance-data'
 import { TreasuryCatalogs } from './TreasuryCatalogs'
 import { TenantIdentity } from './TenantIdentity'
+import { AccountingPlans } from './AccountingPlans'
 
 type Command = { name: string; args: Record<string, unknown> }
 const domainLabels: Record<string, string> = { member_receivable: 'Cobrança de integrante', institutional_revenue: 'Receita institucional', institutional_expense: 'Despesa institucional' }
@@ -95,5 +96,6 @@ export function FinancialStructure({ client, organizationId }: { client: Supabas
     <p className="subtle">Até 200 registros por lista. Neutra/repasse, vínculo contábil DRE, recorrência institucional, regras especiais e demais abas do Plano de Contas serão disponibilizados nos próximos incrementos.</p>
     <TreasuryCatalogs client={client} organizationId={organizationId} />
     <TenantIdentity client={client} organizationId={organizationId} />
+    <AccountingPlans client={client} organizationId={organizationId} />
   </section>
 }
