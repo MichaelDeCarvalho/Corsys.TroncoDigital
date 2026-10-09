@@ -1,3 +1,12 @@
+## Incremento 11 — concorrência por Loja e cobertura contábil (2026-10-09 Brasil)
+
+- PR #4 / branch `feat/v35-dev-gate-20261002`, migration DEV #32 `20261009165809_tenant_scoped_accounting_publication_guard`, SHA256 no manifesto.
+- Substituídos bloqueios `LOCK TABLE SHARE` globais da publicação por bloqueios `organizations FOR UPDATE` de cada Loja. Seis triggers `accounting_tenant_change_guard` em categorias, contas de caixa/banco, contas contábeis, dois mapeamentos e planos contábeis coordenam escritas concorrentes por tenant. RPC de vínculo contábil passa a bloquear a Loja **antes** do plano para impedir inversão de ordem/deadlocks.
+- Categorias novas ativas sem mapeamentos nos planos publicados atuais/futuros são rejeitadas com `23514`. Categorias inativas são admitidas para planejamento de sucessor. Novas contas financeiras são criadas **inativas** por padrão, auditadas corretamente; tentativa de ativá-las sem classificação patrimonial em todos os planos publicados aplicáveis é rejeitada. Triggers impedem inclusive gravações privilegiadas que ignorassem RPCs. UI ajustada e testes de erro `23514`; `scripts/verify_dev_treasury_catalog.sql` atualizado para novo contrato.
+- Verificações executadas com transações SQL `ROLLBACK` A/B: `DEV_VALIDATED_ACCOUNTING_PUBLICATION_ROLLBACK_PASS`, `DEV_ACCOUNTING_DRAFT_MAPPINGS_ROLLBACK_PASS`, `DEV_ACCOUNTING_PREPUBLICATION_ROLLBACK_PASS`, `DEV_TREASURY_CATALOG_ROLLBACK_PASS` e `DEV_TENANT_ACCOUNTING_GUARD_ROLLBACK_PASS`. Contagens persistidas: planos 6, publicados 4, template 91, categorias 8, contas financeiras 2, charges 17, payments 16.
+- Tentativa de três consultas simultâneas pela API de execução SQL não demonstrou lock do mesmo tenant: falhou na asserção `same-tenant lock unexpectedly free`. O executor pareceu enfileirar consultas. **Concorrência entre conexões comprovadamente independentes: NOT EVALUATED.** Gate definido em `docs/engineering/ACCOUNTING_CONCURRENCY_TEST_PLAN.md`; não declarar PASS.
+- CI do último commit: conferir GitHub Actions. HTTP com JWT real, sessões DB independentes, V35 visual desktop/mobile, escala e regras de vigência de novas categorias ainda pendentes. Nenhum deploy/merge de produção.
+
 ## Incremento 10 — publicação validada (2026-10-09)
 
 - Branch `feat/v35-dev-gate-20261002`, PR #4, Supabase DEV migration 31 `20261009162535_validated_accounting_plan_publication`; fonte e hash no manifesto.

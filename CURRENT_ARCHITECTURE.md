@@ -1,5 +1,14 @@
 # CURRENT ARCHITECTURE
 
+## Coordenação de publicação por Loja (2026-10-09)
+
+Migration DEV #32 define `private.guard_tenant_accounting_change()`, SECURITY DEFINER em schema não exposto e EXECUTE revogado aos roles web. Triggers `BEFORE INSERT/UPDATE/DELETE` em `financial_categories`, `financial_accounts`, `accounting_accounts`, `financial_category_account_mappings`, `financial_account_accounting_mappings` e `accounting_plans` obtêm `SELECT FOR UPDATE` na linha `organizations` da própria Loja antes da mutação. A publicação `publish_validated_accounting_plan` usa a mesma linha e o rascunho, revalida todas as condições e dispensa os cinco bloqueios de tabela `SHARE`. A RPC `set_draft_accounting_mapping` recebe ordem determinística Loja→plano. Nenhuma nova concessão de escrita nas tabelas, RLS mantida.
+
+Categorias ativas só são introduzidas/ativadas (ou têm domínio alterado) quando todas as vigências publicadas cujo `valid_to` alcança a competência atual têm mapeamento analítico ativo e compatível. Contas financeiras seguem regra análoga para patrimonial; novas contas nascem inativas no backend e precisam de plano sucessor quando um publicado já não admite vínculo. As funções de mutação de contas/mapeamentos rejeitam destino publicado mesmo se `accounting_plan_id` mudar. Triggers estão presentes em seis tabelas. Histórico financeiro intocado. Mudanças pós-publicação exigem planejamento de novo ciclo, incluindo a janela temporal entre planos.
+
+**Limite da evidência:** os cinco gates SQL com claims simuladas retornaram `ROLLBACK_PASS`. Tentativa de concorrência através do executor Supabase não assegurou sessões independentes e não comprovou bloqueio por tenant. Teste DB paralelo real e JWT HTTP precisam ser executados antes de produção.
+
+
 ## Publicação transacional contábil — 2026-10-09
 
 A RPC `publish_validated_accounting_plan` confere `accounting.manage` e assinatura, recupera/chaveia a solicitação idempotente, trava organização e rascunho, valida vigência informada, protege transitoriamente 5 tabelas de categorias, contas e mapeamentos com SHARE lock e executa a pré-validação completa dentro da mesma transação. Quando pronta, utiliza a função interna V35 `publish_accounting_plan`, respeitando triggers de imutabilidade e constraint EXCLUDE contra sobreposição, e audita motivo e resultado. A UI exige confirmação explícita; readiness anterior nunca substitui validação servidor. EXECUTE de `publish_accounting_plan` foi revogado para authenticated, anon e PUBLIC. Migration31 só DEV. Locks SHARE são globais aos tenants e requerem teste de concorrência/latência; novos catálogos depois da publicação exigem controle separado de sucessão.

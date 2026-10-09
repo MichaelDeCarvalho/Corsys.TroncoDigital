@@ -1,5 +1,10 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Etapa 2 — bloqueios contábeis por Loja e novas categorias (2026-10-09)
+
+A migration DEV #32 removeu os SHARE locks globais da publicação, adicionou seis triggers de proteção das configurações por tenant e impede ativação de categoria/conta financeira sem cobertura nos planos contábeis publicados aplicáveis. Conta nova nasce inativa, permitindo planejamento de plano sucessor; categorias novas padrão inativas no formulário. SQL rollback/regressões A/B aprovados. Conexões simultâneas realmente independentes não foram validadas; produção permanece bloqueada.
+
+
 ## Incremento 10 — publicação de Plano Contábil DEV, 2026-10-09
 
 A V35 possui agora fluxo de publicação explicitamente confirmada do Plano de Contas, com rechecagem atômica no Supabase DEV, idempotência e auditoria. A migração DEV31 revogou a exposição direta do endpoint legado `publish_accounting_plan`, mantendo-o apenas como etapa interna da RPC validada. Teste SQL de duas Lojas com fixtures revertidos demonstrou publicação válida, proteção contra duplicidades e erros de escopo. Exigir validação HTTP/JWT, concorrência, preview/mobile e paridade integral antes de produção; Etapa 2 ainda não encerrada.

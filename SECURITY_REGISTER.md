@@ -1,5 +1,12 @@
 # SECURITY REGISTER
 
+## Incremento 11 — exclusão mútua por tenant e cobertura de cadastros (2026-10-09)
+
+Controles críticos de escrita contábil passaram a usar `organizations FOR UPDATE` por tenant nos seis triggers `private.guard_tenant_accounting_change()` em vez de `LOCK TABLE SHARE` global na publicação. Trigger em schema `private`, SECURITY DEFINER e sem EXECUTE em `PUBLIC`/`anon`/`authenticated`; mudança do `organization_id` é rejeitada. O RPC de mapeamento trava tenant antes de plano, reduzindo inversão de locks. Configurações com destino publicado são rejeitadas na inserção/mutação independentemente de RPC. Nova categoria ativa sem mapeamento analítico compatível em **todos** os planos publicados vigentes/futuros aplicáveis falha `23514`; conta financeira ativa sem mapeamento patrimonial também falha. Conta nova começa inativa e auditoria reflete `active=false`.
+
+**Limites/riscos:** o lock da Loja agora é um ponto de serialização intencional; seu tempo de espera, requisições simultâneas, timeout, recuperação de deadlock e comportamento de assinaturas HTTP reais ainda NÃO foram testados em sessões independentes. Simulação via executor SQL retornou `same-tenant lock unexpectedly free`; sem evidência de sobreposição da janela crítica, o resultado não prova falha nem sucesso do locking. Triggers de linha não cobrem `TRUNCATE` por administrador privilegiado; DDL/credenciais privilegiadas não são o fluxo SaaS. Catálogos publicados existentes podem ser incompletos (legado DEV), o que bloqueia ativação de novos cadastros até criação de planos sucessores. Revisar fluxos antigos que esperavam conta nova ativa. Lints existentes de SECURITY DEFINER e outros seguem pendentes de análise de superfície de ataque.
+
+
 ## Riscos de publicação contábil — 2026-10-09
 
 A implementação DEV usa `public.publish_validated_accounting_plan` SECURITY DEFINER exposta intencionalmente só a `authenticated`, exigindo `private.require_permission('accounting.manage')` e validação de assinatura antes da operação. `anon` e PUBLIC sem EXECUTE. O endpoint legado `publish_accounting_plan(uuid,uuid)` perdeu EXECUTE API para impedir contornar validações de hierarquia, natureza e vigência. A wrapper refaz diagnóstico sob lock e usa a constraint PostgreSQL de exclusão temporal do plano published. Idempotência evita publicação duplicada após timeouts, retorno divergente não é sucesso no frontend e eventos de auditoria incluem motivo. SQL/claims A/B rollback PASS, HTTP/JWT real e concorrência independente **não avaliados**.

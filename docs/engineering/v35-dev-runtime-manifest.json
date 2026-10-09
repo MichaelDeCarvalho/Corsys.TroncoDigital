@@ -244,6 +244,15 @@
       "sha256": "e7a02237ea8d42cdbeb29756c67bbacb501cc4a0e67bc3a14c48b8e876e5aa67",
       "applied_at": "2026-10-09",
       "note": "Atomic future-dated accounting publication validates readiness under tenant/plan row locks and five SHARE table locks. Idempotent authorized audited RPC; direct authenticated legacy publish revoked. SQL A/B ROLLBACK PASS. DEV only; HTTP JWT/concurrency/real visual not evaluated."
+    },
+    {
+      "version": "20261009165809",
+      "name": "tenant_scoped_accounting_publication_guard",
+      "source_path": "supabase/migrations/20261009165809_tenant_scoped_accounting_publication_guard.sql",
+      "path": "supabase/migrations/20261009165809_tenant_scoped_accounting_publication_guard.sql",
+      "sha256": "fa26e5428d04e30b5e44dc7046047b70f591a442efcd0fcd666ba967a6127a5b",
+      "applied_at": "2026-10-09",
+      "note": "Six before-row accounting/catalog triggers lock organization row per tenant, prevent unmapped account/category activation and published-structure mutation; removes 5 global SHARE locks, aligns mapping lock order, financial accounts default inactive. No production/ledger changes; SQL rollback tests pass; independent-session HTTP/DB lock test inconclusive."
     }
   ],
   "baseline_patches": {
