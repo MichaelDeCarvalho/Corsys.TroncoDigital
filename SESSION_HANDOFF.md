@@ -1,3 +1,11 @@
+## Incremento 7 — Identidade da Loja, 2026-10-08 Brasil
+
+- DEV migrations 27/28 `20261009012944_tenant_identity_commands` e `20261009013042_tenant_settings_monotonic_version`, fontes e hashes no manifesto.
+- Nova UI `TenantIdentity.tsx` inserida na tela Plano de Contas; cadastro e edição de contato, PIX, endereço e localização, sem fluxo de transferência.
+- RPC de gravação única com `settings.manage` + idempotência + lock da Loja + revisão otimista e auditoria minimizada. Trigger corrigido somente para `organization_settings` por bug de `now()` em transações.
+- SQL de DEV A/B, cenários positivos/negativos e ROLLBACK PASS; fixture não persistida. Os 17 títulos e 16 pagamentos financeiros anteriores seguem intactos.
+- Verificar CI do commit final, HTTP/JWT real, concorrência entre conexões, mobile, HTML V35, demais parâmetros, plano contábil, logo e demais configurações ainda pendentes. Nada liberado em produção.
+
 ## Incremento 6 — contas/fundos/meios de pagamento (2026-10-08 Brasil)
 
 - Branch: `feat/v35-dev-gate-20261002` no PR draft #4.

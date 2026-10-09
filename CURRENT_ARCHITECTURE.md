@@ -1,5 +1,10 @@
 # CURRENT ARCHITECTURE
 
+## Identidade da Loja versionada — 2026-10-08 Brasil
+
+`TenantIdentity.tsx` consulta `organization_settings` por Loja com SELECT/RLS e expõe edição limitada por RPC `save_tenant_identity`; `settings.manage` antes de consultas e sem escrita direta do frontend. Atualização otimista por `updated_at`, inicialização serializada por lock em `organizations`, retry idempotente. Trigger próprio `private.bump_tenant_settings_updated_at` impede revisões com timestamp repetido em uma transação sem modificar o helper global; apenas informações cadastrais, sem valor financeiro. Auditoria não copia PII/PIX. Migrations27/28 DEV; sem deploy de produção.
+
+
 ## Catálogos de tesouraria — 2026-10-08 Brasil
 
 `src/components/TreasuryCatalogs.tsx` integra a área Plano de Contas, usando `src/lib/treasury-catalogs.ts` para SELECT/RLS escopado em financial_accounts, funds e payment_methods. Mutação exclusivamente por RPCs SECURITY DEFINER `create_treasury_catalog_item` e `set_treasury_catalog_status`; require_permission(settings.manage), idempotência, auditoria, lock, validação/escopo, suspensão fail-closed, grants EXECUTE só authenticated. Estado inativo preserva referências e dados existentes; não atualiza ledger, não gera movimentação nem saldo. 26 migrations no DEV; produção inalterada. Limite UI 200 por catálogo e sem paginação global. `scripts/verify_dev_treasury_catalog.sql` é teste SQL com ROLLBACK, não HTTP real.

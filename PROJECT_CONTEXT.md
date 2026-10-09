@@ -1,5 +1,10 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Implementação incremental — identidade da Loja, 2026-10-08 Brasil
+
+Parâmetros de contato, endereço/CEP/UF e chave PIX implementados em `organization_settings` com UI e RPC autorizada; 28 migrations aplicadas somente ao DEV. Persistência otimista e auditada, gatilho monotônico para proteger a revisão, sem alterações financeiras. Testes SQL A/B `ROLLBACK` aprovados, frontend/CI a conferir. Demais opções do HTML V35, logo, planos contábeis/mapeamentos e relatórios não concluídos.
+
+
 ## Etapa 2 — catálogos de contas/fundos/meios conectados, 2026-10-08 Brasil
 
 Plano de Contas agora permite contas financeiras (bank/pix/cash/other), fundos e formas de pagamento com cadastro e status, autorização exclusiva `settings.manage` e histórico preservado. Dados permanecem separados por Loja; migrações25/26 aplicadas DEV. SQL A/B em ROLLBACK aprovado; frontend CI e homologação autenticada visual devem ser conferidos. Ainda não há movimentos ou saldos gerados por esses cadastros. Próximo: parâmetros da Loja e plano contábil. Etapa 2 não concluída.

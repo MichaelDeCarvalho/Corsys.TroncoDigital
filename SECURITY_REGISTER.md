@@ -1,5 +1,10 @@
 # SECURITY REGISTER
 
+## Identidade/PIX da Loja — 2026-10-08 Brasil
+
+`save_tenant_identity` é uma RPC SECURITY DEFINER limitada a authenticated com `private.require_permission(settings.manage)`, valida tamanho/formatos, preserva propriedades não autorizadas, usa lock por organização e `expected_updated_at`. Para auditoria, não registra telefone, e-mail, PIX ou endereço. Retry com mesma chave/payload e conflito `40001`; após erro de transporte UI bloqueia e exige reenvio idempotente. Versão monotônica via trigger exclusivo corrige vulnerabilidade de lost update com `now()` fixo. SQL rollback A/B confirmou grants, roles e suspensão; HTTP/JWT real e concorrência em conexões simultâneas ainda não avaliados. Chave PIX armazenada em configuração não constitui processamento de pagamento.
+
+
 ## Incremento de tesouraria — 2026-10-08 Brasil
 
 Duas RPCs SECURITY DEFINER autenticadas adicionais exigem `private.require_permission(p_organization_id,'settings.manage')` antes de acessar tabelas e validam organização/estado. Concessões nas tabelas continuam SELECT apenas para authenticated; nenhuma policy RLS ou tabela alterada. create usa `pg_advisory_xact_lock` e impede duplicação case-insensitive; status usa `FOR UPDATE` e `expected_active`. ID estrangeiro é 23503 após forward-fix: `EXECUTE ... INTO` não define `FOUND`, portanto usar `v_old is null` sobre coluna NOT NULL. Auditoria grava tipo/nome/status, sem copiar identificações bancárias. Campos com valores de conta permanecem protegidos pelas RLS existentes.

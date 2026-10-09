@@ -199,6 +199,24 @@
       "sha256": "493773818ad015e586fabea836b3012ea7483a62c962addb984998e61294218a",
       "applied_at": "2026-10-09",
       "note": "Additive correction to distinguish absent/foreign item 23503 from stale status 40001 after dynamic EXECUTE; no other permission/data changes."
+    },
+    {
+      "version": "20261009012944",
+      "name": "tenant_identity_commands",
+      "source_path": "supabase/migrations/20261009012944_tenant_identity_commands.sql",
+      "path": "supabase/migrations/20261009012944_tenant_identity_commands.sql",
+      "sha256": "8e7c13f6898b9309d90081915ca938625a62d0b32136df343d00ba4a90e86fed",
+      "applied_at": "2026-10-09",
+      "note": "Identity settings RPC requires settings.manage; optimistic update, idempotency, sanitization, audit excludes private values."
+    },
+    {
+      "version": "20261009013042",
+      "name": "tenant_settings_monotonic_version",
+      "source_path": "supabase/migrations/20261009013042_tenant_settings_monotonic_version.sql",
+      "path": "supabase/migrations/20261009013042_tenant_settings_monotonic_version.sql",
+      "sha256": "f0dce8782b777d4cfa0d9894eabb9187cbb7e176ad433702e3b2e548d78f6da0",
+      "applied_at": "2026-10-09",
+      "note": "Only organization_settings updated_at trigger replaced by monotonic wall-clock version; SQL rollback verified."
     }
   ],
   "baseline_patches": {
