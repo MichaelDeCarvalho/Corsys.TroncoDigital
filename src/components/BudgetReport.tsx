@@ -78,8 +78,9 @@ export function BudgetReport({client,organizationId}:{client:SupabaseClient;orga
         const item=kind==='account'?
          catalog.accounts.find(a=>a.id===r.accounting_account_id):
          catalog.funds.find(f=>f.id===r.fund_id)
-        const name=kind==='account'&&item&&'code' in item?
-         `${item.code} — ${item.description}`:item?.name??'Não identificado'
+        const name=item
+         ? ('code' in item ? `${item.code} — ${item.description}` : item.name)
+         : 'Não identificado'
         return <tr key={`${r.accounting_account_id??r.fund_id}:${i}`}>
          <th scope="row">{name}</th><td>{formatMoney(checkedSigned(r.budget_amount))}</td>
          <td>{formatMoney(checkedSigned(r.actual_amount))}</td>
