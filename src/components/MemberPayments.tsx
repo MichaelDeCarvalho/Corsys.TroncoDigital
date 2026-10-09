@@ -67,7 +67,7 @@ export function MemberPayments({client,organizationId}:{client:SupabaseClient;or
   try{
    const {data,error:failure}=await client.rpc(command.current.name,command.current.args)
    if(failure)throw failure
-   if(!isUuid(data)) throw new Error('Payment operation did not return a confirmed UUID')
+   if(!isUuid(data)){if(import.meta.env.MODE==='test') console.error('TEST MemberPayments response',typeof data,JSON.stringify(data));throw new Error('Payment operation did not return a confirmed UUID')}
    if(mounted.current){
     command.current=null;setUncertain(false)
     setSaved('Operação confirmada. O extrato foi atualizado.')
