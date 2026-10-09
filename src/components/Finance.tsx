@@ -2,20 +2,24 @@ import { useEffect, useState } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { RefreshCw } from 'lucide-react'
 import { MemberPayments } from './MemberPayments'
+import { DreReport } from './DreReport'
 import { FinanceIntegrityError, financeSources, formatDate, formatMoney, loadFinancePage, type FinanceKind, type FinanceRow } from '../lib/finance-data'
 
 const statusLabels: Record<string, string> = { open: 'Em aberto', paid: 'Liquidada', partially_paid: 'Parcialmente liquidada', cancelled: 'Cancelada', posted: 'Contabilizada', approved: 'Aprovada', pending: 'Pendente', missing_request: 'Aprovação não solicitada', not_required: 'Dispensada', rejected: 'Rejeitada' }
 
 export function Finance({ client, organizationId }: { client: SupabaseClient; organizationId: string }) {
-  const [kind, setKind] = useState<FinanceKind | 'memberPayments'>('charges')
+  const [kind, setKind] = useState<FinanceKind | 'memberPayments' | 'dre'>('charges')
   return <>
     <div className="finance-sections" role="group" aria-label="Consultas financeiras">
       {(Object.keys(financeSources) as FinanceKind[]).map(id => <button className="secondary" key={id} aria-pressed={kind === id} onClick={() => setKind(id)}>{financeSources[id].label}</button>)}
       <button className="secondary" aria-pressed={kind === 'memberPayments'} onClick={() => setKind('memberPayments')}>Pagamentos de integrantes</button>
+      <button className="secondary" aria-pressed={kind === 'dre'} onClick={() => setKind('dre')}>DRE contábil</button>
     </div>
     <p className="subtle">Cobranças e obrigações são separadas dos pagamentos. Os valores em aberto não representam saldo de caixa.</p>
     {kind === 'memberPayments'
       ? <MemberPayments key={organizationId} client={client} organizationId={organizationId} />
+      : kind === 'dre'
+      ? <DreReport key={organizationId} client={client} organizationId={organizationId} />
       : <FinanceList key={`${organizationId}:${kind}`} client={client} organizationId={organizationId} kind={kind} />}
   </>
 }
