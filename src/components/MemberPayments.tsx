@@ -74,6 +74,7 @@ export function MemberPayments({client,organizationId}:{client:SupabaseClient;or
     setRevision(value=>value+1)
    }
   }catch(cause){
+   if(import.meta.env.MODE==='test') console.error('TEST MemberPayments RPC:',cause)
    if(!mounted.current)return
    const code=(cause as {code?:string}|null)?.code??''
    if(['22023','22003','23502','23503','23505','23514','40001','42501','28000','55000','P0002'].includes(code)){
