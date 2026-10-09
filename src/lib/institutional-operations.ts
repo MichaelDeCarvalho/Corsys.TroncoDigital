@@ -13,10 +13,12 @@ export type InstitutionalCatalogs={
  categories:InstitutionalCategory[];funds:InstitutionalCatalogItem[];
  methods:InstitutionalCatalogItem[];accounts:InstitutionalCatalogItem[]
 }
-function tenantScoped<T extends {organization_id:string}>(r:{data:T[]|null;error:unknown},org:string):T[]{
+function tenantScoped<T extends {organization_id:string}>(r:{data:unknown;error:unknown},org:string):T[]{
  if(r.error)throw r.error
- const data=r.data??[]
- if(data.some(row=>row.organization_id!==org))throw Error('Unexpected institutional tenant data')
+ if(r.data!==null && !Array.isArray(r.data))throw Error('Invalid institutional API payload')
+ const data=(r.data??[]) as T[]
+ if(data.some(row=>!row||typeof row!=='object'||row.organization_id!==org))
+  throw Error('Unexpected institutional tenant data')
  return data
 }
 export async function loadInstitutionalCatalogs(client:SupabaseClient,org:string,signal:AbortSignal):Promise<InstitutionalCatalogs>{
