@@ -132,7 +132,9 @@ export function AccountingPlans({client,organizationId}:{client:SupabaseClient;o
     </details>
     {plan.status==='draft' && <AccountingPrepublication
      key={`${organizationId}:${selected}:${revision}`}
-     client={client} organizationId={organizationId} planId={selected} disabled={blocked}
+     client={client} organizationId={organizationId} planId={selected}
+     validFrom={plan.valid_from} validTo={plan.valid_to}
+     onPublished={() => setRevision(value => value + 1)} disabled={blocked}
     />}
     {plan.status==='draft'&&<form aria-label="Configurar vínculo contábil" onSubmit={saveMapping}>
      <fieldset disabled={blocked}><legend>Mapear categoria ou conta financeira</legend>
