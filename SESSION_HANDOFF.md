@@ -1,3 +1,13 @@
+## Incremento 8 — Plano de Contas: drafts e mappings (2026-10-08 Brasil)
+
+- Branch `feat/v35-dev-gate-20261002`, PR draft #4, nova migration DEV29 `20261009014331_tenant_accounting_drafts_and_mappings`, fonte SHA256 no manifesto.
+- Código: `src/lib/accounting-plans.ts`, `src/components/AccountingPlans.tsx`/`.test.tsx`, módulo conectado a `FinancialStructure` e CSS responsivo; wrapper idempotente para plano draft a partir de template (91 contas), duplicata da Loja ou branco; vinculação draft de categoria/conta financeira a conta analítica com natureza compatível.
+- Preservação: plano publicado imutável, mapeamentos/valores históricos não alterados; nenhuma publicação automática, sem alteração de ledger, RLS ou grants de tabela.
+- SQL DEV `DEV_ACCOUNTING_DRAFT_MAPPINGS_ROLLBACK_PASS` confirmado A/B, inclusive 91 contas/86 hierarquias; fixtures SQL revertidos. 6 planos DEV anteriores e template padrão preservados.
+- CI validar revisão exata após commit. HTTPS/JWT real do novo recurso, concorrência entre sessões e homologação visual com HTML V35/mobile ainda não verificados.
+- Próximo: revisão de códigos/estrutura V35, validação pré-publicação e sucessão sem sobreposição, regras de categoria neutra/repasse, operações financeiras e relatórios.
+- Sem produção/merge/contratações.
+
 ## Incremento 7 — Identidade da Loja, 2026-10-08 Brasil
 
 - DEV migrations 27/28 `20261009012944_tenant_identity_commands` e `20261009013042_tenant_settings_monotonic_version`, fontes e hashes no manifesto.

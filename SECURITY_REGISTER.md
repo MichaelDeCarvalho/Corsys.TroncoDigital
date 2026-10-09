@@ -1,5 +1,10 @@
 # SECURITY REGISTER
 
+## Incremento 8 — RPCs de plano contábil draft, 2026-10-08 Brasil
+
+Duas RPC SECURITY DEFINER autenticadas novas em `public`, com `accounting.manage`, assinatura verificada por `private.require_permission`, `search_path` vazio, `anon` sem EXECUTE. Criação de plano restringe início a competência futura e reutiliza `create_accounting_plan` (não impede o uso do endpoint legado por quem já possua accounting.manage); idempotência e motivo auditado. Mapeamento exige tenant e draft com `FOR UPDATE`, associação FK dentro da mesma Loja/plano, tipo analítico ativo, natureza compatível, controle otimista via conta esperada e trilha de auditoria. Trigger legado torna planos publicados imutáveis. Testes SQL em duas Lojas: A/B positivos/negativos, RLS, suspensão, roles, anon, imutabilidade e invariantes financeiros PASS com ROLLBACK. Auditoria de segurança integral, JWT HTTP e concorrência simultânea permanecem não avaliados. Adicionadas duas funções definer ao inventário de risco, sem novos grants em tabelas.
+
+
 ## Identidade/PIX da Loja — 2026-10-08 Brasil
 
 `save_tenant_identity` é uma RPC SECURITY DEFINER limitada a authenticated com `private.require_permission(settings.manage)`, valida tamanho/formatos, preserva propriedades não autorizadas, usa lock por organização e `expected_updated_at`. Para auditoria, não registra telefone, e-mail, PIX ou endereço. Retry com mesma chave/payload e conflito `40001`; após erro de transporte UI bloqueia e exige reenvio idempotente. Versão monotônica via trigger exclusivo corrige vulnerabilidade de lost update com `now()` fixo. SQL rollback A/B confirmou grants, roles e suspensão; HTTP/JWT real e concorrência em conexões simultâneas ainda não avaliados. Chave PIX armazenada em configuração não constitui processamento de pagamento.

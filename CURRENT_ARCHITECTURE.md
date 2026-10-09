@@ -1,5 +1,10 @@
 # CURRENT ARCHITECTURE
 
+## Plano contábil V35 — rascunhos e mapeamentos (2026-10-08 Brasil)
+
+`AccountingPlans.tsx` faz SELECT tenant-scoped via `accounting-plans.ts` de planos, modelo público ativo, contas e mapeamentos; valida organização/plano também no client como defesa em profundidade. RPC `create_tenant_accounting_draft` delega ao construtor V35 `create_accounting_plan` para gerar 91 códigos e hierarquia ou duplicar/blank, com idempotency wrapper, mês futuro e `accounting.manage`. RPC `set_draft_accounting_mapping` serializa no plano draft e verifica `expected_account_id`; exige natureza contábil adequada e trilha de auditoria. O esquema antigo impõe bloqueio de mudança no published e exclusão de vigências published sobrepostas, inclusive fora da UI. Não expor `publish_accounting_plan` na UI antes da cobertura de mapeamentos, revisão de 91 códigos e testes HTTP reais. Nenhuma atualização de ledger ou das tabelas históricas.
+
+
 ## Identidade da Loja versionada — 2026-10-08 Brasil
 
 `TenantIdentity.tsx` consulta `organization_settings` por Loja com SELECT/RLS e expõe edição limitada por RPC `save_tenant_identity`; `settings.manage` antes de consultas e sem escrita direta do frontend. Atualização otimista por `updated_at`, inicialização serializada por lock em `organizations`, retry idempotente. Trigger próprio `private.bump_tenant_settings_updated_at` impede revisões com timestamp repetido em uma transação sem modificar o helper global; apenas informações cadastrais, sem valor financeiro. Auditoria não copia PII/PIX. Migrations27/28 DEV; sem deploy de produção.

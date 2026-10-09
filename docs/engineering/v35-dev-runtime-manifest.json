@@ -217,6 +217,15 @@
       "sha256": "f0dce8782b777d4cfa0d9894eabb9187cbb7e176ad433702e3b2e548d78f6da0",
       "applied_at": "2026-10-09",
       "note": "Only organization_settings updated_at trigger replaced by monotonic wall-clock version; SQL rollback verified."
+    },
+    {
+      "version": "20261009014331",
+      "name": "tenant_accounting_drafts_and_mappings",
+      "source_path": "supabase/migrations/20261009014331_tenant_accounting_drafts_and_mappings.sql",
+      "path": "supabase/migrations/20261009014331_tenant_accounting_drafts_and_mappings.sql",
+      "sha256": "7d95c6476da37526224920f173a7468633c6ad9a7588bc8cc57bb00ad7eb8b8e",
+      "applied_at": "2026-10-09",
+      "note": "Future-only idempotent draft plan creation; maps categories/cash accounts only inside drafts with tenant scope, nature validation, lock, audit. Uses existing 91 account template; no published plan or ledger changes."
     }
   ],
   "baseline_patches": {
