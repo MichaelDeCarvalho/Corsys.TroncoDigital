@@ -6,9 +6,19 @@ import {validateOnboardingDraft} from '../lib/master-onboarding'
 const plan='a752dda8-4ef0-4c58-9d3b-b8fee14ec624'
 const created='faaf76e4-d796-430f-929f-71df5beaf832'
 const published={id:plan,plan_id:created,status:'published',price:'125.00',currency:'BRL',billing_interval:'monthly',valid_from:'2026-09-01',valid_to:null,display_name_snapshot:'Essencial',version_number:1}
-function fixture(foreign=false){
+function fixture(foreign=false,hasDraft=false,complete=true){
+ const draft={
+  id:created,status:'draft',current_step:'commercial',organization_id:null,
+  prospective_name:'Loja Aurora do Sul',organization_number:'101',
+  city:'Curitiba',state_code:'PR',admin_name:'Administrador Teste',
+  admin_email:'admin@example.test',billing_email:'financeiro@example.test',
+  plan_version_id:plan,contract_price:'125.00',subscription_start:'2026-11-01',
+  trial_days:0,tenant_slug:complete?'loja-aurora-101':null,
+  invite_email:'convite@example.test',terms_acceptance_required:true,
+ }
+
  const rows:Record<string,unknown[]>={
-  saas_onboarding_runs:foreign?[{id:'invalid',organization_id:null,status:'draft',current_step:'commercial'}]:[],
+  saas_onboarding_runs:foreign?[{id:'invalid',organization_id:null,status:'draft',current_step:'commercial'}]:(hasDraft?[draft]:[]),
   saas_plan_versions:[published],
  }
  const from=vi.fn((name:string)=>{
@@ -76,4 +86,28 @@ describe('Master onboarding draft only',()=>{
   expect(()=>validateOnboardingDraft(source,[published])).toThrow()
   expect(()=>validateOnboardingDraft({...source,start:'2026-11-01',tenantSlug:'INVALID SLUG'},[published])).toThrow()
  })
+ it('offers provisioning only for a selected reviewed draft with typed confirmation',async()=>{
+  const {client,rpc}=fixture(false,true)
+  render(<MasterOnboarding client={client}/>)
+  await screen.findByLabelText('Consultar rascunho')
+  fireEvent.change(screen.getByLabelText('Consultar rascunho'),{target:{value:created}})
+  const button=screen.getByRole('button',{name:'Criar Loja e assinatura'})
+  expect(button).toBeDisabled()
+  expect(rpc).not.toHaveBeenCalled()
+  fireEvent.change(screen.getByLabelText('Para provisionar, digite PROVISIONAR'),{target:{value:'PROVISIONAR'}})
+  fireEvent.submit(screen.getByRole('form',{name:'Provisionar Loja no DEV'}))
+  await waitFor(()=>expect(rpc).toHaveBeenCalledWith('provision_saas_onboarding_database',{p_run_id:created}))
+  expect(rpc).toHaveBeenCalledTimes(1)
+ })
+ it('refuses to provision an incomplete draft even after explicit confirmation',async()=>{
+  const {client,rpc}=fixture(false,true,false)
+  render(<MasterOnboarding client={client}/>)
+  await screen.findByLabelText('Consultar rascunho')
+  fireEvent.change(screen.getByLabelText('Consultar rascunho'),{target:{value:created}})
+  fireEvent.change(screen.getByLabelText('Para provisionar, digite PROVISIONAR'),{target:{value:'PROVISIONAR'}})
+  fireEvent.submit(screen.getByRole('form',{name:'Provisionar Loja no DEV'}))
+  await screen.findByText('Rascunho incompleto ou plano/vigência inválida. O provisionamento está bloqueado.')
+  expect(rpc).not.toHaveBeenCalled()
+ })
+
 })
