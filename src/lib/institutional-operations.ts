@@ -6,6 +6,8 @@ export type InstitutionalCategory={id:string;organization_id:string;name:string;
 export type InstitutionalCatalogItem={id:string;organization_id:string;name:string;active:boolean}
 export type InstitutionalObligation={
  organization_id:string;payable_id?:string;receivable_id?:string;description:string;due_date:string;
+ category_id:string;fund_id:string|null;competence:string;
+ effective_amount:string|number;allocated_amount:string|number;
  counterparty_name:string;open_amount:string|number;is_canceled:boolean;integrity_ok:boolean;
  approval_status?:string
 }
@@ -40,6 +42,7 @@ export async function loadInstitutionalCatalogs(client:SupabaseClient,org:string
 export async function loadInstitutionalObligations(client:SupabaseClient,org:string,kind:InstitutionalKind,signal:AbortSignal):Promise<InstitutionalObligation[]>{
  const name=kind==='payable'?'v_institutional_payable_effective':'v_institutional_receivable_effective'
  const fields=['organization_id',kind==='payable'?'payable_id':'receivable_id',
+   'category_id','fund_id','competence','effective_amount','allocated_amount',
    'description','counterparty_name','due_date','open_amount','is_canceled','integrity_ok',
    ...(kind==='payable'?['approval_status']:[])].join(',')
  const result=await client.from(name).select(fields).eq('organization_id',org)
@@ -49,8 +52,22 @@ export async function loadInstitutionalObligations(client:SupabaseClient,org:str
  for(const r of rows){
   const id=kind==='payable'?r.payable_id:r.receivable_id
   if(!id||r.integrity_ok!==true||typeof r.is_canceled!=='boolean'||typeof r.description!=='string'
-    ||typeof r.counterparty_name!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(r.due_date))throw Error('Invalid institutional obligation record')
-  exactPaymentAmount(r.open_amount)
+    ||typeof r.category_id!=='string'||(r.fund_id!==null&&typeof r.fund_id!=='string')||
+   typeof r.counterparty_name!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(r.due_date)||
+   !/^\d{4}-\d{2}-01$/.test(r.competence))throw Error('Invalid institutional obligation record')
+  const open=Number(exactPaymentAmount(r.open_amount))
+  const amount=Number(exactPaymentAmount(r.effective_amount))
+  const allocated=Number(exactPaymentAmount(r.allocated_amount))
+  if(allocated>amount||open>amount)throw Error('Institutional obligation financial amount mismatch')
  }
  return rows
+}
+
+export function expectedInstitutionalState(row:InstitutionalObligation){
+ return {
+  category_id:row.category_id,fund_id:row.fund_id,
+  description:row.description,competence:row.competence,due_date:row.due_date,
+  effective_amount:Number(exactPaymentAmount(row.effective_amount)),
+  allocated_amount:Number(exactPaymentAmount(row.allocated_amount)),
+ }
 }
