@@ -4,7 +4,7 @@ import {loadMasterOnboarding,validateOnboardingDraft,type OnboardingDraft,type O
 import {formatMoney} from '../lib/finance-data'
 
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-type Command={name:'save_saas_onboarding_draft'|'provision_saas_onboarding_database';args:Record<string,unknown>}
+type Command={name:'create_master_onboarding_draft_idempotent'|'provision_saas_onboarding_database';args:Record<string,unknown>}
 export function MasterOnboarding({client}:{client:SupabaseClient}){
  const [runs,setRuns]=useState<OnboardingDraft[]|null>(null)
  const [plans,setPlans]=useState<OnboardingPlan[]|null>(null)
@@ -79,15 +79,17 @@ export function MasterOnboarding({client}:{client:SupabaseClient}){
   }
   try{
    const valid=validateOnboardingDraft(source,plans)
-   void run({name:'save_saas_onboarding_draft',args:{
-    p_run_id:null,p_idempotency_key:crypto.randomUUID(),p_current_step:'commercial',
-    p_prospective_name:valid.name,p_organization_number:valid.number,p_tax_id:null,
-    p_city:valid.city||null,p_state_code:valid.state||null,p_admin_name:valid.adminName,
-    p_admin_email:valid.adminEmail,p_billing_email:valid.billingEmail,p_phone:null,
-    p_plan_version_id:valid.planId,p_contract_price:valid.price,p_subscription_start:valid.start,
-    p_trial_days:valid.trialDays,p_tenant_slug:valid.tenantSlug,p_initial_role:'ADMIN',
-    p_initial_accounting_plan_mode:'blank',p_invite_email:valid.inviteEmail,
-    p_terms_acceptance_required:true,
+   void run({name:'create_master_onboarding_draft_idempotent',args:{
+    p_idempotency_key:crypto.randomUUID(),
+    p_payload:{
+     prospective_name:valid.name,organization_number:valid.number,
+     city:valid.city||null,state_code:valid.state||null,
+     admin_name:valid.adminName,admin_email:valid.adminEmail,
+     billing_email:valid.billingEmail,invite_email:valid.inviteEmail,
+     tenant_slug:valid.tenantSlug,plan_version_id:valid.planId,
+     contract_price:valid.price,subscription_start:valid.start,
+     trial_days:valid.trialDays,
+    },
    }})
   }catch(e){setError((e as Error).message)}
  }
