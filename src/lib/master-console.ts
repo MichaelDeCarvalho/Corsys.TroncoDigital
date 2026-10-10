@@ -49,11 +49,21 @@ export async function loadMasterOverview(client:SupabaseClient){
  if(error)throw error
  return validateMasterOverview(data)
 }
-export async function loadMasterTenants(client:SupabaseClient,page:number){
+export type MasterTenantFilters={search:string;status:'all'|'active'|'past_due';plan:string}
+export const DEFAULT_MASTER_TENANT_FILTERS:MasterTenantFilters={search:'',status:'all',plan:''}
+export async function loadMasterTenants(client:SupabaseClient,page:number,filters:MasterTenantFilters=DEFAULT_MASTER_TENANT_FILTERS){
  if(!Number.isSafeInteger(page)||page<0||page>800)throw Error('Invalid Master page')
- const {data,error}=await client.rpc('list_platform_master_tenants',{
-  p_limit:MASTER_PAGE_SIZE+1,p_offset:page*MASTER_PAGE_SIZE,
- })
+ const search=filters.search.trim(),plan=filters.plan.trim()
+ if(search.length>100||plan.length>100||!['all','active','past_due'].includes(filters.status))
+  throw Error('Invalid Master tenant filter')
+ const filtered=search.length>0||plan.length>0||filters.status!=='all'
+ const {data,error}=await client.rpc(filtered?'search_platform_master_tenants':'list_platform_master_tenants',
+  filtered?{
+   p_search:search||null,p_subscription_status:filters.status,p_plan_search:plan||null,
+   p_limit:MASTER_PAGE_SIZE+1,p_offset:page*MASTER_PAGE_SIZE,
+  }:{
+   p_limit:MASTER_PAGE_SIZE+1,p_offset:page*MASTER_PAGE_SIZE,
+  })
  if(error)throw error
  if(!Array.isArray(data)||data.length>MASTER_PAGE_SIZE+1)
   throw Error('Invalid Master directory pagination')
