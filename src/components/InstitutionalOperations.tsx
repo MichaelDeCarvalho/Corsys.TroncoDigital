@@ -4,7 +4,7 @@ import { normalizedAmount } from '../lib/member-configuration'
 import { formatDate, formatMoney } from '../lib/finance-data'
 import { exactPaymentAmount } from '../lib/member-payments'
 import {
- loadInstitutionalCatalogs, loadInstitutionalObligations,
+ loadInstitutionalCatalogs, loadInstitutionalObligations, expectedInstitutionalState,
  type InstitutionalCatalogs, type InstitutionalObligation, type InstitutionalKind,
 } from '../lib/institutional-operations'
 
@@ -28,12 +28,12 @@ export function InstitutionalOperations({client,organizationId}:{client:Supabase
  const [revision,setRevision]=useState(0)
  const [error,setError]=useState(''),[saved,setSaved]=useState(false)
  const [pending,setPending]=useState(false),[uncertain,setUncertain]=useState(false),[conflict,setConflict]=useState(false)
- const [selected,setSelected]=useState(''),[cancelTarget,setCancelTarget]=useState('')
+ const [selected,setSelected]=useState(''),[cancelTarget,setCancelTarget]=useState(''),[correctionTarget,setCorrectionTarget]=useState('')
  const guard=useRef(false),mounted=useRef(false),command=useRef<Operation|null>(null)
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false}},[])
  useEffect(()=>{
   let active=true;const controller=new AbortController()
-  setCatalog(null);setRows(null);setError('');setSelected('');setCancelTarget('')
+  setCatalog(null);setRows(null);setError('');setSelected('');setCancelTarget('');setCorrectionTarget('')
   Promise.all([
    loadInstitutionalCatalogs(client,organizationId,controller.signal),
    loadInstitutionalObligations(client,organizationId,kind,controller.signal),
@@ -134,6 +134,38 @@ export function InstitutionalOperations({client,organizationId}:{client:Supabase
    }})
   }catch(cause){setError((cause as Error).message)}
  }
+ const correctionCandidate=(rows??[]).find(r=>!r.is_canceled&&
+  (kind==='payable'?r.payable_id:r.receivable_id)===correctionTarget)
+ function correctObligation(e:FormEvent<HTMLFormElement>){
+  e.preventDefault()
+  if(pending||uncertain||conflict||!catalog||!rows||!correctionCandidate)return
+  const d=new FormData(e.currentTarget)
+  const category=get(d,'category'),fund=get(d,'fund'),description=get(d,'description'),due=get(d,'due')
+  const domain=kind==='payable'?'institutional_expense':'institutional_revenue'
+  if(!catalog.categories.some(c=>c.id===category&&c.active&&c.domain===domain)){
+   setError('Selecione categoria institucional ativa, correspondente ao tipo de obrigação.');return
+  }
+  if(fund&&!catalog.funds.some(f=>f.id===fund)){
+   setError('Fundo não vinculado à Loja.');return
+  }
+  try{
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(due)||description.length<3||description.length>300)
+    throw Error('Informe descrição e vencimento válidos.')
+   const amount=positive(get(d,'amount'))
+   if(Number(amount)<Number(exactPaymentAmount(correctionCandidate.allocated_amount)))
+    throw Error('Valor corrigido não pode ser menor que o valor já liquidado.')
+   const reason=get(d,'reason')
+   if(reason.length<3||reason.length>500)throw Error('Informe justificativa válida.')
+   void run({name:'correct_tenant_institutional_obligation_idempotent',args:{
+    p_organization_id:organizationId,p_obligation_id:correctionTarget,p_kind:kind,
+    p_expected_state:expectedInstitutionalState(correctionCandidate),
+    p_new_category_id:category,p_new_fund_id:fund||null,
+    p_new_description:description,p_new_competence:monthStart(get(d,'competence')),
+    p_new_due_date:due,p_new_amount:amount,p_accounting_period:monthStart(get(d,'period')),
+    p_reason:reason,p_idempotency_key:crypto.randomUUID(),
+   }})
+  }catch(cause){setError((cause as Error).message)}
+ }
  const locked=pending||uncertain||conflict
  const categories=catalog?.categories.filter(c=>c.active&&c.domain===(kind==='payable'?'institutional_expense':'institutional_revenue'))??[]
  return <section className="panel member-editor institutional-operations" aria-label="Tesouraria institucional">
@@ -228,7 +260,54 @@ export function InstitutionalOperations({client,organizationId}:{client:Supabase
      </button>
     </fieldset>
    </form>
-   <p className="subtle">Consulta limitada a 150 obrigações por tipo, sem somar páginas como saldo total. Se exceder a capacidade, a operação é bloqueada. Correções, política de aprovação e negociação permanecem pendentes.</p>
+   <form aria-label="Corrigir obrigação institucional" onSubmit={correctObligation}>
+    <fieldset disabled={locked}>
+     <legend>Corrigir obrigação com registro histórico</legend>
+     <label htmlFor="inst-correction-target">Obrigação para correção</label>
+     <select id="inst-correction-target" value={correctionTarget}
+      onChange={e=>setCorrectionTarget(e.target.value)} required>
+      <option value="">Selecione a obrigação</option>
+      {(rows??[]).filter(r=>!r.is_canceled).map(r=><option
+       key={kind==='payable'?r.payable_id:r.receivable_id}
+       value={kind==='payable'?r.payable_id:r.receivable_id}>
+       {r.description} — saldo {formatMoney(Number(r.open_amount))}
+      </option>)}
+     </select>
+     {correctionCandidate&&<div key={`${revision}:${kind}:${correctionTarget}`} className="member-form-grid">
+      <div><label htmlFor="inst-correction-description">Descrição corrigida</label>
+       <input id="inst-correction-description" name="description" required maxLength={300}
+        defaultValue={correctionCandidate.description}/></div>
+      <div><label htmlFor="inst-correction-category">Categoria corrigida</label>
+       <select id="inst-correction-category" name="category" defaultValue={correctionCandidate.category_id} required>
+        {categories.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
+       </select></div>
+      <div><label htmlFor="inst-correction-fund">Fundo corrigido</label>
+       <select id="inst-correction-fund" name="fund" defaultValue={correctionCandidate.fund_id??''}>
+        <option value="">Sem fundo</option>{catalog.funds.map(f=><option key={f.id} value={f.id}>{f.name}</option>)}
+       </select></div>
+      <div><label htmlFor="inst-correction-competence">Competência da obrigação corrigida</label>
+       <input id="inst-correction-competence" name="competence" required type="month"
+        defaultValue={correctionCandidate.competence.slice(0,7)}/></div>
+      <div><label htmlFor="inst-correction-due">Vencimento corrigido</label>
+       <input id="inst-correction-due" name="due" required type="date"
+        defaultValue={correctionCandidate.due_date}/></div>
+      <div><label htmlFor="inst-correction-amount">Valor corrigido (R$)</label>
+       <input id="inst-correction-amount" name="amount" required inputMode="decimal"
+        defaultValue={String(correctionCandidate.effective_amount)}/></div>
+      <div><label htmlFor="inst-correction-period">Competência contábil da correção</label>
+       <input id="inst-correction-period" name="period" required type="month"/></div>
+      <div><label htmlFor="inst-correction-reason">Justificativa da correção</label>
+       <input id="inst-correction-reason" name="reason" minLength={3} maxLength={500} required/></div>
+     </div>}
+     {correctionCandidate&&<p className="subtle">Já liquidado:
+      {formatMoney(Number(correctionCandidate.allocated_amount))}. A correção cria evento histórico,
+      não altera a obrigação original; novas políticas de aprovação podem ser aplicadas.</p>}
+     <button type="submit" className="secondary" disabled={locked||!correctionCandidate}>
+      Confirmar correção
+     </button>
+    </fieldset>
+   </form>
+   <p className="subtle">Consulta limitada a 150 obrigações por tipo, sem somar páginas como saldo total. Se exceder a capacidade, a operação é bloqueada. Política de aprovação configurável e negociação permanecem pendentes.</p>
   </>}
  </section>
 }
