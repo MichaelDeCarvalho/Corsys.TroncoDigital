@@ -1,3 +1,10 @@
+## Incremento 27 — exportação CSV privada de inadimplência (2026-10-10)
+
+- `Financeiro > Inadimplência` ganhou botão `Exportar CSV completo`, acionado pelo usuário autenticado com `finance.read`, sem endpoint de exportação público e sem chave de serviço no navegador. `loadDelinquencyExport` percorre as páginas da RPC autorizada `read_tenant_delinquency`, valida cada posição, detecta integrante duplicado entre páginas, interrompe em erro ou mudança de tenant e bloqueia arquivos parciais (limite **1.000 integrantes**). `createDelinquencyCsv` usa UTF-8 BOM, `;` para pt-BR e neutraliza células iniciadas por fórmulas (`=`, `+`, `-`, `@`) ou controles. Não exporta CPF, telefone ou e-mail. Sem custos/serviços externos.
+- Testes Vitest em `src/lib/delinquency-export.test.ts` cobrem duas páginas (31 registros), CSV injection, valores incorretos, duplicatas, interrupção ao trocar de Loja e limite. Teste na UI confirma que exportação não roda automaticamente e falha fechada se a consulta retorna erro de autorização. CI do HEAD deve ser verificada.
+- **Limitações:** CSV NÃO é XLSX nem PDF; registros podem mudar entre páginas e não há snapshot consistente de transação (informado na UI). Não é relatório contábil auditado de corte; para comprovantes oficiais e volumetria alta é preciso exportação server-side com snapshot consistente, LGPD e retenção adequada. Teste real de download em navegador mobile/desktop NÃO AVALIADO.
+- DEV somente, branch PR #4. Etapa 2 continua aberta, sem produção ou merge.
+
 ## Incremento 26 — transferências internas entre contas e estornos (2026-10-10)
 
 - Branch DEV `feat/v35-dev-gate-20261002`, PR #4. Supabase **50 migrations**, #50 `20261010222543_tenant_account_transfer_commands` aplicada/versionada com SHA256 no manifesto. Sem merge, deploy ou alteração de PROD.

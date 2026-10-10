@@ -1,5 +1,12 @@
 # SECURITY REGISTER
 
+## Incremento 27 — relatório CSV privado: LGPD e prevenção de CSV injection (2026-10-10)
+
+O relatório de inadimplência contém nome e situação financeira por integrante (dado pessoal). Exportação ocorre somente após clique, por `read_tenant_delinquency` com `finance.read` no PostgreSQL; nenhuma chave service_role ou rota pública. O CSV não inclui CPF, e-mail, telefone ou credenciais. `createDelinquencyCsv` sanitiza controle/quebra de linha e prefixos Excel/LibreOffice `=`, `+`, `-`, `@` mesmo após normalização de compatibilidade Unicode, escapa aspas/delimitadores e inclui BOM UTF-8. Requisição completa limita 1.000 membros, verifica duplicidade e cancela após mudança de Loja, erro ou dados inconsistentes. Não gera arquivo parcial nem registra export no banco.
+
+Riscos pendentes: arquivos gerados passam a existir fora da plataforma e devem ser protegidos pelo operador conforme política LGPD; exportação paginada não garante snapshot temporal transacional consistente se lançamentos mudarem durante múltiplas chamadas. Download real em navegadores, permissão HTTP/JWT assinada e geração formal PDF/XLSX não foram avaliados. Antes de release, considerar relatórios com snapshot de servidor, autorização/datalog de export quando justificável, canal seguro e trilha de acesso.
+
+
 ## Incremento 26 — contas de caixa/bancos e transferências (2026-10-10)
 
 Transferências de saldo são execução sensível. Migration #50 cria duas RPCs SECURITY DEFINER (`search_path=''` e EXECUTE só authenticated) que validam `institutional.manage`, org tenant, contas financeiras ativas (estorno pode referenciar conta que posteriormente ficou inativa), saldo do livro até a data do lançamento, competência não fechada, moeda centesimal e motivo. A função usa `private.idempotency_begin/complete`, locks de contas por ID, eventos append-only e audit logs imutáveis. O livro `v_financial_account_movements` já representa quatro eventos (transfer_out/in, reversal_in/out) e preserva saldo global.

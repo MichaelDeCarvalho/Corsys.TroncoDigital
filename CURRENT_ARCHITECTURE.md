@@ -1,5 +1,10 @@
 # CURRENT ARCHITECTURE
 
+## CSV de inadimplência — DEV 2026-10-10
+
+`DelinquencyReport` dispara `loadDelinquencyExport` somente após clique e leitura tenant-scoped permitida. A rotina reusa a RPC `read_tenant_delinquency`, agrega até 1.000 linhas com validação e duplicata bloqueada, revalida o tenant para impedir download tardio depois de troca de Loja ou desmontagem. Serialização `createDelinquencyCsv` em memória no browser neutraliza prefixos perigosos de células, preserva decimal BRL em formato CSV pt-BR (`;` e vírgula) e limita campos a nome, situação, vencimento, saldos e créditos. Não há endpoint privilegiado ou banco novo; não há snapshot servidor para consistência entre múltiplas páginas. O arquivo fica sob responsabilidade de quem solicitou o download.
+
+
 ## Transferências entre contas financeiras — DEV 2026-10-10
 
 `AccountTransfers` em Financeiro consome `loadTreasuryAccounts`, `loadAccountTransferPage` (lista tenant-scoped paginada), e RPCs #50 `register_tenant_account_transfer_idempotent`/`reverse_tenant_account_transfer_idempotent`. A autorização de escrita é `private.require_permission(organization_id,'institutional.manage')` + tenant habilitado. A operação grava dois lados simétricos via `financial_account_transfers` no ledger `v_financial_account_movements`, com reversões em `financial_account_transfer_reversals`; **não** grava receitas/despesas ou edita movimentos históricos. Saldo é derivado do banco e não de soma de páginas; controles de saldo, conta, competência, data, arredondamento e tenant estão no servidor. Bloqueio ordenado das duas contas serializa transferências entre contas, mas outros fluxos financeiros que não compartilham o lock e simultaneidade independente ainda precisam de teste/hardening antes de PROD.
