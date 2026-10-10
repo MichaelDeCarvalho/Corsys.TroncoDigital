@@ -406,6 +406,15 @@
       "sha256": "46dfe0197a625a7aeecadae13d029b1b4ef1709d83df8c3a4d65398ba4c36db8",
       "applied_at": "2026-10-10",
       "note": "MASTER/AAL2 strict idempotent future-dated successor draft; publication closes prior version; audit + stale-version rejection."
+    },
+    {
+      "version": "20261010222543",
+      "name": "tenant_account_transfer_commands",
+      "path": "supabase/migrations/20261010222543_tenant_account_transfer_commands.sql",
+      "source_path": "supabase/migrations/20261010222543_tenant_account_transfer_commands.sql",
+      "sha256": "8ab135ce84fc6a582eab5db7ea4aff3305e700592a2ba74bf8623b93d6bb597e",
+      "applied_at": "2026-10-10",
+      "note": "Idempotent transfer and append-only reversal in tenant internal cash ledger; negative SQL gates PASS, positive end-to-end DB lifecycle NOT EVALUATED."
     }
   ],
   "baseline_patches": {

@@ -1,5 +1,10 @@
 # CURRENT ARCHITECTURE
 
+## Transferências entre contas financeiras — DEV 2026-10-10
+
+`AccountTransfers` em Financeiro consome `loadTreasuryAccounts`, `loadAccountTransferPage` (lista tenant-scoped paginada), e RPCs #50 `register_tenant_account_transfer_idempotent`/`reverse_tenant_account_transfer_idempotent`. A autorização de escrita é `private.require_permission(organization_id,'institutional.manage')` + tenant habilitado. A operação grava dois lados simétricos via `financial_account_transfers` no ledger `v_financial_account_movements`, com reversões em `financial_account_transfer_reversals`; **não** grava receitas/despesas ou edita movimentos históricos. Saldo é derivado do banco e não de soma de páginas; controles de saldo, conta, competência, data, arredondamento e tenant estão no servidor. Bloqueio ordenado das duas contas serializa transferências entre contas, mas outros fluxos financeiros que não compartilham o lock e simultaneidade independente ainda precisam de teste/hardening antes de PROD.
+
+
 ## Master promoção com versão sucessora — DEV 2026-10-10
 
 `MasterPromotions` seleciona série nova ou `latest_promotion_id` de uma série já publicada. A sucessão por `create_master_promotion_successor_idempotent` (migração #49) exige MASTER/MFA, valor/validade futura, serializa criação por `promotion_series_id`, bloqueia origem anterior obsoleta e preserva versão publicada. O rascunho sucessor não muda benefício/contrato já vigente. A publicação posterior pela RPC idempotente delega a `publish_saas_promotion_version` para encerrar a vigência antiga na fronteira correta, sem recalcular faturas.

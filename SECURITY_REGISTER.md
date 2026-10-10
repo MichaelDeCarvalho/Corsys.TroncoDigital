@@ -1,5 +1,12 @@
 # SECURITY REGISTER
 
+## Incremento 26 — contas de caixa/bancos e transferências (2026-10-10)
+
+Transferências de saldo são execução sensível. Migration #50 cria duas RPCs SECURITY DEFINER (`search_path=''` e EXECUTE só authenticated) que validam `institutional.manage`, org tenant, contas financeiras ativas (estorno pode referenciar conta que posteriormente ficou inativa), saldo do livro até a data do lançamento, competência não fechada, moeda centesimal e motivo. A função usa `private.idempotency_begin/complete`, locks de contas por ID, eventos append-only e audit logs imutáveis. O livro `v_financial_account_movements` já representa quatro eventos (transfer_out/in, reversal_in/out) e preserva saldo global.
+
+Evidência executada: `DEV_TRANSFER_GUARDS_ROLLBACK_PASS` rejeita auto-transferência, conta de outro tenant e estorno não existente; `anon` sem EXECUTE. **Não foi possível homologar cenário positivo** porque DEV A/B só têm uma conta ativa por Loja e tentativa de provisionar organização de teste em rollback foi bloqueada por segurança da ferramenta. Não contornar bloqueio e não declarar execução positivo; cross-user negative RBAC, JWT HTTP real, paralelismo interconexões e saldo de outros lançamentos concorrentes permanecem sem avaliação. Perigo residual: locking de transferências não necessariamente coordena pagamentos efetuados por comandos legados; checar saldo concorrente em homologação antes de habilitar PROD.
+
+
 ## Incremento 25 — sucessão controlada de ofertas (2026-10-10)
 
 RPC DEV `create_master_promotion_successor_idempotent` é SECURITY DEFINER e restringe EXECUTE authenticated com `private.require_platform_staff('MASTER')` (AAL2) antes de leitura/escrita, hash do payload em `private.master_idempotency_keys`, advisory transaction lock por série para impedir versão concorrente de mesmo histórico, valida último publicado e datas futuras; registros published são preservados. Erro `40001` em predecessor obsoleto. Teste `DEV_MASTER_PROMOTION_SUCCESSOR_ROLLBACK_PASS` validou sucessão e fronteira de vigência dentro da transação de teste; não é substituto de teste de sessão simultânea independente ou HTTP com JWT assinado. APIs legadas do Master continuam disponíveis a usuários MASTER/AAL2: revisar/apagar acesso direto antes do release.

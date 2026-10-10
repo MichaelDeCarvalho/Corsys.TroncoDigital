@@ -1,5 +1,10 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Etapa 2 — transferências internas e estornos em DEV, 2026-10-10
+
+Comandos de movimentação entre contas e estorno append-only agora disponíveis em Financeiro > Transferências, migration #50. Exigem contas ativas da mesma Loja, saldo contabilizado, competência aberta, permissão institucional, motivo, auditoria e replay idempotente. O banco mantém DRE e transferências distintos. Teste negativo A/B de isolamento/cancelamento SQL passou com ROLLBACK, mas **ciclo positivo NÃO foi validado**: só há uma conta ativa em cada tenant piloto, e criação de tenant fictício temporário para fixture foi bloqueada pelas configurações de segurança. CI frontend verificar. PROD continua bloqueado.
+
+
 ## Master SaaS — promoção sucessora (2026-10-10)
 
 O catálogo Master permite criar rascunho de uma promoção nova ou versão sucessora sem editar ofertas históricas. Migração DEV #49, `create_master_promotion_successor_idempotent`, controle de hash/replay, validação MASTER/MFA e serialização de série. Gate SQL com rollback passou. Não houve resgates, alterações de assinatura, faturas ou clientes.
