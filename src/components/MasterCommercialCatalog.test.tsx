@@ -43,7 +43,7 @@ describe('Master commercial version history',()=>{
  it('shows no Master commercial data if the server denies access',async()=>{
   const {client}=fixture({deny:true})
   render(<MasterCommercialCatalog client={client}/>)
-  await screen.findByRole('alert')
+  expect((await screen.findAllByRole('alert')).length).toBeGreaterThan(0)
   expect(screen.queryByText('Plano ESSENCIAL')).not.toBeInTheDocument()
  })
  it('rejects invalid prices rather than displaying a commercial offer',async()=>{
