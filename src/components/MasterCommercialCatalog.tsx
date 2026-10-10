@@ -1,6 +1,7 @@
 import {useEffect,useState} from 'react'
 import type {SupabaseClient} from '@supabase/supabase-js'
 import {formatMoney} from '../lib/finance-data'
+import {MasterPlanLifecycle} from './MasterPlanLifecycle'
 import {
  loadPlatformCommercialCatalog,type PlatformPlanVersion,type PlatformPromotion
 } from '../lib/master-commercial'
@@ -16,7 +17,9 @@ export function MasterCommercialCatalog({client}:{client:SupabaseClient}){
    .catch(()=>{if(live)setError('O catálogo de planos e ofertas não está disponível para esta autenticação.')})
   return()=>{live=false;controller.abort()}
  },[client,revision])
- return <section className="panel" aria-label="Catálogo comercial Master">
+ return <>
+  <MasterPlanLifecycle client={client}/>
+  <section className="panel" aria-label="Catálogo comercial Master">
   <div className="section-title"><h2>Planos e ofertas comerciais</h2>
    <button className="secondary" type="button" onClick={()=>setRevision(v=>v+1)}>Atualizar catálogo</button>
   </div>
@@ -50,4 +53,5 @@ export function MasterCommercialCatalog({client}:{client:SupabaseClient}){
    <p className="subtle">Limite de consulta: 200 versões de planos e 200 séries de ofertas. Dados acima desse limite bloqueiam o módulo, sem exibir catálogo incompleto.</p>
   </>}
  </section>
+ </>
 }
