@@ -1,3 +1,7 @@
+## Incremento 22 — endurecimento do replay de onboarding, 2026-10-10
+
+Novo wrapper `create_master_onboarding_draft_idempotent` migration DEV #46 resolve risco de reutilização da mesma chave para rascunho comercial diferente. Entrada de parâmetros em JSONB é normalizada/validada pelo PostgreSQL e serializada por chave; registro existente é comparado campo a campo (nome, número, contato, convite, slug, plano, preço, datas, UF, cidade, papel ADMIN). Reenvio do mesmo payload retorna o mesmo UUID sem registrar segundo evento, enquanto mudança é rejeitada com `22023`. UI Master agora consome o wrapper. Teste SQL com `ROLLBACK` `DEV_MASTER_ONBOARDING_STRICT_REPLAY_ROLLBACK_PASS`, dois papéis negativos, uma linha/um evento positivos. A RPC anterior permanece por compatibilidade e precisa ser deprecada/restrita antes de produção.
+
 ## Incremento 21 — Master onboarding e Cliente 360°, 2026-10-10
 
 Interfaces Master acrescentadas em `MasterConsole`: `MasterOnboarding` cria rascunho de implantação usando RPC preexistente `save_saas_onboarding_draft` (MASTER/AAL2). O rascunho contém dados de cadastro e plano publicado com vigência e preço; mudança de estado de implantação tem ação separada com confirmação digitada `PROVISIONAR`, que invoca `provision_saas_onboarding_database` do pacote V35. O PostgreSQL cria organização, assinatura e evento/job de convite sob a transação; este job **não constitui entrega de e-mail** e serviços externos permanecem fora da validação.

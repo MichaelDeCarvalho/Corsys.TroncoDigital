@@ -1,5 +1,10 @@
 # SECURITY REGISTER
 
+## Incremento 22 — colisões de idempotência em onboarding Master (2026-10-10)
+
+Identificado risco no `save_saas_onboarding_draft` preexistente: `INSERT ... ON CONFLICT (idempotency_key) DO UPDATE updated_at` não comparava payload original e emitia evento de etapa repetido. Remediação aditiva DEV #46: novo `create_master_onboarding_draft_idempotent(key,jsonb)` valida MASTER+AAL2, normaliza inputs, protege replay com `pg_advisory_xact_lock`, consulta a linha com `FOR UPDATE`, compara campos comerciais relevantes, rejeita colisão de payload por `22023`, devolve ID sem gravar segundo evento em replay. EXECUTE somente authenticated após verificação de cargo/MFA. SQL gate `DEV_MASTER_ONBOARDING_STRICT_REPLAY_ROLLBACK_PASS` confirmou uma linha/um evento, payload divergente negado e AAL1/tenant/anon negados. **Risco residual:** a RPC legada continua com EXECUTE autorizado a Master; mapear consumidores e revogar/depreciar com transição segura antes de PROD. A verificação SQL é por claims simuladas; JWT HTTP real e concorrência de duas conexões continuam NOT EVALUATED.
+
+
 ## Master onboarding e Cliente360 — 2026-10-10
 
 `MasterOnboarding` utiliza SELECT sob RLS Master/Billing somente depois do gate frontend MASTER AAL2; a segurança verdadeira dos comandos está em `private.require_platform_staff('MASTER')` nas RPCs. Form exige plano publicado, datas compatíveis, ADMIN inicial, dados válidos e confirmação humana distinta para provisionar. O backend existente cria organização e assinatura, retorna mesma Loja se repetido pelo mesmo run e enfileira um job de convite. Teste rollback confirma exatamente uma organização, assinatura e job, mas não testa disparo/entrega de e-mail nem fluxo externo de aceite. Risco pendente: a RPC `save_saas_onboarding_draft` reutiliza `idempotency_key` para conflito mas não valida hash de payload divergente; frontend repete o payload, porém proteger reuso externo com payload diferente é melhoria de servidor requerida antes de PROD.

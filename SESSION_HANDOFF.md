@@ -1,3 +1,10 @@
+## Incremento 22 — Master draft replay protegido por payload (2026-10-10)
+
+- Migration DEV #46 `20261010205909_master_onboarding_strict_idempotency`, SQL e SHA256 versionados. RPC `create_master_onboarding_draft_idempotent(key,payload)` usa `private.require_platform_staff('MASTER')` AAL2, normaliza campos, valida papel ADMIN e dados essenciais, serializa mesma key via advisory lock, compara todos os campos com rascunho existente e só invoca a RPC antiga no primeiro envio. Key existente com payload diferente ou status não-draft gera `22023`, nenhuma mutação/evento adicional.
+- Frontend `MasterOnboarding` agora chama wrapper protegido, mantendo a mesma key/payload quando resultado de transporte é incerto. Script SQL `DEV_MASTER_ONBOARDING_STRICT_REPLAY_ROLLBACK_PASS` validou replay, colisão de payload rejeitada, uma única linha e um único evento, AAL1 e tenant negados, anon sem grant. ROLLBACK.
+- Atenção: RPC legada `save_saas_onboarding_draft` continua diretamente chamável por MASTER/AAL2; sua colisão sem validação não pode ser considerada corrigida para todos os consumidores. Nova UI usa wrapper; antes de PROD mapear consumidores e restringir/aposentar legado ou endurecê-lo com compatibilidade validada. Nenhum deploy PROD, HTTP/JWT real não avaliado.
+- CI `GitHub Actions` do SHA consolidado deve ser verificada depois desta revisão documental. Etapa 2 ainda aberta: convite/aceite real e entrega, integrações comerciais, paridade do piloto, Master completo, relatórios e segurança E2E.
+
 ## Incremento 21 — onboarding e Cliente 360 Master (2026-10-10)
 
 - DEV branch `feat/v35-dev-gate-20261002`, PR #4. Supabase migrações **45**, `20261010010836_master_plan_draft_publication_idempotent` (#44, anterior) e `20261010205431_master_client_360_summary` (#45, nova), SQLs versionados e hashes SHA256 conferidos no manifesto.

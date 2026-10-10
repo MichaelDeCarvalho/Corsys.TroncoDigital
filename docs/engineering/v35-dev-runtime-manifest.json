@@ -370,6 +370,15 @@
       "sha256": "62306842980d43bbccd922d4c06cfeea970e2dc9336f6b9d91eadb80c0746e47",
       "applied_at": "2026-10-10",
       "note": "Read-only MASTER MFA client 360 from SaaS subscriptions, invoice balances and support; no impersonation."
+    },
+    {
+      "version": "20261010205909",
+      "name": "master_onboarding_strict_idempotency",
+      "path": "supabase/migrations/20261010205909_master_onboarding_strict_idempotency.sql",
+      "source_path": "supabase/migrations/20261010205909_master_onboarding_strict_idempotency.sql",
+      "sha256": "642819e1dc9987114c05aaec7bc006c331f5f92dcbcb4375226bbb91bc51eeb9",
+      "applied_at": "2026-10-10",
+      "note": "Strict immutable draft key/payload replay; permission MASTER/AAL2 and transaction advisory lock; no duplicate saved events."
     }
   ],
   "baseline_patches": {

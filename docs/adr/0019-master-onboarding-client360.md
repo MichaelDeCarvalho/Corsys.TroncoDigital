@@ -11,3 +11,7 @@ Acesso somente MASTER com MFA/AAL2 validado no PostgreSQL. Salvar rascunho em fo
 ### Segurança e limites
 RLS do catálogo e dos rascunhos permanece; comandos restringidos pelo servidor, view Master via RPC AAL2. Testes SQL DEV com rollback cobrem usuário MASTER, AAL1, tenant e replay. A RPC de rascunho existente não vincula hash do payload à chave idempotente: corrigir antes de PROD para impedir colidir com dados distintos. Fluxo de invite/aceite real não homologado. Relatório 360 não é editor de contrato e pode conter dados comerciais sensíveis; não usar em sessão de cliente. Sem PRODUCTION.
 
+
+## Aditamento de segurança — 2026-10-10
+
+O formulário de criação de novos rascunhos foi migrado para a RPC `create_master_onboarding_draft_idempotent` (migração DEV #46), que compara chave e payload normalizado antes de reutilizar o resultado e não gera eventos de etapas duplicados no retry. O risco de colisão no comando legado ficou mitigado **para a nova interface**, mas continua existindo para consumidores que ainda chamam `save_saas_onboarding_draft` diretamente; documentar depreciação/compatibilidade e bloquear PROD até resolver o risco residual. Gate SQL de replay e autorização MASTER/AAL2 aprovado, sem dados persistidos.

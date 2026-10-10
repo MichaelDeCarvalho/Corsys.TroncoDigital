@@ -1,5 +1,10 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Master SaaS — proteção de rascunho idempotente, 2026-10-10
+
+RPC #46 `create_master_onboarding_draft_idempotent` protege mesma chave contra alteração de dados, com validação MASTER/AAL2 no servidor, e impede duplicidade de eventos ao retransmitir a mesma proposta. A interface Master usa esse wrapper. SQL AAL2 positivo e AAL1/tenant negativos com rollback. Legado ainda permitido para Master exige migração de clientes antigos antes de produção.
+
+
 ## Master SaaS — onboarding e panorama Cliente 360°, 2026-10-10
 
 Além do catálogo, cobrança e suporte Master, já existe fluxo de rascunho de nova Loja e provisionamento após confirmação específica em DEV. Cria uma Loja e assinatura com tarefa de convite pendente, sem entrega externa verificada, usando RPC preexistente MASTER com MFA. Cliente360 traz status comercial, assinatura, faturas SaaS em aberto/vencidas e total de chamados; acesso exclusivo MASTER/MFA. SQL de ambos os fluxos foi executado com ROLLBACK e retentativa, sem clientes fictícios persistidos; testes frontend adicionados. Ainda não representa paridade total V35, nem autoriza produção.

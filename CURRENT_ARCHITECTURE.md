@@ -1,5 +1,10 @@
 # CURRENT ARCHITECTURE
 
+## Idempotência estrita dos novos rascunhos Master — DEV 2026-10-10
+
+`MasterOnboarding` utiliza `create_master_onboarding_draft_idempotent(key,payload)` (migration #46) em vez da RPC legada diretamente. O wrapper exige MASTER/AAL2, valida campos no servidor, serializa `key` em transação, retorna ID salvo quando payload é exatamente igual e falha `22023` se key for reaproveitada com parâmetros divergentes ou draft saiu de estado editável. Ao chamar `save_saas_onboarding_draft` somente quando key é nova, evita evento de etapa duplicado em retries. A RPC legada permanece para compatibilidade e exige revisão de consumidores antes de release.
+
+
 ## Onboarding e panorama Cliente 360° Master — DEV 2026-10-10
 
 `MasterConsole` inclui `MasterOnboarding` e `MasterClient360`, renderizados somente após a validação de `read_platform_master_overview`. O banco reforça limite MASTER/AAL2 independentemente de UI: `save_saas_onboarding_draft` e `provision_saas_onboarding_database` existentes; `read_master_client_360` novo (SQL #45) exige `private.require_platform_staff('MASTER')` e lê apenas agregados comerciais/faturamento SaaS/suporte do cliente indicado. Onboarding é duas ações separadas: salvar draft não provoca efeitos externos; provisionar exige draft completo, confirmação explícita e cria organização, assinatura e job de convite, **não envia nem confirma entrega do convite por si**. Evitar interpretação de fila de job como e-mail enviado; etapa assíncrona/consentimento ainda em aberto. Report AAL2-only, anon sem EXECUTE, consulta nunca inclui finanças privadas da Loja nem autenticação como cliente.
