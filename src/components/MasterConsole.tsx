@@ -1,4 +1,4 @@
-import {useEffect,useState} from 'react'
+import {useEffect,useState,type FormEvent} from 'react'
 import type {SupabaseClient} from '@supabase/supabase-js'
 import {formatDate} from '../lib/finance-data'
 import {MasterCommercialCatalog} from './MasterCommercialCatalog'
@@ -6,18 +6,21 @@ import {MasterSupportQueue} from './MasterSupportQueue'
 import {MasterBilling} from './MasterBilling'
 import {MasterOnboarding} from './MasterOnboarding'
 import {MasterClient360} from './MasterClient360'
-import {loadMasterOverview,loadMasterTenants,type MasterOverview,type MasterTenant} from '../lib/master-console'
+import {loadMasterOverview,loadMasterTenants,type MasterOverview,type MasterTenant,type MasterTenantFilters,DEFAULT_MASTER_TENANT_FILTERS} from '../lib/master-console'
 
 export function MasterConsole({client}:{client:SupabaseClient}){
  const [overview,setOverview]=useState<MasterOverview|null>(null)
  const [tab,setTab]=useState<'overview'|'commercial'|'support'|'billing'|'onboarding'|'client360'>('overview')
  const [page,setPage]=useState(0),[revision,setRevision]=useState(0)
+ const [search,setSearch]=useState(''),[status,setStatus]=useState<'all'|'active'|'past_due'>('all')
+ const [plan,setPlan]=useState('')
+ const [filters,setFilters]=useState<MasterTenantFilters>(DEFAULT_MASTER_TENANT_FILTERS)
  const [tenants,setTenants]=useState<{rows:MasterTenant[];hasNext:boolean}|null>(null)
  const [error,setError]=useState(''),[denied,setDenied]=useState(false)
  useEffect(()=>{
   let live=true
   setOverview(null);setTenants(null);setError('');setDenied(false)
-  Promise.all([loadMasterOverview(client),loadMasterTenants(client,page)]).then(([o,t])=>{
+  Promise.all([loadMasterOverview(client),loadMasterTenants(client,page,filters)]).then(([o,t])=>{
    if(live){setOverview(o);setTenants(t)}
   }).catch(cause=>{
    if(!live)return
@@ -26,7 +29,16 @@ export function MasterConsole({client}:{client:SupabaseClient}){
    else setError('Não foi possível validar a consulta do Master SaaS. Os dados permaneceram ocultos.')
   })
   return()=>{live=false}
- },[client,page,revision])
+ },[client,page,revision,filters])
+ function submitFilters(event:FormEvent<HTMLFormElement>){
+  event.preventDefault()
+  setPage(0)
+  setFilters({search:search.trim(),status,plan:plan.trim()})
+ }
+ function clearFilters(){
+  setSearch('');setStatus('all');setPlan('');setPage(0)
+  setFilters({search:'',status:'all',plan:''})
+ }
  const metrics=overview?[
   ['Lojas cadastradas',overview.tenants_total],
   ['Lojas ativas',overview.tenants_active],
@@ -63,6 +75,26 @@ export function MasterConsole({client}:{client:SupabaseClient}){
    </div>
    <section className="panel">
     <h3>Diretório de Lojas</h3>
+    <form aria-label="Filtrar clientes SaaS" onSubmit={submitFilters}>
+     <div className="member-form-grid">
+      <div><label htmlFor="master-search-client">Buscar cliente</label>
+       <input id="master-search-client" placeholder="Nome, número, cidade ou contato" value={search}
+        maxLength={100} onChange={e=>setSearch(e.target.value)}/></div>
+      <div><label htmlFor="master-search-status">Status comercial</label>
+       <select id="master-search-status" value={status}
+        onChange={e=>setStatus(e.target.value as 'all'|'active'|'past_due')}>
+        <option value="all">Todos</option><option value="active">Ativo</option><option value="past_due">Em atraso</option>
+       </select></div>
+      <div><label htmlFor="master-search-plan">Plano comercial</label>
+       <input id="master-search-plan" maxLength={100} value={plan} placeholder="Nome ou código do plano"
+        onChange={e=>setPlan(e.target.value)}/></div>
+     </div>
+     <div className="finance-sections">
+      <button type="submit" className="secondary">Aplicar filtros</button>
+      <button type="button" className="secondary" onClick={clearFilters}>Limpar filtros</button>
+     </div>
+    </form>
+    <p className="subtle">Busca processada no banco sob autorização MASTER/MFA, inclusive por cidade e contato. Resultado paginado; não equivale ao cadastro completo de todos os clientes da plataforma.</p>
     {!tenants.rows.length?<p>Nenhuma Loja encontrada nesta página.</p>:
      <div className="finance-table" role="region" aria-label="Lojas Master" tabIndex={0}>
       <table><thead><tr><th>Loja</th><th>Nº</th><th>Situação</th><th>Assinatura</th><th>Plano</th><th>Chamados abertos</th></tr></thead>
@@ -79,7 +111,7 @@ export function MasterConsole({client}:{client:SupabaseClient}){
      <span role="status">Página {page+1} — {tenants.rows.length} Lojas</span>
      <button className="secondary" disabled={!tenants.hasNext} onClick={()=>setPage(v=>v+1)}>Próxima</button>
     </div>
-    <p className="subtle">Cadastro, planos comerciais, cobranças SaaS e suporte Master terão fluxos próprios com autorização e auditoria. Nenhum valor de contrato é alterado neste painel.</p>
+    <p className="subtle">Cadastro, planos comerciais, cobranças SaaS e suporte Master têm fluxos separados com autorização e auditoria. Nenhum valor de contrato é alterado pelos filtros deste painel.</p>
    </section>
    </>}
    {tab==='commercial'&&<MasterCommercialCatalog client={client}/>}
