@@ -38,6 +38,8 @@ function fixture(hasTransfer=false,hasReversal=false,override?:Record<string,unk
  return {client:{from,rpc} as unknown as SupabaseClient,rpc}
 }
 async function fill(){
+ await screen.findByText('Não existem transferências nesta página.')
+ await waitFor(()=>expect(screen.getByRole('button',{name:'Registrar transferência'})).toBeEnabled())
  await screen.findByLabelText('Conta de origem')
  fireEvent.change(screen.getByLabelText('Conta de origem'),{target:{value:fromId}})
  fireEvent.change(screen.getByLabelText('Conta de destino'),{target:{value:toId}})
