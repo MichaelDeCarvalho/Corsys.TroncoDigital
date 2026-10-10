@@ -37,6 +37,20 @@ describe('Member overdue report',()=>{
    p_organization_id:'org-a',p_limit:26,p_offset:25,
   })
  })
+ it('exports only on explicit user action and prevents partial downloads on authorization errors',async()=>{
+  const {client,rpc}=fixture()
+  rpc.mockResolvedValueOnce({data:[base],error:null})
+   .mockResolvedValueOnce({data:null,error:{code:'42501'}})
+  render(<DelinquencyReport client={client} organizationId="org-a"/>)
+  await screen.findByText('Integrante DEV')
+  expect(rpc).toHaveBeenCalledTimes(1)
+  fireEvent.click(screen.getByRole('button',{name:'Exportar CSV completo'}))
+  await screen.findByText(/A exportação não pôde ser concluída/)
+  expect(rpc).toHaveBeenCalledTimes(2)
+  expect(rpc).toHaveBeenLastCalledWith('read_tenant_delinquency',{
+   p_organization_id:'org-a',p_limit:26,p_offset:0,
+  })
+ })
  it('handles denied access by hiding all balances',async()=>{
   const {client}=fixture([],{code:'42501'})
   render(<DelinquencyReport client={client} organizationId="org-a"/>)
