@@ -4,7 +4,7 @@ import {loadMasterOnboarding,validateOnboardingDraft,type OnboardingDraft,type O
 import {formatMoney} from '../lib/finance-data'
 
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-type Command={name:'save_saas_onboarding_draft';args:Record<string,unknown>}
+type Command={name:'save_saas_onboarding_draft'|'provision_saas_onboarding_database';args:Record<string,unknown>}
 export function MasterOnboarding({client}:{client:SupabaseClient}){
  const [runs,setRuns]=useState<OnboardingDraft[]|null>(null)
  const [plans,setPlans]=useState<OnboardingPlan[]|null>(null)
@@ -13,6 +13,7 @@ export function MasterOnboarding({client}:{client:SupabaseClient}){
  const [error,setError]=useState(''),[success,setSuccess]=useState('')
  const [selected,setSelected]=useState('')
  const [confirmed,setConfirmed]=useState(false)
+ const [provisionConfirmation,setProvisionConfirmation]=useState('')
  const cmd=useRef<Command|null>(null),guard=useRef(false),mounted=useRef(false)
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false}},[])
  useEffect(()=>{
@@ -32,7 +33,11 @@ export function MasterOnboarding({client}:{client:SupabaseClient}){
    if(response.error)throw response.error
    if(typeof response.data!=='string'||!uuid.test(response.data))throw Error('Onboarding write unconfirmed')
    if(mounted.current){
-    cmd.current=null;setUncertain(false);setSuccess('Rascunho de implantação salvo. Nenhuma Loja, assinatura ou convite foi criado.')
+    const wasProvision=cmd.current.name==='provision_saas_onboarding_database'
+    cmd.current=null;setUncertain(false)
+    setSuccess(wasProvision
+     ? 'Loja e assinatura provisionadas no DEV. O convite ficou registrado como tarefa pendente; não há confirmação de envio.'
+     : 'Rascunho de implantação salvo. Nenhuma Loja, assinatura ou convite foi criado.')
     setRevision(v=>v+1)
    }
   }catch(failure){
@@ -47,6 +52,19 @@ export function MasterOnboarding({client}:{client:SupabaseClient}){
     setError('Resposta não confirmada. Verifique o envio repetindo exatamente os mesmos parâmetros.')
    }
   }finally{guard.current=false;if(mounted.current)setPending(false)}
+ }
+ function provision(event:FormEvent<HTMLFormElement>){
+  event.preventDefault()
+  if(!runs||!plans||pending||uncertain||provisionConfirmation!=='PROVISIONAR')return
+  const draft=runs.find(r=>r.id===selected&&r.status==='draft'&&r.organization_id===null)
+  const plan=plans.find(p=>p.id===draft?.plan_version_id&&p.status==='published')
+  if(!draft||!plan||!draft.prospective_name||!draft.organization_number||
+     !draft.admin_email||!draft.invite_email||!draft.tenant_slug||!draft.subscription_start||
+     draft.subscription_start<plan.valid_from||
+     (plan.valid_to!==null&&draft.subscription_start>plan.valid_to)){
+   setError('Rascunho incompleto ou plano/vigência inválida. O provisionamento está bloqueado.');return
+  }
+  void run({name:'provision_saas_onboarding_database',args:{p_run_id:draft.id}})
  }
  function submit(event:FormEvent<HTMLFormElement>){
   event.preventDefault()
@@ -81,7 +99,7 @@ export function MasterOnboarding({client}:{client:SupabaseClient}){
    <button className="secondary" type="button" disabled={locked}
     onClick={()=>{setSuccess('');setRevision(v=>v+1)}}>Atualizar rascunhos</button>
   </div>
-  <p className="subtle">Preparação exclusivamente pelo Master com MFA. Salvar um rascunho não provisiona uma Loja, ativa assinatura, envia e-mail ou gera cobrança. O provisionamento deve ser confirmado em fluxo separado depois da revisão contratual e de segurança.</p>
+  <p className="subtle">Preparação exclusivamente pelo Master com MFA. Salvar um rascunho não provisiona uma Loja, ativa assinatura, envia e-mail ou gera cobrança. O provisionamento exige confirmação específica de rascunho completo e gera somente uma tarefa de convite; não comprova envio do e-mail.</p>
   {success&&<p role="status">{success}</p>}
   {error&&<p role="alert" className="message error">{error}</p>}
   {uncertain&&<button type="button" className="secondary" disabled={pending}
@@ -90,7 +108,7 @@ export function MasterOnboarding({client}:{client:SupabaseClient}){
    <h4>Rascunhos em andamento</h4>
    {!draft.length?<p>Nenhum rascunho pendente.</p>:<>
     <label htmlFor="master-onboarding-select">Consultar rascunho</label>
-    <select id="master-onboarding-select" value={selected} onChange={e=>setSelected(e.target.value)}>
+    <select id="master-onboarding-select" value={selected} onChange={e=>{setSelected(e.target.value);setProvisionConfirmation('')}}>
      <option value="">Selecione</option>{draft.map(r=><option key={r.id} value={r.id}>
       {r.prospective_name??'Loja sem nome'} — {r.current_step}
      </option>)}
@@ -100,6 +118,18 @@ export function MasterOnboarding({client}:{client:SupabaseClient}){
      <p>Etapa: {selectedDraft.current_step} · Situação: {selectedDraft.status}</p>
      <p>Contrato previsto: {selectedDraft.contract_price===null?'Sem valor definido':formatMoney(Number(selectedDraft.contract_price))} · Início: {selectedDraft.subscription_start??'Não definido'}</p>
      <p>Proposta e informações do administrador ficam restritas ao acesso Master.</p>
+     <form aria-label="Provisionar Loja no DEV" onSubmit={provision}>
+      <fieldset disabled={locked}>
+       <legend>Provisionamento controlado</legend>
+       <p className="subtle">Esta operação cria a Loja, inicia a assinatura conforme o contrato e coloca um convite na fila de tarefas. Ela não confirma entrega de e-mail, pagamento ou homologação do cliente. O comando aceita reconsulta do mesmo rascunho sem criar outra Loja.</p>
+       <label htmlFor="master-provision-confirm">Para provisionar, digite PROVISIONAR</label>
+       <input id="master-provision-confirm" value={provisionConfirmation}
+        onChange={e=>setProvisionConfirmation(e.target.value)} autoComplete="off"/>
+       <button className="primary" type="submit" disabled={locked||provisionConfirmation!=='PROVISIONAR'}>
+        Criar Loja e assinatura
+       </button>
+      </fieldset>
+     </form>
     </div>}
    </>}
    <form aria-label="Criar rascunho de implantação" onSubmit={submit}>
