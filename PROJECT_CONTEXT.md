@@ -1,5 +1,9 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Master SaaS — resposta e acompanhamento de chamados (2026-10-10)
+O Master DEV inclui agora uma fila de operação com histórico, métricas de primeira resposta e resposta ao chamado de cliente por RPC idempotente AAL2/Master. Chamados internos permanecem restritos e sem comando de resposta no frontend. SQL AAL2/RLS e React 162 testes passaram; demais telas Master e homologação por JWT HTTP real ainda pendentes.
+
+
 ## Etapa 2 — incremento transversal verificado 2026-10-09/10
 
 O Financeiro DEV incorporou geração mensal idempotente (prévia, vigência e condições individuais), cobranças manuais/cancelamentos, fechamento mensal auditado, saldos de caixa/bancos, orçamento×realizado, indicadores globais da Loja e inadimplência por integrante. Operações institucionais agora incluem correção/cancelamento auditados com revisão otimista. Master SaaS recebeu área de consulta segregada por papel Master+AAL2, sem autorizar operação de contratos comerciais. SQL de regressão A/B com transações revertidas passou; os 42 arquivos migration do DEV foram versionados. **Faltam Master operacional, múltiplas telas completas e homologação de segurança, concorrência e UX. Não tratar esta base DEV como produção/homologação concluída.**

@@ -343,6 +343,15 @@
       "sha256": "d8201338e0cf5ebd44638d4d397230fd5d2e46e1a15e7399f9ef26fbab6e19b5",
       "applied_at": "2026-10-10",
       "note": "Read-only platform Master overview and tenant directory with enforced AAL2 and platform staff MASTER."
+    },
+    {
+      "version": "20261010005826",
+      "name": "master_tenant_support_idempotent_reply",
+      "path": "supabase/migrations/20261010005826_master_tenant_support_idempotent_reply.sql",
+      "source_path": "supabase/migrations/20261010005826_master_tenant_support_idempotent_reply.sql",
+      "sha256": "ef565ccf7cef7bbb5bc661c6afffc8c2a1f1d98f2e0b36080db308184f99b410",
+      "applied_at": "2026-10-10",
+      "note": "Master MFA/AAL2-only idempotent reply to tenant support tickets, audit and status transition via existing command; explicitly excludes internal tickets."
     }
   ],
   "baseline_patches": {

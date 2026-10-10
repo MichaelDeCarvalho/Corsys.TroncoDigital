@@ -1,3 +1,11 @@
+## Incremento 20 — operação Master de suporte e respostas (2026-10-10)
+- Branch DEV PR #4, migration #43 `20261010005826_master_tenant_support_idempotent_reply` versionada e SHA256 conferido no manifesto. `MasterSupportQueue` mostra chamados internos e da Loja, métricas reais, mensagens e paginação; `MasterConsole` tem aba Operação e suporte.
+- `reply_master_tenant_support_idempotent` exige MASTER ativo + MFA AAL2 no PostgreSQL, restringe `ticket_scope='tenant'`, valida mensagem e status, usa mesma chave/payload após perda de resposta e delega à RPC auditada `reply_saas_support_ticket`. Não concede escrita em chamados internos ou impersonação cross-tenant.
+- Gates SQL `DEV_MASTER_SUPPORT_RLS_ROLLBACK_PASS` e `DEV_MASTER_SUPPORT_REPLY_ROLLBACK_PASS`: Master AAL2 pode, AAL1/tenant sem MASTER/anon não pode; chamada repetida não duplica mensagem; ROLLBACK. Claims do SQL são simuladas, **não** JWT HTTP assinados.
+- CI funcional `cb6fe527` run `38011418036`: 162/162 testes em 26 arquivos, TypeScript, build e estático PASS. Antes de production exige HTTP/JWT real, QA desktop/mobile e restante da paridade 21 telas.
+- Master overview, diretório, versões comerciais permanecem READ-ONLY; **resposta a ticket de cliente e mudança de status são comandos reais em DEV**, sem ativar cobranças comerciais.
+- Pendências Stage2: onboarding, Cliente 360, billing SaaS, políticas de aprovação completas, negociação, ágapes/mútuas, conciliação, transferências, exportação PDF/XLSX, regras anuais e institucionais, paridade piloto, segurança HTTP concorrência, testes de navegação real. Sem PROD ou merge.
+
 ## Incrementos 15–19 — recorrência, tesouraria, correções e Master (2026-10-09/10)
 
 - Branch DEV `feat/v35-dev-gate-20261002`, PR #4. Supabase DEV **42 migrations**, #36–42 versionadas em `docs/engineering/v35-dev-runtime-manifest.json` com SHA256 dos SQL aplicados. Nenhum deploy ou alteração PROD autorizados.

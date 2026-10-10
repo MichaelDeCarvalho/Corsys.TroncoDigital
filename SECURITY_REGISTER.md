@@ -1,5 +1,9 @@
 # SECURITY REGISTER
 
+## Incremento 20 — isolamento do suporte Master (2026-10-10)
+Nova função `reply_master_tenant_support_idempotent` (SECURITY DEFINER, `search_path=''`, EXECUTE somente `authenticated`) exige `private.require_platform_staff('MASTER')` (MFA/AAL2), escopo organization + `ticket_scope='tenant'` e lock antes de delegar a `reply_saas_support_ticket`. Registra resultado pela mesma chave de idempotência após incerteza de rede, impedindo segundo evento por replay; payload diferente retorna erro. O frontend diferencia notas internas de mensagens visíveis ao cliente, sem expor comando de resposta nos chamados internos. Views/ tabelas RLS permanecem origem de autorização de leitura. Testes `DEV_MASTER_SUPPORT_RLS_ROLLBACK_PASS` e `DEV_MASTER_SUPPORT_REPLY_ROLLBACK_PASS` com claims simuladas MASTER AAL2, AAL1, tenant AAL2 e anon. JWT HTTP real, concorrência independente e fluxo de suporte temporário read_only NÃO avaliados. Nenhum segredo/API provider foi incluído.
+
+
 ## Incrementos 15–19 — revisão de superfícies de autorização, 2026-10-09/10
 
 Superfícies novas SQL SECURITY DEFINER `search_path=''` e acesso EXECUTE exclusivo ao papel `authenticated` (revoke anon/public): `preview_monthly_charge_generation`/`generate_monthly_member_charges` (perm. `charges.create`), `cancel_member_charge_idempotent` (`charges.cancel`), `close_financial_period_idempotent`/`reopen_financial_period_idempotent` (perms próprias), `read_tenant_financial_dashboard`/`read_tenant_delinquency` (`finance.read`), `cancel_tenant_institutional_obligation_idempotent`/`correct_tenant_institutional_obligation_idempotent` (`institutional.manage`), `read_platform_master_overview`/`list_platform_master_tenants` (`private.require_platform_staff('MASTER')` com AAL2). `private.monthly_charge_candidates` não é executável externamente. Consultas comercial Master existentes continuam com filtro `private.has_aal2`/ `private.is_platform_staff`.

@@ -1,3 +1,6 @@
+## Incremento 20 — Operação Master: chamados e respostas (2026-10-10)
+`MasterSupportQueue` mostra chamados e métricas com view existente `security_invoker`, mensagens RLS e separação explícita tenant/internal. A aba `Operação e suporte` está integrada ao `MasterConsole`. Migration #43 `master_tenant_support_idempotent_reply` adicionou RPC para resposta MASTER (AAL2) somente em tickets de cliente, com atualização de status e replay seguro, delegando a `reply_saas_support_ticket` auditada. Testes SQL AAL2 e RLS duas Lojas, todos com ROLLBACK, passaram; testes React (incluindo cancelamento de rede e proibição de responder interno) e CI 162/162 PASS commit `cb6fe527`. **Não** implementa ainda notas internas, atribuição, Kanban completo, auditoria de suporte/read_only temporário, nem Cliente 360 e onboarding. Assinatura e billing SaaS inalterados.
+
 ## Incrementos 15–19 — núcleo financeiro e Master read-only (2026-10-09/10)
 
 1. **Geração mensal:** migration DEV #36, prévia com fingerprint/quantidade/isentos/duplicados e confirmação atômica por integrante e competência; valida preços históricos, isenções e overrides, limite de 200, mapeamento contábil e período; lote e cobranças imutáveis. `DEV_MONTHLY_GENERATION_ROLLBACK_PASS` (duas Lojas, dois emitidos e um isento em cada, fevereiro dia 31 -> 28). UI em Financeiro > Gerar mensalidades.

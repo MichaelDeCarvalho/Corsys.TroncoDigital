@@ -1,5 +1,9 @@
 # CURRENT ARCHITECTURE
 
+## Suporte Master com respostas autorizadas — 2026-10-10
+`MasterSupportQueue` consome `v_saas_support_ticket_metrics` como view `security_invoker=true` e `saas_support_ticket_messages` com RLS, respeitando visibilidade customer/internal. Consulta Master requer perfil de plataforma + AAL2. A escrita em chamados tenant é feita exclusivamente por `reply_master_tenant_support_idempotent` (MFA Master, ID tenant, validação, idempotência), que reutiliza `reply_saas_support_ticket` e respectivos eventos de status. Ticket interno não pode receber resposta usando endpoint tenant. A navegação/ocultação de formulário não é controle de autorização; PostgreSQL verifica todos os pedidos. O restante do catálogo Master e diretório continua somente leitura.
+
+
 ## Etapa 2: recorrência, fluxo financeiro e Master read-only — 2026-10-09/10
 
 **Cobrança recorrente:** `private.monthly_charge_candidates` resolve, por competência, preço versionado e `recurring_member_terms` (padrão, isenção, valor individual). `preview_monthly_charge_generation` calcula quantidade e fingerprint/condições antes de emitir; `generate_monthly_member_charges` exige `charges.create`, idempotência, bloqueio da Loja/regra/integrantes, mapping contábil publicado, período aberto e fingerprint idêntico. Lote `charge_batches` + fatos `charges` imutáveis, chaves únicas em banco. A tela `MonthlyChargeGeneration` não gera automaticamente.
