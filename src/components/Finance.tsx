@@ -10,6 +10,7 @@ import { MonthlyChargeGeneration } from './MonthlyChargeGeneration'
 import { ManualCharges } from './ManualCharges'
 import { FinancialPeriods } from './FinancialPeriods'
 import { TreasuryBalances } from './TreasuryBalances'
+import { AccountTransfers } from './AccountTransfers'
 import { BudgetReport } from './BudgetReport'
 import { DelinquencyReport } from './DelinquencyReport'
 import { FinanceIntegrityError, financeSources, formatDate, formatMoney, loadFinancePage, type FinanceKind, type FinanceRow } from '../lib/finance-data'
@@ -17,7 +18,7 @@ import { FinanceIntegrityError, financeSources, formatDate, formatMoney, loadFin
 const statusLabels: Record<string, string> = { open: 'Em aberto', paid: 'Liquidada', partially_paid: 'Parcialmente liquidada', cancelled: 'Cancelada', posted: 'Contabilizada', approved: 'Aprovada', pending: 'Pendente', missing_request: 'Aprovação não solicitada', not_required: 'Dispensada', rejected: 'Rejeitada' }
 
 export function Finance({ client, organizationId }: { client: SupabaseClient; organizationId: string }) {
-  const [kind, setKind] = useState<FinanceKind | 'memberPayments' | 'dre' | 'institutional' | 'approvals' | 'monthly' | 'manual' | 'periods' | 'treasury' | 'budget' | 'delinquency' | 'approvalPolicies'>('charges')
+  const [kind, setKind] = useState<FinanceKind | 'memberPayments' | 'dre' | 'institutional' | 'approvals' | 'monthly' | 'manual' | 'periods' | 'treasury' | 'budget' | 'delinquency' | 'approvalPolicies' | 'transfers'>('charges')
   return <>
     <div className="finance-sections" role="group" aria-label="Consultas financeiras">
       {(Object.keys(financeSources) as FinanceKind[]).map(id => <button className="secondary" key={id} aria-pressed={kind === id} onClick={() => setKind(id)}>{financeSources[id].label}</button>)}
@@ -30,6 +31,7 @@ export function Finance({ client, organizationId }: { client: SupabaseClient; or
       <button className="secondary" aria-pressed={kind === 'manual'} onClick={() => setKind('manual')}>Cobranças avulsas</button>
       <button className="secondary" aria-pressed={kind === 'periods'} onClick={() => setKind('periods')}>Fechamento mensal</button>
       <button className="secondary" aria-pressed={kind === 'treasury'} onClick={() => setKind('treasury')}>Caixa e bancos</button>
+      <button className="secondary" aria-pressed={kind === 'transfers'} onClick={() => setKind('transfers')}>Transferências</button>
       <button className="secondary" aria-pressed={kind === 'budget'} onClick={() => setKind('budget')}>Orçado × realizado</button>
       <button className="secondary" aria-pressed={kind === 'delinquency'} onClick={() => setKind('delinquency')}>Inadimplência</button>
     </div>
@@ -52,6 +54,8 @@ export function Finance({ client, organizationId }: { client: SupabaseClient; or
       ? <FinancialPeriods key={organizationId} client={client} organizationId={organizationId} />
       : kind === 'treasury'
       ? <TreasuryBalances key={organizationId} client={client} organizationId={organizationId} />
+      : kind === 'transfers'
+      ? <AccountTransfers key={organizationId} client={client} organizationId={organizationId} />
       : kind === 'budget'
       ? <BudgetReport key={organizationId} client={client} organizationId={organizationId} />
       : kind === 'delinquency'
