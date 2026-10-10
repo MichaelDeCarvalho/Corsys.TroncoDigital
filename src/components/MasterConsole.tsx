@@ -2,11 +2,12 @@ import {useEffect,useState} from 'react'
 import type {SupabaseClient} from '@supabase/supabase-js'
 import {formatDate} from '../lib/finance-data'
 import {MasterCommercialCatalog} from './MasterCommercialCatalog'
+import {MasterSupportQueue} from './MasterSupportQueue'
 import {loadMasterOverview,loadMasterTenants,type MasterOverview,type MasterTenant} from '../lib/master-console'
 
 export function MasterConsole({client}:{client:SupabaseClient}){
  const [overview,setOverview]=useState<MasterOverview|null>(null)
- const [tab,setTab]=useState<'overview'|'commercial'>('overview')
+ const [tab,setTab]=useState<'overview'|'commercial'|'support'>('overview')
  const [page,setPage]=useState(0),[revision,setRevision]=useState(0)
  const [tenants,setTenants]=useState<{rows:MasterTenant[];hasNext:boolean}|null>(null)
  const [error,setError]=useState(''),[denied,setDenied]=useState(false)
@@ -45,6 +46,7 @@ export function MasterConsole({client}:{client:SupabaseClient}){
    <div className="finance-sections" role="group" aria-label="Áreas do Master SaaS">
     <button className="secondary" aria-pressed={tab==='overview'} onClick={()=>setTab('overview')}>Visão geral</button>
     <button className="secondary" aria-pressed={tab==='commercial'} onClick={()=>setTab('commercial')}>Planos e ofertas</button>
+    <button className="secondary" aria-pressed={tab==='support'} onClick={()=>setTab('support')}>Operação e suporte</button>
    </div>
    {tab==='overview'&&<>
    <p className="subtle">Indicadores da plataforma em {formatDate(overview.as_of)}. Não representam faturamento recebido.</p>
@@ -75,6 +77,7 @@ export function MasterConsole({client}:{client:SupabaseClient}){
    </section>
    </>}
    {tab==='commercial'&&<MasterCommercialCatalog client={client}/>}
+   {tab==='support'&&<MasterSupportQueue client={client}/>}
   </>}
  </section>
 }
