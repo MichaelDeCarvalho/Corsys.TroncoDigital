@@ -1,10 +1,12 @@
 import {useEffect,useState} from 'react'
 import type {SupabaseClient} from '@supabase/supabase-js'
 import {formatDate} from '../lib/finance-data'
+import {MasterCommercialCatalog} from './MasterCommercialCatalog'
 import {loadMasterOverview,loadMasterTenants,type MasterOverview,type MasterTenant} from '../lib/master-console'
 
 export function MasterConsole({client}:{client:SupabaseClient}){
  const [overview,setOverview]=useState<MasterOverview|null>(null)
+ const [tab,setTab]=useState<'overview'|'commercial'>('overview')
  const [page,setPage]=useState(0),[revision,setRevision]=useState(0)
  const [tenants,setTenants]=useState<{rows:MasterTenant[];hasNext:boolean}|null>(null)
  const [error,setError]=useState(''),[denied,setDenied]=useState(false)
@@ -40,6 +42,11 @@ export function MasterConsole({client}:{client:SupabaseClient}){
   {error&&<p role="alert" className="message error">{error}</p>}
   {!overview&&!error&&!denied&&<p role="status">Validando Master e consultando indicadores…</p>}
   {overview&&tenants&&<>
+   <div className="finance-sections" role="group" aria-label="Áreas do Master SaaS">
+    <button className="secondary" aria-pressed={tab==='overview'} onClick={()=>setTab('overview')}>Visão geral</button>
+    <button className="secondary" aria-pressed={tab==='commercial'} onClick={()=>setTab('commercial')}>Planos e ofertas</button>
+   </div>
+   {tab==='overview'&&<>
    <p className="subtle">Indicadores da plataforma em {formatDate(overview.as_of)}. Não representam faturamento recebido.</p>
    <div className="metric-grid">
     {metrics.map(([label,value])=><article className="panel metric" key={label}>
@@ -66,6 +73,8 @@ export function MasterConsole({client}:{client:SupabaseClient}){
     </div>
     <p className="subtle">Cadastro, planos comerciais, cobranças SaaS e suporte Master terão fluxos próprios com autorização e auditoria. Nenhum valor de contrato é alterado neste painel.</p>
    </section>
+   </>}
+   {tab==='commercial'&&<MasterCommercialCatalog client={client}/>}
   </>}
  </section>
 }
