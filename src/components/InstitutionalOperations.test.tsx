@@ -128,6 +128,47 @@ describe('Institutional treasury operations',()=>{
   await waitFor(()=>expect(rpc).toHaveBeenCalledTimes(2))
   expect(rpc.mock.calls[1]).toEqual(rpc.mock.calls[0])
  })
+ it('cancels only an eligible open payable with a reason and idempotency key',async()=>{
+  const {client,rpc}=fixture()
+  render(<InstitutionalOperations client={client} organizationId="org"/>)
+  await loaded()
+  fill('Obrigação para cancelamento',payable)
+  fill('Competência do cancelamento','2030-01')
+  fill('Justificativa','Obrigação cadastrada em duplicidade')
+  fireEvent.submit(screen.getByRole('form',{name:'Cancelar obrigação institucional'}))
+  await screen.findByText('Operação institucional confirmada. A consulta foi atualizada.')
+  expect(rpc).toHaveBeenCalledWith('cancel_tenant_institutional_obligation_idempotent',{
+   p_organization_id:'org',p_obligation_id:payable,p_kind:'payable',
+   p_accounting_period:'2030-01-01',p_reason:'Obrigação cadastrada em duplicidade',
+   p_idempotency_key:expect.any(String),
+  })
+ })
+ it('cancels a receivable as a distinct kind without cancelling an expense',async()=>{
+  const {client,rpc}=fixture()
+  render(<InstitutionalOperations client={client} organizationId="org"/>)
+  await setKind('Contas a receber')
+  fill('Obrigação para cancelamento',receivable)
+  fill('Competência do cancelamento','2030-01')
+  fill('Justificativa','Receita institucional lançada incorretamente')
+  fireEvent.submit(screen.getByRole('form',{name:'Cancelar obrigação institucional'}))
+  await screen.findByText('Operação institucional confirmada. A consulta foi atualizada.')
+  expect(rpc).toHaveBeenCalledWith('cancel_tenant_institutional_obligation_idempotent',
+   expect.objectContaining({p_kind:'receivable',p_obligation_id:receivable}))
+ })
+ it('retries a lost cancellation response with the same payload and key',async()=>{
+  const {client,rpc}=fixture()
+  rpc.mockRejectedValueOnce(new Error('connection reset'))
+  render(<InstitutionalOperations client={client} organizationId="org"/>)
+  await loaded()
+  fill('Obrigação para cancelamento',payable)
+  fill('Competência do cancelamento','2030-01')
+  fill('Justificativa','Despesa duplicada')
+  fireEvent.submit(screen.getByRole('form',{name:'Cancelar obrigação institucional'}))
+  await screen.findByRole('button',{name:'Verificar envio'})
+  fireEvent.click(screen.getByRole('button',{name:'Verificar envio'}))
+  await waitFor(()=>expect(rpc).toHaveBeenCalledTimes(2))
+  expect(rpc.mock.calls[1]).toEqual(rpc.mock.calls[0])
+ })
  it('fails closed if institutional effective data originates from another tenant',async()=>{
   const {client,rpc}=fixture({foreign:true})
   render(<InstitutionalOperations client={client} organizationId="org"/>)
