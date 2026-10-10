@@ -1,4 +1,4 @@
-import {render,screen} from '@testing-library/react'
+import {render,screen,fireEvent,waitFor} from '@testing-library/react'
 import type {SupabaseClient} from '@supabase/supabase-js'
 import {vi} from 'vitest'
 import {MasterConsole} from './MasterConsole'
@@ -39,6 +39,27 @@ describe('Master read-only overview',()=>{
   expect(()=>validateMasterOverview({...summary,tenants_total:3})).toThrow()
   expect(()=>validateMasterOverview({...summary,access:'TENANT'})).toThrow()
   expect(()=>validateMasterOverview({...summary,plan_drafts:-1})).toThrow()
+ })
+ it('filters global client directory at the server, never in a browser-only table',async()=>{
+  const {client,rpc}=fixture()
+  render(<MasterConsole client={client}/>)
+  await screen.findByText('Loja Exemplo')
+  fireEvent.change(screen.getByLabelText('Buscar cliente'),{target:{value:'DEV-A'}})
+  fireEvent.change(screen.getByLabelText('Status comercial'),{target:{value:'active'}})
+  fireEvent.change(screen.getByLabelText('Plano comercial'),{target:{value:'Mensal'}})
+  fireEvent.submit(screen.getByRole('form',{name:'Filtrar clientes SaaS'}))
+  await waitFor(()=>expect(rpc).toHaveBeenCalledWith('search_platform_master_tenants',{
+   p_search:'DEV-A',p_subscription_status:'active',p_plan_search:'Mensal',
+   p_limit:26,p_offset:0,
+  }))
+  fireEvent.click(screen.getByRole('button',{name:'Limpar filtros'}))
+  await waitFor(()=>expect(rpc.mock.calls.filter(call=>call[0]==='list_platform_master_tenants').length).toBeGreaterThan(1))
+ })
+ it('rejects oversize and unsupported status filters before contacting platform',async()=>{
+  const {client,rpc}=fixture()
+  await expect(loadMasterTenants(client,0,{search:'x'.repeat(101),status:'all',plan:''})).rejects.toThrow()
+  await expect(loadMasterTenants(client,0,{search:'',status:'invalid' as 'all',plan:''})).rejects.toThrow()
+  expect(rpc).not.toHaveBeenCalled()
  })
  it('rejects pages outside the supported range',async()=>{
   const {client,rpc}=fixture()
