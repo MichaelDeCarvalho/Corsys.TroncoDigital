@@ -67,7 +67,7 @@ export function MasterOnboarding({client}:{client:SupabaseClient}){
     p_city:valid.city||null,p_state_code:valid.state||null,p_admin_name:valid.adminName,
     p_admin_email:valid.adminEmail,p_billing_email:valid.billingEmail,p_phone:null,
     p_plan_version_id:valid.planId,p_contract_price:valid.price,p_subscription_start:valid.start,
-    p_trial_days:valid.trialDays,p_tenant_slug:valid.tenantSlug,p_initial_role:'owner',
+    p_trial_days:valid.trialDays,p_tenant_slug:valid.tenantSlug,p_initial_role:'ADMIN',
     p_initial_accounting_plan_mode:'blank',p_invite_email:valid.inviteEmail,
     p_terms_acceptance_required:true,
    }})
