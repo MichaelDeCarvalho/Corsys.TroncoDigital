@@ -20,11 +20,15 @@ function fixture(opts:{foreign?:boolean;approved?:boolean;invalid?:boolean}={}){
   financial_accounts:[{id:account,organization_id:'org',name:'Conta institucional',active:true}],
   v_institutional_payable_effective:[
    {payable_id:payable,organization_id:opts.foreign?'other':'org',description:'Energia do templo',
+    category_id:catPay,fund_id:null,competence:'2030-01-01',
+    effective_amount:'150.00',allocated_amount:'0.00',
     counterparty_name:'Concessionária',due_date:'2030-01-15',open_amount:'150.00',
     is_canceled:false,integrity_ok:!opts.invalid,approval_status:opts.approved===false?'pending':'approved'},
   ],
   v_institutional_receivable_effective:[
    {receivable_id:receivable,organization_id:'org',description:'Doação institucional',
+    category_id:catRecv,fund_id:null,competence:'2030-01-01',
+    effective_amount:'220.00',allocated_amount:'0.00',
     counterparty_name:'Doador',due_date:'2030-01-15',open_amount:'220.00',
     is_canceled:false,integrity_ok:true},
   ],
@@ -164,6 +168,55 @@ describe('Institutional treasury operations',()=>{
   fill('Competência do cancelamento','2030-01')
   fill('Justificativa','Despesa duplicada')
   fireEvent.submit(screen.getByRole('form',{name:'Cancelar obrigação institucional'}))
+  await screen.findByRole('button',{name:'Verificar envio'})
+  fireEvent.click(screen.getByRole('button',{name:'Verificar envio'}))
+  await waitFor(()=>expect(rpc).toHaveBeenCalledTimes(2))
+  expect(rpc.mock.calls[1]).toEqual(rpc.mock.calls[0])
+ })
+ it('corrects a payable after checking the effective snapshot, preserving historical amount',async()=>{
+  const {client,rpc}=fixture()
+  render(<InstitutionalOperations client={client} organizationId="org"/>)
+  await loaded()
+  fill('Obrigação para correção',payable)
+  fill('Descrição corrigida','Energia elétrica reclassificada')
+  fill('Vencimento corrigido','2030-01-20')
+  fill('Valor corrigido (R$)','180,50')
+  fill('Competência contábil da correção','2030-01')
+  fill('Justificativa da correção','Correção de nota fiscal')
+  fireEvent.submit(screen.getByRole('form',{name:'Corrigir obrigação institucional'}))
+  await screen.findByText('Operação institucional confirmada. A consulta foi atualizada.')
+  expect(rpc).toHaveBeenCalledWith('correct_tenant_institutional_obligation_idempotent',expect.objectContaining({
+   p_organization_id:'org',p_obligation_id:payable,p_kind:'payable',
+   p_expected_state:{
+    category_id:catPay,fund_id:null,description:'Energia do templo',
+    competence:'2030-01-01',due_date:'2030-01-15',
+    effective_amount:150,allocated_amount:0,
+   },
+   p_new_category_id:catPay,p_new_amount:'180.50',p_new_due_date:'2030-01-20',
+   p_idempotency_key:expect.any(String),
+  }))
+ })
+ it('corrects a receivable through its distinct posted-transaction contract',async()=>{
+  const {client,rpc}=fixture()
+  render(<InstitutionalOperations client={client} organizationId="org"/>)
+  await setKind('Contas a receber')
+  fill('Obrigação para correção',receivable)
+  fill('Competência contábil da correção','2030-01')
+  fill('Justificativa da correção','Correção da receita lançada')
+  fireEvent.submit(screen.getByRole('form',{name:'Corrigir obrigação institucional'}))
+  await screen.findByText('Operação institucional confirmada. A consulta foi atualizada.')
+  expect(rpc).toHaveBeenCalledWith('correct_tenant_institutional_obligation_idempotent',
+   expect.objectContaining({p_kind:'receivable',p_obligation_id:receivable,p_new_amount:'220.00'}))
+ })
+ it('maintains the identical correction payload and key after an uncertain response',async()=>{
+  const {client,rpc}=fixture()
+  rpc.mockRejectedValueOnce(new Error('network'))
+  render(<InstitutionalOperations client={client} organizationId="org"/>)
+  await loaded()
+  fill('Obrigação para correção',payable)
+  fill('Competência contábil da correção','2030-01')
+  fill('Justificativa da correção','Corrigir vencimento errado')
+  fireEvent.submit(screen.getByRole('form',{name:'Corrigir obrigação institucional'}))
   await screen.findByRole('button',{name:'Verificar envio'})
   fireEvent.click(screen.getByRole('button',{name:'Verificar envio'}))
   await waitFor(()=>expect(rpc).toHaveBeenCalledTimes(2))
