@@ -1,5 +1,12 @@
 # SECURITY REGISTER
 
+## Master onboarding e Cliente360 — 2026-10-10
+
+`MasterOnboarding` utiliza SELECT sob RLS Master/Billing somente depois do gate frontend MASTER AAL2; a segurança verdadeira dos comandos está em `private.require_platform_staff('MASTER')` nas RPCs. Form exige plano publicado, datas compatíveis, ADMIN inicial, dados válidos e confirmação humana distinta para provisionar. O backend existente cria organização e assinatura, retorna mesma Loja se repetido pelo mesmo run e enfileira um job de convite. Teste rollback confirma exatamente uma organização, assinatura e job, mas não testa disparo/entrega de e-mail nem fluxo externo de aceite. Risco pendente: a RPC `save_saas_onboarding_draft` reutiliza `idempotency_key` para conflito mas não valida hash de payload divergente; frontend repete o payload, porém proteger reuso externo com payload diferente é melhoria de servidor requerida antes de PROD.
+
+`read_master_client_360` (#45) é somente leitura com SECURITY DEFINER/search_path vazio, EXECUTE negado anon e concedido authenticated, permissão MASTER/AAL2 antes de seleção, agregado de tickets somente `ticket_scope='tenant'` e valida `integrity_ok` do faturamento. SQL Master AAL2 positivo, Master AAL1 e tenant AAL2 negativos e anon negado, ROLLBACK PASS. Não prova HTTP/JWT realmente assinados, MFA em navegador ou isolamento em múltiplas sessões. Sem produção.
+
+
 ## Incremento 20 — isolamento do suporte Master (2026-10-10)
 Nova função `reply_master_tenant_support_idempotent` (SECURITY DEFINER, `search_path=''`, EXECUTE somente `authenticated`) exige `private.require_platform_staff('MASTER')` (MFA/AAL2), escopo organization + `ticket_scope='tenant'` e lock antes de delegar a `reply_saas_support_ticket`. Registra resultado pela mesma chave de idempotência após incerteza de rede, impedindo segundo evento por replay; payload diferente retorna erro. O frontend diferencia notas internas de mensagens visíveis ao cliente, sem expor comando de resposta nos chamados internos. Views/ tabelas RLS permanecem origem de autorização de leitura. Testes `DEV_MASTER_SUPPORT_RLS_ROLLBACK_PASS` e `DEV_MASTER_SUPPORT_REPLY_ROLLBACK_PASS` com claims simuladas MASTER AAL2, AAL1, tenant AAL2 e anon. JWT HTTP real, concorrência independente e fluxo de suporte temporário read_only NÃO avaliados. Nenhum segredo/API provider foi incluído.
 

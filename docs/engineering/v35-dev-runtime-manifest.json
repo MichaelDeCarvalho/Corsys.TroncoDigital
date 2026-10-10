@@ -352,6 +352,24 @@
       "sha256": "ef565ccf7cef7bbb5bc661c6afffc8c2a1f1d98f2e0b36080db308184f99b410",
       "applied_at": "2026-10-10",
       "note": "Master MFA/AAL2-only idempotent reply to tenant support tickets, audit and status transition via existing command; explicitly excludes internal tickets."
+    },
+    {
+      "version": "20261010010836",
+      "name": "master_plan_draft_publication_idempotent",
+      "path": "supabase/migrations/20261010010836_master_plan_draft_publication_idempotent.sql",
+      "source_path": "supabase/migrations/20261010010836_master_plan_draft_publication_idempotent.sql",
+      "sha256": "56052e24f65cec66c0f14883e04996c6f561f3686cb2f4481d29e0076545bc7d",
+      "applied_at": "2026-10-10",
+      "note": "Master MFA-only plan drafts and explicit idempotent publication, existing CI gates."
+    },
+    {
+      "version": "20261010205431",
+      "name": "master_client_360_summary",
+      "path": "supabase/migrations/20261010205431_master_client_360_summary.sql",
+      "source_path": "supabase/migrations/20261010205431_master_client_360_summary.sql",
+      "sha256": "62306842980d43bbccd922d4c06cfeea970e2dc9336f6b9d91eadb80c0746e47",
+      "applied_at": "2026-10-10",
+      "note": "Read-only MASTER MFA client 360 from SaaS subscriptions, invoice balances and support; no impersonation."
     }
   ],
   "baseline_patches": {

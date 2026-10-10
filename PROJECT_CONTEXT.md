@@ -1,5 +1,10 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Master SaaS — onboarding e panorama Cliente 360°, 2026-10-10
+
+Além do catálogo, cobrança e suporte Master, já existe fluxo de rascunho de nova Loja e provisionamento após confirmação específica em DEV. Cria uma Loja e assinatura com tarefa de convite pendente, sem entrega externa verificada, usando RPC preexistente MASTER com MFA. Cliente360 traz status comercial, assinatura, faturas SaaS em aberto/vencidas e total de chamados; acesso exclusivo MASTER/MFA. SQL de ambos os fluxos foi executado com ROLLBACK e retentativa, sem clientes fictícios persistidos; testes frontend adicionados. Ainda não representa paridade total V35, nem autoriza produção.
+
+
 ## Master SaaS — resposta e acompanhamento de chamados (2026-10-10)
 O Master DEV inclui agora uma fila de operação com histórico, métricas de primeira resposta e resposta ao chamado de cliente por RPC idempotente AAL2/Master. Chamados internos permanecem restritos e sem comando de resposta no frontend. SQL AAL2/RLS e React 162 testes passaram; demais telas Master e homologação por JWT HTTP real ainda pendentes.
 

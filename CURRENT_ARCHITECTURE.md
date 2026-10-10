@@ -1,5 +1,10 @@
 # CURRENT ARCHITECTURE
 
+## Onboarding e panorama Cliente 360° Master — DEV 2026-10-10
+
+`MasterConsole` inclui `MasterOnboarding` e `MasterClient360`, renderizados somente após a validação de `read_platform_master_overview`. O banco reforça limite MASTER/AAL2 independentemente de UI: `save_saas_onboarding_draft` e `provision_saas_onboarding_database` existentes; `read_master_client_360` novo (SQL #45) exige `private.require_platform_staff('MASTER')` e lê apenas agregados comerciais/faturamento SaaS/suporte do cliente indicado. Onboarding é duas ações separadas: salvar draft não provoca efeitos externos; provisionar exige draft completo, confirmação explícita e cria organização, assinatura e job de convite, **não envia nem confirma entrega do convite por si**. Evitar interpretação de fila de job como e-mail enviado; etapa assíncrona/consentimento ainda em aberto. Report AAL2-only, anon sem EXECUTE, consulta nunca inclui finanças privadas da Loja nem autenticação como cliente.
+
+
 ## Suporte Master com respostas autorizadas — 2026-10-10
 `MasterSupportQueue` consome `v_saas_support_ticket_metrics` como view `security_invoker=true` e `saas_support_ticket_messages` com RLS, respeitando visibilidade customer/internal. Consulta Master requer perfil de plataforma + AAL2. A escrita em chamados tenant é feita exclusivamente por `reply_master_tenant_support_idempotent` (MFA Master, ID tenant, validação, idempotência), que reutiliza `reply_saas_support_ticket` e respectivos eventos de status. Ticket interno não pode receber resposta usando endpoint tenant. A navegação/ocultação de formulário não é controle de autorização; PostgreSQL verifica todos os pedidos. O restante do catálogo Master e diretório continua somente leitura.
 
