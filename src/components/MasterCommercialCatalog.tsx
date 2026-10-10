@@ -2,6 +2,7 @@ import {useEffect,useState} from 'react'
 import type {SupabaseClient} from '@supabase/supabase-js'
 import {formatMoney} from '../lib/finance-data'
 import {MasterPlanLifecycle} from './MasterPlanLifecycle'
+import {MasterPromotions} from './MasterPromotions'
 import {
  loadPlatformCommercialCatalog,type PlatformPlanVersion,type PlatformPromotion
 } from '../lib/master-commercial'
@@ -19,6 +20,7 @@ export function MasterCommercialCatalog({client}:{client:SupabaseClient}){
  },[client,revision])
  return <>
   <MasterPlanLifecycle client={client}/>
+  <MasterPromotions client={client}/>
   <section className="panel" aria-label="Catálogo comercial Master">
   <div className="section-title"><h2>Planos e ofertas comerciais</h2>
    <button className="secondary" type="button" onClick={()=>setRevision(v=>v+1)}>Atualizar catálogo</button>
