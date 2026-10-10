@@ -9,8 +9,15 @@ export function DelinquencyReport({client,organizationId}:{client:SupabaseClient
  const [error,setError]=useState(''),[denied,setDenied]=useState(false)
  const [exporting,setExporting]=useState(false),[exportError,setExportError]=useState('')
  const stillMounted=useRef(true),currentTenant=useRef(organizationId),exportGuard=useRef(false)
+ const exportEpoch=useRef(0)
  currentTenant.current=organizationId
  useEffect(()=>{stillMounted.current=true;return()=>{stillMounted.current=false}},[])
+ useEffect(()=>{
+  exportEpoch.current+=1
+  exportGuard.current=false
+  setExporting(false);setExportError('')
+  return()=>{exportEpoch.current+=1}
+ },[organizationId])
  useEffect(()=>{
   let live=true;setResult(null);setError('');setDenied(false)
   loadDelinquencyPage(client,organizationId,page).then(data=>{
@@ -26,8 +33,8 @@ export function DelinquencyReport({client,organizationId}:{client:SupabaseClient
  async function exportCsv(){
   if(exportGuard.current||!result||denied||error)return
   exportGuard.current=true;setExporting(true);setExportError('')
-  const org=organizationId
-  const safe=()=>stillMounted.current&&currentTenant.current===org
+  const org=organizationId,epoch=exportEpoch.current
+  const safe=()=>stillMounted.current&&currentTenant.current===org&&exportEpoch.current===epoch
   try{
    const rows=await loadDelinquencyExport(client,org,safe)
    if(!safe())return
@@ -47,8 +54,10 @@ export function DelinquencyReport({client,organizationId}:{client:SupabaseClient
   }catch{
    if(safe())setExportError('A exportação não pôde ser concluída ou excedeu 1.000 registros; nenhum arquivo parcial foi disponibilizado.')
   }finally{
-   exportGuard.current=false
-   if(safe())setExporting(false)
+   if(safe()){
+    exportGuard.current=false
+    setExporting(false)
+   }
   }
  }
  return <section className="panel" aria-label="Relatório de inadimplência">
