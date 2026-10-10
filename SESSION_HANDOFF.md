@@ -1,3 +1,10 @@
+## Incremento 25 — versões sucessoras de ofertas Master (2026-10-10)
+
+- Migração DEV #49 `20261010211529_master_promotion_successor_idempotent` aplicada, hash SHA256 no manifesto. `create_master_promotion_successor_idempotent` exige MASTER/AAL2, chave + hash invariantes, bloqueia série para concorrência e confere a última versão publicada; cria somente draft sucessor com validade futura, sem mutação do histórico. Publicação existente fecha a vigência da versão anterior.
+- `MasterPromotions` agora escolhe nova série ou sucessora de uma oferta publicada, com mesma validação monetária e confirmação posterior de publicação. Teste React adicional distingue RPC de sucessão de edição direta. 
+- SQL `DEV_MASTER_PROMOTION_SUCCESSOR_ROLLBACK_PASS`: versão inicial publicada, sucessora draft/publicada, janela anterior encerrada, chave reutilizada com payload diferente negada e origem obsoleta `40001` bloqueada; tudo em transação `ROLLBACK`. **JWT HTTP real e concorrência em conexões simultâneas NÃO AVALIADOS.**
+- Pendente Stage 2: revisão/edição de promoções draft, exclusão/retirada autorizada, resgates reais, billing SaaS, contas/tesouraria específicas e demais 21 telas V35. Não houve deploy/merge produção.
+
 ## Incremento 24 — políticas de aprovação parametrizáveis (2026-10-10)
 
 - Migração DEV #48 `20261010210919_tenant_expense_approval_policy_lifecycle` aplicada/versionada SHA256. `create_tenant_approval_policy_draft` exige `approvals.manage`, regras `off`/`all`/`threshold`, limite em BRL centesimal quando applicable, 1–10 aprovadores e vigência futura. `publish_tenant_approval_policy_idempotent` delega à RPC auditada existente de publicação, com motivo e replay idempotente. Constraint de não sobreposição entre políticas publicadas continua no PostgreSQL.

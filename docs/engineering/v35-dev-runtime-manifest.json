@@ -397,6 +397,15 @@
       "sha256": "88c0f92fbfa785b8a406a418f0bcfaa39699b6ea224cd56c4b1b67db3f514a55",
       "applied_at": "2026-10-10",
       "note": "Tenant approvals.manage audited/idempotent expense policy draft and publication. Published effective ranges may not overlap."
+    },
+    {
+      "version": "20261010211529",
+      "name": "master_promotion_successor_idempotent",
+      "path": "supabase/migrations/20261010211529_master_promotion_successor_idempotent.sql",
+      "source_path": "supabase/migrations/20261010211529_master_promotion_successor_idempotent.sql",
+      "sha256": "46dfe0197a625a7aeecadae13d029b1b4ef1709d83df8c3a4d65398ba4c36db8",
+      "applied_at": "2026-10-10",
+      "note": "MASTER/AAL2 strict idempotent future-dated successor draft; publication closes prior version; audit + stale-version rejection."
     }
   ],
   "baseline_patches": {

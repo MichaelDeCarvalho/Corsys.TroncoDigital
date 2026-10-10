@@ -1,5 +1,10 @@
 # SECURITY REGISTER
 
+## Incremento 25 — sucessão controlada de ofertas (2026-10-10)
+
+RPC DEV `create_master_promotion_successor_idempotent` é SECURITY DEFINER e restringe EXECUTE authenticated com `private.require_platform_staff('MASTER')` (AAL2) antes de leitura/escrita, hash do payload em `private.master_idempotency_keys`, advisory transaction lock por série para impedir versão concorrente de mesmo histórico, valida último publicado e datas futuras; registros published são preservados. Erro `40001` em predecessor obsoleto. Teste `DEV_MASTER_PROMOTION_SUCCESSOR_ROLLBACK_PASS` validou sucessão e fronteira de vigência dentro da transação de teste; não é substituto de teste de sessão simultânea independente ou HTTP com JWT assinado. APIs legadas do Master continuam disponíveis a usuários MASTER/AAL2: revisar/apagar acesso direto antes do release.
+
+
 ## Incremento 24 — proteção de políticas de aprovação por Loja (2026-10-10)
 
 As RPCs `create_tenant_approval_policy_draft` e `publish_tenant_approval_policy_idempotent` têm `SECURITY DEFINER`, `search_path=''`, EXCECUTE apenas authenticated, `private.require_permission(org,'approvals.manage')` antes de ler/escrever. Validações exigem vigência futura sem sobreposição com política publicada, valor com duas casas e até 10 aprovadores, motivo obrigatório, key idempotente e auditoria. Constraint de exclusão GIST impede duas políticas simultaneamente publicadas na mesma Loja. Consulta sob RLS de `finance.read`, sem expor políticas de outra Loja. SQL A/B `DEV_APPROVAL_POLICY_LIFECYCLE_ROLLBACK_PASS`, ROLLBACK e anon EXECUTE negado. Testes JWT HTTP reais e sessões simultâneas não avaliados. Política `off` é funcionalidade autorizada de negócio e exige privilégio administrativo; não confiar em ocultar opção por CSS.

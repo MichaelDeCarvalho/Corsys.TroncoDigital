@@ -1,5 +1,10 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Master SaaS — promoção sucessora (2026-10-10)
+
+O catálogo Master permite criar rascunho de uma promoção nova ou versão sucessora sem editar ofertas históricas. Migração DEV #49, `create_master_promotion_successor_idempotent`, controle de hash/replay, validação MASTER/MFA e serialização de série. Gate SQL com rollback passou. Não houve resgates, alterações de assinatura, faturas ou clientes.
+
+
 ## Etapa 2 — parametrização de aprovação de despesas (2026-10-10)
 
 Além da fila de votos, o Financeiro possui agora cadastro e publicação de políticas de aprovação versionadas por Loja: nenhuma aprovação, todas as despesas ou limiar, mínimo 1–10 aprovadores e vigências futuras. RPCs com `approvals.manage`, auditoria, idempotência e constraint de vigência; SQL nas duas Lojas com ROLLBACK PASS. Stage2 ainda em execução.

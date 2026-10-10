@@ -1,5 +1,10 @@
 # CURRENT ARCHITECTURE
 
+## Master promoção com versão sucessora — DEV 2026-10-10
+
+`MasterPromotions` seleciona série nova ou `latest_promotion_id` de uma série já publicada. A sucessão por `create_master_promotion_successor_idempotent` (migração #49) exige MASTER/MFA, valor/validade futura, serializa criação por `promotion_series_id`, bloqueia origem anterior obsoleta e preserva versão publicada. O rascunho sucessor não muda benefício/contrato já vigente. A publicação posterior pela RPC idempotente delega a `publish_saas_promotion_version` para encerrar a vigência antiga na fronteira correta, sem recalcular faturas.
+
+
 ## Parametrização de aprovação de despesas (DEV 2026-10-10)
 
 `ApprovalPolicies` consulta `expense_approval_policies` exclusivamente por `organization_id` sob RLS `finance.read`. Escrita por RPCs #48 exige `approvals.manage` no PostgreSQL, chave idempotente e trilha em `audit_logs`. Política nova é draft, publication separada por confirmação `PUBLICAR`; ranges de políticas publicadas não podem se sobrepor (constraint no banco). `PayableApprovals` continua responsável pelos votos imutáveis de despesas e não é substituído pela parametrização. A configuração não reabre decisões passadas nem recalcula ledger.
