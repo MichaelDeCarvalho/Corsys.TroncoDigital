@@ -28,12 +28,12 @@ export function InstitutionalOperations({client,organizationId}:{client:Supabase
  const [revision,setRevision]=useState(0)
  const [error,setError]=useState(''),[saved,setSaved]=useState(false)
  const [pending,setPending]=useState(false),[uncertain,setUncertain]=useState(false),[conflict,setConflict]=useState(false)
- const [selected,setSelected]=useState('')
+ const [selected,setSelected]=useState(''),[cancelTarget,setCancelTarget]=useState('')
  const guard=useRef(false),mounted=useRef(false),command=useRef<Operation|null>(null)
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false}},[])
  useEffect(()=>{
   let active=true;const controller=new AbortController()
-  setCatalog(null);setRows(null);setError('');setSelected('')
+  setCatalog(null);setRows(null);setError('');setSelected('');setCancelTarget('')
   Promise.all([
    loadInstitutionalCatalogs(client,organizationId,controller.signal),
    loadInstitutionalObligations(client,organizationId,kind,controller.signal),
@@ -115,6 +115,25 @@ export function InstitutionalOperations({client,organizationId}:{client:Supabase
    }})
   }catch(cause){setError((cause as Error).message)}
  }
+ const cancellable=(rows??[]).filter(r=>!r.is_canceled&&Number(r.open_amount)>0)
+ function cancelObligation(e:FormEvent<HTMLFormElement>){
+  e.preventDefault()
+  if(pending||uncertain||conflict||!catalog||!rows)return
+  const row=cancellable.find(r=>(kind==='payable'?r.payable_id:r.receivable_id)===cancelTarget)
+  if(!row){setError('Selecione uma obrigação com saldo pendente e não cancelada.');return}
+  const data=new FormData(e.currentTarget),reason=get(data,'reason')
+  if(reason.length<3||reason.length>500){
+   setError('Informe o motivo entre 3 e 500 caracteres.');return
+  }
+  try{
+   void run({name:'cancel_tenant_institutional_obligation_idempotent',args:{
+    p_organization_id:organizationId,
+    p_obligation_id:cancelTarget,p_kind:kind,
+    p_accounting_period:monthStart(get(data,'period')),
+    p_reason:reason,p_idempotency_key:crypto.randomUUID(),
+   }})
+  }catch(cause){setError((cause as Error).message)}
+ }
  const locked=pending||uncertain||conflict
  const categories=catalog?.categories.filter(c=>c.active&&c.domain===(kind==='payable'?'institutional_expense':'institutional_revenue'))??[]
  return <section className="panel member-editor institutional-operations" aria-label="Tesouraria institucional">
@@ -187,7 +206,29 @@ export function InstitutionalOperations({client,organizationId}:{client:Supabase
      <button type="submit" className="primary" disabled={locked||!selected||!catalog.methods.length||!catalog.accounts.length}>{kind==='payable'?'Registrar pagamento':'Registrar recebimento'}</button>
     </fieldset>
    </form>
-   <p className="subtle">Consulta limitada a 150 obrigações por tipo, sem somar páginas como saldo total. Se exceder a capacidade, a operação é bloqueada. Correções, cancelamentos, política de aprovação e negociação possuem fluxos próprios ainda pendentes.</p>
+   <form aria-label="Cancelar obrigação institucional" onSubmit={cancelObligation}>
+    <fieldset disabled={locked||!cancellable.length}>
+     <legend>Cancelar saldo pendente — {kind==='payable'?'despesa':'receita'}</legend>
+     <label htmlFor="inst-cancel-target">Obrigação para cancelamento</label>
+     <select id="inst-cancel-target" required value={cancelTarget}
+      onChange={e=>setCancelTarget(e.target.value)}>
+      <option value="">Selecione a obrigação</option>
+      {cancellable.map(r=><option key={kind==='payable'?r.payable_id:r.receivable_id}
+       value={kind==='payable'?r.payable_id:r.receivable_id}>
+       {r.description} — saldo {formatMoney(Number(r.open_amount))}
+      </option>)}
+     </select>
+     <label htmlFor="inst-cancel-period">Competência do cancelamento</label>
+     <input id="inst-cancel-period" type="month" name="period" required/>
+     <label htmlFor="inst-cancel-reason">Justificativa</label>
+     <input id="inst-cancel-reason" name="reason" required minLength={3} maxLength={500}/>
+     <p className="subtle">Cancelamento somente do saldo ainda em aberto. Pagamentos e recebimentos já liquidados não são estornados automaticamente; sua reversão exige operação própria.</p>
+     <button type="submit" className="secondary" disabled={locked||!cancelTarget}>
+      Confirmar cancelamento do saldo
+     </button>
+    </fieldset>
+   </form>
+   <p className="subtle">Consulta limitada a 150 obrigações por tipo, sem somar páginas como saldo total. Se exceder a capacidade, a operação é bloqueada. Correções, política de aprovação e negociação permanecem pendentes.</p>
   </>}
  </section>
 }
