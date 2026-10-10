@@ -3,7 +3,7 @@ import type {SupabaseClient} from '@supabase/supabase-js'
 import {normalizedAmount} from '../lib/member-configuration'
 import {loadPlatformCommercialCatalog,type PlatformPromotion} from '../lib/master-commercial'
 const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i
-type Command={name:'create_master_promotion_draft_idempotent'|'publish_master_promotion_draft_idempotent';args:Record<string,unknown>}
+type Command={name:'create_master_promotion_draft_idempotent'|'create_master_promotion_successor_idempotent'|'publish_master_promotion_draft_idempotent';args:Record<string,unknown>}
 function when(input:string):string{
  if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(input))throw Error('Data e horário inválidos.')
  const date=new Date(input)
@@ -13,6 +13,7 @@ function when(input:string):string{
 export function MasterPromotions({client}:{client:SupabaseClient}){
  const [promotions,setPromotions]=useState<PlatformPromotion[]|null>(null)
  const [draft,setDraft]=useState(''),[confirmed,setConfirmed]=useState('')
+ const [sourcePromotion,setSourcePromotion]=useState('')
  const [revision,setRevision]=useState(0),[pending,setPending]=useState(false)
  const [uncertain,setUncertain]=useState(false),[error,setError]=useState(''),[success,setSuccess]=useState('')
  const [duration,setDuration]=useState('once')
@@ -36,7 +37,7 @@ export function MasterPromotions({client}:{client:SupabaseClient}){
    if(typeof response.data!=='string'||!uuid.test(response.data))
     throw Error('Master promotion command unconfirmed')
    if(mounted.current){
-    const created=cmd.current.name==='create_master_promotion_draft_idempotent'
+    const created=cmd.current.name!=='publish_master_promotion_draft_idempotent'
     cmd.current=null;setUncertain(false)
     setSuccess(created?'Rascunho promocional confirmado. A oferta ainda não está publicada.':
       'Oferta publicada com confirmação no banco. Verifique a vigência no catálogo.')
@@ -72,7 +73,8 @@ export function MasterPromotions({client}:{client:SupabaseClient}){
     (durationType==='cycles'&&(!Number.isSafeInteger(cycles)||cycles===null||cycles<1||cycles>36))||
     (limit!==null&&(!Number.isSafeInteger(limit)||limit<1||limit>1000000))||
     (to!==null&&to<=from))throw Error('Parâmetros da oferta inválidos.')
-   void run({name:'create_master_promotion_draft_idempotent',args:{
+   void run({name:sourcePromotion?'create_master_promotion_successor_idempotent':'create_master_promotion_draft_idempotent',args:{
+    ...(sourcePromotion?{p_current_promotion_id:sourcePromotion}:{}),
     p_name:name,p_public_code:code,p_benefit_type:type,p_benefit_value:value,
     p_duration_type:durationType,p_duration_cycles:cycles,
     p_valid_from:from,p_valid_to:to,p_eligibility_scope:get('scope'),
@@ -106,6 +108,15 @@ export function MasterPromotions({client}:{client:SupabaseClient}){
    <form aria-label="Criar rascunho de promoção" onSubmit={create}>
     <fieldset disabled={locked}>
      <legend>Nova oferta em rascunho</legend>
+     <label htmlFor="promo-successor-source">Modalidade da versão</label>
+     <select id="promo-successor-source" value={sourcePromotion} onChange={e=>setSourcePromotion(e.target.value)}>
+      <option value="">Nova série de oferta</option>
+      {promotions.filter(p=>p.latest_version_status==='published').map(p=>
+       <option key={p.latest_promotion_id} value={p.latest_promotion_id}>
+        Nova versão de {p.name} (v{p.version_number})
+       </option>)}
+     </select>
+     <p className="subtle">Uma versão sucessora inicia vigência futura e não edita o desconto histórico; se já existe rascunho sucessor, conclua-o antes de criar outro.</p>
      <div className="member-form-grid">
       <div><label htmlFor="promo-name">Nome da oferta</label><input id="promo-name" name="name" maxLength={120} required/></div>
       <div><label htmlFor="promo-code">Código público</label><input id="promo-code" name="code" maxLength={40} required/></div>
