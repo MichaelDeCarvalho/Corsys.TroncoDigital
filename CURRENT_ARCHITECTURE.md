@@ -1,5 +1,10 @@
 # CURRENT ARCHITECTURE
 
+## Parametrização de aprovação de despesas (DEV 2026-10-10)
+
+`ApprovalPolicies` consulta `expense_approval_policies` exclusivamente por `organization_id` sob RLS `finance.read`. Escrita por RPCs #48 exige `approvals.manage` no PostgreSQL, chave idempotente e trilha em `audit_logs`. Política nova é draft, publication separada por confirmação `PUBLICAR`; ranges de políticas publicadas não podem se sobrepor (constraint no banco). `PayableApprovals` continua responsável pelos votos imutáveis de despesas e não é substituído pela parametrização. A configuração não reabre decisões passadas nem recalcula ledger.
+
+
 ## Master SaaS — publicação de ofertas (DEV 2026-10-10)
 
 A plataforma usa `MasterPromotions` dentro de `MasterCommercialCatalog`, separado do ledger da Loja. Backend #47: RPCs `create_master_promotion_draft_idempotent`/`publish_master_promotion_draft_idempotent` exigem Master com MFA/AAL2, validam campos e status, bloqueiam repetição de key com hash diferente em `private.master_idempotency_keys`, delegam ao fluxo de versões `saas_promotions` preexistente e registram auditoria de plataforma. Publicação não resgata promoções nem altera invoices/subscriptions. Janelas de datas ISO convertidas a timestamptz; elegibilidade efetiva permanece regra do backend V35.

@@ -1,5 +1,10 @@
 # SECURITY REGISTER
 
+## Incremento 24 — proteção de políticas de aprovação por Loja (2026-10-10)
+
+As RPCs `create_tenant_approval_policy_draft` e `publish_tenant_approval_policy_idempotent` têm `SECURITY DEFINER`, `search_path=''`, EXCECUTE apenas authenticated, `private.require_permission(org,'approvals.manage')` antes de ler/escrever. Validações exigem vigência futura sem sobreposição com política publicada, valor com duas casas e até 10 aprovadores, motivo obrigatório, key idempotente e auditoria. Constraint de exclusão GIST impede duas políticas simultaneamente publicadas na mesma Loja. Consulta sob RLS de `finance.read`, sem expor políticas de outra Loja. SQL A/B `DEV_APPROVAL_POLICY_LIFECYCLE_ROLLBACK_PASS`, ROLLBACK e anon EXECUTE negado. Testes JWT HTTP reais e sessões simultâneas não avaliados. Política `off` é funcionalidade autorizada de negócio e exige privilégio administrativo; não confiar em ocultar opção por CSS.
+
+
 ## Incremento 23 — ofertas SaaS MASTER (2026-10-10)
 
 `create_master_promotion_draft_idempotent` valida descontos finitos (máximo 100% para benefício percentual), limites, datas futuras, escopo, combinação e duração. `publish_master_promotion_draft_idempotent` publica somente versão draft mediante MFA Master; ambas têm `search_path=''`, EXECUTE somente authenticated com `private.require_platform_staff('MASTER')`, controle de replay hash/payload por funcionário em tabela privada e audit trail. Teste `DEV_MASTER_PROMOTION_ROLLBACK_PASS` fez negativos Master AAL1, usuário tenant AAL2 e anon, não gerou dados permanentes. Como fluxo legado de promoções continua exposto ao papel MASTER (com AAL2), revisar consumidores antes de restringir/aposentar; HTTP JWT reais, concorrência, ativação/resgate e regras antifraude comerciais não avaliadas. PROD continua bloqueado.

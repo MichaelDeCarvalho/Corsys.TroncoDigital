@@ -1,3 +1,10 @@
+## Incremento 24 — políticas de aprovação parametrizáveis (2026-10-10)
+
+- Migração DEV #48 `20261010210919_tenant_expense_approval_policy_lifecycle` aplicada/versionada SHA256. `create_tenant_approval_policy_draft` exige `approvals.manage`, regras `off`/`all`/`threshold`, limite em BRL centesimal quando applicable, 1–10 aprovadores e vigência futura. `publish_tenant_approval_policy_idempotent` delega à RPC auditada existente de publicação, com motivo e replay idempotente. Constraint de não sobreposição entre políticas publicadas continua no PostgreSQL.
+- UI `ApprovalPolicies` integrada ao Financeiro em aba separada da fila de decisões. Permite cadastro de rascunho, leitura do histórico tenant-scoped e publicação somente após digitar `PUBLICAR`. Nenhuma política altera cobrança/contrato histórico, votos anteriores ou aprovações já tomadas.
+- Teste SQL A/B `scripts/verify_dev_expense_approval_policies.sql`: `DEV_APPROVAL_POLICY_LIFECYCLE_ROLLBACK_PASS`, duas Lojas, publish/replay, bloqueio de vigência sobreposta, anon sem grant, ROLLBACK. Testes React incluem draft threshold, publish confirm, retry e row cross-tenant bloqueado; conferir CI do HEAD antes de aceite.
+- PENDENTE: autores/roles autorizados a aprovar, regra de autoaprovação, delegação, workflows especiais do HTML V35, HTTP JWT real e concorrência independente. PROD não autorizada.
+
 ## Incremento 23 — ofertas promocionais Master (2026-10-10)
 
 - Migração DEV #47 `20261010210329_master_promotion_draft_publication_idempotent` aplicada, SQL + SHA256 no manifesto. Duas RPCs `create_master_promotion_draft_idempotent` e `publish_master_promotion_draft_idempotent` validam MASTER/AAL2 no PostgreSQL, usam `private.master_idempotency_keys` e hash de payload para impedir duplicidade/alteração em retry; preservam versões e registram `saas_master_audit_logs`.

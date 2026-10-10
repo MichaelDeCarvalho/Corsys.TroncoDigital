@@ -1,5 +1,10 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Etapa 2 — parametrização de aprovação de despesas (2026-10-10)
+
+Além da fila de votos, o Financeiro possui agora cadastro e publicação de políticas de aprovação versionadas por Loja: nenhuma aprovação, todas as despesas ou limiar, mínimo 1–10 aprovadores e vigências futuras. RPCs com `approvals.manage`, auditoria, idempotência e constraint de vigência; SQL nas duas Lojas com ROLLBACK PASS. Stage2 ainda em execução.
+
+
 ## Master SaaS — ofertas por versão (2026-10-10)
 
 Comandos Master DEV de rascunho e publicação de ofertas implementados com MFA/AAL2, idempotência e auditoria, integrados ao catálogo comercial. Novo número de migrations: 47. SQL rollback Master AAL2 positivo e tenant/AAL1/anon negativos passou. Promos não afetam automaticamente assinaturas e clientes existentes; futuras ofertas sucessoras, resgates e contratação ainda pendentes.

@@ -388,6 +388,15 @@
       "sha256": "3df5fdd0fe8bd9258460a1f7a8a795c2adf8dd3fb6c3d645bd8143f8759c9452",
       "applied_at": "2026-10-10",
       "note": "MASTER/AAL2-only promotion version draft and explicit publication with payload-key idempotency, immutable audit."
+    },
+    {
+      "version": "20261010210919",
+      "name": "tenant_expense_approval_policy_lifecycle",
+      "path": "supabase/migrations/20261010210919_tenant_expense_approval_policy_lifecycle.sql",
+      "source_path": "supabase/migrations/20261010210919_tenant_expense_approval_policy_lifecycle.sql",
+      "sha256": "88c0f92fbfa785b8a406a418f0bcfaa39699b6ea224cd56c4b1b67db3f514a55",
+      "applied_at": "2026-10-10",
+      "note": "Tenant approvals.manage audited/idempotent expense policy draft and publication. Published effective ranges may not overlap."
     }
   ],
   "baseline_patches": {
