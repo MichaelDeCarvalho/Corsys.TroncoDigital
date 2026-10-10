@@ -1,5 +1,10 @@
 # V35 — escopo mínimo do piloto e matriz de paridade
 
+## Atualização incremental — fluxo de caixa e tesouraria (DEV 2026-10-10)
+
+**Este bloco é evidência de implementação posterior à matriz estática inicial, não altera nem apaga os requisitos do HTML original.** Para `view-fluxo-caixa` e `view-dashboard`, foi implementada RPC `read_tenant_daily_cash_flow` (migração DEV #51) e UI Financeiro > Fluxo de caixa com 1–93 dias, resumos e linhas diárias do realizado operacional e projeção de obrigações abertas. Não mistura transferências internas/abertura com faturamento. Gate SQL A/B `DEV_DAILY_CASH_FLOW_ROLLBACK_PASS`. **Paridade ainda pendente:** gráficos de série, saldos inicial e final ajustados, fluxo projetado com critério de probabilidade, comparações/período conforme DOM, layout do HTML V35 e QA mobile/desktop. Para `view-tesouraria`, `AccountTransfers` e reversão foram codados na migração #50, mas a transferência positiva real segue sem ensaio com duas contas ativas e não está homologada. Para `view-relatorios`, CSV privado de inadimplência existe com limite 1.000, mas PDF/XLSX continuam pendentes.
+
+
 ## Compromisso e fontes
 
 Todo recurso planejado no HTML entregue pelo proprietário integra o escopo mínimo, junto com a documentação V35. Entrega incremental não autoriza retirar telas, abas, campos, opções, ações ou regras. Cada incremento deve citar os IDs do [inventário detalhado](V35_PILOT_INVENTORY.md), demonstrar o comportamento correspondente e manter as pendências visíveis. Não concluir um módulo somente porque seu menu existe.

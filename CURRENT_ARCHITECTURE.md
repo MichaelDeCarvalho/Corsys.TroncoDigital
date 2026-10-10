@@ -1,5 +1,10 @@
 # CURRENT ARCHITECTURE
 
+## Fluxo de caixa diário por tenant — DEV 2026-10-10
+
+`DailyCashFlow` consome RPC `read_tenant_daily_cash_flow` (#51), exposta apenas a authenticated e protegida por `private.require_permission(org,'finance.read')`. A função `SECURITY DEFINER` com `search_path=''` agrupa em uma consulta do PostgreSQL os eventos operacionais reais do livro de contas, deixando de fora transferências internas e saldos de abertura, e calcula separadamente obrigações ainda abertas por vencimento (integrantes, receitas e despesas institucionais). O retorno tem 1 a 93 dias completos; frontend valida calendário, continuidade e invariantes de somas antes de exibir. Realizado não equivale a lucro contábil nem saldo de banco, e valores a receber por vencimento não equivalem a probabilidade de arrecadação.
+
+
 ## CSV de inadimplência — DEV 2026-10-10
 
 `DelinquencyReport` dispara `loadDelinquencyExport` somente após clique e leitura tenant-scoped permitida. A rotina reusa a RPC `read_tenant_delinquency`, agrega até 1.000 linhas com validação e duplicata bloqueada, revalida o tenant para impedir download tardio depois de troca de Loja ou desmontagem. Serialização `createDelinquencyCsv` em memória no browser neutraliza prefixos perigosos de células, preserva decimal BRL em formato CSV pt-BR (`;` e vírgula) e limita campos a nome, situação, vencimento, saldos e créditos. Não há endpoint privilegiado ou banco novo; não há snapshot servidor para consistência entre múltiplas páginas. O arquivo fica sob responsabilidade de quem solicitou o download.

@@ -1,5 +1,10 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Etapa 2 — fluxo de caixa consolidado (2026-10-10)
+
+Incluída aba `Financeiro > Fluxo de caixa` com realizado por dia e projeção de recebíveis/obrigações separados, sem contar transferências internas como receita/despesa e sem somar páginas limitadas. Migração DEV #51, teste SQL de reconciliação nas duas Lojas com rollback `DEV_DAILY_CASH_FLOW_ROLLBACK_PASS`. Ainda faltam gráficos, visão de caixa inicial/projetado, filtros do piloto, JWT HTTP real e visual mobile/desktop. Não representa aceite integral da tela V35.
+
+
 ## Etapa 2 — exportação privada de inadimplência (2026-10-10)
 
 Relatório de inadimplência agora permite CSV compatível com Excel, por ação explícita: consulta paginada da mesma RPC com permissão tenant `finance.read`, limite de 1.000 registros, nenhuma planilha parcial se falhar, e sanitização anti-injeção de fórmula. Exclui CPF/e-mail/telefone. Não representa XLSX/PDF nem fotografia transacional única; QA real de navegador ainda pendente. Nenhum deploy produção.

@@ -1,5 +1,10 @@
 # SECURITY REGISTER
 
+## Incremento 28 — fluxo de caixa consolidado, integridade e tenant (2026-10-10)
+
+RPC DEV `read_tenant_daily_cash_flow(uuid,date,date)` usa SECURITY DEFINER/search_path vazio, EXECUTE somente authenticated, gate `finance.read` antes de consulta e validação de integridade financeira de todas as obrigações abertas. O SQL não devolve mais de 93 dias e agrega o livro sem paginação. Exclui transferências internas (entrada/saída simétrica) e abertura patrimonial dos valores operacionais, impedindo falso faturamento/fluxo e dupla contagem. Recebíveis por vencimento são estado atual, não reconstrução contábil histórica. Teste `DEV_DAILY_CASH_FLOW_ROLLBACK_PASS` com claims simuladas A/B negou IDOR, limite excedido e EXECUTE anon, reconciliou recebimentos de setembro e cobranças de integrantes com as views. Não avalia JWT HTTP reais, RLS independente ao longo de sessões, mobile/desktop ou volume 93 dias com dados massivos. Nenhum deploy produção.
+
+
 ## Incremento 27 — relatório CSV privado: LGPD e prevenção de CSV injection (2026-10-10)
 
 O relatório de inadimplência contém nome e situação financeira por integrante (dado pessoal). Exportação ocorre somente após clique, por `read_tenant_delinquency` com `finance.read` no PostgreSQL; nenhuma chave service_role ou rota pública. O CSV não inclui CPF, e-mail, telefone ou credenciais. `createDelinquencyCsv` sanitiza controle/quebra de linha e prefixos Excel/LibreOffice `=`, `+`, `-`, `@` mesmo após normalização de compatibilidade Unicode, escapa aspas/delimitadores e inclui BOM UTF-8. Requisição completa limita 1.000 membros, verifica duplicidade e cancela após mudança de Loja, erro ou dados inconsistentes. Não gera arquivo parcial nem registra export no banco.

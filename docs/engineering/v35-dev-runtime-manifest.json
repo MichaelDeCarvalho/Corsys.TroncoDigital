@@ -415,6 +415,15 @@
       "sha256": "8ab135ce84fc6a582eab5db7ea4aff3305e700592a2ba74bf8623b93d6bb597e",
       "applied_at": "2026-10-10",
       "note": "Idempotent transfer and append-only reversal in tenant internal cash ledger; negative SQL gates PASS, positive end-to-end DB lifecycle NOT EVALUATED."
+    },
+    {
+      "version": "20261010224130",
+      "name": "tenant_daily_cash_flow_summary",
+      "path": "supabase/migrations/20261010224130_tenant_daily_cash_flow_summary.sql",
+      "source_path": "supabase/migrations/20261010224130_tenant_daily_cash_flow_summary.sql",
+      "sha256": "a50e832561a4a6fa9556c2c1c26c3bcc982afd9539996e073140b411111cab51",
+      "applied_at": "2026-10-10",
+      "note": "Cashflow RPC finance.read: daily realized receipts/expenses excluding internal transfers and opening entries; current due-date open obligations in distinct projected columns."
     }
   ],
   "baseline_patches": {
