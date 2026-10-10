@@ -49,10 +49,12 @@ describe('Master onboarding draft only',()=>{
   await screen.findByLabelText('Nome da Loja')
   fill()
   fireEvent.submit(screen.getByRole('form',{name:'Criar rascunho de implantação'}))
-  await waitFor(()=>expect(rpc).toHaveBeenCalledWith('save_saas_onboarding_draft',expect.objectContaining({
-   p_run_id:null,p_prospective_name:'Loja Aurora do Sul',p_organization_number:'101',
-   p_plan_version_id:plan,p_contract_price:'125.00',p_tenant_slug:'loja-aurora-101',
-   p_idempotency_key:expect.any(String),p_terms_acceptance_required:true,
+  await waitFor(()=>expect(rpc).toHaveBeenCalledWith('create_master_onboarding_draft_idempotent',expect.objectContaining({
+   p_payload:expect.objectContaining({
+    prospective_name:'Loja Aurora do Sul',organization_number:'101',
+    plan_version_id:plan,contract_price:'125.00',tenant_slug:'loja-aurora-101',
+   }),
+   p_idempotency_key:expect.any(String),
   })))
   expect(rpc).toHaveBeenCalledTimes(1)
   expect(rpc.mock.calls[0][0]).not.toBe('provision_saas_onboarding_database')
