@@ -1,5 +1,10 @@
 # SECURITY REGISTER
 
+## Incremento 29 — filtros privados de clientes SaaS (2026-10-10)
+
+A pesquisa do diretório Master pode consultar dados comerciais e contatos de clientes, exigindo `private.require_platform_staff('MASTER')` (AAL2) na RPC `search_platform_master_tenants` antes das junções. Serviço usa search_path vazio, apenas EXECUTE authenticated, caps de tamanho de filtros (100 chars), status enum e paginação (até 50 linhas). Texto literal é comparado por `position(lower(...))`, não interpolado em SQL dinâmico ou convertido em wildcard `LIKE`; evita ampliação acidental por `%`/`_`. Os contatos podem ser critérios de busca mas não são expostos no retorno; não há dados financeiros dos integrantes. SQL `DEV_MASTER_TENANT_SEARCH_ROLLBACK_PASS` verificou Master AAL2, AAL1 negado, tenant AAL2 negado, anon negado e paginação. Tokens JWT reais em HTTP e volume massivo não avaliados; sem produção.
+
+
 ## Incremento 28 — fluxo de caixa consolidado, integridade e tenant (2026-10-10)
 
 RPC DEV `read_tenant_daily_cash_flow(uuid,date,date)` usa SECURITY DEFINER/search_path vazio, EXECUTE somente authenticated, gate `finance.read` antes de consulta e validação de integridade financeira de todas as obrigações abertas. O SQL não devolve mais de 93 dias e agrega o livro sem paginação. Exclui transferências internas (entrada/saída simétrica) e abertura patrimonial dos valores operacionais, impedindo falso faturamento/fluxo e dupla contagem. Recebíveis por vencimento são estado atual, não reconstrução contábil histórica. Teste `DEV_DAILY_CASH_FLOW_ROLLBACK_PASS` com claims simuladas A/B negou IDOR, limite excedido e EXECUTE anon, reconciliou recebimentos de setembro e cobranças de integrantes com as views. Não avalia JWT HTTP reais, RLS independente ao longo de sessões, mobile/desktop ou volume 93 dias com dados massivos. Nenhum deploy produção.

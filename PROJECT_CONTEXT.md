@@ -1,5 +1,10 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Incremento 29 — consulta filtrada Master com MFA (2026-10-10)
+
+Diretório de clientes Master permite buscar no servidor por nome, número, cidade, contato, status comercial e plano, limitado/paginado, com gate MASTER/AAL2 no PostgreSQL. Migração DEV #52, SQL com rollback `DEV_MASTER_TENANT_SEARCH_ROLLBACK_PASS`. A tela não transfere todo cadastro para filtragem no navegador. Campo de plano ainda é busca textual; select de planos e paridade completa do piloto pendentes. Etapa 2 ainda em progresso.
+
+
 ## Etapa 2 — fluxo de caixa consolidado (2026-10-10)
 
 Incluída aba `Financeiro > Fluxo de caixa` com realizado por dia e projeção de recebíveis/obrigações separados, sem contar transferências internas como receita/despesa e sem somar páginas limitadas. Migração DEV #51, teste SQL de reconciliação nas duas Lojas com rollback `DEV_DAILY_CASH_FLOW_ROLLBACK_PASS`. Ainda faltam gráficos, visão de caixa inicial/projetado, filtros do piloto, JWT HTTP real e visual mobile/desktop. Não representa aceite integral da tela V35.

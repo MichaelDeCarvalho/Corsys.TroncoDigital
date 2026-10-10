@@ -1,5 +1,10 @@
 # V35 — escopo mínimo do piloto e matriz de paridade
 
+## Atualização incremental — filtro de clientes Master (DEV 2026-10-10)
+
+Para `view-master-clientes`, existe agora filtro server-side de nome/número/cidade/contato, situação da assinatura e plano em `MasterConsole`, migração #52 `search_platform_master_tenants`, com autorização MASTER/AAL2, sem carga global no browser. `view-master-clientes-F001` busca parcialmente coberta; `F002` status all/active/past_due implementado; `F003` plano utiliza campo textual em vez de `select` de versões catalogadas, ainda NÃO equivalente ao controle original. Diretório não substitui ações específicas “Novo cliente”, “Cliente 360º”, “Cadastro comercial”, “Plano/preço”, “Tenant + roles”, “Plano contábil inicial”, “Convite/ativação” do piloto; permanecem workflows de homologação separada.
+
+
 ## Atualização incremental — fluxo de caixa e tesouraria (DEV 2026-10-10)
 
 **Este bloco é evidência de implementação posterior à matriz estática inicial, não altera nem apaga os requisitos do HTML original.** Para `view-fluxo-caixa` e `view-dashboard`, foi implementada RPC `read_tenant_daily_cash_flow` (migração DEV #51) e UI Financeiro > Fluxo de caixa com 1–93 dias, resumos e linhas diárias do realizado operacional e projeção de obrigações abertas. Não mistura transferências internas/abertura com faturamento. Gate SQL A/B `DEV_DAILY_CASH_FLOW_ROLLBACK_PASS`. **Paridade ainda pendente:** gráficos de série, saldos inicial e final ajustados, fluxo projetado com critério de probabilidade, comparações/período conforme DOM, layout do HTML V35 e QA mobile/desktop. Para `view-tesouraria`, `AccountTransfers` e reversão foram codados na migração #50, mas a transferência positiva real segue sem ensaio com duas contas ativas e não está homologada. Para `view-relatorios`, CSV privado de inadimplência existe com limite 1.000, mas PDF/XLSX continuam pendentes.

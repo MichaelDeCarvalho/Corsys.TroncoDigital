@@ -424,6 +424,15 @@
       "sha256": "a50e832561a4a6fa9556c2c1c26c3bcc982afd9539996e073140b411111cab51",
       "applied_at": "2026-10-10",
       "note": "Cashflow RPC finance.read: daily realized receipts/expenses excluding internal transfers and opening entries; current due-date open obligations in distinct projected columns."
+    },
+    {
+      "version": "20261010224802",
+      "name": "master_tenant_search_filters",
+      "path": "supabase/migrations/20261010224802_master_tenant_search_filters.sql",
+      "source_path": "supabase/migrations/20261010224802_master_tenant_search_filters.sql",
+      "sha256": "202ba7a91f0e19643f24f216e7f18590be3f132b4f40b3fb506f5c5b6114b6ed",
+      "applied_at": "2026-10-10",
+      "note": "MASTER/AAL2-only server-side directory search for name/number/city/contact, subscription status and plan with pagination."
     }
   ],
   "baseline_patches": {

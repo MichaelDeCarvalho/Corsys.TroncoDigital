@@ -1,5 +1,10 @@
 # CURRENT ARCHITECTURE
 
+## Busca autorizada do diretório Master — DEV 2026-10-10
+
+`MasterConsole` envia filtros opcionais para `loadMasterTenants` (`master-console.ts`). Sem filtros preserva `list_platform_master_tenants`; com filtros chama `search_platform_master_tenants` migração #52, RPC SECURITY DEFINER/search_path vazio e `private.require_platform_staff('MASTER')`. Banco aplica a pesquisa e paginação determinística, restringe `status` a all/active/past_due, limita consulta textual e não retorna e-mail/telefone de contato (embora possa consultá-los para localizar a Loja). O diretório permanece separado da tesouraria da Loja; selecionar um cliente nunca autoriza impersonação ou escreve dados.
+
+
 ## Fluxo de caixa diário por tenant — DEV 2026-10-10
 
 `DailyCashFlow` consome RPC `read_tenant_daily_cash_flow` (#51), exposta apenas a authenticated e protegida por `private.require_permission(org,'finance.read')`. A função `SECURITY DEFINER` com `search_path=''` agrupa em uma consulta do PostgreSQL os eventos operacionais reais do livro de contas, deixando de fora transferências internas e saldos de abertura, e calcula separadamente obrigações ainda abertas por vencimento (integrantes, receitas e despesas institucionais). O retorno tem 1 a 93 dias completos; frontend valida calendário, continuidade e invariantes de somas antes de exibir. Realizado não equivale a lucro contábil nem saldo de banco, e valores a receber por vencimento não equivalem a probabilidade de arrecadação.
