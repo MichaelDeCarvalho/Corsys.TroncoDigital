@@ -4,13 +4,13 @@ import {vi} from 'vitest'
 import {MasterPromotions} from './MasterPromotions'
 const id='a752dda8-4ef0-4c58-9d3b-b8fee14ec624'
 const series='faaf76e4-d796-430f-929f-71df5beaf832'
-function fixture(withDraft=false){
+function fixture(withDraft=false,withPublished=false){
  const promotion={promotion_series_id:series,latest_promotion_id:id,version_number:1,
-  name:'DESCONTO NOVO',public_code:'NOVO12',active:true,latest_version_status:'draft',
+  name:'DESCONTO NOVO',public_code:'NOVO12',active:true,latest_version_status:withPublished?'published':'draft',
   valid_from:'2027-01-01T00:00:00Z',valid_to:null,redemption_count:0,can_delete:true,
   delete_block_reason:null}
  const data:Record<string,unknown[]>={v_saas_plan_version_admin:[],
-  v_saas_promotion_series_admin:withDraft?[promotion]:[]}
+  v_saas_promotion_series_admin:(withDraft||withPublished)?[promotion]:[]}
  const from=vi.fn((table:string)=>{
   const chain={select:()=>chain,order:()=>chain,limit:()=>chain,abortSignal:()=>Promise.resolve({data:data[table],error:null})}
   return chain
@@ -71,4 +71,19 @@ describe('Master SaaS promotion lifecycle',()=>{
   await screen.findByText('Operação exclusiva MASTER com MFA ativo.')
   expect(screen.queryByRole('button',{name:'Verificar envio'})).not.toBeInTheDocument()
  })
+ it('creates a versioned successor from the latest published offer, never an in-place edit',async()=>{
+  const {client,rpc}=fixture(false,true)
+  render(<MasterPromotions client={client}/>)
+  await fill()
+  fireEvent.change(screen.getByLabelText('Modalidade da versão'),{target:{value:id}})
+  fireEvent.submit(screen.getByRole('form',{name:'Criar rascunho de promoção'}))
+  await waitFor(()=>expect(rpc).toHaveBeenCalledWith('create_master_promotion_successor_idempotent',
+   expect.objectContaining({
+    p_current_promotion_id:id,p_public_code:'NOVO12',
+    p_benefit_type:'percent',p_benefit_value:'12.00',
+    p_idempotency_key:expect.any(String),
+   })))
+  expect(rpc).not.toHaveBeenCalledWith('update_saas_promotion_draft',expect.anything())
+ })
+
 })
