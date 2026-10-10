@@ -21,10 +21,10 @@ export function ApprovalPolicies({client,organizationId}:{client:SupabaseClient;
  useEffect(()=>{
   let live=true;const controller=new AbortController()
   setPolicies(null);setError('')
-  client.from('expense_approval_policies')
+  Promise.resolve(client.from('expense_approval_policies')
    .select('id,organization_id,name,mode,threshold_amount,minimum_approvers,status,valid_from,valid_to')
    .eq('organization_id',organizationId).order('valid_from',{ascending:false}).limit(151)
-   .abortSignal(controller.signal).then(({data,error:failure})=>{
+   .abortSignal(controller.signal)).then(({data,error:failure})=>{
     if(!live)return
     if(failure||!Array.isArray(data)||data.length>150||
      data.some(p=>p.organization_id!==organizationId||!uuid.test(p.id)||
