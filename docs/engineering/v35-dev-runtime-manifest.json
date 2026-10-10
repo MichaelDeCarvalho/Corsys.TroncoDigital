@@ -379,6 +379,15 @@
       "sha256": "642819e1dc9987114c05aaec7bc006c331f5f92dcbcb4375226bbb91bc51eeb9",
       "applied_at": "2026-10-10",
       "note": "Strict immutable draft key/payload replay; permission MASTER/AAL2 and transaction advisory lock; no duplicate saved events."
+    },
+    {
+      "version": "20261010210329",
+      "name": "master_promotion_draft_publication_idempotent",
+      "path": "supabase/migrations/20261010210329_master_promotion_draft_publication_idempotent.sql",
+      "source_path": "supabase/migrations/20261010210329_master_promotion_draft_publication_idempotent.sql",
+      "sha256": "3df5fdd0fe8bd9258460a1f7a8a795c2adf8dd3fb6c3d645bd8143f8759c9452",
+      "applied_at": "2026-10-10",
+      "note": "MASTER/AAL2-only promotion version draft and explicit publication with payload-key idempotency, immutable audit."
     }
   ],
   "baseline_patches": {

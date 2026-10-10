@@ -1,3 +1,10 @@
+## Incremento 23 — ofertas promocionais Master (2026-10-10)
+
+- Migração DEV #47 `20261010210329_master_promotion_draft_publication_idempotent` aplicada, SQL + SHA256 no manifesto. Duas RPCs `create_master_promotion_draft_idempotent` e `publish_master_promotion_draft_idempotent` validam MASTER/AAL2 no PostgreSQL, usam `private.master_idempotency_keys` e hash de payload para impedir duplicidade/alteração em retry; preservam versões e registram `saas_master_audit_logs`.
+- UI `MasterPromotions` integrada ao `MasterCommercialCatalog`: cria rascunho com desconto percentual/fixo/preço de teste, vigência, elegibilidade, máximo de resgates, combinação e duração; publica apenas draft selecionado após digitar `PUBLICAR`. Nenhum contrato, cliente, fatura ou resgate é ativado retroativamente pela tela.
+- Script DEV `verify_dev_master_promotions.sql` retornou `DEV_MASTER_PROMOTION_ROLLBACK_PASS`: criação de rascunho, prevenção de payload divergente na mesma key, publicação, retry, auditoria e AAL1/tenant/anon negados, tudo ROLLBACK. Frontend testado por Vitest (criação, publicação, retry, permissão); confirmar CI do último commit.
+- Pendentes Master: ofertas sucessoras e edição de drafts, ações de ativação/aposentadoria, contratos, cobrança, verificação real de resgate, importação de clientes e Cliente360 completo. Etapa2 segue ABERTA. Não houve produção.
+
 ## Incremento 22 — Master draft replay protegido por payload (2026-10-10)
 
 - Migration DEV #46 `20261010205909_master_onboarding_strict_idempotency`, SQL e SHA256 versionados. RPC `create_master_onboarding_draft_idempotent(key,payload)` usa `private.require_platform_staff('MASTER')` AAL2, normaliza campos, valida papel ADMIN e dados essenciais, serializa mesma key via advisory lock, compara todos os campos com rascunho existente e só invoca a RPC antiga no primeiro envio. Key existente com payload diferente ou status não-draft gera `22023`, nenhuma mutação/evento adicional.

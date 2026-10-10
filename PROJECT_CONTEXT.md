@@ -1,5 +1,10 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Master SaaS — ofertas por versão (2026-10-10)
+
+Comandos Master DEV de rascunho e publicação de ofertas implementados com MFA/AAL2, idempotência e auditoria, integrados ao catálogo comercial. Novo número de migrations: 47. SQL rollback Master AAL2 positivo e tenant/AAL1/anon negativos passou. Promos não afetam automaticamente assinaturas e clientes existentes; futuras ofertas sucessoras, resgates e contratação ainda pendentes.
+
+
 ## Master SaaS — proteção de rascunho idempotente, 2026-10-10
 
 RPC #46 `create_master_onboarding_draft_idempotent` protege mesma chave contra alteração de dados, com validação MASTER/AAL2 no servidor, e impede duplicidade de eventos ao retransmitir a mesma proposta. A interface Master usa esse wrapper. SQL AAL2 positivo e AAL1/tenant negativos com rollback. Legado ainda permitido para Master exige migração de clientes antigos antes de produção.

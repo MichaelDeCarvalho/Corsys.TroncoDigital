@@ -1,5 +1,10 @@
 # SECURITY REGISTER
 
+## Incremento 23 — ofertas SaaS MASTER (2026-10-10)
+
+`create_master_promotion_draft_idempotent` valida descontos finitos (máximo 100% para benefício percentual), limites, datas futuras, escopo, combinação e duração. `publish_master_promotion_draft_idempotent` publica somente versão draft mediante MFA Master; ambas têm `search_path=''`, EXECUTE somente authenticated com `private.require_platform_staff('MASTER')`, controle de replay hash/payload por funcionário em tabela privada e audit trail. Teste `DEV_MASTER_PROMOTION_ROLLBACK_PASS` fez negativos Master AAL1, usuário tenant AAL2 e anon, não gerou dados permanentes. Como fluxo legado de promoções continua exposto ao papel MASTER (com AAL2), revisar consumidores antes de restringir/aposentar; HTTP JWT reais, concorrência, ativação/resgate e regras antifraude comerciais não avaliadas. PROD continua bloqueado.
+
+
 ## Incremento 22 — colisões de idempotência em onboarding Master (2026-10-10)
 
 Identificado risco no `save_saas_onboarding_draft` preexistente: `INSERT ... ON CONFLICT (idempotency_key) DO UPDATE updated_at` não comparava payload original e emitia evento de etapa repetido. Remediação aditiva DEV #46: novo `create_master_onboarding_draft_idempotent(key,jsonb)` valida MASTER+AAL2, normaliza inputs, protege replay com `pg_advisory_xact_lock`, consulta a linha com `FOR UPDATE`, compara campos comerciais relevantes, rejeita colisão de payload por `22023`, devolve ID sem gravar segundo evento em replay. EXECUTE somente authenticated após verificação de cargo/MFA. SQL gate `DEV_MASTER_ONBOARDING_STRICT_REPLAY_ROLLBACK_PASS` confirmou uma linha/um evento, payload divergente negado e AAL1/tenant/anon negados. **Risco residual:** a RPC legada continua com EXECUTE autorizado a Master; mapear consumidores e revogar/depreciar com transição segura antes de PROD. A verificação SQL é por claims simuladas; JWT HTTP real e concorrência de duas conexões continuam NOT EVALUATED.

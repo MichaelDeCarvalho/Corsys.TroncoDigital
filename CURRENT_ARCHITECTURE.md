@@ -1,5 +1,10 @@
 # CURRENT ARCHITECTURE
 
+## Master SaaS — publicação de ofertas (DEV 2026-10-10)
+
+A plataforma usa `MasterPromotions` dentro de `MasterCommercialCatalog`, separado do ledger da Loja. Backend #47: RPCs `create_master_promotion_draft_idempotent`/`publish_master_promotion_draft_idempotent` exigem Master com MFA/AAL2, validam campos e status, bloqueiam repetição de key com hash diferente em `private.master_idempotency_keys`, delegam ao fluxo de versões `saas_promotions` preexistente e registram auditoria de plataforma. Publicação não resgata promoções nem altera invoices/subscriptions. Janelas de datas ISO convertidas a timestamptz; elegibilidade efetiva permanece regra do backend V35.
+
+
 ## Idempotência estrita dos novos rascunhos Master — DEV 2026-10-10
 
 `MasterOnboarding` utiliza `create_master_onboarding_draft_idempotent(key,payload)` (migration #46) em vez da RPC legada diretamente. O wrapper exige MASTER/AAL2, valida campos no servidor, serializa `key` em transação, retorna ID salvo quando payload é exatamente igual e falha `22023` se key for reaproveitada com parâmetros divergentes ou draft saiu de estado editável. Ao chamar `save_saas_onboarding_draft` somente quando key é nova, evita evento de etapa duplicado em retries. A RPC legada permanece para compatibilidade e exige revisão de consumidores antes de release.
