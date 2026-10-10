@@ -1,4 +1,4 @@
-import {fireEvent,render,screen,within} from '@testing-library/react'
+import {fireEvent,render,screen,waitFor} from '@testing-library/react'
 import type {SupabaseClient} from '@supabase/supabase-js'
 import {vi} from 'vitest'
 import {MasterSupportQueue} from './MasterSupportQueue'
@@ -15,16 +15,17 @@ const ticket={
 const message={id:'b112d600-bf1a-4bfd-bc1c-e9e9b749b539',
  ticket_id:tid,organization_id:org,sender_kind:'platform_staff',
  visibility:'customer',body:'Resposta registrada de suporte',created_at:'2026-10-09T10:05:00Z'}
-function mock(options:{denied?:boolean;foreign?:boolean;badMetric?:boolean}={}){
+function mock(options:{denied?:boolean;foreign?:boolean;badMetric?:boolean;internal?:boolean}={}){
+ const rpc=vi.fn().mockResolvedValue({data:'faaf76e4-d796-430f-929f-71df5beaf832',error:null})
  const from=vi.fn((table:string)=>{
   const chain={select:()=>chain,order:()=>chain,eq:()=>chain,limit:()=>chain,range:()=>chain,
    abortSignal:()=>Promise.resolve({data:table==='v_saas_support_ticket_metrics'?
-    [{...ticket,first_response_seconds:options.badMetric?'-1':'300'}]:
+    [{...ticket,organization_id:options.internal?null:org,ticket_scope:options.internal?'internal':'tenant',first_response_seconds:options.badMetric?'-1':'300'}]:
     [{...message,organization_id:options.foreign?'other':org}],
     error:options.denied?{code:'42501'}:null})}
   return chain
  })
- return {client:{from} as unknown as SupabaseClient,from}
+ return {client:{from,rpc} as unknown as SupabaseClient,from,rpc}
 }
 describe('Master operational support queue',()=>{
  it('shows real response metrics, ticket scope and authorized message history',async()=>{
@@ -36,6 +37,50 @@ describe('Master operational support queue',()=>{
   await screen.findByText('Resposta registrada de suporte')
   expect(from).toHaveBeenCalledWith('v_saas_support_ticket_metrics')
   expect(from).toHaveBeenCalledWith('saas_support_ticket_messages')
+ })
+ it('replies to a tenant ticket using idempotent Master command and a real status transition',async()=>{
+  const {client,rpc}=mock()
+  render(<MasterSupportQueue client={client}/>)
+  await screen.findByText('Dúvida sobre tesouraria')
+  fireEvent.click(screen.getByRole('button',{name:'Ver conversa'}))
+  await screen.findByText('Resposta registrada de suporte')
+  fireEvent.change(screen.getByLabelText('Mensagem ao cliente'),{
+   target:{value:'Resposta autorizada da plataforma'},
+  })
+  fireEvent.change(screen.getByLabelText('Status após resposta'),{target:{value:'working'}})
+  fireEvent.submit(screen.getByRole('form',{name:'Responder chamado Master'}))
+  await screen.findByText('Resposta registrada com auditoria. Histórico atualizado.')
+  expect(rpc).toHaveBeenCalledWith('reply_master_tenant_support_idempotent',
+   expect.objectContaining({
+    p_organization_id:org,p_ticket_id:tid,
+    p_message:'Resposta autorizada da plataforma',p_next_status:'working',
+    p_idempotency_key:expect.any(String),
+   }))
+ })
+ it('does not duplicate a Master response after a network interruption',async()=>{
+  const {client,rpc}=mock()
+  rpc.mockRejectedValueOnce(new Error('network'))
+  render(<MasterSupportQueue client={client}/>)
+  await screen.findByText('Dúvida sobre tesouraria')
+  fireEvent.click(screen.getByRole('button',{name:'Ver conversa'}))
+  await screen.findByText('Resposta registrada de suporte')
+  fireEvent.change(screen.getByLabelText('Mensagem ao cliente'),{
+   target:{value:'Solicitação revisada'},
+  })
+  fireEvent.submit(screen.getByRole('form',{name:'Responder chamado Master'}))
+  await screen.findByRole('button',{name:'Verificar envio'})
+  fireEvent.click(screen.getByRole('button',{name:'Verificar envio'}))
+  await waitFor(()=>expect(rpc).toHaveBeenCalledTimes(2))
+  expect(rpc.mock.calls[1]).toEqual(rpc.mock.calls[0])
+ })
+ it('does not offer customer replies on internal platform tickets',async()=>{
+  const {client,rpc}=mock({internal:true})
+  render(<MasterSupportQueue client={client}/>)
+  await screen.findByText('Dúvida sobre tesouraria')
+  fireEvent.click(screen.getByRole('button',{name:'Ver conversa'}))
+  await screen.findByText(/resposta por este fluxo de clientes não é permitida/)
+  expect(screen.queryByRole('form',{name:'Responder chamado Master'})).not.toBeInTheDocument()
+  expect(rpc).not.toHaveBeenCalled()
  })
  it('does not show tickets or messages if the backend denies access',async()=>{
   const {client}=mock({denied:true})
