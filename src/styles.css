@@ -157,3 +157,8 @@ p { line-height: 1.6; }
 .accounting-accounts-list summary { cursor: pointer; color: var(--accent); padding: 12px 0; }
 .accounting-accounts-list ul { max-height: 360px; overflow-y: auto; margin: 0 0 12px; padding: 4px 0; list-style: none; }
 .accounting-accounts-list li { padding: 8px 0; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+
+@media (max-width: 440px) {
+ .mobile-nav.has-master { padding-inline: 4px; }
+ .mobile-nav.has-master button { min-width: 0; font-size: .61rem; padding-inline: 2px; }
+}

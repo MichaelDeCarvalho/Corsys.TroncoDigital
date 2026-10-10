@@ -155,7 +155,7 @@ describe('Tenant workspace', () => {
     const mock = mockClient({ orgs: [] })
     render(<Workspace client={mock.client} user={userA} onSignOut={vi.fn()} />)
     await screen.findByRole('heading', { name: 'Nenhuma Loja vinculada' })
-    expect(mock.rpc).not.toHaveBeenCalled()
+    expect(mock.rpc.mock.calls.filter(call => call[0] === 'create_saas_support_ticket')).toHaveLength(0)
   })
 })
 

@@ -4,6 +4,8 @@ import type { SupabaseClient, User } from '@supabase/supabase-js'
 import { AppShell, type Page } from './AppShell'
 import { Finance } from './Finance'
 import { FinancialDashboard } from './FinancialDashboard'
+import { MasterConsole } from './MasterConsole'
+import { loadMasterOverview } from '../lib/master-console'
 import { FinancialStructure } from './FinancialStructure'
 import { Members } from './Members'
 import { loadOrganizations, loadTenantData, openTicket, type Organization, type TenantData } from '../lib/tenant-data'
@@ -17,6 +19,17 @@ export function Workspace({ client, user, onSignOut }: { client: SupabaseClient;
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [retry, setRetry] = useState(0)
+  const [masterAvailable, setMasterAvailable] = useState(false)
+  useEffect(() => {
+    let active = true
+    setMasterAvailable(false)
+    loadMasterOverview(client).then(() => {
+      if (active) setMasterAvailable(true)
+    }).catch(() => {
+      if (active) setMasterAvailable(false)
+    })
+    return () => { active = false }
+  }, [client, user.id])
   useEffect(() => {
     const controller = new AbortController()
     let active = true
@@ -27,11 +40,14 @@ export function Workspace({ client, user, onSignOut }: { client: SupabaseClient;
     return () => { active = false; controller.abort() }
   }, [client, user.id, retry])
   const organization = organizations.find(row => row.id === selected)
-  return <AppShell page={page} onNavigate={setPage} onSignOut={onSignOut} email={user.email ?? 'Minha conta'}>
-    <section className="workspace-heading"><div><p className="eyebrow">Área da Loja</p><h1>{page === 'home' ? 'Visão geral' : page === 'members' ? 'Integrantes' : page === 'finance' ? 'Financeiro' : page === 'structure' ? 'Plano de Contas' : 'Atendimento'}</h1><p className="subtle">Acompanhe as informações da sua organização.</p></div>
-      {!!organizations.length && <div className="org-selector"><label htmlFor="organization">Loja</label><select id="organization" value={selected} onChange={e => setSelected(e.target.value)}>{organizations.map(row => <option key={row.id} value={row.id}>{row.name}</option>)}</select></div>}
+  return <AppShell page={page} showMaster={masterAvailable} onNavigate={setPage} onSignOut={onSignOut} email={user.email ?? 'Minha conta'}>
+    <section className="workspace-heading"><div><p className="eyebrow">Área da Loja</p><h1>{page === 'home' ? 'Visão geral' : page === 'members' ? 'Integrantes' : page === 'finance' ? 'Financeiro' : page === 'structure' ? 'Plano de Contas' : page === 'master' ? 'Master SaaS' : 'Atendimento'}</h1><p className="subtle">Acompanhe as informações da sua organização.</p></div>
+      {page !== 'master' && !!organizations.length && <div className="org-selector"><label htmlFor="organization">Loja</label><select id="organization" value={selected} onChange={e => setSelected(e.target.value)}>{organizations.map(row => <option key={row.id} value={row.id}>{row.name}</option>)}</select></div>}
     </section>
-    {loading ? <p role="status" className="message">Carregando suas Lojas…</p> : error ? <div className="panel"><p role="alert" className="message error">{error}</p><button className="secondary" onClick={() => setRetry(value => value + 1)}>Tentar novamente</button></div> : !organization ? <div className="empty panel"><Building2 size={32} aria-hidden="true" /><h2>Nenhuma Loja vinculada</h2><p>Solicite ao administrador o vínculo da sua conta a uma Loja.</p></div> : <TenantPanel key={organization.id} client={client} organization={organization} page={page} onNavigate={setPage} />}
+    {page === 'master' ? (
+      masterAvailable ? <MasterConsole key={user.id} client={client} />
+      : <p role="alert" className="message error">O acesso ao Master SaaS requer perfil da plataforma e MFA ativo.</p>
+    ) : loading ? <p role="status" className="message">Carregando suas Lojas…</p> : error ? <div className="panel"><p role="alert" className="message error">{error}</p><button className="secondary" onClick={() => setRetry(value => value + 1)}>Tentar novamente</button></div> : !organization ? <div className="empty panel"><Building2 size={32} aria-hidden="true" /><h2>Nenhuma Loja vinculada</h2><p>Solicite ao administrador o vínculo da sua conta a uma Loja.</p></div> : <TenantPanel key={organization.id} client={client} organization={organization} page={page} onNavigate={setPage} />}
   </AppShell>
 }
 
