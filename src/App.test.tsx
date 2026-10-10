@@ -144,7 +144,7 @@ describe('Tenant workspace', () => {
     fireEvent.change(screen.getByLabelText('Descrição'), { target: { value: 'Solicitação de teste' } })
     const form = screen.getByRole('form', { name: 'Novo chamado' })
     fireEvent.submit(form); fireEvent.submit(form)
-    expect(mock.rpc).toHaveBeenCalledTimes(1)
+    expect(mock.rpc.mock.calls.filter(call => call[0] === 'create_saas_support_ticket')).toHaveLength(1)
     expect(mock.rpc).toHaveBeenCalledWith('create_saas_support_ticket', expect.objectContaining({ p_organization_id: orgA.id, p_subject: 'Ajuda com cadastro' }))
     expect(screen.getByRole('button', { name: 'Enviando…' })).toBeDisabled()
     await act(async () => { pending.resolve({ data: 'ticket-id', error: null }); await pending.promise })

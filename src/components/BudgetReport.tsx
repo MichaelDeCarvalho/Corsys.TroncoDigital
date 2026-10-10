@@ -1,4 +1,4 @@
-import { useEffect,useState,type FormEvent } from 'react'
+import { useEffect,useRef,useState,type FormEvent } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { formatMoney } from '../lib/finance-data'
 import {
@@ -14,7 +14,17 @@ export function BudgetReport({client,organizationId}:{client:SupabaseClient;orga
  const [rows,setRows]=useState<BudgetRow[]|null>(null)
  const [error,setError]=useState(''),[loading,setLoading]=useState(false)
  const [revision,setRevision]=useState(0)
+ const sequence=useRef(0)
+ const ongoing=useRef<AbortController|null>(null)
+ function invalidate(){
+  sequence.current+=1
+  ongoing.current?.abort()
+  ongoing.current=null
+  setRows(null);setError('');setLoading(false)
+ }
  useEffect(()=>{
+  sequence.current+=1;ongoing.current?.abort();ongoing.current=null
+  setLoading(false)
   let live=true;const controller=new AbortController()
   setCatalog(null);setRows(null);setError('')
   loadBudgetCatalog(client,organizationId,controller.signal)
@@ -22,25 +32,29 @@ export function BudgetReport({client,organizationId}:{client:SupabaseClient;orga
     setCatalog(c)
     setCycle(old=>c.cycles.some(x=>x.id===old)?old:'')
    }}).catch(()=>{if(live)setError('Não foi possível ler os planos orçamentários da Loja.')})
-  return()=>{live=false;controller.abort()}
+  return()=>{live=false;controller.abort();sequence.current+=1;ongoing.current?.abort();ongoing.current=null}
  },[client,organizationId,revision])
  const validCycle=catalog?.cycles.find(c=>c.id===cycle)
  async function submit(e:FormEvent<HTMLFormElement>){
   e.preventDefault();if(!catalog||!validCycle||loading)return
+  ongoing.current?.abort()
   const controller=new AbortController()
+  ongoing.current=controller
+  const issued=++sequence.current
   setRows(null);setError('');setLoading(true)
   try{
    validMonth(month)
    const r=await loadBudgetLines(client,organizationId,cycle,month,kind,catalog,controller.signal)
-   setRows(r)
-  }catch{setError('Consulta orçamentária indisponível ou inconsistente. Não foram exibidos totais parciais.')}
-  finally{setLoading(false)}
+   if(issued===sequence.current)setRows(r)
+  }catch{
+   if(issued===sequence.current)setError('Consulta orçamentária indisponível ou inconsistente. Não foram exibidos totais parciais.')
+  }finally{if(issued===sequence.current){ongoing.current=null;setLoading(false)}}
  }
  const budget=rows?.reduce((v,r)=>v+checkedSigned(r.budget_amount),0)
  const actual=rows?.reduce((v,r)=>v+checkedSigned(r.actual_amount),0)
  return <section className="panel member-editor" aria-label="Orçamento versus realizado">
   <div className="section-title"><h2>Orçamento × realizado</h2>
-   <button type="button" className="secondary" onClick={()=>setRevision(v=>v+1)} disabled={loading}>Atualizar orçamento</button>
+   <button type="button" className="secondary" onClick={()=>{invalidate();setRevision(v=>v+1)}} disabled={loading}>Atualizar orçamento</button>
   </div>
   <p className="subtle">Consulta somente das contas ou fundos que possuem linhas orçamentárias no ciclo escolhido. Não equivale à DRE total, ao saldo bancário nem à projeção de caixa. Valores são obtidos das views de realização do PostgreSQL.</p>
   {error&&<p role="alert" className="message error">{error}</p>}
@@ -49,15 +63,15 @@ export function BudgetReport({client,organizationId}:{client:SupabaseClient;orga
    <form aria-label="Consultar orçamento versus realizado" onSubmit={submit}>
     <fieldset disabled={loading||!catalog.cycles.length}>
      <label htmlFor="budget-cycle">Ciclo orçamentário</label>
-     <select id="budget-cycle" value={cycle} required onChange={e=>{setCycle(e.target.value);setRows(null)}}>
+     <select id="budget-cycle" value={cycle} required onChange={e=>{invalidate();setCycle(e.target.value)}}>
       <option value="">Selecione o ciclo</option>{catalog.cycles.map(c=><option key={c.id} value={c.id}>
        {c.name} — {c.status} ({c.period_start} a {c.period_end})
       </option>)}
      </select>
      <label htmlFor="budget-month">Competência</label>
-     <input id="budget-month" type="month" required value={month} onChange={e=>{setMonth(e.target.value);setRows(null)}}/>
+     <input id="budget-month" type="month" required value={month} onChange={e=>{invalidate();setMonth(e.target.value)}}/>
      <label htmlFor="budget-kind">Agrupamento</label>
-     <select id="budget-kind" value={kind} onChange={e=>{setKind(e.target.value as BudgetKind);setRows(null)}}>
+     <select id="budget-kind" value={kind} onChange={e=>{invalidate();setKind(e.target.value as BudgetKind)}}>
       <option value="account">Conta contábil</option><option value="fund">Fundo</option>
      </select>
      <button className="primary" disabled={!cycle||!month||loading} type="submit">
