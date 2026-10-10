@@ -5,11 +5,12 @@ import {MasterCommercialCatalog} from './MasterCommercialCatalog'
 import {MasterSupportQueue} from './MasterSupportQueue'
 import {MasterBilling} from './MasterBilling'
 import {MasterOnboarding} from './MasterOnboarding'
+import {MasterClient360} from './MasterClient360'
 import {loadMasterOverview,loadMasterTenants,type MasterOverview,type MasterTenant} from '../lib/master-console'
 
 export function MasterConsole({client}:{client:SupabaseClient}){
  const [overview,setOverview]=useState<MasterOverview|null>(null)
- const [tab,setTab]=useState<'overview'|'commercial'|'support'|'billing'|'onboarding'>('overview')
+ const [tab,setTab]=useState<'overview'|'commercial'|'support'|'billing'|'onboarding'|'client360'>('overview')
  const [page,setPage]=useState(0),[revision,setRevision]=useState(0)
  const [tenants,setTenants]=useState<{rows:MasterTenant[];hasNext:boolean}|null>(null)
  const [error,setError]=useState(''),[denied,setDenied]=useState(false)
@@ -51,6 +52,7 @@ export function MasterConsole({client}:{client:SupabaseClient}){
     <button className="secondary" aria-pressed={tab==='support'} onClick={()=>setTab('support')}>Operação e suporte</button>
     <button className="secondary" aria-pressed={tab==='billing'} onClick={()=>setTab('billing')}>Cobrança SaaS</button>
     <button className="secondary" aria-pressed={tab==='onboarding'} onClick={()=>setTab('onboarding')}>Implantação de Lojas</button>
+    <button className="secondary" aria-pressed={tab==='client360'} onClick={()=>setTab('client360')}>Cliente 360°</button>
    </div>
    {tab==='overview'&&<>
    <p className="subtle">Indicadores da plataforma em {formatDate(overview.as_of)}. Não representam faturamento recebido.</p>
@@ -84,6 +86,7 @@ export function MasterConsole({client}:{client:SupabaseClient}){
    {tab==='support'&&<MasterSupportQueue client={client}/>}
    {tab==='billing'&&<MasterBilling client={client} tenants={tenants.rows}/>}
    {tab==='onboarding'&&<MasterOnboarding client={client}/>}
+   {tab==='client360'&&<MasterClient360 client={client} tenants={tenants.rows}/>} 
   </>}
  </section>
 }
