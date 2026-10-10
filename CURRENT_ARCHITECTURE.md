@@ -1,5 +1,16 @@
 # CURRENT ARCHITECTURE
 
+## Etapa 2: recorrência, fluxo financeiro e Master read-only — 2026-10-09/10
+
+**Cobrança recorrente:** `private.monthly_charge_candidates` resolve, por competência, preço versionado e `recurring_member_terms` (padrão, isenção, valor individual). `preview_monthly_charge_generation` calcula quantidade e fingerprint/condições antes de emitir; `generate_monthly_member_charges` exige `charges.create`, idempotência, bloqueio da Loja/regra/integrantes, mapping contábil publicado, período aberto e fingerprint idêntico. Lote `charge_batches` + fatos `charges` imutáveis, chaves únicas em banco. A tela `MonthlyChargeGeneration` não gera automaticamente.
+
+**Correções/cancelamentos e períodos:** `ManualCharges` usa `create_manual_charge` e wrapper idempotente de cancelamento, preservando eventos `charge_cancellations` e reversões originais. `FinancialPeriods` consome estado derivado de `period_events` e wrappers idempotentes de `close_financial_period`/`reopen_financial_period`. `InstitutionalOperations` consome novas RPCs wrappers para cancelar saldo em aberto e corrigir obrigação mantendo a linha original e `institutional_..._corrections`. Correção verifica um snapshot JSONB exato do effective view **após bloquear o registro base**, retornando `40001` se desatualizado.
+
+**Consultas:** `read_tenant_financial_dashboard` calcula 6 KPIs a partir de `v_charge_balances`, `v_institutional_*_effective` e `v_financial_account_movements`; `read_tenant_delinquency` separa atrasos e créditos não alocados com paginação servidor. `TreasuryBalances` mostra saldos derivados por conta e paginação; `BudgetReport` consulta exclusivamente orçamento vs realizado de linhas realmente cadastradas, não apresenta caixa projetado como fato. Consultas comerciais Master não recalculam saldos das Lojas.
+
+**Master:** novos RPCs exclusivamente READ requerem `private.require_platform_staff('MASTER')`, que verifica usuário de plataforma ativo e AAL2/MFA. `Workspace` mostra link `Master SaaS` somente após uma validação positiva, mas o link **não concede acesso**; todo endpoint/ view valida no servidor. `MasterConsole` e `MasterCommercialCatalog` exibem diretório, KPIs e versões/ promoções históricas; ainda não há comandos operacionais de Master, sessão de suporte ou impersonação. Sem mudanças em auth.users/roles, RLS de tabelas, produção ou cobrança de provedores.
+
+
 ## Aprovação de despesas — fila e decisão idempotente (2026-10-09)
 
 O frontend `PayableApprovals` consulta `v_payable_approval_state` tenant-scoped para itens pendentes e chama exclusivamente `decide_payable_approval_idempotent`; o servidor exige `approvals.review`, chave idempotente e motivo, delegando ao comando já auditado que registra o voto imutável por usuário. A situação agregada continua calculada no banco, separada da liquidação institucional. Limite fail-closed 150, ainda sem paginação/rotina Master. Migration DEV35.

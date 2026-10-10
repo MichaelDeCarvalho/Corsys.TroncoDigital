@@ -1,5 +1,10 @@
 # V35 — preservação do escopo e cobertura de implementação
 
+## Atualização de cobertura após incrementos 15–19 — 2026-10-09/10
+
+A tabela histórica abaixo corresponde ao levantamento inicial; o campo “Frontend atual” das suas linhas **não foi reescrito retrospectivamente**. Complemento de estado real: há interfaces DEV de prévia/geração de mensalidade por competência, cobrança manual/cancelamento, pagamentos de integrantes, contas institucionais com aprovação/correção/cancelamento, DRE, orçamento vs realizado, caixa/bancos, inadimplência, fechamento mensal, painel com 6 KPIs e área Master READ-ONLY (indicadores, Lojas, planos/ofertas). Consulte `docs/V35_STAGE_2_IMPLEMENTATION.md` para testes e limites. Menus e mocks **não constituem paridade integral das 21 telas**. Persistem Master onboarding/360º/billing/operação, exportação PDF/Excel, conciliação, regras especiais, UX V35 e verificação HTTP/JWT.
+
+
 ## Contrato de continuidade
 
 A V35 é o escopo mínimo do produto, por instrução do proprietário em 2026-10-02. Implementar por etapas não remove telas, parâmetros, regras ou ideias do escopo. Não substituir funções do banco por regras inventadas no frontend. Mudanças incompatíveis exigem decisão explícita registrada; fatos financeiros e histórico comercial permanecem preservados.

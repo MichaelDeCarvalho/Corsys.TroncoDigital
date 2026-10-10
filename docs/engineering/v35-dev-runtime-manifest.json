@@ -280,6 +280,69 @@
       "sha256": "37214fe24aa1db9114633211a0c7e08c5ad323699b70b70c95c9121160d68041",
       "applied_at": "2026-10-09",
       "note": "Authorization approvals.review, one-time immutable vote and idempotent retry; wraps existing decide_payable_approval. DEV only."
+    },
+    {
+      "version": "20261009184116",
+      "name": "monthly_member_generation_preview_and_commit",
+      "path": "supabase/migrations/20261009184116_monthly_member_generation_preview_and_commit.sql",
+      "source_path": "supabase/migrations/20261009184116_monthly_member_generation_preview_and_commit.sql",
+      "sha256": "bf8c111ec152654ed9db004055deb6b13e9458aa8d5f065b16712f83dac0a36a",
+      "applied_at": "2026-10-09",
+      "note": "Preview and audited generation of per-member recurring monthly charge batches with exemption/override, fingerprint and idempotency."
+    },
+    {
+      "version": "20261009184801",
+      "name": "member_charge_cancellation_and_period_idempotency",
+      "path": "supabase/migrations/20261009184801_member_charge_cancellation_and_period_idempotency.sql",
+      "source_path": "supabase/migrations/20261009184801_member_charge_cancellation_and_period_idempotency.sql",
+      "sha256": "069f6dab39bc829a4e74ab33c6bfe8f5c5672f9cf771ac1ecae6d03d4e8ac693",
+      "applied_at": "2026-10-09",
+      "note": "Idempotent cancellation and financial period close/reopen wrappers over existing immutable event commands."
+    },
+    {
+      "version": "20261009190304",
+      "name": "tenant_financial_dashboard_kpis",
+      "path": "supabase/migrations/20261009190304_tenant_financial_dashboard_kpis.sql",
+      "source_path": "supabase/migrations/20261009190304_tenant_financial_dashboard_kpis.sql",
+      "sha256": "a1136d5f51ed702a3b4b72506916ae2fd129987f4280f57fa23a8ebe046e1d0a",
+      "applied_at": "2026-10-09",
+      "note": "Read-only six server-computed tenant finance dashboard KPIs; permission finance.read."
+    },
+    {
+      "version": "20261009190647",
+      "name": "tenant_delinquency_paginated_report",
+      "path": "supabase/migrations/20261009190647_tenant_delinquency_paginated_report.sql",
+      "source_path": "supabase/migrations/20261009190647_tenant_delinquency_paginated_report.sql",
+      "sha256": "7fceb76b6b0947c3adc96777bc59924cd6c6f5f5085e410287c3913571084769",
+      "applied_at": "2026-10-09",
+      "note": "Read-only paginated delinquency by member, remaining credits explicitly separate, tenant-finance authorization."
+    },
+    {
+      "version": "20261010003754",
+      "name": "institutional_obligation_cancellation_idempotent",
+      "path": "supabase/migrations/20261010003754_institutional_obligation_cancellation_idempotent.sql",
+      "source_path": "supabase/migrations/20261010003754_institutional_obligation_cancellation_idempotent.sql",
+      "sha256": "4fc6bbd7e37dc8eb1fd5de23d4a31661538bdfe3beff2996a98d1eee2e7be2cd",
+      "applied_at": "2026-10-10",
+      "note": "Idempotent cancellation of institutional payable/receivable open amounts, preserved original events."
+    },
+    {
+      "version": "20261010004023",
+      "name": "institutional_correction_idempotent_optimistic",
+      "path": "supabase/migrations/20261010004023_institutional_correction_idempotent_optimistic.sql",
+      "source_path": "supabase/migrations/20261010004023_institutional_correction_idempotent_optimistic.sql",
+      "sha256": "d4df0c78994f99d6e7109dcc744a37c85257bbbf51ba23869f2127620e60ad6d",
+      "applied_at": "2026-10-10",
+      "note": "Optimistically guarded, idempotent and audited institution corrections via existing financial commands."
+    },
+    {
+      "version": "20261010004540",
+      "name": "master_readonly_overview_tenant_directory",
+      "path": "supabase/migrations/20261010004540_master_readonly_overview_tenant_directory.sql",
+      "source_path": "supabase/migrations/20261010004540_master_readonly_overview_tenant_directory.sql",
+      "sha256": "d8201338e0cf5ebd44638d4d397230fd5d2e46e1a15e7399f9ef26fbab6e19b5",
+      "applied_at": "2026-10-10",
+      "note": "Read-only platform Master overview and tenant directory with enforced AAL2 and platform staff MASTER."
     }
   ],
   "baseline_patches": {

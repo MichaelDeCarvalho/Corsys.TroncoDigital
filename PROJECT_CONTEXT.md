@@ -1,5 +1,10 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Etapa 2 — incremento transversal verificado 2026-10-09/10
+
+O Financeiro DEV incorporou geração mensal idempotente (prévia, vigência e condições individuais), cobranças manuais/cancelamentos, fechamento mensal auditado, saldos de caixa/bancos, orçamento×realizado, indicadores globais da Loja e inadimplência por integrante. Operações institucionais agora incluem correção/cancelamento auditados com revisão otimista. Master SaaS recebeu área de consulta segregada por papel Master+AAL2, sem autorizar operação de contratos comerciais. SQL de regressão A/B com transações revertidas passou; os 42 arquivos migration do DEV foram versionados. **Faltam Master operacional, múltiplas telas completas e homologação de segurança, concorrência e UX. Não tratar esta base DEV como produção/homologação concluída.**
+
+
 ## Etapa 2 — fila de aprovação financeira (2026-10-09)
 
 Decisões de aprovação/rejeição de despesas institucionais adicionadas ao Financeiro utilizando a view existente e o backend `approvals.review`, com wrapper idempotente DEV35. SQL teste A/B com ROLLBACK aprovado; não alterou aprovações reais. Ainda faltam a configuração de políticas, histórico, fluxo completo de múltiplos aprovadores e a paridade integral V35.

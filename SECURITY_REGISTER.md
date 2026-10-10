@@ -1,5 +1,14 @@
 # SECURITY REGISTER
 
+## Incrementos 15–19 — revisão de superfícies de autorização, 2026-10-09/10
+
+Superfícies novas SQL SECURITY DEFINER `search_path=''` e acesso EXECUTE exclusivo ao papel `authenticated` (revoke anon/public): `preview_monthly_charge_generation`/`generate_monthly_member_charges` (perm. `charges.create`), `cancel_member_charge_idempotent` (`charges.cancel`), `close_financial_period_idempotent`/`reopen_financial_period_idempotent` (perms próprias), `read_tenant_financial_dashboard`/`read_tenant_delinquency` (`finance.read`), `cancel_tenant_institutional_obligation_idempotent`/`correct_tenant_institutional_obligation_idempotent` (`institutional.manage`), `read_platform_master_overview`/`list_platform_master_tenants` (`private.require_platform_staff('MASTER')` com AAL2). `private.monthly_charge_candidates` não é executável externamente. Consultas comercial Master existentes continuam com filtro `private.has_aal2`/ `private.is_platform_staff`.
+
+Gates SQL em duas Lojas e MASTER com `set_config('request.jwt.claims',...)` + `SET LOCAL ROLE authenticated` simulam claims, exercitam allow/deny, idempotência, ledger/reversões, histórico de preços, ledger financeiro e não alteram fatos após ROLLBACK. **Não equivalem a assinaturas JWT HTTP reais** ou a validação do fluxo MFA em navegador. Falta concorrência real multiconexão, auditoria completa de `SECURITY DEFINER`, dependências de views/security_invoker, acessos MASTER/BILLING/SUPPORT reais, identidade e onboarding, rate limiting, limites e paginação escaláveis. A função antiga cancel/correct ainda acessível a papéis autorizados e sem chave idempotente; revisar consumidores antes de bloqueios.
+
+Mudanças são aditivas no Supabase **DEV**, sem tokens/provider/configs novos. Possível contenção: REVOKE EXECUTE das RPCs novas (sem apagar fatos financeiros) e suspender navegação frontend; fazer forward-fix versionado. Não usar migration DOWN destrutiva. Publicação PROD bloqueada.
+
+
 ## Aprovações com replay seguro — 2026-10-09
 
 `decide_payable_approval_idempotent` SECURITY DEFINER/empty search_path, EXECUTE concedido apenas a authenticated, exige `approvals.review` e assinatura elegível antes de executar `private.idempotency_begin`. Valida request id, decisão e motivo, reutiliza `decide_payable_approval` (bloqueio da solicitação, auditoria e constraint de voto único por ator). RLS da view `v_payable_approval_state` e filtro de organização mantidos. SQL A/B simulando claims com transação revertida PASS; sem teste JWT HTTP real nem múltiplos aprovadores em sessões simultâneas. O RPC legado segue exposto a usuários com `approvals.review` mas rejeita voto duplicado pela constraint; consumidores anteriores precisam de revisão antes de revogar acesso. Nenhum deploy produção.
