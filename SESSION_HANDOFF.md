@@ -1,5 +1,12 @@
 ## Retomada auditada — 2026-10-14
 
+QA positivo posterior: proprietário aprovou fixture orçamentária temporária. Teste
+real no preview A passou (250 orçado / 500 realizado / -250 restante / 200% explícito).
+Ciclo `6f953af3-c600-4bf2-ae3c-4ff1a0c63236` e linha removidos por cleanup restrito;
+zero remanescentes, 17 cobranças/16 pagamentos preservados. Aprovação resolveu
+bloqueio de fixture registrado abaixo; não há aprovação pendente para esse teste.
+Desktop/mobile separados, demais papéis e fechamento da Etapa 2 continuam pendentes.
+
 Atualização: OAuth Cloudflare concluído. A publicação DEV existente
 `4d47c0cf-d659-4403-8624-8fe63d259b80` contém os assets exatos do build `be967cf`
 (hashes JS/CSS no relatório); não houve novo upload. CI `38655489396` success.

@@ -1,5 +1,26 @@
 # V35 — retomada e entregas verticais (2026-10-14)
 
+## QA positivo autenticado — aprovado e executado
+
+O proprietário aprovou explicitamente o ciclo sintético persistido durante o teste
+e sua exclusão ao final. Criado somente no tenant DEV A o draft
+`6f953af3-c600-4bf2-ae3c-4ff1a0c63236`, nome `DEV QA ORCAMENTO be967cf TEMPORARIO`,
+competência setembro/2026, com uma linha de R$250 para conta existente cujo realizado
+na view é R$500. Nenhuma cobrança, pagamento ou movimento criado/alterado.
+
+No preview publicado, sessão autenticada A: ciclo selecionado, competência 2026-09,
+consulta de conta contábil retornou R$250 orçado, R$500 realizado, -R$250 restante,
+indicador visual limitado a 100 e texto **200% — acima do orçamento**. PASS para
+essa jornada real. Entrada automatizada do mês exigiu confirmação por teclado;
+não foi alterado o DOM nem simulado estado React para obter o resultado.
+
+Cleanup transacional limitado por UUID/tenant/nome/status draft: ciclo e linha
+removidos. Read-back: zero ciclos/linhas desse UUID, 17 cobranças e 16 pagamentos
+preservados. Consulta atualizada no navegador após limpeza. O bloqueio anterior
+do auto-review foi resolvido pela aprovação explícita, sem contorno de controle.
+Limite: viewport efetivo 754x668; desktop/mobile separados e B/Master não avaliados
+nesta jornada. Não representa orçamento editável/publicável ou fechamento da Etapa 2.
+
 ## Publicação DEV conferida após autenticação
 
 OAuth Cloudflare concluído pelo proprietário. Conta e Worker existentes conferidos:

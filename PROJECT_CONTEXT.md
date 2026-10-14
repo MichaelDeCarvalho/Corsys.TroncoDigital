@@ -2,6 +2,11 @@
 
 ## Retomada auditada — 2026-10-14
 
+QA positivo autenticado de orçamento concluído após aprovação específica: preview
+A exibiu 250/500/-250 e 200% acima do orçamento; fixture temporária removida e
+ausência conferida. Sem alteração no ledger. Esse bloqueio está resolvido; permanecem
+os demais limites do relatório e a Etapa 2 aberta.
+
 Atualização: OAuth Cloudflare resolvido; versão DEV existente `4d47c0cf` corresponde
 ao build funcional `be967cf` por SHA256 JS/CSS. Sem novo upload. CI #271 success.
 Login A e orçamento vazio observados. QA positivo de orçamento aguarda aprovação
