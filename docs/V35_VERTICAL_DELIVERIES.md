@@ -1,5 +1,31 @@
 # V35 — retomada e entregas verticais (2026-10-14)
 
+## Publicação DEV conferida após autenticação
+
+OAuth Cloudflare concluído pelo proprietário. Conta e Worker existentes conferidos:
+`corsys-tronco-digital-dev`, URL `https://corsys-tronco-digital-dev.corsys1.workers.dev/`.
+Já havia versão publicada `4d47c0cf-d659-4403-8624-8fe63d259b80` às 20h41 Brasil
+(23:41:46 UTC) de 2026-10-14; não foi necessário novo upload. Não atribuir essa
+publicação ao agente: seus assets coincidem com o build local de `be967cf`,
+recompilado com a chave pública DEV vigente:
+
+- JS `index-DYt1QjTc.js`, SHA256 `13b4001326491d8728ba98e1f5e91509b086e13b6045803f244d4d55f3783f48`.
+- CSS `index-J4Ueqwlt.css`, SHA256 `96619b89eb5c9ce9f8c7c010dc92f9c0770bcd07826af773b83eb64e9d2a5f85`.
+- CI de `be967cf`: run `38655489396` (#271) completed success.
+
+Sessão autenticada A preservada após reload; orçamento vazio real e formulário
+desabilitado observados no build publicado. Pedido de viewport desktop 1440x1000
+não mudou a largura efetiva do navegador interno (754x668), confirmado pelo DOM;
+override restaurado. Não declarar desktop 1440/mobile 390 homologados.
+
+Teste positivo com ciclo sintético persistido durante a sessão de navegador foi
+rejeitado pelo auto-review por alterar temporariamente o relatório orçamentário
+sem ROLLBACK. Nenhum registro foi criado. Aprovação específica pedida ao proprietário
+para ciclo temporário identificado, uma linha de R$250 contra realizado R$500, com
+exclusão restrita do fixture após QA. Não contornar o bloqueio.
+SQL A/B com ROLLBACK e testes de componente não substituem esse teste positivo
+autenticado. Gate do lote 0 permanece parcialmente aberto.
+
 ## Auditoria inicial e lote 0
 
 Base confirmada: `210a039bf19e4978d9fcd28bfd8eba58aacfd44b`, branch
@@ -71,8 +97,8 @@ não telas homologadas. Lote 0 ainda em execução; lotes 1–6 são sequência 
    retry, concorrência relevante, suspensão e fechamento. SQL/mocks não são HTTP/JWT.
 6. Atualizar contexto/handoff e registrar aceite antes de avançar. Sem merge/PROD.
 
-Impedimentos: Cloudflare CLI inicialmente sem autenticação; OAuth solicitado ao
-proprietário. Login A no preview disponível; B/Master/MFA e novos HTTP não avaliados.
+Impedimentos iniciais: Cloudflare CLI sem autenticação, resolvido conforme seção
+de publicação acima. Login A no preview disponível; B/Master/MFA e novos HTTP não avaliados.
 Cada tenant tem uma conta ativa: transferência positiva exige segunda conta e
 mapeamento em plano sucessor legítimo, sem alterar planos publicados ou desabilitar
 triggers. Orçamento consultivo existe; cadastro/publicação e conciliação OFX/CSV

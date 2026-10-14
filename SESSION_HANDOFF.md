@@ -1,5 +1,13 @@
 ## Retomada auditada — 2026-10-14
 
+Atualização: OAuth Cloudflare concluído. A publicação DEV existente
+`4d47c0cf-d659-4403-8624-8fe63d259b80` contém os assets exatos do build `be967cf`
+(hashes JS/CSS no relatório); não houve novo upload. CI `38655489396` success.
+Sessão A e orçamento vazio conferidos no build publicado. Fixture positiva de
+orçamento persistida para QA foi bloqueada pelo auto-review; aprovação específica
+solicitada, nenhum registro criado. Viewport do navegador interno permaneceu
+754x668 apesar do pedido 1440x1000; não declarar desktop/mobile homologados.
+
 Base `210a039b`, branch `feat/v35-dev-gate-20261002`, PR draft #4 confirmado.
 Auditoria, evidências, seis lotes e 21 telas em `docs/V35_VERTICAL_DELIVERIES.md`.
 Lote 0: orçamento consultivo com execução visual, validação de duplicatas/moeda/

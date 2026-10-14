@@ -2,6 +2,12 @@
 
 ## Retomada auditada — 2026-10-14
 
+Atualização: OAuth Cloudflare resolvido; versão DEV existente `4d47c0cf` corresponde
+ao build funcional `be967cf` por SHA256 JS/CSS. Sem novo upload. CI #271 success.
+Login A e orçamento vazio observados. QA positivo de orçamento aguarda aprovação
+específica do fixture temporário após bloqueio automático; desktop/mobile ainda
+não homologados. Evidência detalhada no relatório de entregas.
+
 Branch/PR #4 confirmados em `210a039b`; 52 migrations e 138 tabelas no DEV.
 Ver `docs/V35_VERTICAL_DELIVERIES.md` para evidências atuais e as 21 telas em seis
 lotes com gate DEV. Etapa 2 permanece em execução. Lote 0 acrescenta execução visual
