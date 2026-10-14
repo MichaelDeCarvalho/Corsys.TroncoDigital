@@ -2,7 +2,7 @@ import { useEffect,useRef,useState,type FormEvent } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { formatMoney } from '../lib/finance-data'
 import {
- loadBudgetCatalog,loadBudgetLines,validMonth,
+ loadBudgetCatalog,loadBudgetLines,validMonth,budgetExecution,
  type BudgetKind,type BudgetRow,
 } from '../lib/budget-report'
 import { checkedSigned } from '../lib/treasury-balances'
@@ -87,7 +87,7 @@ export function BudgetReport({client,organizationId}:{client:SupabaseClient;orga
       <article className="panel metric"><p>Total realizado (itens consultados)</p><strong>{formatMoney(actual??0)}</strong></article>
      </div>
      <div className="finance-table" role="region" tabIndex={0} aria-label="Linhas de execução orçamentária">
-      <table><thead><tr><th>Conta ou fundo</th><th>Orçado</th><th>Realizado</th><th>Restante</th></tr></thead>
+      <table><thead><tr><th>Conta ou fundo</th><th>Orçado</th><th>Realizado</th><th>Restante</th><th>Execução</th></tr></thead>
        <tbody>{rows.map((r,i)=>{
         const item=kind==='account'?
          catalog.accounts.find(a=>a.id===r.accounting_account_id):
@@ -95,10 +95,15 @@ export function BudgetReport({client,organizationId}:{client:SupabaseClient;orga
         const name=item
          ? ('code' in item ? `${item.code} — ${item.description}` : item.name)
          : 'Não identificado'
+        const execution=budgetExecution(r.budget_amount,r.actual_amount)
         return <tr key={`${r.accounting_account_id??r.fund_id}:${i}`}>
          <th scope="row">{name}</th><td>{formatMoney(checkedSigned(r.budget_amount))}</td>
          <td>{formatMoney(checkedSigned(r.actual_amount))}</td>
          <td>{formatMoney(checkedSigned(kind==='account'?r.remaining_amount!:r.available_amount!))}</td>
+         <td>{execution===null?'Sem base orçada':<>
+          <progress className="budget-execution" aria-label={`Execução de ${name}`} max={100} value={Math.min(execution,100)}/>
+          <span>{execution.toLocaleString('pt-BR',{maximumFractionDigits:1})}%{execution>100?' — acima do orçamento':''}</span>
+         </>}</td>
         </tr>
        })}</tbody>
       </table>

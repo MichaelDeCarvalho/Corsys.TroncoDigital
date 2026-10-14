@@ -13,6 +13,14 @@ export function validMonth(value:string){
  if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(value))throw Error('Invalid budget competence')
  return value+'-01'
 }
+function uniqueIds(rows:Array<{id:string}>){
+ return new Set(rows.map(row=>row.id)).size===rows.length
+}
+export function budgetExecution(budget:string|number,actual:string|number){
+ const planned=checkedSigned(budget),spent=checkedSigned(actual)
+ if(planned<0||spent<0)throw Error('Invalid budget execution')
+ return planned===0?null:spent/planned*100
+}
 export async function loadBudgetCatalog(client:SupabaseClient,org:string,signal:AbortSignal){
  const [cycles,accounts,funds]=await Promise.all([
   client.from('budget_cycles').select('id,organization_id,name,status,period_start,period_end,currency')
@@ -27,15 +35,18 @@ export async function loadBudgetCatalog(client:SupabaseClient,org:string,signal:
  if(funds.error)throw funds.error
  if(!Array.isArray(cycles.data)||!Array.isArray(accounts.data)||!Array.isArray(funds.data)||
   cycles.data.length>100||accounts.data.length>300||funds.data.length>100||
+  !uniqueIds(cycles.data)||!uniqueIds(accounts.data)||!uniqueIds(funds.data)||
   cycles.data.some(c=>c.organization_id!==org||typeof c.id!=='string'||typeof c.name!=='string'||
-   !/^\d{4}-\d{2}-\d{2}$/.test(c.period_start)||!/^\d{4}-\d{2}-\d{2}$/.test(c.period_end))||
-  accounts.data.some(a=>a.organization_id!==org||typeof a.id!=='string'||typeof a.code!=='string')||
-  funds.data.some(f=>f.organization_id!==org||typeof f.id!=='string'))throw Error('Invalid budget tenant catalog')
+   !/^\d{4}-\d{2}-\d{2}$/.test(c.period_start)||!/^\d{4}-\d{2}-\d{2}$/.test(c.period_end)||
+   c.period_start>c.period_end||c.currency!=='BRL'||!['draft','published','closed'].includes(c.status))||
+  accounts.data.some(a=>a.organization_id!==org||typeof a.id!=='string'||typeof a.code!=='string'||typeof a.description!=='string')||
+  funds.data.some(f=>f.organization_id!==org||typeof f.id!=='string'||typeof f.name!=='string'))throw Error('Invalid budget tenant catalog')
  return {cycles:cycles.data as BudgetCycle[],accounts:accounts.data as BudgetAccount[],funds:funds.data as BudgetFund[]}
 }
 export async function loadBudgetLines(client:SupabaseClient,org:string,cycle:string,month:string,kind:BudgetKind,
  catalog:Awaited<ReturnType<typeof loadBudgetCatalog>>,signal:AbortSignal){
  const period=validMonth(month)
+ if(kind!=='account'&&kind!=='fund')throw Error('Invalid budget grouping')
  const selected=catalog.cycles.find(c=>c.id===cycle&&c.organization_id===org)
  if(!selected)throw Error('Unknown budget cycle')
  if(period<selected.period_start||period>selected.period_end)throw Error('Period outside budget cycle')
@@ -53,14 +64,18 @@ export async function loadBudgetLines(client:SupabaseClient,org:string,cycle:str
   .limit(401).abortSignal(signal)
  if(error)throw error
  if(!Array.isArray(data)||data.length>400)throw Error('Budget result truncated')
+ const seen=new Set<string>()
  for(const raw of data){
   const row=raw as unknown as BudgetRow
+  const item=isAccount?row?.accounting_account_id:row?.fund_id
   if(!row||row.organization_id!==org||row.budget_cycle_id!==cycle||row.period!==period||
-    (isAccount?!accountIds.has(row.accounting_account_id??''):!fundIds.has(row.fund_id??'')))
+    !item||seen.has(item)||
+    (isAccount?!accountIds.has(item):!fundIds.has(item)))
    throw Error('Unexpected budget scope or account')
+  seen.add(item)
   const budget=checkedSigned(row.budget_amount),actual=checkedSigned(row.actual_amount)
   const remaining=checkedSigned(isAccount?row.remaining_amount!:row.available_amount!)
-  if(budget<0||actual<0||Math.abs(budget-actual-remaining)>0.01)
+  if(budget<0||actual<0||Math.round(budget*100)-Math.round(actual*100)!==Math.round(remaining*100))
    throw Error('Budget amounts inconsistent')
  }
  return data as unknown as BudgetRow[]

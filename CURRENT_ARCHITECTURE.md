@@ -1,5 +1,14 @@
 # CURRENT ARCHITECTURE
 
+## Consulta orçamentária — 2026-10-14
+
+`BudgetReport` mantém views `security_invoker` e escopo Loja/ciclo/competência.
+`budget-report.ts` recusa duplicatas, moeda não BRL e diferenças de centavos antes
+dos totais. Percentual/barra representam somente itens consultados; ultrapassagem
+de 100% é explícita e base zero não produz percentual. Nenhuma escrita orçamentária,
+auth, grant ou RLS alterados. Wrangler fixado em 4.151.0 para corrigir dependência
+transitiva de desenvolvimento. Evidências em `docs/V35_VERTICAL_DELIVERIES.md`.
+
 ## Busca autorizada do diretório Master — DEV 2026-10-10
 
 `MasterConsole` envia filtros opcionais para `loadMasterTenants` (`master-console.ts`). Sem filtros preserva `list_platform_master_tenants`; com filtros chama `search_platform_master_tenants` migração #52, RPC SECURITY DEFINER/search_path vazio e `private.require_platform_staff('MASTER')`. Banco aplica a pesquisa e paginação determinística, restringe `status` a all/active/past_due, limita consulta textual e não retorna e-mail/telefone de contato (embora possa consultá-los para localizar a Loja). O diretório permanece separado da tesouraria da Loja; selecionar um cliente nunca autoriza impersonação ou escreve dados.

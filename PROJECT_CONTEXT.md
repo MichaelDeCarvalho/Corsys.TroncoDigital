@@ -1,5 +1,17 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Retomada auditada — 2026-10-14
+
+Branch/PR #4 confirmados em `210a039b`; 52 migrations e 138 tabelas no DEV.
+Ver `docs/V35_VERTICAL_DELIVERIES.md` para evidências atuais e as 21 telas em seis
+lotes com gate DEV. Etapa 2 permanece em execução. Lote 0 acrescenta execução visual
+e validações de duplicatas/moeda/centavos ao orçamento consultivo, e atualiza
+Wrangler 4.151.0 para corrigir cadeia de três alertas high. 217 testes/tipos/build,
+12 guardas locais, preservação e SQL rollback A/B PASS no escopo registrado.
+Sem nova migration ou escrita persistida. Publicação/aceite do build novo dependem
+de OAuth Cloudflare e QA; login real do proprietário na Loja A observado.
+Cadastro/publicação de orçamento, conciliação OFX/CSV e transferência positiva pendentes.
+
 ## Incremento 29 — consulta filtrada Master com MFA (2026-10-10)
 
 Diretório de clientes Master permite buscar no servidor por nome, número, cidade, contato, status comercial e plano, limitado/paginado, com gate MASTER/AAL2 no PostgreSQL. Migração DEV #52, SQL com rollback `DEV_MASTER_TENANT_SEARCH_ROLLBACK_PASS`. A tela não transfere todo cadastro para filtragem no navegador. Campo de plano ainda é busca textual; select de planos e paridade completa do piloto pendentes. Etapa 2 ainda em progresso.

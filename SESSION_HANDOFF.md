@@ -1,3 +1,15 @@
+## Retomada auditada — 2026-10-14
+
+Base `210a039b`, branch `feat/v35-dev-gate-20261002`, PR draft #4 confirmado.
+Auditoria, evidências, seis lotes e 21 telas em `docs/V35_VERTICAL_DELIVERIES.md`.
+Lote 0: orçamento consultivo com execução visual, validação de duplicatas/moeda/
+centavos e Wrangler 4.151.0. 217 testes/tipos/build, 12 guardas DEV, preservação,
+regressões financeiras e novo SQL de orçamento A/B PASS. SQL revertido; 52 migrations,
+sem DDL novo. OAuth Cloudflare solicitado para preview; login Loja A observado.
+Sem merge/PROD. Etapa 2 não encerrada. Próximo: publicar/homologar o lote 0, antes
+de avançar demais lotes. Cadastro/publicação de orçamento e conciliação permanecem
+pendentes; transferência positiva exige duas contas legitimamente mapeadas.
+
 ## Incremento 29 — busca filtrada de clientes Master, 2026-10-10
 
 - Migração DEV #52 `20261010224802_master_tenant_search_filters` aplicada, SQL e SHA256 no manifesto. Nova RPC `search_platform_master_tenants(search,status,plan,limit,offset)` exige MASTER/MFA AAL2 no PostgreSQL, retorna o mesmo contrato de `list_platform_master_tenants`, pagina 1–50 linhas e até offset 20.000. A busca ocorre no banco por nome, número, cidade e contatos do cadastro comercial, não revela e-mail/telefone no resultado; status `active`/`past_due` e plano por nome/código. `anon` sem EXECUTE.

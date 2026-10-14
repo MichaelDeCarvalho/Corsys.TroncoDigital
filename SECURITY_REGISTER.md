@@ -1,5 +1,21 @@
 # SECURITY REGISTER
 
+## Retomada — 2026-10-14
+
+- Dependências (E2): audit inicial 3 high em Wrangler → Miniflare → sharp,
+  GHSA-wq5f-xc86-pv6w. Atualização fixa Wrangler 4.151.0 removeu os avisos no audit.
+  Não foi demonstrada exploração no aplicativo; ferramenta de desenvolvimento.
+- Integridade de orçamento (E3, testes): bloqueadas duplicatas, moeda não BRL e
+  inconsistência de centavo; nenhuma mudança de banco/permite escrita. Regressões
+  frontend e SQL A/B com ROLLBACK positivas/negativas aprovadas no escopo declarado.
+- RLS/views/grants: catálogo existente executado sem exceção; não equivale a
+  autorização integral por HTTP/JWT. Novos fluxos A/B/MFA/concorrência em navegador
+  e paridade desktop/mobile ainda não homologados nesta retomada.
+- Rollback do incremento: reverter arquivos de UI/loader e ferramenta ao commit
+  anterior, avaliando reintrodução do advisory; sem rollback de banco ou ledger.
+- Ver `docs/V35_VERTICAL_DELIVERIES.md`. Nenhuma garantia de segurança absoluta,
+  merge, produção ou novo provedor/custo autorizado por este registro.
+
 ## Incremento 29 — filtros privados de clientes SaaS (2026-10-10)
 
 A pesquisa do diretório Master pode consultar dados comerciais e contatos de clientes, exigindo `private.require_platform_staff('MASTER')` (AAL2) na RPC `search_platform_master_tenants` antes das junções. Serviço usa search_path vazio, apenas EXECUTE authenticated, caps de tamanho de filtros (100 chars), status enum e paginação (até 50 linhas). Texto literal é comparado por `position(lower(...))`, não interpolado em SQL dinâmico ou convertido em wildcard `LIKE`; evita ampliação acidental por `%`/`_`. Os contatos podem ser critérios de busca mas não são expostos no retorno; não há dados financeiros dos integrantes. SQL `DEV_MASTER_TENANT_SEARCH_ROLLBACK_PASS` verificou Master AAL2, AAL1 negado, tenant AAL2 negado, anon negado e paginação. Tokens JWT reais em HTTP e volume massivo não avaliados; sem produção.
