@@ -35,6 +35,15 @@ antes e passaram após correção. Não é apenas teste de chamada do mock.
 `VITE_DEV_QA_ENABLED=true` e Supabase DEV exato. Build normal não inclui essa página.
 Runtime verifica hostname DEV, flag e identidade esperada; esses gates limitam a
 ferramenta de teste, não substituem autorização/RLS do banco. Sem novos grants.
+Hostnames aceitos: Worker DEV exato ou sua Version URL com prefixo hexadecimal
+de oito caracteres. Três testes dos gates incluem recusa de alvo/hostname/flag
+incorretos. A configuração de build também recusou alvo fora do DEV.
+
+Outra publicação (`bb8d6c3b`, 02:43 UTC) substituiu a versão `31831e03` publicada
+por esta sessão às 02:41 UTC e removeu a entrada QA. Usar upload de versão sem
+trocar tráfego, evitando disputar o endpoint principal. Version URL exige login
+normal na nova origem; não transportar credenciais entre origens. Referência:
+[Version URLs](https://developers.cloudflare.com/workers/versions-and-deployments/version-urls/).
 
 Usa o cliente Supabase padrão da aplicação e getUser; não lê/exibe/exporta JWT,
 senha ou armazenamento de sessão. Não contém login próprio. Testes acionados por

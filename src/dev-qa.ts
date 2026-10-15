@@ -1,7 +1,6 @@
 import {getSupabaseClient} from './lib/supabase'
-import {assertQADenied as denied,assertQARows as rows,assertQAUUID as uuid,assertQAOneWinner as winner} from './lib/dev-qa-gates'
-const target='https://szqkdekwhzxsoxorgvaz.supabase.co'
-if(import.meta.env.VITE_DEV_QA_ENABLED!=='true'||import.meta.env.VITE_SUPABASE_URL!==target||location.hostname!=='corsys-tronco-digital-dev.corsys1.workers.dev')throw Error('DEV QA target denied')
+import {assertQADenied as denied,assertQARows as rows,assertQAUUID as uuid,assertQAOneWinner as winner,assertQABrowserTarget} from './lib/dev-qa-gates'
+assertQABrowserTarget(import.meta.env.VITE_DEV_QA_ENABLED,import.meta.env.VITE_SUPABASE_URL,location.hostname)
 const c=getSupabaseClient()
 const fixtures=[
  {label:'A',actor:'a752dda8-4ef0-4c58-9d3b-b8fee14ec624',org:'68ca5c28-b1bd-4d42-b758-f80b4b31a97f',source:'d6e9a3e6-cacf-491f-b2fa-55f7ab54028f',destination:'92d120d5-0f45-47f1-8cee-c06ea6925e15',original:'f2d9a9c9-e2c4-4ff3-9589-93f91fdde05b',budget:'ce7f052b-2f0b-4db0-9ff7-e29d44f0b195'},
