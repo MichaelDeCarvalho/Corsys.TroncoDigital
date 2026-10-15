@@ -25,8 +25,12 @@
 - Contagens preservadas: 17 cobranças e 16 pagamentos. Novos testes SQL permanecem
   revertidos; somente o orçamento fictício da jornada browser foi persistido.
 
-Sessão real B para o novo fluxo solicitada ao proprietário; API cross-tenant com
-JWTs assinados A/B e concorrência independente ainda não comprovadas. Não converter
+Sessão real B no Edge concluiu criar rascunho, salvar R$250 em setembro/2026 e
+publicar com confirmação. Controles de edição desapareceram. Seletor B mostrou
+somente seu ciclo; o ciclo A não apareceu. Read-back confirmou ciclo B
+`73d7be4f-bfc2-474c-a7ea-26320fb5b3a5` publicado no tenant B. Ambos os ciclos
+fictícios publicados ficam preservados no DEV, sem movimentação financeira.
+API cross-tenant com JWTs assinados A/B e concorrência independente ainda não comprovadas. Não converter
 o gate SQL A/B ou as negativas anon em aceite desses cenários.
 
 ## Entrega de 2026-10-14 Brasil

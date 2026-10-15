@@ -5,7 +5,9 @@ DEV23727d71-ec86-4fc1-8650-346264573d9f. Bundle remoto igual ao local por SHA256
 Browser A percorreu draft/linha/remoção/reinclusão/publicação/consulta; Edge1440/390
 conferido, quatro negativas HTTP anon PASS. Ciclo fictício publicado
 ce7f052b-2f0b-4db0-9ff7-e29d44f0b195 fica preservado; 17 cobranças/16 pagamentos.
-LoginB solicitado para novo gate; negativos HTTP cross-tenant com JWT real e corrida
+Sessão B no Edge passou: draft/linha R$250/publicação imutável; seletor sem ciclo A.
+Ciclo B 73d7be4f-bfc2-474c-a7ea-26320fb5b3a5 preservado como evidência DEV.
+Negativos HTTP cross-tenant com JWT real e corrida
 independente continuam pendentes. Não avançar classificando esses limites como PASS.
 
 Nova migration #53 `20261015001840_tenant_budget_lifecycle` aplicada DEV e hash no

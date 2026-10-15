@@ -6,7 +6,8 @@ Publicação concluída: versão DEV `23727d71` do commit `0a3ed4e`, hash do bun
 conferido e CI #274 success. Jornada autenticada A draft → linha → remoção/reinclusão
 → publicação imutável → realizado passou. Edge 1440/390 verificado; quatro negativas
 HTTP anon PASS. Orçamento fictício `DEV QA ORCAMENTO 0a3ed4e` permanece publicado
-no DEV como evidência, sem ledger alterado. Sessão B/HTTP cross-tenant e concorrência
+no DEV como evidência, sem ledger alterado. Sessão B também criou linha e publicou
+seu próprio ciclo, sem visualizar o ciclo A. HTTP cross-tenant e concorrência
 independente do novo fluxo pendentes; não é encerramento da Etapa 2.
 
 Financeiro > Planejar orçamento implementa criar draft, editar/remover linhas e
