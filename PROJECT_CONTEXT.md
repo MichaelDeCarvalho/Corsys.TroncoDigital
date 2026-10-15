@@ -1,5 +1,16 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Conciliação DEV — 2026-10-14
+
+Migration #54 aplicada: staging/validação, vínculo manual e desfazimento auditável,
+sem ledger. Interface OFX/CSV implementada; 239 testes/tipos/build e SQL A/B com
+rollback PASS. Transferência/estorno positivos e ambas as pontas conciliadas passaram
+em Lojas descartáveis revertidas. Não equivale a jornada browser de transferência.
+Dois extratos de concorrência B persistidos com aprovação específica. Tentativa
+via conector foi sequencial; não alegar concorrência real. Teste HTTP pronto,
+credenciais locais A/B pendentes. Ver docs/V35_BANK_RECONCILIATION.md e ADR-0027.
+Publicação e homologação browser deste incremento ainda devem ser registradas.
+
 ## Orçamento operacional DEV — 2026-10-14
 
 Publicação concluída: versão DEV `23727d71` do commit `0a3ed4e`, hash do bundle

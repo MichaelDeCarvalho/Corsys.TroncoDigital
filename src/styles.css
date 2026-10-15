@@ -164,3 +164,6 @@ p { line-height: 1.6; }
  .mobile-nav.has-master { padding-inline: 4px; }
  .mobile-nav.has-master button { min-width: 0; font-size: .61rem; padding-inline: 2px; }
 }
+.bank-reconciliation fieldset { min-width: 0; border: 1px solid var(--line); border-radius: 12px; padding: 18px; margin: 18px 0; }
+.bank-reconciliation select { max-width: 100%; }
+.bank-reconciliation p { overflow-wrap: anywhere; }

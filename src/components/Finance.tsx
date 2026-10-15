@@ -14,13 +14,14 @@ import { AccountTransfers } from './AccountTransfers'
 import { DailyCashFlow } from './DailyCashFlow'
 import { BudgetReport } from './BudgetReport'
 import { BudgetManagement } from './BudgetManagement'
+import { BankReconciliation } from './BankReconciliation'
 import { DelinquencyReport } from './DelinquencyReport'
 import { FinanceIntegrityError, financeSources, formatDate, formatMoney, loadFinancePage, type FinanceKind, type FinanceRow } from '../lib/finance-data'
 
 const statusLabels: Record<string, string> = { open: 'Em aberto', paid: 'Liquidada', partially_paid: 'Parcialmente liquidada', cancelled: 'Cancelada', posted: 'Contabilizada', approved: 'Aprovada', pending: 'Pendente', missing_request: 'Aprovação não solicitada', not_required: 'Dispensada', rejected: 'Rejeitada' }
 
 export function Finance({ client, organizationId }: { client: SupabaseClient; organizationId: string }) {
-  const [kind, setKind] = useState<FinanceKind | 'memberPayments' | 'dre' | 'institutional' | 'approvals' | 'monthly' | 'manual' | 'periods' | 'treasury' | 'budget' | 'budgetManagement' | 'delinquency' | 'approvalPolicies' | 'transfers' | 'cashflow'>('charges')
+  const [kind, setKind] = useState<FinanceKind | 'memberPayments' | 'dre' | 'institutional' | 'approvals' | 'monthly' | 'manual' | 'periods' | 'treasury' | 'budget' | 'budgetManagement' | 'delinquency' | 'approvalPolicies' | 'transfers' | 'cashflow' | 'reconciliation'>('charges')
   return <>
     <div className="finance-sections" role="group" aria-label="Consultas financeiras">
       {(Object.keys(financeSources) as FinanceKind[]).map(id => <button className="secondary" key={id} aria-pressed={kind === id} onClick={() => setKind(id)}>{financeSources[id].label}</button>)}
@@ -34,6 +35,7 @@ export function Finance({ client, organizationId }: { client: SupabaseClient; or
       <button className="secondary" aria-pressed={kind === 'periods'} onClick={() => setKind('periods')}>Fechamento mensal</button>
       <button className="secondary" aria-pressed={kind === 'treasury'} onClick={() => setKind('treasury')}>Caixa e bancos</button>
       <button className="secondary" aria-pressed={kind === 'transfers'} onClick={() => setKind('transfers')}>Transferências</button>
+      <button className="secondary" aria-pressed={kind === 'reconciliation'} onClick={() => setKind('reconciliation')}>Conciliação bancária</button>
       <button className="secondary" aria-pressed={kind === 'cashflow'} onClick={() => setKind('cashflow')}>Fluxo de caixa</button>
       <button className="secondary" aria-pressed={kind === 'budget'} onClick={() => setKind('budget')}>Orçado × realizado</button>
       <button className="secondary" aria-pressed={kind === 'budgetManagement'} onClick={() => setKind('budgetManagement')}>Planejar orçamento</button>
@@ -60,6 +62,8 @@ export function Finance({ client, organizationId }: { client: SupabaseClient; or
       ? <TreasuryBalances key={organizationId} client={client} organizationId={organizationId} />
       : kind === 'transfers'
       ? <AccountTransfers key={organizationId} client={client} organizationId={organizationId} />
+      : kind === 'reconciliation'
+      ? <BankReconciliation key={organizationId} client={client} organizationId={organizationId} />
       : kind === 'cashflow'
       ? <DailyCashFlow key={organizationId} client={client} organizationId={organizationId} />
       : kind === 'budget'

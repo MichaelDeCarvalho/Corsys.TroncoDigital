@@ -1,5 +1,15 @@
 # CURRENT ARCHITECTURE
 
+## Conciliação bancária DEV — 2026-10-14
+
+BankReconciliation → parser local UTF-8 OFX/CSV → stage_tenant_bank_statement →
+validate_tenant_bank_statement → match_tenant_bank_statement / reverse_tenant_bank_match.
+Migration #54 reutiliza tabelas/RLS e triggers históricos; quatro comandos exigem
+reconciliation.manage e usam replay/auditoria existentes. Ordem de lock: import,
+linha, fato. Limite de transferência é separado por conta bancária. Nenhuma nova
+tabela ou escrita de ledger. Consultas incompletas recusadas; arquivo bruto não
+é enviado. ADR-0027 e relatório descrevem formatos, limites e evidências.
+
 ## Ciclo de orçamento por Loja — 2026-10-14
 
 `BudgetManagement` → create_tenant_budget_draft / read_tenant_budget_detail /

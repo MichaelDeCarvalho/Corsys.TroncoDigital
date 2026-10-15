@@ -442,6 +442,15 @@
       "sha256": "d94277df8a5c7ba0b2cf5e54885f60cbb5e78e310069b5479ecbbf31ccd5e508",
       "applied_at": "2026-10-14",
       "note": "DEV budget draft, line mutation, reviewed publication, strict replay, tenant permission and immutable published history. SQL rollback gate PASS."
+    },
+    {
+      "version": "20261015003945",
+      "name": "tenant_bank_reconciliation",
+      "path": "supabase/migrations/20261015003945_tenant_bank_reconciliation.sql",
+      "source_path": "supabase/migrations/20261015003945_tenant_bank_reconciliation.sql",
+      "sha256": "81bdc16a8b930ab49fcb8ea3afb139fee431f7b1e6e96ef217eb6b8399b46797",
+      "applied_at": "2026-10-14",
+      "note": "DEV statement staging, validation, matching and append-only undo; independent transfer bank legs. SQL rollback A/B and positive transfer gates PASS."
     }
   ],
   "baseline_patches": {

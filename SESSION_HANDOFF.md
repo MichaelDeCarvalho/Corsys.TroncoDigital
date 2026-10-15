@@ -1,5 +1,12 @@
 ## Orçamento operacional DEV — 2026-10-14
 
+Retomada seguinte: conciliação implementada, migration #54 aplicada DEV,
+239 testes/tipos/build e 12 guardas locais PASS. SQL A/B e transferência positiva
+com estorno/duas pontas conciliadas PASS, tudo rollback. Dois extratos B autorizados
+ficam persistidos para disputa; primeira tentativa via conector sem sobreposição,
+vínculo desfeito. HTTP real aguarda .env.dev local A/B (não pedir secrets no chat).
+Ver docs/V35_BANK_RECONCILIATION.md; publicar/homologar incremento antes de avançar.
+
 Atualização de publicação: commit funcional 0a3ed4e, CI38659598745 success, versão
 DEV23727d71-ec86-4fc1-8650-346264573d9f. Bundle remoto igual ao local por SHA256.
 Browser A percorreu draft/linha/remoção/reinclusão/publicação/consulta; Edge1440/390

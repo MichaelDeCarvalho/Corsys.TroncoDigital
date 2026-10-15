@@ -1,5 +1,20 @@
 # SECURITY REGISTER
 
+## Conciliação DEV — 2026-10-14
+
+Quatro RPCs definer intencionais, search_path vazio, require_permission antes de
+consulta, PUBLIC/anon sem EXECUTE. Sem grants de escrita/RLS novos. Ownership,
+limites monetários, validação explícita e serialização dos vínculos server-side.
+OFX sem DTD/entidades e CSV com parsing estrito; arquivo bruto não persistido.
+Hash informado pelo cliente é deduplicador, não assinatura/autenticidade bancária.
+SQL A/B rollback PASS; HTTP JWT A/B e concorrência real ainda não avaliados.
+Advisors mantêm as categorias funções definer autenticadas, RLS backend sem policy e
+proteção contra senha vazada. Não há scanner limpo. Referências de remediação:
+[definer](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable),
+[RLS](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy),
+[senhas](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
+Escopo/evidências/limites em docs/V35_BANK_RECONCILIATION.md; nenhuma garantia global.
+
 ## Orçamento draft/publicação DEV — 2026-10-14
 
 Quatro novas RPCs definer intencionais com search_path vazio e require_permission
