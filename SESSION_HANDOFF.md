@@ -9,6 +9,9 @@ Preflight scripts/prepare_dev_financial_browser_qa.sql passou com rollback; COMM
 bloqueado pelo auto-review por autorização anterior restrita a QA INTERFACE.
 Precisa aprovação específica das novas QA FINANCE A/B e login no novo preview;
 não gravar por outro caminho. Plano imutável original e fixtures antigas intactos.
+Commit funcional 991ae9c enviado; versão isolada a782b50f publicada sem trocar
+tráfego, assets HTML/JS/CSS iguais ao build. Alias v35-finance-corsys-tronco-digital-dev.corsys1.workers.dev
+aberto no Edge 1875274749 para login A. CI #284/run38676894646 inicialmente em curso.
 Ver docs/V35_STAGE_2_IMPLEMENTATION.md para escopo e próximos gates. Sem PROD/merge.
 
 ## Homologação A/B encerrada no escopo — 2026-10-15

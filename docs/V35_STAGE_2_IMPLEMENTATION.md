@@ -36,6 +36,18 @@ aceite do preview. Nenhuma regra financeira alterada.
 
 ### Próxima validação concreta
 
+Correção publicada em versão DEV `a782b50f-be91-4faa-948d-31010f9b3e66`, commit
+`991ae9c`, sem alteração de tráfego. URL fixa
+https://a782b50f-corsys-tronco-digital-dev.corsys1.workers.dev/ ; alias estável
+https://v35-finance-corsys-tronco-digital-dev.corsys1.workers.dev/ aberto no Edge
+na tela de login. Login normal A necessário nessa origem, sem transferir tokens.
+HTML/JS/CSS remotos iguais aos arquivos locais (HTTP 200 e comparação byte a byte).
+JS index-Dede1ZMg.js SHA256
+`a507797616384927dacd922975bfcc4dbaba1c8dde680d5a645323275ee5347e`;
+CSS index-o9vIR7UR.css SHA256
+`c8a2f3b3c17dbc5a939d391a9b1f7fb1d8218a36b112c7db46860d01e31fa7bf`.
+Upload observado não equivale à jornada autenticada homologada.
+
 Não há regra recorrente persistida em A/B. As Lojas QA INTERFACE existentes têm
 plano publicado somente patrimonial; não adicionar categorias a plano imutável.
 Proposta em scripts/prepare_dev_financial_browser_qa.sql: duas novas Lojas isoladas
