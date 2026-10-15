@@ -125,3 +125,14 @@ mapeamento em plano sucessor legítimo, sem alterar planos publicados ou desabil
 triggers. Orçamento consultivo existe; cadastro/publicação e conciliação OFX/CSV
 não têm fluxo frontend operacional completo. Próximo passo é publicar/homologar
 lote 0, fechar dependências do lote 1 e avançar jornadas 2/3. Não declarar Etapa 2 concluída.
+# Atualização de aceite — 2026-10-14
+
+Orçamento operacional e conciliação passaram a ter implementação vertical DEV;
+ver V35_BUDGET_LIFECYCLE.md e V35_BANK_RECONCILIATION.md para evidências atuais.
+Conciliação: migration #54, 239 testes, CI #278 success, preview publicado e QA
+desktop/mobile. Transferência/estorno positivos em fixture isolada rollback;
+duas abas B disputaram um pagamento com apenas um vínculo aceito, depois desfeito.
+HTTP cruzado A/B completo e concorrência de transferências seguem não avaliados;
+transferência positiva na UI A/B precisa de segunda conta válida. Etapa 2 aberta.
+As seções anteriores registram a auditoria histórica, não substituem esses
+relatórios de aceite incremental. Nenhum PROD/merge.

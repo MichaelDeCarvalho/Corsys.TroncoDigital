@@ -9,7 +9,10 @@ em Lojas descartáveis revertidas. Não equivale a jornada browser de transferê
 Dois extratos de concorrência B persistidos com aprovação específica. Tentativa
 via conector foi sequencial; não alegar concorrência real. Teste HTTP pronto,
 credenciais locais A/B pendentes. Ver docs/V35_BANK_RECONCILIATION.md e ADR-0027.
-Publicação e homologação browser deste incremento ainda devem ser registradas.
+Atualização: publicado DEV `485cc0a0`/commit `19c9c32`, hashes remotos conferidos.
+Edge B em duas abas: um vínculo aceito e outro rejeitado; único ativo conferido e
+desfeito pela tela. QA 1440/390 após correção mobile PASS. HTTP anon quatro PASS.
+Proprietário optou por sessões browser; HTTP A/B completo continua não avaliado.
 
 ## Orçamento operacional DEV — 2026-10-14
 

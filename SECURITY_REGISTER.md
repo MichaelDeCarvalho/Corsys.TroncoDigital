@@ -7,7 +7,11 @@ consulta, PUBLIC/anon sem EXECUTE. Sem grants de escrita/RLS novos. Ownership,
 limites monetários, validação explícita e serialização dos vínculos server-side.
 OFX sem DTD/entidades e CSV com parsing estrito; arquivo bruto não persistido.
 Hash informado pelo cliente é deduplicador, não assinatura/autenticidade bancária.
-SQL A/B rollback PASS; HTTP JWT A/B e concorrência real ainda não avaliados.
+SQL A/B rollback PASS, incluindo VIEWER nas quatro RPCs e suspensão. HTTP anon
+quatro PASS. Sessão B real em duas abas: um vínculo aceito, outro recusado, único
+ativo conferido e desfeito. Não prova intervalos de locks ou stress concorrente.
+HTTP JWT cruzado A/B e replay simultâneo com mesma chave ainda não avaliados;
+proprietário optou por seguir com sessões do navegador, sem credenciais locais.
 Advisors mantêm as categorias funções definer autenticadas, RLS backend sem policy e
 proteção contra senha vazada. Não há scanner limpo. Referências de remediação:
 [definer](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable),

@@ -5,7 +5,12 @@ Retomada seguinte: conciliação implementada, migration #54 aplicada DEV,
 com estorno/duas pontas conciliadas PASS, tudo rollback. Dois extratos B autorizados
 ficam persistidos para disputa; primeira tentativa via conector sem sobreposição,
 vínculo desfeito. HTTP real aguarda .env.dev local A/B (não pedir secrets no chat).
-Ver docs/V35_BANK_RECONCILIATION.md; publicar/homologar incremento antes de avançar.
+Atualização posterior: DEV `485cc0a0`, `19c9c32` publicado e assets iguais ao build.
+Browser B duas abas: único aceite de R$100, concorrente rejeitado, desfazimento pela
+tela e zero vínculos ativos conferidos. Prévia CSV local e QA desktop/mobile PASS
+após correção de overflow. Quatro negativas HTTP anon PASS. VIEWER/suspensão SQL PASS.
+Proprietário prefere browser, sem .env.dev; registrar HTTP A/B completo não avaliado,
+sem pedir credenciais novamente. Ver docs/V35_BANK_RECONCILIATION.md antes de avançar.
 
 Atualização de publicação: commit funcional 0a3ed4e, CI38659598745 success, versão
 DEV23727d71-ec86-4fc1-8650-346264573d9f. Bundle remoto igual ao local por SHA256.
