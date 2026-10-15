@@ -1,5 +1,13 @@
 ## Orçamento operacional DEV — 2026-10-14
 
+Atualização de publicação: commit funcional 0a3ed4e, CI38659598745 success, versão
+DEV23727d71-ec86-4fc1-8650-346264573d9f. Bundle remoto igual ao local por SHA256.
+Browser A percorreu draft/linha/remoção/reinclusão/publicação/consulta; Edge1440/390
+conferido, quatro negativas HTTP anon PASS. Ciclo fictício publicado
+ce7f052b-2f0b-4db0-9ff7-e29d44f0b195 fica preservado; 17 cobranças/16 pagamentos.
+LoginB solicitado para novo gate; negativos HTTP cross-tenant com JWT real e corrida
+independente continuam pendentes. Não avançar classificando esses limites como PASS.
+
 Nova migration #53 `20261015001840_tenant_budget_lifecycle` aplicada DEV e hash no
 manifesto. BudgetManagement em Financeiro > Planejar orçamento: draft/linhas/revisão/
 publicação, com RPCs autenticadas e idempotentes e histórico imutável. ADR-0006 e

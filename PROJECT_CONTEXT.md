@@ -2,12 +2,19 @@
 
 ## Orçamento operacional DEV — 2026-10-14
 
+Publicação concluída: versão DEV `23727d71` do commit `0a3ed4e`, hash do bundle
+conferido e CI #274 success. Jornada autenticada A draft → linha → remoção/reinclusão
+→ publicação imutável → realizado passou. Edge 1440/390 verificado; quatro negativas
+HTTP anon PASS. Orçamento fictício `DEV QA ORCAMENTO 0a3ed4e` permanece publicado
+no DEV como evidência, sem ledger alterado. Sessão B/HTTP cross-tenant e concorrência
+independente do novo fluxo pendentes; não é encerramento da Etapa 2.
+
 Financeiro > Planejar orçamento implementa criar draft, editar/remover linhas e
 publicar conteúdo revisado com confirmação. Migration #53 aplicada somente DEV;
 RPCs budgets.manage/finance.read, auditoria, idempotência, lock/revisão otimista e
 imutabilidade publicada. Sem alterar ledger/RLS/grants diretos. 224 testes/tipos/build
 e gate SQL A/B com rollback PASS. Ver `docs/V35_BUDGET_LIFECYCLE.md` e ADR-0006.
-Novo frontend ainda aguarda registro de publicação/QA real; não encerrar Etapa 2.
+Publicação/QA real têm escopo e limites registrados no relatório; não encerrar Etapa 2.
 
 ## Retomada auditada — 2026-10-14
 
