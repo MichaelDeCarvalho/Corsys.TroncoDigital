@@ -11,10 +11,10 @@ branch `feat/v35-dev-gate-20261002`, PR draft #4; 54 migrations DEV.
 | Orçamento | Draft/linhas/publicação/consulta; jornadas UI A/B e execução acima de 100% | Matriz completa de papéis e integração visual integral |
 | Transferências | Duas contas mapeadas por Loja QA autorizada; UI A/B com estorno; HTTP replay/disputa de saldo A/B; DRE preservada | Demais papéis, período fechado/suspensão sob HTTP e paridade integral |
 | Conciliação | OFX A/CSV B persistidos, validados, conciliados/desfeitos pela UI; replay/disputa HTTP B | Demais papéis, formatos adicionais e paridade integral |
-| Recorrência mensal | Prévia/geração e regras históricas; testes SQL rollback e componentes | Jornada autenticada completa; recorrências especiais/anuais/institucionais do inventário |
-| Cobranças/pagamentos | Avulsa/cancelamento, registro/alocação/estorno; testes SQL rollback e componentes | Jornada autenticada integrada, negociação/parcelamento/eventos previstos |
-| Obrigações/aprovações | Cadastro/liquidação/correção/cancelamento, política e decisão | Multiaprovador, histórico completo e jornada autenticada integrada |
-| Fechamento | Eventos de fechamento/reabertura e testes SQL rollback | Bloqueio de comandos e recuperação, papéis e suspensão na jornada integrada |
+| Recorrência mensal | Prévia/geração e regras históricas; testes SQL rollback e componentes | Mensal A/B autenticada concluída; faltam recorrências especiais/anuais/institucionais do inventário |
+| Cobranças/pagamentos | Avulsa/cancelamento, registro/alocação/estorno; testes SQL rollback e componentes | Jornada básica A/B concluída; faltam negociação/parcelamento/eventos previstos |
+| Obrigações/aprovações | Cadastro/liquidação/correção/cancelamento, política e decisão | Criação/correção/cancelamento A/B concluídos; faltam estorno institucional, multiaprovador e histórico completo |
+| Fechamento | Eventos de fechamento/reabertura e testes SQL rollback | Bloqueio de avulsa e reabertura A/B concluídos; faltam demais comandos/papéis/suspensão em HTTP |
 | 21 telas | Componentes parciais e sequência de seis lotes abaixo | Aceite campo/ação a campo/ação, responsividade e visual do HTML original |
 
 Evidência atual das três primeiras frentes: [QA assinado](V35_SIGNED_BROWSER_QA.md),

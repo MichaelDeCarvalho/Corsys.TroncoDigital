@@ -1,5 +1,18 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Estado vigente — 2026-10-15 — QA FINANCE A/B
+
+Jornadas autorizadas A e B concluídas no preview v35-finance/c7008f47: mensalidade
+com prevenção de nova emissão, pagamento/alocação/estorno, cancelamentos,
+correção de despesa/receita e fechamento/bloqueio/reabertura. Read-back UI A/B:
+origem R$10, destino sem movimentos, DRE outubro2026/março2027 zerada. Não repetir
+seed nem solicitar login B. Detalhes e IDs no handoff e relatório da Etapa 2.
+252 testes/tipos/build PASS, CI #286 success; auditoria de dependências zero.
+Nenhuma liquidação institucional criada. Próximo: estorno institucional conforme
+plano específico, ainda sem implementação/migration. Integração administrativa
+continua sem permissão no DEV correto; leitura SQL atual não foi validada.
+Sem merge/produção. Etapa 2 e 21 telas não concluídas.
+
 ## Fixtures autorizadas e jornada A — 2026-10-15
 
 QA FINANCE A/B aprovadas e persistidas; aprovação anterior bloqueada está resolvida.

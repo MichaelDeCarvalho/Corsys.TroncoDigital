@@ -1,3 +1,29 @@
+## Estado vigente — jornadas financeiras A/B concluídas — 2026-10-15
+
+Este bloco substitui as pendências de login/jornada B nos registros anteriores.
+DEV B permanece no Edge 1875274749, alias v35-finance. NÃO repetir seed nem A/B.
+QA FINANCE B 7a6aa771-524d-4d5a-9d38-7006175e1cb4 concluiu pela interface:
+- mensal março/2027 R$1, batch 0bd3365f-daeb-429f-bae5-85c30aa006c7;
+  nova prévia zero novas/uma existente e sem botão de emissão;
+- pagamento R$1 em 02/03/2027 (prefixo 84ad3760), alocação integral e estorno;
+  crédito/alocação zerados, mensalidade reaberta e depois cancelada;
+- avulsa outubro R$1 criada/cancelada; outubro fechado, nova avulsa rejeitada
+  pelo servidor e competência reaberta;
+- despesa e receita R$1 corrigidas para R$0,50/vencimento21/10 e canceladas;
+- origem R$10, destino sem movimentos; DRE outubro2026/março2027 receitas,
+  despesas e resultado R$0. Última leitura DRE e Loja selecionada reconferidas.
+A concluiu o mesmo escopo. Nenhuma liquidação institucional executada.
+Build funcional 37879f6, preview c7008f47, 252 testes/tipos/build PASS e CI #286
+success; auditoria de dependências retornou zero vulnerabilidades. Evidência de
+UI não substitui read-back SQL atual, nem comprova toda a Etapa 2/21 telas.
+Próximo bloqueio: estorno institucional requer confirmar catálogo real, migration
+mínima, testes SQL e UI. Contrato/aceite em docs/V35_INSTITUTIONAL_REVERSAL_PLAN.md.
+CLI local migration new falhou ao gravar telemetria fora do workspace; não criou
+arquivo. Nenhuma nova migration, comando de estorno ou interface foi implementada.
+Consulta administrativa read-only ao DEV continua negada pela integração mesmo
+após reconexões. Não contornar acesso, liquidar sem estorno validado ou publicar
+recurso incompleto. Projeto DEV exato szqkdekwhzxsoxorgvaz. Sem merge/produção.
+
 ## Retomada após aprovação das fixtures — 2026-10-15
 
 Proprietário aprovou explicitamente QA FINANCE A/B, saldo inicial R$10 e operações

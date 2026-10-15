@@ -1,3 +1,21 @@
+## Marco vigente — jornadas QA FINANCE A/B — 2026-10-15
+
+A pendência de login/jornada B dos blocos anteriores foi concluída na versão DEV
+c7008f47 (commit funcional37879f6). B gerou mensalidade março/2027 R$1, confirmou
+prévia sem nova emissão, recebeu/alocou/estornou R$1, cancelou mensalidade e avulsa,
+fechou outubro, confirmou rejeição de nova avulsa e reabriu. Batch B
+`0bd3365f-daeb-429f-bae5-85c30aa006c7`, pagamento prefixo `84ad3760`.
+Despesa/receita B criadas R$1, corrigidas R$0,50/vencimento21/10 e canceladas.
+Read-back UI final A e B: origem R$10, destino sem movimentos, cobranças e
+obrigações de teste canceladas, pagamento de teste estornado; DRE outubro/2026
+e março/2027 com receitas/despesas/resultado R$0. Histórico mantido conforme
+aprovação. Não repetir fixtures ou pagamentos. Nenhuma liquidação institucional.
+252 testes/tipos/build e CI #286 PASS; npm audit retornou zero vulnerabilidades
+em dependências, sem equivaler a garantia de segurança da aplicação.
+Read-back administrativo atual NÃO AVALIADO: consulta direta ao DEV negada.
+Próxima entrega e critérios: [estorno institucional](V35_INSTITUTIONAL_REVERSAL_PLAN.md).
+Ainda não implementada/aplicada; Etapa 2, aprovações ampliadas e 21 telas abertas.
+
 ## Aprovação e jornada financeira A — 2026-10-15
 
 Conclusão adicional observada: despesa e receita de R$1 criadas, corrigidas para
