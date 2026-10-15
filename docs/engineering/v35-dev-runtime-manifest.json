@@ -433,6 +433,15 @@
       "sha256": "202ba7a91f0e19643f24f216e7f18590be3f132b4f40b3fb506f5c5b6114b6ed",
       "applied_at": "2026-10-10",
       "note": "MASTER/AAL2-only server-side directory search for name/number/city/contact, subscription status and plan with pagination."
+    },
+    {
+      "version": "20261015001840",
+      "name": "tenant_budget_lifecycle",
+      "path": "supabase/migrations/20261015001840_tenant_budget_lifecycle.sql",
+      "source_path": "supabase/migrations/20261015001840_tenant_budget_lifecycle.sql",
+      "sha256": "d94277df8a5c7ba0b2cf5e54885f60cbb5e78e310069b5479ecbbf31ccd5e508",
+      "applied_at": "2026-10-14",
+      "note": "DEV budget draft, line mutation, reviewed publication, strict replay, tenant permission and immutable published history. SQL rollback gate PASS."
     }
   ],
   "baseline_patches": {

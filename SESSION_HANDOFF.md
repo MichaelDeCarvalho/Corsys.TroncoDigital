@@ -1,3 +1,13 @@
+## Orçamento operacional DEV — 2026-10-14
+
+Nova migration #53 `20261015001840_tenant_budget_lifecycle` aplicada DEV e hash no
+manifesto. BudgetManagement em Financeiro > Planejar orçamento: draft/linhas/revisão/
+publicação, com RPCs autenticadas e idempotentes e histórico imutável. ADR-0006 e
+docs/V35_BUDGET_LIFECYCLE.md registram segurança, testes e recuperação. 224 testes,
+tipos/build, SQL lifecycle A/B rollback, regressões e preservação PASS. Sem ledger,
+RLS, grants diretos, produção ou merge. Próximo: publicar/homologar esta jornada
+no preview com registro de versão/SHA, antes de avançar outra entrega funcional.
+
 ## Retomada auditada — 2026-10-14
 
 QA positivo posterior: proprietário aprovou fixture orçamentária temporária. Teste

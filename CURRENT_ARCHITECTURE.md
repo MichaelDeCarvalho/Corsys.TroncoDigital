@@ -1,5 +1,16 @@
 # CURRENT ARCHITECTURE
 
+## Ciclo de orçamento por Loja — 2026-10-14
+
+`BudgetManagement` → create_tenant_budget_draft / read_tenant_budget_detail /
+set_tenant_budget_line / publish_tenant_budget (migration #53). Escrita exige
+budgets.manage, leitura finance.read, server-side. Cada comando de edição/publicação
+serializa pela linha budget_cycles e compara fingerprint do snapshot revisado;
+replay usa idempotency_begin/complete e audit_logs existentes. Publicação revalida
+fontes sob SHARE e aproveita triggers de imutabilidade histórica. Não adiciona
+escrita direta, RLS, tabela ou cálculo de realizado. Orçamento × realizado continua
+nas views existentes. Detalhes e recuperação em ADR-0006 e V35_BUDGET_LIFECYCLE.md.
+
 ## Consulta orçamentária — 2026-10-14
 
 `BudgetReport` mantém views `security_invoker` e escopo Loja/ciclo/competência.

@@ -1,5 +1,14 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Orçamento operacional DEV — 2026-10-14
+
+Financeiro > Planejar orçamento implementa criar draft, editar/remover linhas e
+publicar conteúdo revisado com confirmação. Migration #53 aplicada somente DEV;
+RPCs budgets.manage/finance.read, auditoria, idempotência, lock/revisão otimista e
+imutabilidade publicada. Sem alterar ledger/RLS/grants diretos. 224 testes/tipos/build
+e gate SQL A/B com rollback PASS. Ver `docs/V35_BUDGET_LIFECYCLE.md` e ADR-0006.
+Novo frontend ainda aguarda registro de publicação/QA real; não encerrar Etapa 2.
+
 ## Retomada auditada — 2026-10-14
 
 QA positivo autenticado de orçamento concluído após aprovação específica: preview

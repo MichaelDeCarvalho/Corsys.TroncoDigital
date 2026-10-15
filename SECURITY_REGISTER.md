@@ -1,5 +1,22 @@
 # SECURITY REGISTER
 
+## Orçamento draft/publicação DEV — 2026-10-14
+
+Quatro novas RPCs definer intencionais com search_path vazio e require_permission
+antes de consulta: três budgets.manage e leitura finance.read. Helper privado sem
+EXECUTE de cliente; anon sem execução pública. Sem alteração de RLS/grants de tabela.
+Idempotência estrita, lock/revisão otimista, validação monetária e de escopo,
+publicação revalida fontes e preserva triggers históricos. SQL A/B com ROLLBACK e
+224 testes frontend PASS no escopo documentado em V35_BUDGET_LIFECYCLE.md.
+
+Advisors: 82 definer autenticadas, três backend RLS sem policy e aviso preexistente
+de senha vazada. Referências de remediação: https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable ,
+https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy ,
+https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection .
+Não reduzir autorização para silenciar scanner. Concurrency HTTP, matriz completa
+por papel, QA desktop/mobile e segurança global ainda não aprovados. Recuperação:
+UI anterior/revogar EXECUTE de escrita, preservando dados; forward-fix aditivo.
+
 ## Retomada — 2026-10-14
 
 - Dependências (E2): audit inicial 3 high em Wrangler → Miniflare → sharp,
