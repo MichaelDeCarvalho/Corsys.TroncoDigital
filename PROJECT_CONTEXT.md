@@ -6,7 +6,8 @@ QA FINANCE A/B aprovadas e persistidas; aprovação anterior bloqueada está res
 IDs e roteiro em V35_STAGE_2_IMPLEMENTATION.md. Sessão A no alias v35-finance passou
 mensalidade R$1, nova emissão bloqueada, pagamento/alocação/estorno, cancelamento
 mensal/avulso e fechamento/bloqueio/reabertura de outubro. Despesa criada/corrigida/
-cancelada pela UI, receita em validação. Nova proteção de integridade de leituras
+cancelada pela UI, assim como receita corrigida/cancelada. Caixa final R$10 e DRE
+outubro2026/março2027 zerada; login B solicitado para a mesma jornada. Nova proteção de integridade de leituras
 institucionais: regressões falharam antes/passaram após; 252 testes/tipos/build PASS.
 Supabase administrativo perdeu acesso; reconexões declaradas pelo proprietário
 ainda não liberaram consulta direta no projeto correto. Não pedir aprovação das

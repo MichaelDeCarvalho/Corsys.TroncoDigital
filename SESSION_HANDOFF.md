@@ -11,6 +11,19 @@ b598d5dd, alocado integralmente; estorno confirmado, crédito zero e cobrança a
 novamente. Cobrança mensal cancelada; avulsa R$1 outubro criada/cancelada. Outubro
 fechado, tentativa de avulsa bloqueada, competência reaberta. Tudo observado UI.
 Despesa R$1 criada, corrigida para R$0,50 e cancelamento enviado; conferir conclusão.
+Atualização: cancelamento da despesa confirmado; receita também criada R$1,
+corrigida R$0,50/vencimento21/10 e cancelada/zero aberto. Outubro reaberto.
+Correção loader passou 252 testes/tipos/build/preservação; commit37879f6 enviado,
+versãoDEVc7008f47 no mesmo alias, assets iguais ao build. Reload mantém sessão A;
+conferir nova leitura institucional e saldos antes de pedir troca para B.
+Conferido no novo build: despesa/receita canceladas/zero aberto sem erro; origem
+R$10, destino sem movimentos; DRE outubro2026 e março2027 toda zerada. Mobile390
+document/client375, override restaurado. CI #286/run38811322401 success.
+Solicitado login B na mesma aba/alias; não repetir A. Próximo B: selecionar
+DEV QA FINANCE B 20261015, gerar mensal março2027R$1, conferir nova emissão negada,
+registrar R$1/alocar/estornar, cancelar mensalidade, avulsaR$1/cancelar, despesa e
+receitaR$1/corrigirR$0,50/cancelar, fechamento outubro/bloqueio/reabrir e saldos/DRE.
+Cada operação atéR$1 autorizada. Não estornar pagamento inicial deR$10.
 Sem pagamento institucional criado. Não liquidar antes de implementar/validar
 estorno institucional: nenhum comando correspondente localizado no código versionado.
 SQL administrativo voltou sem permissão; usuário reconectou duas vezes, mas a

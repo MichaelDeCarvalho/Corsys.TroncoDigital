@@ -1,5 +1,25 @@
 ## Aprovação e jornada financeira A — 2026-10-15
 
+Conclusão adicional observada: despesa e receita de R$1 criadas, corrigidas para
+R$0,50/vencimento 21/10/2026 e canceladas, ambas zero aberto. Nenhuma liquidação
+institucional executada. Outubro/2026 terminou reaberto. Correção do loader:
+252 testes em 39 arquivos, tipos/build e preservação PASS; sem nova migration.
+Commit funcional `37879f6`, versão isolada `c7008f47-1160-4b23-8d02-a157d27c069a`,
+mesmo alias estável v35-finance, sem alterar tráfego principal. HTML/JS/CSS HTTP200
+e iguais ao build; JS index-COCphutR.js SHA256
+`330dc5a8deb9cc7818cf68a02c879432a5a2165ce051678c730447c8a964c6f9`.
+Não inferir aceite integral: jornada B, liquidação/estorno institucional,
+aprovações e read-back administrativo atual permanecem pendentes.
+
+Read-back pela UI no build novo COCphutR: despesa/receita canceladas e zero aberto,
+sem erro de leitura; ambas cobranças canceladas; Caixa e bancos mostra origem
+R$10 e destino sem movimentos. DRE consultada 2026-10 a 2027-03: outubro e março
+com receitas/despesas/resultado R$0, incluindo linhas de contas zeradas. Competência
+outubro reaberta. Mobile390x844: largura documento/client375, sem overflow global,
+menu móvel observado e override restaurado; não é paridade visual integral V35.
+CI funcional `38811322401` #286 completed success. Próximo: login B solicitado na
+mesma origem para repetir jornada na QA FINANCE B. Não repetir seed nem operações A.
+
 Proprietário aprovou a proposta abaixo, incluindo operações fictícias até R$1.
 Fixtures persistidas uma vez: QA FINANCE A `94b84958-4dd9-435d-9a4e-244220835d70`,
 QA FINANCE B `7a6aa771-524d-4d5a-9d38-7006175e1cb4`. Não são as QA INTERFACE.
