@@ -7,7 +7,11 @@ estrangeiros recusados; conta estrangeira em transferência 23503 e organizaçã
 estrangeira 42501. Replay concorrente de transferência e conciliação retornou
 mesmo UUID; disputa entre chaves teve um vencedor/23514; saldo e vínculos restaurados.
 SELECT vazio de tabela que já é vazia no tenant remoto não constitui prova isolada
-de RLS. Direção A→B depende de login A; não declarar matriz inteira aprovada.
+de RLS. Direção A→B executada em 2026-10-15: leitura própria positiva, escopo/IDs
+estrangeiros negados e cinco SELECTs estrangeiros ocultos PASS. Replay e disputa
+de transferências A também PASS, com estornos/10/0/DRE preservados. Read-back
+conjunto confirmou zero transferências sem estorno e zero valor conciliado ativo.
+Não declarar matriz inteira de papéis nem testes de carga aprovados.
 Hostname QA aceita apenas Worker DEV exato ou prefixo de versão hexadecimal de oito
 caracteres desse mesmo Worker. CI #281 success. Nenhuma nova migration/grant/RLS.
 

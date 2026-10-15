@@ -87,6 +87,28 @@ aceitos como prova de isolamento. Fixtures com saldo inesperado falham fechado.
   valor ativo conciliado nos extratos de disputa. Nenhuma fatura SaaS nas Lojas QA.
 - CI do commit `23906b6`: execução `38673128298` #281 completed success.
 
-Jornada A e read-back final devem ser acrescentados após
-observação. Testes de carga, intervalos internos dos locks e toda matriz de papéis
-não são cobertos por estas jornadas funcionais.
+## Fechamento A e read-back conjunto — 2026-10-15
+
+- Sessão real A confirmada no Edge, seletor exibindo somente original A e QA A.
+- UI A: transferência `0ba7ff08-f218-4594-9707-0c836c945554`, R$1,
+  confirmação visível e saldos 9/1; estorno confirmado e saldos 10/0 restaurados.
+- OFX A completo pela interface: prévia de uma linha R$10 → staged → VALIDAR →
+  vínculo com pagamento sintético `22adbd88-f517-4c1b-9680-37662e940056` →
+  reconciled → DESFAZER → validated, zero conciliado. Import
+  `46d1bd1b-ac7b-421e-afc3-dfc0c8b199f8`, SHA256
+  `0dbc55a253c19027493c7ebaa525728c5687f41612bef78d3f083fdc92e5a9a7`.
+  Vínculo `f4f147d2-ae7d-472f-b46a-2e87397f61f8` preservado com reversão.
+- HTTP A→B: cinco leituras estrangeiras ocultas, leitura própria positiva e RPCs
+  com escopo/IDs estrangeiros recusadas. Resultado PASS observado na página QA.
+- HTTP concorrente A: mesmo UUID no replay simultâneo, divergência 22023;
+  disputa R$9/R$9 sobre R$10 com um vencedor e um 23514, saldo 1/9;
+  estornos restauraram 10/0 e DRE vazia. Resultado PASS observado.
+- Read-back SQL independente conjunto: A e B com saldos 10/0, zero transferências
+  sem estorno, zero valor conciliado nos imports QA e nos dois extratos originais
+  de disputa; ambos imports QA validated; zero faturas SaaS QA. Lojas originais
+  continuam com 17 cobranças e 16 pagamentos.
+
+Estas jornadas concluem o escopo funcional solicitado de transferência A/B,
+CSV/OFX persistidos e testes HTTP cruzados/concorrentes descritos acima. Não
+encerram a Etapa 2 inteira nem a implementação das 21 telas. Testes de carga,
+intervalos internos dos locks e toda matriz de papéis não são cobertos.

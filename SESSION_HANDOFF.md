@@ -1,4 +1,18 @@
-## Orçamento operacional DEV — 2026-10-14
+## Homologação A/B encerrada no escopo — 2026-10-15
+
+Sessão A real na versão isolada 962f7b1b concluiu transferência R$1/estorno UI,
+OFX persistido/validado/conciliado/desfeito e HTTP isolamento A→B/replay/disputa.
+Todos PASS observados. B já havia concluído CSV/UI/HTTP e concorrência bancária.
+Read-back conjunto confirmou A/B 10/0, zero transferências sem estorno, zero valor
+conciliado ativo nas fixtures e zero faturas SaaS QA; originais 17 cobranças/16
+pagamentos. IDs/SHA e limitações em docs/V35_SIGNED_BROWSER_QA.md.
+Não repetir jornadas nem pedir login A novamente. Sem nova migration, publicação,
+merge ou produção nesta conclusão. Próximo: revisar pendências da Etapa 2 e lotes
+em docs/V35_VERTICAL_DELIVERIES.md; não tratar 21 telas como concluídas.
+Se precisar publicar DEV, preservar a versão isolada e coordenar o outro publicador
+que altera o endpoint principal. Manter históricos fictícios identificados.
+
+## Histórico — Orçamento operacional DEV — 2026-10-14
 
 Mais recente: versão isolada `962f7b1b-1652-4ae5-86d3-4e53f4cbe7ae`, commit
 `23906b6` (CI #281 success), URL no V35_SIGNED_BROWSER_QA.md. Publicada por

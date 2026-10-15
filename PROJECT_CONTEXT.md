@@ -9,8 +9,11 @@ de transferências; conciliação passou replay simultâneo e disputa de capacid
 Read-back: saldo QA B 10/0, zero transferências ativas, zero vínculo ativo nas
 fixtures de disputa, zero faturas SaaS QA; originais 17 cobranças/16 pagamentos.
 Versão fixa de homologação `962f7b1b`, sem trocar tráfego do endpoint principal
-após detectar publicação concorrente. CI #281 success. Login A solicitado na
-mesma versão para encerrar direção A→B e jornada OFX; não presumir esse aceite.
+após detectar publicação concorrente. CI #281 success. Em 2026-10-15, sessão A
+concluiu transferência/estorno UI, OFX persistido completo e HTTP A→B/replay/disputa
+de saldo, todos PASS observados. Read-back conjunto: A/B 10/0, zero transferências
+sem estorno e valores conciliados ativos, zero faturas QA, originais 17/16.
+Este escopo está homologado; Etapa 2 completa e 21 telas continuam abertas.
 
 Duas Lojas QA isoladas A/B persistidas após aprovação específica, cada uma com
 duas contas mapeadas e R$10 fictícios; originais intactas. Transferência B revelou
