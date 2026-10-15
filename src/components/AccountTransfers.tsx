@@ -6,7 +6,7 @@ import {normalizedAmount} from '../lib/member-configuration'
 import {formatMoney,formatDate} from '../lib/finance-data'
 type Account=TreasuryAccount&{balance:number|null}
 type Command={name:'register_tenant_account_transfer_idempotent'|'reverse_tenant_account_transfer_idempotent';args:Record<string,unknown>}
-const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i
+const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i
 export function AccountTransfers({client,organizationId}:{client:SupabaseClient;organizationId:string}){
  const [accounts,setAccounts]=useState<Account[]|null>(null)
  const [transfers,setTransfers]=useState<{rows:AccountTransfer[];reversals:AccountTransferReversal[];hasNext:boolean}|null>(null)
@@ -18,7 +18,7 @@ export function AccountTransfers({client,organizationId}:{client:SupabaseClient;
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false}},[])
  useEffect(()=>{
   let live=true;const controller=new AbortController()
-  setAccounts(null);setTransfers(null);setError('');setSuccess('');setSelected('')
+  setAccounts(null);setTransfers(null);setSelected('')
   loadTreasuryAccounts(client,organizationId,controller.signal)
    .then(value=>{if(live)setAccounts(value)})
    .catch(()=>{if(live)setError('Não foi possível validar as contas e os saldos desta Loja.')})

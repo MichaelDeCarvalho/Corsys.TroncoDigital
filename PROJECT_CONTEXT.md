@@ -1,5 +1,14 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Fechamento de jornadas DEV — 2026-10-14
+
+Duas Lojas QA isoladas A/B persistidas após aprovação específica, cada uma com
+duas contas mapeadas e R$10 fictícios; originais intactas. Transferência B revelou
+regex UUID incorreta no frontend: lançamento real confirmado no banco, feedback
+incerto sem duplicação. Correção mínima e regressões de confirmação preparadas.
+Página QA opcional permite testes HTTP sob sessão browser existente, sem tokens
+no chat/arquivos. Ver docs/V35_SIGNED_BROWSER_QA.md antes de declarar novo aceite.
+
 ## Conciliação DEV — 2026-10-14
 
 Migration #54 aplicada: staging/validação, vínculo manual e desfazimento auditável,

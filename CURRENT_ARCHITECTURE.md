@@ -1,5 +1,13 @@
 # CURRENT ARCHITECTURE
 
+## Homologação assinada opcional — 2026-10-14
+
+Entrada Vite dev-qa.html incluída somente com VITE_DEV_QA_ENABLED=true e projeto
+DEV exato; build normal permanece somente aplicação. Reutiliza cliente/auth SDK
+existentes para gates HTTP sob sessão real, sem extração de credenciais, novos
+grants ou migration. Fixtures QA isoladas autorizadas por proprietário; não muda
+planos publicados das Lojas originais. Ver docs/V35_SIGNED_BROWSER_QA.md.
+
 ## Conciliação bancária DEV — 2026-10-14
 
 BankReconciliation → parser local UTF-8 OFX/CSV → stage_tenant_bank_statement →

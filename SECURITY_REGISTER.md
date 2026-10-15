@@ -1,5 +1,15 @@
 # SECURITY REGISTER
 
+## Ferramenta QA DEV — 2026-10-14
+
+Entrada opcional de build restrita ao projeto/hostname DEV e identidades de teste;
+SDK auth padrão, sem extração/log de JWT, senha ou armazenamento. Não adiciona
+privilégios nem política/RPC; autorização continua no servidor. Rotinas operam em
+fixtures isoladas autorizadas e preservam originais. Cleanup registra estornos;
+falha de rede permanece falha, nunca PASS. Ausência da página no build padrão deve
+ser conferida. Defeito de confirmação UUID em transferências corrigido com testes
+que falharam antes do ajuste. Detalhes em docs/V35_SIGNED_BROWSER_QA.md.
+
 ## Conciliação DEV — 2026-10-14
 
 Quatro RPCs definer intencionais, search_path vazio, require_permission antes de

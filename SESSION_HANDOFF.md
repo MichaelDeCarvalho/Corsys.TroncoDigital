@@ -1,5 +1,14 @@
 ## Orçamento operacional DEV — 2026-10-14
 
+Retomada seguinte: proprietário autorizou duas Lojas QA isoladas A/B (IDs no novo
+V35_SIGNED_BROWSER_QA.md), cada uma com duas contas e R$10 sintéticos. Seed
+preflight rollback e persistência passaram, sem alterações originais. B UI criou
+transferência 1f124bed-e806-433f-97e8-45f86ea18027; UUID regex frontend defeituosa
+gerou resultado incerto, retry não duplicou. Correção/testes preparados. Estornar
+esse registro pela UI após publicar correção, antes de gate de saldo 10/0.
+Página dev-qa.html opcional para testar RPC HTTP com sessões existentes sem
+extrair JWT. Publicar somente DEV e observar resultados; não presumir testes PASS.
+
 Retomada seguinte: conciliação implementada, migration #54 aplicada DEV,
 239 testes/tipos/build e 12 guardas locais PASS. SQL A/B e transferência positiva
 com estorno/duas pontas conciliadas PASS, tudo rollback. Dois extratos B autorizados

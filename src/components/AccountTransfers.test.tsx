@@ -59,6 +59,8 @@ describe('Account transfer and reversal',()=>{
    p_reason:'Redistribuição interna',p_idempotency_key:expect.any(String),
   }))
   expect(rpc).toHaveBeenCalledTimes(1)
+  await screen.findByText('Transferência contabilizada entre contas da Loja.')
+  expect(screen.queryByRole('button',{name:'Verificar envio'})).not.toBeInTheDocument()
   expect(screen.getByText(/sem gerar receita ou despesa na DRE/)).toBeInTheDocument()
  })
  it('blocks an insufficient source balance in the browser and never invokes RPC',async()=>{
@@ -84,6 +86,7 @@ describe('Account transfer and reversal',()=>{
    p_organization_id:org,p_transfer_id:transferId,p_reversal_date:'2026-10-10',
    p_reason:'Correção autorizada',p_idempotency_key:expect.any(String),
   }))
+  await screen.findByText('Estorno contabilizado como evento independente.')
  })
  it('does not offer reversal of an already reversed transfer',async()=>{
   const {client,rpc}=fixture(true,true)
