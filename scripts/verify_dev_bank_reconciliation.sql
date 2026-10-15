@@ -42,6 +42,26 @@ begin
    perform public.validate_tenant_bank_statement(case when t.org='f2d9a9c9-e2c4-4ff3-9589-93f91fdde05b' then 'b112d600-bf1a-4bfd-bc1c-e9e9b749b539'::uuid else 'f2d9a9c9-e2c4-4ff3-9589-93f91fdde05b'::uuid end,v_import,'Foreign tenant test',gen_random_uuid()::text);
    raise exception 'foreign tenant allowed';exception when insufficient_privilege then null;end;
   execute 'reset role';
+  update public.user_roles set role_id=(select id from public.roles where organization_id=t.org and code='VIEWER')
+   where organization_id=t.org and user_id=t.actor;
+  execute 'set local role authenticated';
+  begin perform public.stage_tenant_bank_statement(t.org,p.financial_account_id,'viewer.csv',v_hash,v_lines,'VIEWER denied',gen_random_uuid()::text);
+   raise exception 'viewer stage allowed';exception when insufficient_privilege then null;end;
+  begin perform public.validate_tenant_bank_statement(t.org,v_import,'VIEWER denied',gen_random_uuid()::text);
+   raise exception 'viewer validation allowed';exception when insufficient_privilege then null;end;
+  begin perform public.match_tenant_bank_statement(t.org,v_line,'member_payment',p.id,1,'VIEWER denied',gen_random_uuid()::text);
+   raise exception 'viewer match allowed';exception when insufficient_privilege then null;end;
+  begin perform public.reverse_tenant_bank_match(t.org,v_match,'VIEWER denied',gen_random_uuid()::text);
+   raise exception 'viewer reversal allowed';exception when insufficient_privilege then null;end;
+  execute 'reset role';
+  update public.user_roles set role_id=(select id from public.roles where organization_id=t.org and code='ADMIN')
+   where organization_id=t.org and user_id=t.actor;
+  update public.saas_subscriptions set status='suspended' where organization_id=t.org;
+  execute 'set local role authenticated';
+  begin perform public.validate_tenant_bank_statement(t.org,v_import,'Suspended denied',gen_random_uuid()::text);
+   raise exception 'suspended validation allowed';exception when insufficient_privilege then null;end;
+  execute 'reset role';
+  update public.saas_subscriptions set status='active' where organization_id=t.org;
  end loop;
  if (select count(*) from public.payments)<>v_payments then raise exception 'ledger changed';end if;
  if (select count(*) from public.bank_statement_imports)<>v_imports+2 then raise exception 'unexpected imports';end if;
