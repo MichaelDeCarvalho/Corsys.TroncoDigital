@@ -1,4 +1,43 @@
-## Retomada financeira — 2026-10-15
+## Aprovação e jornada financeira A — 2026-10-15
+
+Proprietário aprovou a proposta abaixo, incluindo operações fictícias até R$1.
+Fixtures persistidas uma vez: QA FINANCE A `94b84958-4dd9-435d-9a4e-244220835d70`,
+QA FINANCE B `7a6aa771-524d-4d5a-9d38-7006175e1cb4`. Não são as QA INTERFACE.
+Cada uma tem um integrante, duas contas mapeadas, três categorias, plano próprio
+2026–2027, pagamento inicial fictício R$10 e regra mensal R$1. Sem usuário/e-mail
+novo ou provedor externo. Aprovação resolveu bloqueio anterior; não pedir de novo.
+
+A: integrante `d5842ad6-913d-4a3e-8250-876fb2e2a215`, regra
+`6d9b6897-0f5f-45b8-b82a-88a53cf02577`, origem
+`b6116441-5a43-4661-8d5b-1a844c48f6b5`, destino
+`6af9f28f-b43d-4a4a-9c14-d6357bfa9c90`.
+B: integrante `23bdcd76-b7a2-47b5-9f65-267d4c1053be`, regra
+`a7e86c73-df13-4b93-a9ee-403ae35b1321`, origem
+`27f1f82c-5487-41f3-b269-7abc692a4bca`, destino
+`5f2e0f57-15bf-4cc5-a7ea-1272dd97dbe3`.
+
+Jornada A no Edge/preview a782b50f: regra selecionada, prévia de março/2027 com
+um elegível/uma cobrança; atualização e nova prévia utilizáveis, geração confirmada
+batch `997f14d1-535f-47c2-8922-d0b88059da3a`; nova prévia mostra zero novas/uma já
+gerada e botão de confirmação ausente. Isso não reproduz artificialmente latência;
+o caso de resposta obsoleta permanece comprovado pelo teste React, não por throttling.
+Recebimento R$1 de 02/03/2027, ID prefixo b598d5dd, alocado na mensalidade;
+sem crédito restante e cobrança quitada na consulta. Estorno posterior pela UI:
+pagamento Estornado/zero alocado/zero disponível, mensalidade reaberta. Mensalidade
+cancelada e avulsa R$1 de outubro criada/cancelada, ambas zero aberto. Fechamento
+outubro confirmado; nova avulsa negada pelo servidor; reabertura confirmada.
+Sem read-back administrativo novo: integração Supabase perdeu acesso; após duas
+reconexões declaradas pelo proprietário, consulta direta ao DEV segue sem permissão.
+Evidências atuais desta jornada são da UI real; não declarar auditoria SQL completa.
+
+Revisão do loader institucional reproduziu quatro lacunas em respostas malformadas:
+duplicata, divergência de um centavo, cancelado com aberto e status de aprovação
+desconhecido. Quatro regressões falharam antes/passaram após correção. Loader agora
+confere identidades únicas e saldos em centavos inteiros, além da autorização/RLS
+que permanecem no servidor. Casos de recebível e cancelamento parcial válido
+adicionais passam. Nenhuma escrita, grant, RPC ou migration alterada por esse ajuste.
+
+## Histórico — Retomada financeira — 2026-10-15
 
 Passo 1 concluído: estado vigente consolidado em V35_VERTICAL_DELIVERIES.md e
 referenciado na matriz de paridade. Etapa 2 permanece aberta; estados históricos

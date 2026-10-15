@@ -49,16 +49,24 @@ export async function loadInstitutionalObligations(client:SupabaseClient,org:str
   .order('due_date',{ascending:false}).limit(151).abortSignal(signal)
  const rows=tenantScoped(result,org) as InstitutionalObligation[]
  if(rows.length>150)throw Error('Institutional obligation list truncated')
+ const ids=new Set<string>()
+ const cents=(value:string|number)=>{
+  const [units,fraction='']=exactPaymentAmount(value).split('.')
+  return Number(units)*100+Number(fraction.padEnd(2,'0'))
+ }
  for(const r of rows){
   const id=kind==='payable'?r.payable_id:r.receivable_id
   if(!id||r.integrity_ok!==true||typeof r.is_canceled!=='boolean'||typeof r.description!=='string'
     ||typeof r.category_id!=='string'||(r.fund_id!==null&&typeof r.fund_id!=='string')||
    typeof r.counterparty_name!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(r.due_date)||
    !/^\d{4}-\d{2}-01$/.test(r.competence))throw Error('Invalid institutional obligation record')
-  const open=Number(exactPaymentAmount(r.open_amount))
-  const amount=Number(exactPaymentAmount(r.effective_amount))
-  const allocated=Number(exactPaymentAmount(r.allocated_amount))
-  if(allocated>amount||open>amount)throw Error('Institutional obligation financial amount mismatch')
+  if(ids.has(id))throw Error('Duplicate institutional obligation')
+  ids.add(id)
+  if(kind==='payable'&&!['not_required','missing_request','pending','approved','rejected'].includes(r.approval_status??''))
+   throw Error('Invalid institutional approval status')
+  const open=cents(r.open_amount),amount=cents(r.effective_amount),allocated=cents(r.allocated_amount)
+  if(allocated>amount||open!==(r.is_canceled?0:amount-allocated))
+   throw Error('Institutional obligation financial amount mismatch')
  }
  return rows
 }

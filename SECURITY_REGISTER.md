@@ -1,5 +1,18 @@
 # SECURITY REGISTER
 
+## Integridade da leitura institucional — 2026-10-15
+
+Loader institucional aceitava IDs duplicados, divergência de um centavo entre
+valor/alocado/aberto, cancelamento com saldo aberto e status de aprovação fora do
+contrato da view. Quatro regressões de componente reproduziram o problema antes
+do ajuste. Agora bloqueia formulários nesses casos; cálculo em centavos inteiros
+e IDs únicos. Recebíveis e cancelamento parcial consistente também testados.
+252 testes/tipos/build PASS. Defesa do consumidor de dados; não é vulnerabilidade
+de autorização demonstrada e não substitui RLS/validação dos comandos no servidor.
+Nenhuma migration/grant/RPC alterada. Jornada QA A preserva fatos com estornos/
+cancelamentos; read-back SQL administrativo atual indisponível por permissão da
+integração. Não confundir resultados da UI com auditoria administrativa executada.
+
 ## Regressão financeira de estados — 2026-10-15
 
 Matriz SQL de 60 negações esperadas A/B: VIEWER e assinatura suspensa bloqueiam

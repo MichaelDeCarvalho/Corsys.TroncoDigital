@@ -233,4 +233,32 @@ describe('Institutional treasury operations',()=>{
   const {client}=fixture({invalid:true})
   await expect(loadInstitutionalObligations(client,'org','payable',new AbortController().signal)).rejects.toThrow()
  })
+ it.each(['duplicate','open-total','canceled-open','approval-status'])('blocks operations on an invalid %s response',async defect=>{
+  const {client,rows,rpc}=fixture()
+  const row=rows.v_institutional_payable_effective[0] as Record<string,unknown>
+  if(defect==='duplicate')rows.v_institutional_payable_effective.push({...row})
+  if(defect==='open-total')row.open_amount='149.99'
+  if(defect==='canceled-open')row.is_canceled=true
+  if(defect==='approval-status')row.approval_status='unknown'
+  render(<InstitutionalOperations client={client} organizationId="org"/>)
+  await screen.findByText('Não foi possível consultar o financeiro institucional de forma íntegra.')
+  expect(screen.queryByRole('form',{name:'Liquidar obrigação institucional'})).not.toBeInTheDocument()
+  expect(rpc).not.toHaveBeenCalled()
+ })
+ it.each(['duplicate','open-total','canceled-open'])('also rejects an invalid receivable %s',async defect=>{
+  const {client,rows}=fixture()
+  const row=rows.v_institutional_receivable_effective[0] as Record<string,unknown>
+  if(defect==='duplicate')rows.v_institutional_receivable_effective.push({...row})
+  if(defect==='open-total')row.open_amount='219.99'
+  if(defect==='canceled-open')row.is_canceled=true
+  await expect(loadInstitutionalObligations(client,'org','receivable',new AbortController().signal)).rejects.toThrow()
+ })
+ it.each([false,true])('accepts consistent partially allocated obligations (canceled=%s)',async canceled=>{
+  const {client,rows}=fixture()
+  const row=rows.v_institutional_payable_effective[0] as Record<string,unknown>
+  row.allocated_amount='49.99';row.open_amount=canceled?'0.00':'100.01';row.is_canceled=canceled
+  row.approval_status='missing_request'
+  const result=await loadInstitutionalObligations(client,'org','payable',new AbortController().signal)
+  expect(result).toHaveLength(1)
+ })
 })

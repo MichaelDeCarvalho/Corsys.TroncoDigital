@@ -1,5 +1,17 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Fixtures autorizadas e jornada A — 2026-10-15
+
+QA FINANCE A/B aprovadas e persistidas; aprovação anterior bloqueada está resolvida.
+IDs e roteiro em V35_STAGE_2_IMPLEMENTATION.md. Sessão A no alias v35-finance passou
+mensalidade R$1, nova emissão bloqueada, pagamento/alocação/estorno, cancelamento
+mensal/avulso e fechamento/bloqueio/reabertura de outubro. Despesa criada/corrigida/
+cancelada pela UI, receita em validação. Nova proteção de integridade de leituras
+institucionais: regressões falharam antes/passaram após; 252 testes/tipos/build PASS.
+Supabase administrativo perdeu acesso; reconexões declaradas pelo proprietário
+ainda não liberaram consulta direta no projeto correto. Não pedir aprovação das
+fixtures novamente nem presumir dados administrativos conferidos após a perda.
+
 ## Continuação autorizada — 2026-10-15
 
 Proprietário autorizou sequência 1–5 sem pausas rotineiras, exceto dependência de

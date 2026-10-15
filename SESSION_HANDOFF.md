@@ -1,4 +1,28 @@
-## Sequência 1–5 autorizada — 2026-10-15
+## Retomada após aprovação das fixtures — 2026-10-15
+
+Proprietário aprovou explicitamente QA FINANCE A/B, saldo inicial R$10 e operações
+fictícias até R$1, com cancelamentos/estornos e histórico preservado. Seed persistido
+uma vez. NÃO repetir. A: 94b84958-4dd9-435d-9a4e-244220835d70;
+B: 7a6aa771-524d-4d5a-9d38-7006175e1cb4. Sessão A ativa no Edge 1875274749,
+alias v35-finance-corsys-tronco-digital-dev.corsys1.workers.dev.
+A UI: prévia/atualização/geração mensal março2027 R$1; nova prévia recusou duplicação;
+batch 997f14d1-535f-47c2-8922-d0b88059da3a. Recebimento R$1 02/03/2027, ID começa
+b598d5dd, alocado integralmente; estorno confirmado, crédito zero e cobrança aberta
+novamente. Cobrança mensal cancelada; avulsa R$1 outubro criada/cancelada. Outubro
+fechado, tentativa de avulsa bloqueada, competência reaberta. Tudo observado UI.
+Despesa R$1 criada, corrigida para R$0,50 e cancelamento enviado; conferir conclusão.
+Sem pagamento institucional criado. Não liquidar antes de implementar/validar
+estorno institucional: nenhum comando correspondente localizado no código versionado.
+SQL administrativo voltou sem permissão; usuário reconectou duas vezes, mas a
+chamada direta ao DEV continua negada. Primeira listagem mostrou conta de Água/
+Catálogo/Distribuição; última reconexão foi declarada TroncoDigital, sem sucesso
+na consulta. Não insistir em credenciais ou trocar projetos. UI normal funciona.
+Correção local adicional em institutional-operations.ts rejeita duplicatas,
+saldos inconsistentes/cancelado com aberto e aprovação desconhecida; quatro
+regressões falharam antes/passaram após. Validação geral em andamento.
+Ver V35_STAGE_2_IMPLEMENTATION.md para histórico. Etapa 2 aberta.
+
+## Histórico — Sequência 1–5 autorizada — 2026-10-15
 
 Passo 1 consolidado em docs/V35_VERTICAL_DELIVERIES.md. Passo 2 em execução:
 oito gates SQL rollback e matriz nova de 60 negações A/B PASS; tipos/build/243
