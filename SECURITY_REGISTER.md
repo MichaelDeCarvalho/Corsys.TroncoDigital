@@ -1,5 +1,16 @@
 # SECURITY REGISTER
 
+## Regressão financeira de estados — 2026-10-15
+
+Matriz SQL de 60 negações esperadas A/B: VIEWER e assinatura suspensa bloqueiam
+12 comandos por identidade; cinco comandos de integrante bloqueados em competência
+fechada e fechamento futuro recusado; leitura preservada e recuperação positiva.
+Claims simuladas/rollback, sem prova HTTP nova. Nenhum grant/RLS/migration alterado.
+Correção UI de prévia mensal pendente não altera autorização nem envio de comandos.
+Preflight de Lojas financeiras isoladas rollback PASS; COMMIT rejeitado pelo
+auto-review por autorização anterior cobrir somente QA INTERFACE. Não persistir
+ou contornar sem aprovação específica. Relatório em V35_STAGE_2_IMPLEMENTATION.md.
+
 ## Ferramenta QA DEV — 2026-10-14
 
 Execução B com sessão assinada real: orçamento próprio positivo; scope e IDs

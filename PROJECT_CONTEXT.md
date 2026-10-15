@@ -1,5 +1,16 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Continuação autorizada — 2026-10-15
+
+Proprietário autorizou sequência 1–5 sem pausas rotineiras, exceto dependência de
+validação humana. Passo 1 consolidado em V35_VERTICAL_DELIVERIES.md. Passo 2:
+oito gates SQL rollback e nova matriz 60 negações A/B PASS; corrigido bloqueio da
+prévia mensal após atualizar regras (teste falhou antes/passou após), 243 testes,
+tipos/build/gramática/preservação/12 guardas PASS. Detalhes e limites atuais em
+V35_STAGE_2_IMPLEMENTATION.md. Nova fixture financeira passou preflight rollback,
+mas persistência bloqueada pela revisão automática por escopo da autorização
+anterior. Aguardar aprovação específica; sem registros novos, sem bypass.
+
 ## Fechamento de jornadas DEV — 2026-10-14
 
 Atualização de execução: B concluiu transferência/estorno pela UI com confirmação

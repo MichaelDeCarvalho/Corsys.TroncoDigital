@@ -1,5 +1,14 @@
 # V35 — escopo mínimo do piloto e matriz de paridade
 
+## Estado operacional vigente — 2026-10-15
+
+Consultar [plano consolidado](V35_VERTICAL_DELIVERIES.md#estado-consolidado-vigente--2026-10-15)
+e [QA assinado A/B](V35_SIGNED_BROWSER_QA.md). Transferência/estorno UI A/B,
+importação normalizada OFX A/CSV B e testes HTTP cruzados/concorrentes descritos
+nesses relatórios foram homologados. As marcações antigas de ausência dessas
+jornadas abaixo são históricas. Não equivalem a aceite integral das telas;
+campos, ações e requisitos do inventário permanecem no escopo.
+
 ## Atualização incremental — filtro de clientes Master (DEV 2026-10-10)
 
 Para `view-master-clientes`, existe agora filtro server-side de nome/número/cidade/contato, situação da assinatura e plano em `MasterConsole`, migração #52 `search_platform_master_tenants`, com autorização MASTER/AAL2, sem carga global no browser. `view-master-clientes-F001` busca parcialmente coberta; `F002` status all/active/past_due implementado; `F003` plano utiliza campo textual em vez de `select` de versões catalogadas, ainda NÃO equivalente ao controle original. Diretório não substitui ações específicas “Novo cliente”, “Cliente 360º”, “Cadastro comercial”, “Plano/preço”, “Tenant + roles”, “Plano contábil inicial”, “Convite/ativação” do piloto; permanecem workflows de homologação separada.

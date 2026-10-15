@@ -1,3 +1,16 @@
+## Sequência 1–5 autorizada — 2026-10-15
+
+Passo 1 consolidado em docs/V35_VERTICAL_DELIVERIES.md. Passo 2 em execução:
+oito gates SQL rollback e matriz nova de 60 negações A/B PASS; tipos/build/243
+testes/gramática/preservação/12 guardas PASS. Corrigido bloqueio permanente após
+Atualizar regras durante prévia mensal lenta; regressão falhou antes/passou após.
+Não repetir todos os testes sem mudança. Não há regra mensal persistida para QA.
+Preflight scripts/prepare_dev_financial_browser_qa.sql passou com rollback; COMMIT
+bloqueado pelo auto-review por autorização anterior restrita a QA INTERFACE.
+Precisa aprovação específica das novas QA FINANCE A/B e login no novo preview;
+não gravar por outro caminho. Plano imutável original e fixtures antigas intactos.
+Ver docs/V35_STAGE_2_IMPLEMENTATION.md para escopo e próximos gates. Sem PROD/merge.
+
 ## Homologação A/B encerrada no escopo — 2026-10-15
 
 Sessão A real na versão isolada 962f7b1b concluiu transferência R$1/estorno UI,

@@ -31,7 +31,7 @@ export function MonthlyChargeGeneration({client,organizationId}:{
  },[client,organizationId,revision])
  function resetPreview(){
   request.current+=1
-  setPreview(null);setBatch('');setError('')
+  setPreviewPending(false);setPreview(null);setBatch('');setError('')
  }
  async function check(){
   if(!rule||!month||uncertain||pending)return

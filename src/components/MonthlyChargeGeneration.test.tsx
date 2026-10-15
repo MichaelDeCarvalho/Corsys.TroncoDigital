@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { vi } from 'vitest'
 import { MonthlyChargeGeneration } from './MonthlyChargeGeneration'
@@ -30,6 +30,22 @@ async function choose(){
  fireEvent.click(screen.getByRole('button',{name:'Verificar prévia'}))
 }
 describe('Monthly member billing',()=>{
+ it('can refresh during a delayed preview and ignores its obsolete response without locking the form',async()=>{
+  const {client,rpc}=fixture()
+  let resolvePreview!:(value:unknown)=>void
+  rpc.mockImplementationOnce(()=>new Promise(resolve=>{resolvePreview=resolve}))
+  render(<MonthlyChargeGeneration client={client} organizationId="org-a"/>)
+  await choose()
+  expect(screen.getByLabelText('Competência para emissão')).toBeDisabled()
+  fireEvent.click(screen.getByRole('button',{name:'Atualizar regras'}))
+  await screen.findByRole('option',{name:'Mensalidade'})
+  await act(async()=>{resolvePreview({data:preview,error:null})})
+  expect(screen.queryByRole('region',{name:'Prévia mensal'})).not.toBeInTheDocument()
+  expect(screen.getByLabelText('Competência para emissão')).toBeEnabled()
+  fireEvent.click(screen.getByRole('button',{name:'Verificar prévia'}))
+  await screen.findByRole('region',{name:'Prévia mensal'})
+  expect(rpc.mock.calls.filter(x=>x[0]==='generate_monthly_member_charges')).toHaveLength(0)
+ })
  it('shows authoritative eligible, exempt and future period quantities without immediately posting',async()=>{
   const {client,rpc}=fixture()
   render(<MonthlyChargeGeneration client={client} organizationId="org-a"/>)

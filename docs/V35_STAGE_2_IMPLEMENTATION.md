@@ -1,4 +1,59 @@
-## Incremento 29 — diretório SaaS pesquisável e paginado, 2026-10-10
+## Retomada financeira — 2026-10-15
+
+Passo 1 concluído: estado vigente consolidado em V35_VERTICAL_DELIVERIES.md e
+referenciado na matriz de paridade. Etapa 2 permanece aberta; estados históricos
+abaixo não substituem V35_SIGNED_BROWSER_QA.md.
+
+### Verificado nesta execução
+
+- Baseline: 242 testes em 39 arquivos PASS. Após correção: 243/39 PASS; tipos/build,
+  gramática SQL, preservação e 12 guardas locais DEV PASS. Bundle padrão >500 kB
+  continua aviso preexistente. Nenhuma migration, grant ou alteração RLS.
+- Oito gates SQL existentes executados novamente, todos rollback PASS: geração
+  mensal; pagamento/alocação/estorno; cancelamento/fechamento/reabertura; correção
+  institucional; cancelamento institucional; decisão de aprovação; ciclo de
+  política; lifecycle com estorno/cancelamento nas duas ordens.
+- Novo scripts/verify_dev_financial_state_matrix.sql: 60 negações esperadas A/B,
+  positivos antes/depois e rollback PASS. Por tenant: cinco comandos de integrante
+  em período fechado, fechamento futuro recusado, 12 comandos negados para VIEWER
+  e os mesmos 12 negados sob suspensão. Leitura própria preservada, alocação após
+  reabertura/restauração confirmada. Claims simuladas, NÃO HTTP/JWT.
+- As primeiras tentativas de fixture falharam por competência futura e mapeamento
+  inexistente; não contam como PASS. Teste usa categoria 2026 para integrantes,
+  categorias 2027 para obrigações e regra futura 2027. Não altera planos publicados.
+  Bloqueio de competência institucional e mensal não integra essas 60 negações.
+- Read-back após rollback: originais 17 cobranças/16 pagamentos; zero novas Lojas
+  financeiras da proposta abaixo.
+
+### Correção de interface reproduzida
+
+MonthlyChargeGeneration: Atualizar regras durante prévia pendente invalidava a
+resposta antiga, mas deixava previewPending ativo para sempre. Reset agora libera
+os controles e mantém a resposta obsoleta descartada. Novo teste falhou antes,
+passou após ajuste, verificando nova prévia utilizável e nenhuma geração automática.
+Homologação browser da nova revisão ainda pendente; não confundir teste React com
+aceite do preview. Nenhuma regra financeira alterada.
+
+### Próxima validação concreta
+
+Não há regra recorrente persistida em A/B. As Lojas QA INTERFACE existentes têm
+plano publicado somente patrimonial; não adicionar categorias a plano imutável.
+Proposta em scripts/prepare_dev_financial_browser_qa.sql: duas novas Lojas isoladas
+DEV QA FINANCE A/B 20261015, com as respectivas identidades DEV existentes, preço
+SaaS zero, duas contas, três categorias mapeadas em plano próprio, um integrante,
+um pagamento inicial fictício de R$10 e regra mensal de R$1 a partir de março/2027.
+Sem novos usuários, e-mails, convites ou provedores externos. Preflight rollback
+PASS, persistência rejeitada pela revisão automática: aprovação anterior limitada
+às Lojas QA INTERFACE. Nenhum registro dessa proposta gravado. Aguardar aprovação
+específica; não contornar. Futuras operações de QA devem ser identificadas,
+canceladas/estornadas ao encerrar, com histórico preservado e controles originais.
+
+Pendências: aprovação das fixtures, login no novo preview e jornada integrada
+autenticada; recorrências especiais/anuais/institucionais, negociação/parcelamento,
+multiaprovadores e requisitos restantes do inventário. Não avançar outro lote
+classificando essas pendências como concluídas.
+
+## Histórico — Incremento 29 — diretório SaaS pesquisável e paginado, 2026-10-10
 
 O `MasterConsole` ganhou formulário de busca por cliente/número/cidade/contato, status de assinatura e plano, com aplicação/limpeza explícitas. A RPC nova `search_platform_master_tenants` (#52) executa filtro no PostgreSQL somente para MASTER com MFA/AAL2, sem exportar todos os clientes para o browser nem expor CPF/contatos no resultado. `loadMasterTenants` continua usando a RPC histórica quando os filtros estão vazios, para manter compatibilidade. Gate `DEV_MASTER_TENANT_SEARCH_ROLLBACK_PASS` cobriu AAL2 válido, negações AAL1/tenant/anon, parâmetros inválidos e paginação, com ROLLBACK. Testes React dos filtros foram adicionados; validar CI de HEAD. Permanece pendente seletor real de planos, navegação direta do Cliente 360° a partir de cada resultado, filtros comerciais adicionais e reprodução fiel da tela V35.
 
