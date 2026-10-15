@@ -58,5 +58,35 @@ nos dois extratos previamente aprovados. Cleanup em finally estorna/desfaz somen
 os IDs retornados pelas próprias chamadas. Erros de transporte/validação não são
 aceitos como prova de isolamento. Fixtures com saldo inesperado falham fechado.
 
-Pendentes de execução browser: jornadas A/B completas, upload persistido e gates
-assinados. Registrar resultados após observação; implementação não equivale a PASS.
+## Resultados observados
+
+- Commit funcional `4ab9db1`: 241 testes, tipos/build PASS; CI `38672271404` #280
+  success. Guard de hostname/versão acrescentou um terceiro teste focal PASS.
+- Versão isolada `962f7b1b-1652-4ae5-86d3-4e53f4cbe7ae`, commit `23906b6`, upload
+  sem trocar tráfego. URL `https://962f7b1b-corsys-tronco-digital-dev.corsys1.workers.dev/`.
+  HTML principal/QA e assets iguais ao build por SHA256. Entrada canônica QA `/dev-qa`.
+- B UI corrigida confirmou transferência `6bcb2d6a-811b-4d5e-8a09-3047e9e4a9f8`
+  de R$1 e estorno. Também estornou o primeiro lançamento. Saldos 10/0 restaurados.
+- B CSV browser completo: `DEV_QA_UPLOAD_B_20261014.csv`, import
+  `e41657b5-6f27-4fc8-a9ce-0b9396d8d82c`, SHA256
+  `67c55cb3bf8577c84d3b6834d4ffb38e9e741f98dee3fc2ebcc5a852aad08fce`.
+  Prévia → staged → VALIDAR → vínculo R$10 → reconciled → DESFAZER, tudo pela tela.
+  Vínculo `9403480b-784c-4f3c-817c-6dd98fc08a79` preservado com reversão; import
+  voltou a validated. Persistência é das linhas normalizadas, não do arquivo bruto.
+- HTTP real B: próprio positivo, orçamento com org/ID estrangeiros negado, conta
+  estrangeira em transferência e tenant estrangeiro negados. SELECTs estrangeiros
+  vazios em cinco tabelas; uma tabela vazia no tenant remoto não prova por si só RLS.
+- HTTP concorrente B: duas chamadas mesma chave retornaram mesmo UUID; payload
+  divergente 22023. Duas chaves de R$9 disputaram R$10: um vencedor e um 23514,
+  saldo intermediário 1/9; estornos restauraram 10/0, DRE permaneceu vazia.
+- Conciliação HTTP B: replay simultâneo mesma chave retornou um único vínculo;
+  disputa de capacidade entre chaves teve um vencedor e um 23514; cleanup deixou
+  zero valor conciliado nos dois extratos originais autorizados. PASS observado
+  na página, seguido de read-back SQL independente.
+- Read-back posterior B: zero transferências sem estorno; saldos 10/0; nenhum
+  valor ativo conciliado nos extratos de disputa. Nenhuma fatura SaaS nas Lojas QA.
+- CI do commit `23906b6`: execução `38673128298` #281 completed success.
+
+Jornada A e read-back final devem ser acrescentados após
+observação. Testes de carga, intervalos internos dos locks e toda matriz de papéis
+não são cobertos por estas jornadas funcionais.

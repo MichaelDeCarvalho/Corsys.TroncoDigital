@@ -2,6 +2,16 @@
 
 ## Fechamento de jornadas DEV — 2026-10-14
 
+Atualização de execução: B concluiu transferência/estorno pela UI com confirmação
+corrigida e CSV persistido completo até conciliar/desfazer. HTTP real B passou
+isolamento por escopo/IDs, replay simultâneo, payload divergente e disputa de saldo
+de transferências; conciliação passou replay simultâneo e disputa de capacidade.
+Read-back: saldo QA B 10/0, zero transferências ativas, zero vínculo ativo nas
+fixtures de disputa, zero faturas SaaS QA; originais 17 cobranças/16 pagamentos.
+Versão fixa de homologação `962f7b1b`, sem trocar tráfego do endpoint principal
+após detectar publicação concorrente. CI #281 success. Login A solicitado na
+mesma versão para encerrar direção A→B e jornada OFX; não presumir esse aceite.
+
 Duas Lojas QA isoladas A/B persistidas após aprovação específica, cada uma com
 duas contas mapeadas e R$10 fictícios; originais intactas. Transferência B revelou
 regex UUID incorreta no frontend: lançamento real confirmado no banco, feedback

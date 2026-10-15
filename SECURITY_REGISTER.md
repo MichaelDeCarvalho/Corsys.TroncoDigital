@@ -2,6 +2,15 @@
 
 ## Ferramenta QA DEV — 2026-10-14
 
+Execução B com sessão assinada real: orçamento próprio positivo; scope e IDs
+estrangeiros recusados; conta estrangeira em transferência 23503 e organização
+estrangeira 42501. Replay concorrente de transferência e conciliação retornou
+mesmo UUID; disputa entre chaves teve um vencedor/23514; saldo e vínculos restaurados.
+SELECT vazio de tabela que já é vazia no tenant remoto não constitui prova isolada
+de RLS. Direção A→B depende de login A; não declarar matriz inteira aprovada.
+Hostname QA aceita apenas Worker DEV exato ou prefixo de versão hexadecimal de oito
+caracteres desse mesmo Worker. CI #281 success. Nenhuma nova migration/grant/RLS.
+
 Entrada opcional de build restrita ao projeto/hostname DEV e identidades de teste;
 SDK auth padrão, sem extração/log de JWT, senha ou armazenamento. Não adiciona
 privilégios nem política/RPC; autorização continua no servidor. Rotinas operam em

@@ -1,5 +1,17 @@
 ## Orçamento operacional DEV — 2026-10-14
 
+Mais recente: versão isolada `962f7b1b-1652-4ae5-86d3-4e53f4cbe7ae`, commit
+`23906b6` (CI #281 success), URL no V35_SIGNED_BROWSER_QA.md. Publicada por
+versions upload sem trocar tráfego; outro publicador substitui o DEV principal.
+B UI/CSV e HTTP isolamento/concorrência de transferências e conciliação PASS.
+Todos vínculos/transferências B desfeitos, saldos 10/0 e originais preservados.
+Proprietário entrou B nessa versão e foi solicitado a trocar para A na aba Edge
+1875274749; aguardar sessão real A. Arquivo OFX de A está em
+.test-tmp/DEV_QA_UPLOAD_A_20261014.ofx, uma linha fictícia R$10 em 2026-10-15.
+Próximo A: selecionar DEV QA INTERFACE A, transferir R$1/estornar na UI, importar
+OFX/validar/conciliar pagamento sintético/desfazer, depois abrir /dev-qa e executar
+isolamento e concorrência de transferências. Não pedir senha/token nem .env.dev.
+
 Retomada seguinte: proprietário autorizou duas Lojas QA isoladas A/B (IDs no novo
 V35_SIGNED_BROWSER_QA.md), cada uma com duas contas e R$10 sintéticos. Seed
 preflight rollback e persistência passaram, sem alterações originais. B UI criou
