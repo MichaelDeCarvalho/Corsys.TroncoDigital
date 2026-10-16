@@ -4,6 +4,7 @@ import { RefreshCw } from 'lucide-react'
 import { MemberPayments } from './MemberPayments'
 import { DreReport } from './DreReport'
 import { InstitutionalOperations } from './InstitutionalOperations'
+import { InstitutionalMonthly } from './InstitutionalMonthly'
 import { PayableApprovals } from './PayableApprovals'
 import { ApprovalPolicies } from './ApprovalPolicies'
 import { MonthlyChargeGeneration } from './MonthlyChargeGeneration'
@@ -21,13 +22,14 @@ import { FinanceIntegrityError, financeSources, formatDate, formatMoney, loadFin
 const statusLabels: Record<string, string> = { open: 'Em aberto', paid: 'Liquidada', partially_paid: 'Parcialmente liquidada', cancelled: 'Cancelada', posted: 'Contabilizada', approved: 'Aprovada', pending: 'Pendente', missing_request: 'Aprovação não solicitada', not_required: 'Dispensada', rejected: 'Rejeitada' }
 
 export function Finance({ client, organizationId }: { client: SupabaseClient; organizationId: string }) {
-  const [kind, setKind] = useState<FinanceKind | 'memberPayments' | 'dre' | 'institutional' | 'approvals' | 'monthly' | 'manual' | 'periods' | 'treasury' | 'budget' | 'budgetManagement' | 'delinquency' | 'approvalPolicies' | 'transfers' | 'cashflow' | 'reconciliation'>('charges')
+  const [kind, setKind] = useState<FinanceKind | 'memberPayments' | 'dre' | 'institutional' | 'institutionalMonthly' | 'approvals' | 'monthly' | 'manual' | 'periods' | 'treasury' | 'budget' | 'budgetManagement' | 'delinquency' | 'approvalPolicies' | 'transfers' | 'cashflow' | 'reconciliation'>('charges')
   return <>
     <div className="finance-sections" role="group" aria-label="Consultas financeiras">
       {(Object.keys(financeSources) as FinanceKind[]).map(id => <button className="secondary" key={id} aria-pressed={kind === id} onClick={() => setKind(id)}>{financeSources[id].label}</button>)}
       <button className="secondary" aria-pressed={kind === 'memberPayments'} onClick={() => setKind('memberPayments')}>Pagamentos de integrantes</button>
       <button className="secondary" aria-pressed={kind === 'dre'} onClick={() => setKind('dre')}>DRE contábil</button>
       <button className="secondary" aria-pressed={kind === 'institutional'} onClick={() => setKind('institutional')}>Operações institucionais</button>
+      <button className="secondary" aria-pressed={kind === 'institutionalMonthly'} onClick={() => setKind('institutionalMonthly')}>Recorrências institucionais</button>
       <button className="secondary" aria-pressed={kind === 'approvals'} onClick={() => setKind('approvals')}>Aprovação de despesas</button>
       <button className="secondary" aria-pressed={kind === 'approvalPolicies'} onClick={() => setKind('approvalPolicies')}>Políticas de aprovação</button>
       <button className="secondary" aria-pressed={kind === 'monthly'} onClick={() => setKind('monthly')}>Gerar mensalidades</button>
@@ -48,6 +50,8 @@ export function Finance({ client, organizationId }: { client: SupabaseClient; or
       ? <DreReport key={organizationId} client={client} organizationId={organizationId} />
       : kind === 'institutional'
       ? <InstitutionalOperations key={organizationId} client={client} organizationId={organizationId} />
+      : kind === 'institutionalMonthly'
+      ? <InstitutionalMonthly key={organizationId} client={client} organizationId={organizationId} />
       : kind === 'approvals'
       ? <PayableApprovals key={organizationId} client={client} organizationId={organizationId} />
       : kind === 'approvalPolicies'

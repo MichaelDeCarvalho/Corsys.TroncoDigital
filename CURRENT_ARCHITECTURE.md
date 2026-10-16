@@ -1,3 +1,14 @@
+## Recorrência institucional mensal — 2026-10-16
+
+InstitutionalMonthly reutiliza regras/versionamento institucionais existentes.
+Migration56 adiciona quatro RPCs de cadastro, situação, prévia e geração.
+Settings.manage controla cadastro/situação; institutional.manage controla emissão,
+com identidade/assinatura aptas. Prévia determinística inclui fingerprint e data
+ajustada ao último dia do mês. Geração trava organização/período/regra, confere
+fingerprint e chave única regra/competência, cria obrigação e aprovação quando
+exigida, sem movimentar caixa. Cancelamento não permite reemissão do mesmo mês.
+Sem novas tabelas ou ampliação de grants/RLS. ADR-0029; somente DEV.
+
 # CURRENT ARCHITECTURE
 
 ## Estorno institucional — 2026-10-15

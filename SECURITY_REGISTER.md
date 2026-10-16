@@ -1,3 +1,15 @@
+## Recorrência mensal institucional — 2026-10-16
+
+Verificado: autorização server-side, idempotência, isolamento por organização,
+prévia obsoleta negada, período fechado negado, geração duplicada negada inclusive
+após cancelamento, ajuste de vencimento e pedido de aprovação exigido pela política.
+Gate SQL A/B (claims simuladas): 4 positivos/56 negativos, rollback integral.
+292 testes/tipos/build PASS. UI e concorrência HTTP desta recorrência ainda não
+homologadas. Estorno institucional anterior: HTTP real A/B e limpeza concluídos.
+Advisor DEV: 3 INFO RLS sem política, 91 WARN execução authenticated de definer
+(4 novas RPCs intencionalmente protegidas por permissão), 1 WARN proteção de senha
+vazada preexistente. Não equivalem a zero riscos; nenhuma configuração Auth alterada.
+
 # SECURITY REGISTER
 
 ## Estorno institucional e acesso restaurado — 2026-10-15

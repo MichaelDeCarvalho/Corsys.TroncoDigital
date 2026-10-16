@@ -1,3 +1,22 @@
+## Recorrência institucional mensal em implementação — 2026-10-16
+
+Estorno institucional fechado no escopo UI/HTTP A/B (milestone945782d).
+Migration56/20261016212643 tenant_institutional_monthly_generation aplicada DEV;
+arquivo criado pela CLI e timestamp alinhado ao retorno MCP. Quatro comandos:
+create_tenant_institutional_monthly_rule, set_tenant_institutional_monthly_rule_status,
+preview_institutional_monthly_generation, generate_institutional_monthly_obligation.
+Settings.manage para regra/status, institutional.manage para preview/emissão;
+SaaS gate e idempotência, prévia com fingerprint, uma obrigação por regra/mês,
+sem movimentar caixa. Despesa gera pedido de aprovação quando política exige.
+Não reemite após cancelamento. Gate SQL A/B:4 positivos/56 negativos PASS rollback,
+claims simuladas. Frontend InstitutionalMonthly e loader criados,22 testes novos
+PASS; 292 testes/tipos/build PASS. Homologação preview ainda pendente. Não declarar entregue.
+SessãoB Edge4 aba1875274888 em /dev-qa, alias v35-finance atualversãoe1785942
+(ainda anterior a este recurso). Próximo: completar checks/revisão/commit/upload
+sem tráfego e UI B criar regras QA atéR$1, prévia/gerar/cancelar/desativar; depois A.
+Não repetir seeds ou estornos/jornadas já concluídos. Reajuste/anual/especial,
+multiaprovador e21 telas continuam abertos. Nenhum merge/PROD autorizado.
+
 ## Estorno institucional A/B concluído — 2026-10-16
 
 HTTP B também RESULT PASS na versãoe1785942: RLS em4 tabelas, escopoA42501,

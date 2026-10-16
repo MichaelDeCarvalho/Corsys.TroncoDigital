@@ -1,3 +1,12 @@
+## Incremento mensal institucional — 2026-10-16
+
+Migration56 aplicada DEV e interface de regras mensais implementada: cadastro,
+ativação/desativação, prévia, geração única por competência e aprovação exigida.
+Não movimenta caixa. Cancelar a obrigação não libera nova emissão no mesmo mês.
+292 testes/tipos/build PASS; SQL rollback A/B: 4 positivos/56 negativos PASS.
+Preview e homologação UI pendentes. Estorno institucional UI/HTTP A/B já concluído.
+Recorrências anuais/especiais, reajuste e demais requisitos mantêm Etapa2 aberta.
+
 ## Estorno institucional A/B concluído — 2026-10-16
 
 HTTP B também RESULT PASS na versãoe1785942: RLS em4 tabelas, escopoA42501,

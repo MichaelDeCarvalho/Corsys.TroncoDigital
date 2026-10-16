@@ -460,6 +460,15 @@
       "sha256": "ce10d717e154bf773a8dff0bb4979e95767a7205c1198f77875268ceeb0ca297",
       "applied_at": "2026-10-15",
       "note": "DEV institutional settlement reversal; permission/idempotency, obligation-before-fact locks, period lock, immutable events and bank-match guard. A/B SQL rollback: four positives and 44 expected denials PASS; signed UI pending."
+    },
+    {
+      "version": "20261016212643",
+      "name": "tenant_institutional_monthly_generation",
+      "path": "supabase/migrations/20261016212643_tenant_institutional_monthly_generation.sql",
+      "source_path": "supabase/migrations/20261016212643_tenant_institutional_monthly_generation.sql",
+      "sha256": "ad18c56147c61f242cb54f21e3b30ae40c14762c31dc856fe134355001108c89",
+      "applied_at": "2026-10-16",
+      "note": "DEV monthly institutional rule create/status/preview/generate. One immutable obligation per rule/competence; automatic payable approval request preserved. SQL A/B rollback 4 positive/56 negative PASS; UI QA pending."
     }
   ],
   "baseline_patches": {

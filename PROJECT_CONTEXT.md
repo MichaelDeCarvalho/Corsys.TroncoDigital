@@ -1,3 +1,13 @@
+## Estado vigente — recorrência mensal institucional — 2026-10-16
+
+Estorno institucional UI e HTTP A/B concluído; limpeza SQL confirmou saldo R$10
+por Loja e nenhuma obrigação aberta. Novo incremento: migration56 aplicada DEV,
+cadastro/ativação de regra mensal, prévia e geração única por competência.
+292 testes, tipos e build PASS; gate SQL A/B com 4 positivos e 56 rejeições PASS
+com rollback, incluindo política de aprovação. Homologação UI deste novo incremento
+pendente. Anual/especial/reajuste, demais fluxos e 21 telas continuam abertos.
+Sem merge ou produção.
+
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
 ## Estado atual — institucional A/B UI e HTTP A — 2026-10-16
