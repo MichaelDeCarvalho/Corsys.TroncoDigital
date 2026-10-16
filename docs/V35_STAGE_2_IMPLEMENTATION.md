@@ -1,3 +1,20 @@
+## Recorrência mensal: aceite UI/HTTP A/B concluído — 2026-10-16
+
+B RESULT PASS no preview6959e115/commitae1d4a6: quatro tabelas estrangeiras
+ocultas, escopo42501/ID23503, replay simultâneo mesmoUUID, divergência22023,
+disputa chaves distintas um vencedor+PT409 HTTP409, uma obrigação/auditoria por
+regra/mês e reemissão após cancelamento23514 negada. Despesa/receitaJul/Ago2027.
+Read-back B: saldo10, regrasQA ativas0, quatro obrigações canceladas/integrity_ok,
+aberto0. IDs despesaJul75dcff52-5c58-494b-bb24-3bcd06b5a4ff;
+Ago492f8b9a-39e8-4471-9f8d-35d4d967ea6e; receitaJula3993d44-5d03-4531-9563-74edfc56cf8a;
+Ago453fcc91-ae03-4217-ac20-941ec8cd78b4. A já PASS; não repetir jornadas/login
+para este escopo. CI298 success. Somente documentação nesta rodada, sem novo
+build/deploy/migration. Próximo: revisão dos13 comandos emV35_HTTP_CONFLICT_AUDIT,
+depois pendências anuais/especiais/reajustes/negociação/multiaprovação e lotes21telas.
+Etapa2 permanece aberta. Usuário pediu economia de tokens/tempo: evitar releitura
+extensa, testes já aprovados, sondagens repetidas e duplicar blocos em vários docs;
+priorizar lote concreto com verificações proporcionais. SessãoB Edge4 aba1875274888.
+
 ## Mensal institucional UI A/B e HTTP A PASS — 2026-10-16
 
 Estado autoritativo: migrations57/20261016215748 e58/20261016220039 aplicadas DEV.
