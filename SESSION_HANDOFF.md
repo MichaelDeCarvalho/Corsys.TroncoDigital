@@ -1,3 +1,18 @@
+## Jornada institucional A concluída — 2026-10-16
+
+A também concluiu despesa/receitaR$1, liquidação integral, estorno com ESTORNAR,
+reabertura automática e cancelamento na versão841a8aa5. Read-back SQL:
+origemR$10, ambas obrigações canceladas/aberto0, dois movimentos estornados,
+duas auditorias. Não repetir UI A/B ou seed. Sessão A mantida no Edge id4,
+aba1875274888, alias v35-finance. Pendência de login A nos blocos abaixo resolvida.
+Despesa fa332a80-40b3-4147-84a7-c77acc24559d; pagamento
+5faca7ff-d2a8-4af8-ac51-e9092437a1d7. Receita
+412791a4-7626-4b8d-bbcf-48e786c1528d; recebimento
+3888546e-bdfa-46da-867c-3004a065720f. Referências DEV QA REVERSAL A ...20261016.
+Preparando gate HTTP institucional em dev-qa.html opcional, com preflight QA
+FINANCE exato, atéR$1/operacao, replay e corrida/cleanup. Não afirmar execução
+antes de observar RESULT PASS e read-back. Sem nova migration/produção.
+
 ## Preview e jornada institucional B — 2026-10-16
 
 Commit funcional f0ac5ec, 269 testes/40 arquivos, tipos/build PASS; CI #290,

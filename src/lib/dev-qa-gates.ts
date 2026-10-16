@@ -1,7 +1,7 @@
 type Result={data:unknown;error:{code?:string}|null}
 export function assertQABrowserTarget(enabled:string|undefined,url:string|undefined,hostname:string){
  if(enabled!=='true'||url!=='https://szqkdekwhzxsoxorgvaz.supabase.co'||
-  !/^(?:[a-f0-9]{8}-)?corsys-tronco-digital-dev\.corsys1\.workers\.dev$/.test(hostname))throw Error('DEV QA target denied')
+  !/^(?:(?:[a-f0-9]{8}|v35-finance)-)?corsys-tronco-digital-dev\.corsys1\.workers\.dev$/.test(hostname))throw Error('DEV QA target denied')
 }
 export function assertQADenied(r:Result,codes=['42501']){
  if(!r.error||!codes.includes(r.error.code??''))throw Error('Denial not proven: '+(r.error?.code??'success'))
@@ -16,5 +16,9 @@ export function assertQAUUID(r:Result){
 }
 export function assertQAOneWinner(rs:Result[]){
  if(rs.length!==2||rs.filter(r=>!r.error).length!==1||rs.filter(r=>r.error?.code==='23514').length!==1)throw Error('Capacity race not proven')
+ return assertQAUUID(rs.find(r=>!r.error)!)
+}
+export function assertQAOneReversal(rs:Result[]){
+ if(rs.length!==2||rs.filter(r=>!r.error).length!==1||rs.filter(r=>r.error?.code==='23505').length!==1)throw Error('Reversal race not proven')
  return assertQAUUID(rs.find(r=>!r.error)!)
 }
