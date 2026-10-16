@@ -1,3 +1,20 @@
+## Mensal institucional UI A/B concluída — HTTP em preparo — 2026-10-16
+
+UI A concluiu cadastro/prévia/emissãoR$1/cancelamento/desativação para despesa e
+receita. Read-back: saldo10, ambas canceladas/integrity_ok/aberto0, regras inativas.
+A despesa regra a4dec375-abec-4f42-bdf7-23597e2376b3, obrigação05499b17-bfdc-45df-9555-53f242207c32;
+A receita regra33f6406e-b8db-4528-8a1f-dd3d6a3792d0, obrigação22de6cf9-e146-44fe-9271-4453b386fe72.
+B já concluída; não repetir. CI296/run38971046250 reexecutada e SUCCESS após
+usuário regularizar billing. Bloqueio anterior resolvido; não pedir regularização.
+Novo helper opcional dev-qa-monthly usa somente quatro regras QA fixas existentes,
+ativa temporariamente e emite atéR$1 em novembro/dezembro2026 para replay/chaves
+distintas, isolamento e histórico cancelado. Preflight exige ausência nas duas
+competências antes de escrever, saldo10 e regras inativas. Cleanup recupera IDs
+da regra/meses, cancela, desativa e verifica saldo. É gate de execução única:
+não repetir cegamente após persistência, pois histórico bloqueia reemissão.
+Sem nova migration/grants/tokens. HTTP mensal ainda NÃO executado. Sessão A
+Edge4 aba1875274888 no alias v35-finance; publicar QA após checks e testar A.
+
 # Jornadas assinadas DEV — 2026-10-14
 
 ## Escopo autorizado
