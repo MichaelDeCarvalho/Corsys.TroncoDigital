@@ -86,4 +86,17 @@ describe('Master SaaS promotion lifecycle',()=>{
   expect(rpc).not.toHaveBeenCalledWith('update_saas_promotion_draft',expect.anything())
  })
 
+
+ it('classifies PT409 stale source as a definitive conflict, never an uncertain retry',async()=>{
+  const {client,rpc}=fixture(false,true)
+  rpc.mockResolvedValueOnce({data:null,error:{code:'PT409'}})
+  render(<MasterPromotions client={client}/>)
+  await fill()
+  fireEvent.change(screen.getByLabelText('Modalidade da versão'),{target:{value:id}})
+  fireEvent.submit(screen.getByRole('form',{name:'Criar rascunho de promoção'}))
+  await screen.findByText('A oferta foi alterada. Atualize o catálogo antes de criar uma nova versão.')
+  expect(screen.queryByRole('button',{name:'Verificar envio'})).not.toBeInTheDocument()
+  expect(rpc).toHaveBeenCalledTimes(1)
+ })
+
 })
