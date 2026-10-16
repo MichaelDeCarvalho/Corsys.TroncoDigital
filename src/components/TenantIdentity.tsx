@@ -55,10 +55,10 @@ export function TenantIdentity({ client, organizationId }: { client: SupabaseCli
     } catch (cause) {
       if (!mounted.current) return
       const code = (cause as { code?: string })?.code ?? ''
-      if (['22023','23503','40001','42501','28000'].includes(code)) {
+      if (['22023','23503','40001','PT409','42501','28000'].includes(code)) {
         command.current = null; setUncertain(false)
-        setConflict(code === '40001')
-        setError(code === '40001' ? 'Os dados da Loja foram alterados. Atualize antes de salvar novamente.' :
+        setConflict((code === '40001' || code === 'PT409'))
+        setError((code === '40001' || code === 'PT409') ? 'Os dados da Loja foram alterados. Atualize antes de salvar novamente.' :
           code === '42501' || code === '28000' ? 'Seu perfil ou a assinatura da Loja não permite essa configuração.' :
           'Verifique os dados fornecidos. Não foi possível salvar a identidade da Loja.')
       } else {

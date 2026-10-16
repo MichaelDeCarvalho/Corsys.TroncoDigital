@@ -43,9 +43,9 @@ export function AccountingPlans({client,organizationId}:{client:SupabaseClient;o
   }catch(cause){
    if(!mounted.current)return
    const code=(cause as {code?:string}|null)?.code??''
-   if(['22023','23503','23505','23514','23P01','40001','42501','28000','55000'].includes(code)){
-    current.current=null;setUncertain(false);setConflict(code==='40001')
-    setError(code==='40001'?'O vínculo mudou. Atualize os planos antes de tentar novamente.':
+   if(['22023','23503','23505','23514','23P01','40001','PT409','42501','28000','55000'].includes(code)){
+    current.current=null;setUncertain(false);setConflict((code === '40001' || code === 'PT409'))
+    setError((code === '40001' || code === 'PT409')?'O vínculo mudou. Atualize os planos antes de tentar novamente.':
      code==='42501'||code==='28000'?'Acesso negado para alterar o plano contábil.':
      code==='23514'?'A natureza da conta contábil é incompatível com o vínculo.':
      code==='23505'||code==='23P01'?'Já existe uma configuração conflitante.':

@@ -30,11 +30,11 @@ function ReversalPanel({client,organizationId,onReversed}:Props){
   }catch(cause){
    if(!mounted.current)return
    const code=(cause as {code?:string}|null)?.code??''
-   if(['22023','23502','23503','23505','23514','40001','42501','28000','55000'].includes(code)){
+   if(['22023','23502','23503','23505','23514','40001','PT409','42501','28000','55000'].includes(code)){
     request.current=null;setUncertain(false)
     setError(code==='42501'||code==='28000'?'Seu perfil ou a assinatura da Loja não permite este estorno.':
      code==='55000'?'Estorno bloqueado: confira competência aberta, conciliação desfeita e obrigação não cancelada.':
-     code==='40001'?'As alocações mudaram. Atualize o histórico antes de tentar novamente.':'Estorno rejeitado. Atualize o histórico e confira os dados.')
+     (code === '40001' || code === 'PT409')?'As alocações mudaram. Atualize o histórico antes de tentar novamente.':'Estorno rejeitado. Atualize o histórico e confira os dados.')
     setRevision(n=>n+1)
    }else{setUncertain(true);setError('Resultado não confirmado. Verifique novamente com a mesma chave antes de iniciar outro estorno.')}
   }finally{guard.current=false;if(mounted.current)setPending(false)}

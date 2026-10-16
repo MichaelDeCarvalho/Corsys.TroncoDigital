@@ -58,10 +58,10 @@ export function InstitutionalOperations({client,organizationId}:{client:Supabase
   }catch(cause){
    if(!mounted.current)return
    const code=(cause as {code?:string}|null)?.code??''
-   if(['22023','22003','23502','23503','23505','23514','40001','42501','28000','55000','P0002'].includes(code)){
-    command.current=null;setUncertain(false);setConflict(code==='40001')
+   if(['22023','22003','23502','23503','23505','23514','40001','PT409','42501','28000','55000','P0002'].includes(code)){
+    command.current=null;setUncertain(false);setConflict((code === '40001' || code === 'PT409'))
     setError(code==='42501'||code==='28000'?'Seu perfil ou a assinatura da Loja não permite esta operação.':
-     code==='40001'?'O lançamento mudou. Atualize os registros antes de tentar novamente.':
+     (code === '40001' || code === 'PT409')?'O lançamento mudou. Atualize os registros antes de tentar novamente.':
      code==='23514'||code==='55000'?'Operação bloqueada: verifique aprovação, saldo, conta contábil e competência.':
      'Operação institucional rejeitada. Revise os campos e os vínculos contábeis.')
    }else{
