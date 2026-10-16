@@ -1,5 +1,15 @@
 # CURRENT ARCHITECTURE
 
+## Estorno institucional — 2026-10-15
+
+InstitutionalOperations abre InstitutionalReversals, que consulta fatos/reversões
+existentes sob RLS e chama reverse_tenant_institutional_movement. Comando exige
+institutional.manage, identidade ativa e assinatura apta; transação/idempotência,
+período travado, obrigações em ordem antes do fato, eventos append-only e auditoria.
+Recusa conciliação ativa e alocação em obrigação cancelada. Guard adicional impede
+conciliar fato institucional estornado, serializado pelo lock do fato. Migration55,
+ADR-0028. Sem novas tabelas/grants de tabela/RLS; UI assinada em homologação.
+
 ## Homologação assinada opcional — 2026-10-14
 
 Entrada Vite dev-qa.html incluída somente com VITE_DEV_QA_ENABLED=true e projeto

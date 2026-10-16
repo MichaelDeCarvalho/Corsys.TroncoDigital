@@ -1,3 +1,23 @@
+## Estado vigente — acesso restaurado e estorno institucional — 2026-10-15
+
+Supabase multiaccount agora expõe seleção de conexão nas ferramentas. Conexão
+correta identificada por list_projects: somente TroncoDigital em Michael - jobmcc.
+Consulta administrativa PASS; não pedir nova autorização/reconexão. Banco DEV
+szqkdekwhzxsoxorgvaz tem55 migrations, última20261016003940. Arquivo criado pela
+CLI e alinhado ao timestamp retornado pelo apply_migration; hash no manifesto.
+Read-back A/B QA FINANCE confirmou R$10, zero cobranças/obrigações abertas.
+Comando reverse_tenant_institutional_movement e guard de conciliação aplicados.
+Quatro jornadas SQL positivas e44 rejeições esperadas A/B PASS rollback, claims
+simuladas, não HTTP/concorrência real. UI nova em InstitutionalReversals: tipos,
+histórico validado, confirmação, replay da mesma chave após resultado incerto,
+refresh da obrigação após sucesso. Testes de componente e loader passaram.
+Publicação/QA assinada dessa interface em preparação; não declarar homologada.
+Próximo: terminar build/commit, versions upload alias v35-finance sem trocar
+tráfego; QA B na sessão existente, depois A com login humano se necessário.
+Antes de operar conferir Loja QA FINANCE exata. Cada operação fictícia atéR$1,
+estornar e cancelar ao final, preservar seedR$10. Nenhum merge/PROD autorizado.
+Detalhes em ADR-0028 e V35_INSTITUTIONAL_REVERSAL_PLAN.md. Etapa2 segue aberta.
+
 ## Conexão Supabase — nova conta adicionada — 2026-10-15
 
 Navegador Edge atual id4, Supabase tab1875274733 no projeto correto

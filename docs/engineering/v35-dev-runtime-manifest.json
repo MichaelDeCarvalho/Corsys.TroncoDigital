@@ -451,6 +451,15 @@
       "sha256": "81bdc16a8b930ab49fcb8ea3afb139fee431f7b1e6e96ef217eb6b8399b46797",
       "applied_at": "2026-10-14",
       "note": "DEV statement staging, validation, matching and append-only undo; independent transfer bank legs. SQL rollback A/B and positive transfer gates PASS."
+    },
+    {
+      "version": "20261016003940",
+      "name": "tenant_institutional_movement_reversal",
+      "path": "supabase/migrations/20261016003940_tenant_institutional_movement_reversal.sql",
+      "source_path": "supabase/migrations/20261016003940_tenant_institutional_movement_reversal.sql",
+      "sha256": "ce10d717e154bf773a8dff0bb4979e95767a7205c1198f77875268ceeb0ca297",
+      "applied_at": "2026-10-15",
+      "note": "DEV institutional settlement reversal; permission/idempotency, obligation-before-fact locks, period lock, immutable events and bank-match guard. A/B SQL rollback: four positives and 44 expected denials PASS; signed UI pending."
     }
   ],
   "baseline_patches": {

@@ -1,5 +1,24 @@
 # SECURITY REGISTER
 
+## Estorno institucional e acesso restaurado — 2026-10-15
+
+Acesso administrativo DEV restaurado com seleção explícita da conexão correta.
+Migration55 mantém autorização determinística institutional.manage e gate SaaS,
+search_path vazio, PUBLIC/anon sem EXECUTE; trigger privado não executável por
+usuários. Reversão transacional e append-only. Período/obrigação/fato travados;
+nova alocação em obrigação não travada gera40001. Conciliação ativa exige undo;
+guard de insert recusa movimento institucional já estornado. Caso cancelado
+com alocação é recusado até existir modelo de ajuste aprovado.
+Gate rollback A/B:4 positivos e44 negativos PASS (permissão, suspensão, escopo,
+ID, data, período, cancelamento, banco, chave divergente, duplicidade). Não é
+prova de concorrência real ou segurança integral. UI com17 testes novos PASS.
+Advisor antes/depois: WARN authenticated_security_definer_function_executable
+86→87 (novo comando público intencional, autorização testada); demais achados
+inalterados:3 INFO rls_enabled_no_policy e1 WARN leaked password protection.
+Referências: https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable
+ e https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
+Sem alterar configurações Auth ou ampliar acesso às tabelas. Homologação UI pendente.
+
 ## Integridade da leitura institucional — 2026-10-15
 
 Loader institucional aceitava IDs duplicados, divergência de um centavo entre

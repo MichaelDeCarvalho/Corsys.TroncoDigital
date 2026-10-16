@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { normalizedAmount } from '../lib/member-configuration'
 import { formatDate, formatMoney } from '../lib/finance-data'
 import { exactPaymentAmount } from '../lib/member-payments'
+import { InstitutionalReversals } from './InstitutionalReversals'
 import {
  loadInstitutionalCatalogs, loadInstitutionalObligations, expectedInstitutionalState,
  type InstitutionalCatalogs, type InstitutionalObligation, type InstitutionalKind,
@@ -23,6 +24,7 @@ const label:Record<InstitutionalKind,string>={payable:'Contas a pagar',receivabl
 
 export function InstitutionalOperations({client,organizationId}:{client:SupabaseClient;organizationId:string}){
  const [kind,setKind]=useState<InstitutionalKind>('payable')
+ const [showHistory,setShowHistory]=useState(false)
  const [catalog,setCatalog]=useState<InstitutionalCatalogs|null>(null)
  const [rows,setRows]=useState<InstitutionalObligation[]|null>(null)
  const [revision,setRevision]=useState(0)
@@ -309,5 +311,7 @@ export function InstitutionalOperations({client,organizationId}:{client:Supabase
    </form>
    <p className="subtle">Consulta limitada a 150 obrigações por tipo, sem somar páginas como saldo total. Se exceder a capacidade, a operação é bloqueada. Política de aprovação configurável e negociação permanecem pendentes.</p>
   </>}
+  <button className="secondary" aria-expanded={showHistory} disabled={showHistory} onClick={()=>setShowHistory(true)}>Histórico e estornos institucionais</button>
+  {showHistory&&<InstitutionalReversals client={client} organizationId={organizationId} onReversed={()=>setRevision(v=>v+1)}/>}
  </section>
 }

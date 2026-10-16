@@ -1,14 +1,17 @@
 # Estorno institucional — próxima entrega da Etapa 2
 
-Estado em 2026-10-15: desenho para revisão; NÃO implementado, migrado ou homologado.
-Não publicar nem liquidar fixtures para testar antes dos gates abaixo.
+Estado atualizado em 2026-10-15: backend e interface implementados; migration55
+aplicada no DEV. Gate SQL rollback A/B PASS:4 positivos/44 negações esperadas.
+Homologação assinada da interface e concorrência real ainda NÃO AVALIADAS.
+O texto abaixo preserva contrato/critérios; não presume todos os gates concluídos.
 
 ## Evidência e dependência
 
 O código versionado contém pagamentos/recebimentos institucionais, alocações,
 reversões imutáveis, validações, RLS e views de caixa/DRE. A busca nos comandos e
 na interface não encontrou operação pública correspondente ao estorno completo.
-Isso não prova ausência no catálogo DEV: a integração nega a consulta administrativa.
+Consulta administrativa restaurada confirmou ausência desse comando antes da
+migration55; novo comando e guard foram aplicados e testados com rollback.
 Confirmar catálogo, migrations aplicadas e assinatura real antes de adicionar RPC.
 Não alterar migrations históricas, planos publicados ou Lojas originais.
 

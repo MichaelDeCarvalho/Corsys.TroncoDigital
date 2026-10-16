@@ -1,5 +1,17 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Estado vigente — conexão Supabase restaurada — 2026-10-15
+
+Ferramentas agora permitem escolher conta; TroncoDigital DEV acessível por SQL.
+Read-back administrativo QA FINANCE A/B: saldoR$10 e nenhuma cobrança/obrigação
+aberta, coerente com UI anterior. Migration55/20261016003940 aplicada somente DEV:
+estorno institucional e bloqueio de conciliar fato institucional estornado.
+Gate SQL A/B:4 positivos/44 negações esperadas PASS rollback, claims simuladas.
+Interface preparada com histórico/confirmar/replay; homologação DEV ainda pendente.
+ADR-0028 registra locks, limites de obrigação cancelada e conciliação ativa.
+Sem merge/PROD; Etapa2 e21 telas ainda abertas. Estados de acesso negado abaixo
+são histórico resolvido; não solicitar novas reconexões.
+
 ## Estado vigente — 2026-10-15 — QA FINANCE A/B
 
 Jornadas autorizadas A e B concluídas no preview v35-finance/c7008f47: mensalidade
