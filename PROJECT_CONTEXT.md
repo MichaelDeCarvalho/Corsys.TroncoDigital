@@ -1,5 +1,14 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Estado atual — institucional A/B UI e HTTP A — 2026-10-16
+
+UI A/B do estorno institucional concluída e limpeza confirmada por SQL; saldoR$10
+por Loja. Gate HTTP real A passou isolamento, replay concorrente, payload divergente
+e disputa de estorno/uma auditoria. Cleanup/DRE PASS. Commitca98d22,270 testes/
+tipos/build PASS, versãoe1785942 no alias v35-finance com QA opcional.
+Login B solicitado somente para novo HTTP B→A; etapas anteriores não precisam
+repetir. Outros requisitos da Etapa2 e21 telas continuam abertos. Sem merge/PROD.
+
 ## Marco atual — estorno institucional B — 2026-10-16
 
 Conexão administrativa restaurada, migration55 e estorno institucional implementado.

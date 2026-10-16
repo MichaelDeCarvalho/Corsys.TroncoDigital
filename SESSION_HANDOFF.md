@@ -1,3 +1,26 @@
+## HTTP institucional A — concorrência assinada PASS — 2026-10-16
+
+Commit ca98d22:270 testes/40 arquivos, tipos/build com entrada QA PASS.
+Versão isolada e1785942-7f06-401e-925a-5a294eac0911 no alias v35-finance,
+sem trocar tráfego. App/QA/JS/CSS HTTP200 iguais ao build. QA JS
+qa-Di4J3YUN.js SHA2561e626c6456698fe94fc800f599a356eea6040c74bac3d122a3a1656db25769bb.
+Sessão real A em /dev-qa: RESULT PASS. Para despesa e receita, duas chamadas
+simultâneas com mesma chave retornaram mesmo ID, payload divergente negado22023;
+duas chaves distintas disputaram estorno, um vencedor e um23505. EscopoB negado
+42501, IDB sob escopoA negado23503; quatro tabelas estrangeiras ocultas por RLS.
+Um evento e uma auditoria por movimento; cleanup automático confirmado. São
+requisições HTTP concorrentes; não prova todos os interleavings/alocação/fechamento.
+Payable0fffde34-73eb-4c26-9c2b-6372463e0fb3, pagamentos
+79130d3e-1bfa-486a-8a17-47b2aaa3a9d0 e b889e39f-8619-42e8-8533-f350e7dc9d4e.
+Receivable45520fa7-bf01-49c8-9d0f-f63de8456637, recebimentos
+446eed84-60eb-43b0-8baa-1461aa0d3569 e af6ae9f3-dca3-46ff-af45-6afbb429d222.
+Read-back SQL após HTTP: QA A/B saldo10/10; nenhuma obrigação aberta, nenhum
+movimento institucional sem estorno; auditorias A6/B2. DRE A restaurada pelo gate.
+App devolvido à raiz; solicitado login DEV B somente para rodar este novo gate
+no sentido inverso. Não repetir UI A/B/seed/OAuth; aba1875274888 Edge4 preservada.
+Depois do login: /dev-qa.html, executar apenas Testar estornos institucionais HTTP
+e concorrência, conferir RESULT e read-back antes de prosseguir próximo lote.
+
 ## Jornada institucional A concluída — 2026-10-16
 
 A também concluiu despesa/receitaR$1, liquidação integral, estorno com ESTORNAR,
