@@ -19,8 +19,7 @@ RLS, eventos ou valores. Migrations56/57 preservadas sem edição.
 
 ## Validação e limites
 
-SQL A/B com rollback4positivos/56negativos PASS após57 e58. Regressão HTTP final
-pendente. O helper usa chave de cleanup única por execução e confirma desativação,
+SQL A/B com rollback4positivos/56negativos PASS após57 e58. Regressão HTTP A PASS, B pendente. O helper usa chave de cleanup única por execução e confirma desativação,
 cancelamento e saldo10; execuções diagnósticas deixaram somente histórico fictício
 identificado, sem caixa movimentado. Outros comandos históricos com40001 precisam
 ser auditados antes de alegar fechamento integral da Etapa2; não corrigidos em massa.

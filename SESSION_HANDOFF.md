@@ -1,3 +1,31 @@
+## Mensal institucional UI A/B e HTTP A PASS — 2026-10-16
+
+Estado autoritativo: migrations57/20261016215748 e58/20261016220039 aplicadas DEV.
+Commitae1d4a618c79a1ac299cba41b9e91c4ad48c1758; preview6959e115-e1da-4a6a-a082-1ad43a0fac19.
+Alias v35-finance, sem deploy de tráfego/PROD. HTML/app/QA HTTP200 iguais ao build.
+App app-teNnx2Xh.js SHA25686b975c388329de3ded64b56fdf142ae64a203bc28614607047b97839d11ea33;
+QA qa-TpmFiPTa.js c842be044b1b9ebc515bd54413f0a4e1fa6a16e98ad40f2bbe8e081b99b1adb3.
+UI cadastro/prévia/emissão/cancelamento/desativação A/B já concluída.
+HTTP A real:4 tabelas estrangeiras ocultas, escopo42501/ID23503, replay simultâneo
+mesmoUUID, payload divergente22023 e disputa chaves distintas umUUID+PT409/HTTP409,
+sem timeout. Uma obrigação/auditoria por regra/competência; após cancelar,23514
+nega nova emissão. Despesa/receita em Jul/Ago2027; RESULT PASS, cleanup confirmado.
+SQL final: regrasA inativas, quatro obrigações canceladas/integrity_ok/aberto0,
+saldo10. Deadlocks2 cumulativos, sem aumento após57 (não é garantia absoluta).
+IDs despesaJul05ba3bc7-ea9c-4671-9765-feaa21f60c3b/Ago180cba1d-a03b-4e0f-b616-d85cdd5c9115;
+receitaJuld116ea09-e81d-44ad-96ae-60cfb458d876/Ago1a08be97-6183-4a46-9799-7ed4bb9aad5e.
+Gate é execução única: NÃO repetir A; histórico bloqueia reemissão. B Jul/Ago
+vazios e inativa conforme UI anterior; login B solicitado para mesmo novo gate.
+SessãoA Edge4 aba1875274888 /dev-qa. Antes de login entrar na raiz, depois/dev-qa.
+294 testes/tipos/build PASS +25 focados com nova regressãoPT409/cleanup PASS;
+SQL4positivos/56negativos rollback após58 PASS, preservação58 PASS.
+Read-back segurança quatroRPCs SECURITY DEFINER/search_pathvazio/anonsemexecute,
+sem40001 mensal; permissões/RLS conservadas. CI298/run38973320275 SUCCESS; anterior estado em execução;
+CI296/297 success. Billing resolvido, não pedir de novo.
+Auditoria read-only localizou13 funções públicas históricas ainda com40001;
+revisar conflitos de negócio no próximo lote, sem concluir que todos os usos são
+iguais. Lista em docs/V35_HTTP_CONFLICT_AUDIT.md. Etapa2 ainda aberta.
+
 ## Regressão concorrente mensal em correção — 2026-10-16
 
 UI mensal A/B concluída e cleanup SQL saldo10/canceladas/regras inativas.
