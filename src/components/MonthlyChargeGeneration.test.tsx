@@ -111,4 +111,20 @@ describe('Monthly member billing',()=>{
   fireEvent.change(screen.getByLabelText('Competência para emissão'),{target:{value:'2027-03'}})
   expect(screen.queryByRole('button',{name:/Confirmar geração/})).not.toBeInTheDocument()
  })
+
+ it('treats PT409 as a rejected obsolete preview, with no uncertain replay',async()=>{
+  const {client,rpc}=fixture()
+  rpc.mockImplementation(async(name:string)=>name==='preview_monthly_charge_generation'
+   ?{data:preview,error:null}:{data:null,error:{code:'PT409'}})
+  render(<MonthlyChargeGeneration client={client} organizationId="org-a"/>)
+  await choose()
+  await screen.findByLabelText('Motivo da geração')
+  fireEvent.change(screen.getByLabelText('Motivo da geração'),{target:{value:'Cobrança conferida'}})
+  fireEvent.click(screen.getByRole('button',{name:'Confirmar geração de 2 cobranças'}))
+  await screen.findByText('A prévia ficou desatualizada. Consulte novamente antes de gerar as cobranças.')
+  expect(screen.queryByRole('button',{name:'Verificar envio'})).not.toBeInTheDocument()
+  expect(screen.queryByRole('region',{name:'Prévia mensal'})).not.toBeInTheDocument()
+  expect(rpc.mock.calls.filter(x=>x[0]==='generate_monthly_member_charges')).toHaveLength(1)
+ })
+
 })
