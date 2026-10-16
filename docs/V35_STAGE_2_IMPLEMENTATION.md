@@ -1,3 +1,20 @@
+## Estorno institucional A/B concluído — 2026-10-16
+
+HTTP B também RESULT PASS na versãoe1785942: RLS em4 tabelas, escopoA42501,
+IDA sobB23503, pagamento/recebimento com replay simultâneo/mesmoID,
+divergência22023, chaves diferentes com um vencedor/23505 e uma auditoria/fato.
+Cleanup/DRE PASS. SQL final A/B: saldo10 por Loja, nenhuma obrigação aberta;
+auditorias de estorno6 por Loja. UI A/B já concluída. Não pedir nova troca de
+conta para este escopo. SessãoB atual Edge4 aba1875274888 em /dev-qa.
+PayableB cd09e741-b9d0-4af8-826c-0bcc209f68dc; pagamentos
+e7bcd957-2d4c-4260-9663-6cc97b5ab49c e f32f4d35-758c-4a22-b478-91fcacdf3aa0.
+ReceivableB138c3e6c-98e2-4541-b904-9c065070dc4d; recebimentos
+7cc1d129-6a09-478e-bfe6-b3e95200a81d e0bc5c252-58c3-463b-a822-f010e78723b4.
+CI #292/run38968227946 success;270 testes/tipos/build PASS. Sem nova migration
+após55, sem merge/PROD. Próximo escopo em auditoria: recorrência institucional
+mensal (cadastro/prévia/geração única por regra/competência/desativação). Não
+considerar recorrência anual/especial/multiaprovações/21 telas concluídas.
+
 ## HTTP institucional A — concorrência assinada PASS — 2026-10-16
 
 Commit ca98d22:270 testes/40 arquivos, tipos/build com entrada QA PASS.

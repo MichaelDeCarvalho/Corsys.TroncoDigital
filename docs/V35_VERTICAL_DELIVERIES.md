@@ -4,7 +4,7 @@
 
 Este bloco substitui os estados operacionais históricos abaixo. Requisitos e
 critérios de aceite permanecem integrais. Base desta consolidação: `be62954`,
-branch `feat/v35-dev-gate-20261002`, PR draft #4; 54 migrations DEV.
+branch `feat/v35-dev-gate-20261002`, PR draft #4; 55 migrations DEV.
 
 | Frente | Implementado e verificado | Falta para aceite integral |
 |---|---|---|
@@ -13,7 +13,7 @@ branch `feat/v35-dev-gate-20261002`, PR draft #4; 54 migrations DEV.
 | Conciliação | OFX A/CSV B persistidos, validados, conciliados/desfeitos pela UI; replay/disputa HTTP B | Demais papéis, formatos adicionais e paridade integral |
 | Recorrência mensal | Prévia/geração e regras históricas; testes SQL rollback e componentes | Mensal A/B autenticada concluída; faltam recorrências especiais/anuais/institucionais do inventário |
 | Cobranças/pagamentos | Avulsa/cancelamento, registro/alocação/estorno; testes SQL rollback e componentes | Jornada básica A/B concluída; faltam negociação/parcelamento/eventos previstos |
-| Obrigações/aprovações | Cadastro/liquidação/correção/cancelamento, política e decisão | Criação/correção/cancelamento A/B concluídos; faltam estorno institucional, multiaprovador e histórico completo |
+| Obrigações/aprovações | Cadastro/liquidação/correção/cancelamento, política e decisão | Criação/correção/cancelamento A/B concluídos; estorno institucional UI/HTTP A/B concluído; faltam multiaprovador e histórico completo |
 | Fechamento | Eventos de fechamento/reabertura e testes SQL rollback | Bloqueio de avulsa e reabertura A/B concluídos; faltam demais comandos/papéis/suspensão em HTTP |
 | 21 telas | Componentes parciais e sequência de seis lotes abaixo | Aceite campo/ação a campo/ação, responsividade e visual do HTML original |
 
