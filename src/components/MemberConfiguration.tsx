@@ -38,9 +38,9 @@ export function MemberConfiguration({ client, organizationId, member, onClose }:
     } catch (failure) {
       if (!mounted.current) return
       const code = (failure as { code?: string } | null)?.code
-      if (['22023', '23503', '23505', '23P01', '40001', '42501', '28000'].includes(code ?? '')) {
+      if (['22023', '23503', '23505', '23P01', '40001','PT409', '42501', '28000'].includes(code ?? '')) {
         command.current = null; setUncertain(false)
-        setError(code === '40001' ? 'A condição mensal já foi alterada. Atualize os dados antes de uma nova tentativa.' : code === '23P01' ? 'A vigência se sobrepõe a um registro existente. Confira o histórico.' : code === '42501' || code === '28000' ? 'Seu acesso ou a situação da Loja não permite esta configuração.' : code === '23505' ? 'Já existe um cargo com esse nome.' : 'Confira o cadastro selecionado, os valores e as datas. A configuração não foi salva.')
+        setError((code === '40001' || code === 'PT409') ? 'A condição mensal já foi alterada. Atualize os dados antes de uma nova tentativa.' : code === '23P01' ? 'A vigência se sobrepõe a um registro existente. Confira o histórico.' : code === '42501' || code === '28000' ? 'Seu acesso ou a situação da Loja não permite esta configuração.' : code === '23505' ? 'Já existe um cargo com esse nome.' : 'Confira o cadastro selecionado, os valores e as datas. A configuração não foi salva.')
       } else { setUncertain(true); setError('Resultado não confirmado. Use Verificar envio para repetir a mesma solicitação sem duplicá-la.') }
     } finally { guard.current = false; if (mounted.current) setPending(false) }
   }
