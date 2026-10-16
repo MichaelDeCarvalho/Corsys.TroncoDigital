@@ -1,0 +1,31 @@
+{
+  "status": "STATIC_REVIEW_PASS",
+  "scope": "Static schema/security contract review only. No PostgreSQL/Supabase runtime execution.",
+  "checks": {
+    "migration_count": 13,
+    "public_table_count": 117,
+    "rls_enabled_table_count": 117,
+    "missing_rls_tables": [],
+    "public_view_count": 23,
+    "views_without_security_invoker": [],
+    "function_count": 72,
+    "security_definer_function_count": 66,
+    "security_definer_without_locked_search_path": [],
+    "missing_fk_target_tables": [],
+    "float_real_double_detected": false,
+    "accounting_template_row_count": 91,
+    "public_command_count": 20,
+    "post_v31_public_command_count": 12,
+    "published_plan_structure_insert_guard": true,
+    "saas_tenant_write_gate_present": true,
+    "institutional_obligation_cash_separation": true,
+    "runtime_postgresql_executed": false
+  },
+  "limitations": [
+    "No migration was executed against PostgreSQL/Supabase in this environment.",
+    "No real JWT/RLS cross-tenant test was executed.",
+    "No concurrency or idempotency runtime test was executed.",
+    "No Storage bucket/policy was applied.",
+    "No billing provider webhook was integrated."
+  ]
+}

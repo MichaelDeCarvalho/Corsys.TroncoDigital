@@ -1,0 +1,1257 @@
+{
+  "source_sha256": "2679c70bcf64b4c914d30fdd84778f13bae915e1ae278d71b7b0d684db8ef98b",
+  "decisions": [
+    {
+      "path": "docs/adr/v35/0001-financial-source-of-truth.md",
+      "sha256": "9474b51f30686adc9ec3912b06fae10db51c38eaa31961bedfff91c178337419",
+      "source_path": "docs/adr/0001-financial-source-of-truth.md"
+    },
+    {
+      "path": "docs/adr/v35/0002-derived-balances.md",
+      "sha256": "0cd363912e9945af4d9e2ec44afb25a7a0828a55f14beb2e8f22d414dae7e89b",
+      "source_path": "docs/adr/0002-derived-balances.md"
+    },
+    {
+      "path": "docs/adr/v35/0003-financial-immutability.md",
+      "sha256": "5011e2ff596bb4b7eccef1b88487b1b5c0688ffdd0d1643d307d07fcd0dd4185",
+      "source_path": "docs/adr/0003-financial-immutability.md"
+    },
+    {
+      "path": "docs/adr/v35/0004-charge-payment-separation.md",
+      "sha256": "b140f11e8f3d5ce979bd4aeeaca09198af2a8c2e9153ed9d27844f9684f3b9d0",
+      "source_path": "docs/adr/0004-charge-payment-separation.md"
+    },
+    {
+      "path": "docs/adr/v35/0005-receivable-cash-separation.md",
+      "sha256": "e633fdabcd2b03658868eef08f7279117aac01a74e9b2c6dfbf879ab227ac41b",
+      "source_path": "docs/adr/0005-receivable-cash-separation.md"
+    },
+    {
+      "path": "docs/adr/v35/0006-payment-single-fact.md",
+      "sha256": "d5ce39d906f11b2425ea1bcabd93aac90c4d92cff3d0efa22fc913ba0f2bd7e5",
+      "source_path": "docs/adr/0006-payment-single-fact.md"
+    },
+    {
+      "path": "docs/adr/v35/0007-versioned-recurring-rules.md",
+      "sha256": "254fd98b903b1943411137a1a8b9a5a728f6269a9c02a35279f146bd8fe29011",
+      "source_path": "docs/adr/0007-versioned-recurring-rules.md"
+    },
+    {
+      "path": "docs/adr/v35/0008-idempotency.md",
+      "sha256": "def31b4b6864e30d79401aada09e9afd6361aef14fd4fc3eebe54ca82e74d41c",
+      "source_path": "docs/adr/0008-idempotency.md"
+    },
+    {
+      "path": "docs/adr/v35/0009-period-closing.md",
+      "sha256": "52736d45a93b06c50420701bf99823a7b56ae93ef6dd6ab4ea9f8e3a4082761e",
+      "source_path": "docs/adr/0009-period-closing.md"
+    },
+    {
+      "path": "docs/adr/v35/0010-transactional-commands.md",
+      "sha256": "aa7bddbe7dd9e41fc3822eeb44c404e829b42a6a9d9a67b463ea909965f3389c",
+      "source_path": "docs/adr/0010-transactional-commands.md"
+    },
+    {
+      "path": "docs/adr/v35/0011-legacy-non-posting.md",
+      "sha256": "29348a68db1bd7ff5ea937079cd1dd491ae57cebd1918ab7b0537be08dbe20d5",
+      "source_path": "docs/adr/0011-legacy-non-posting.md"
+    },
+    {
+      "path": "docs/adr/v35/0012-saas-multitenancy.md",
+      "sha256": "0af2354210bc5b5c80effade8c21af5d7e53a5ddb36636c0b75908035801b2f6",
+      "source_path": "docs/adr/0012-saas-multitenancy.md"
+    },
+    {
+      "path": "docs/adr/v35/0013-saas-billing-separation.md",
+      "sha256": "3b93da0689b2120256a61800f0c02c3cfcb22069d05cadd64773ad07a434d49d",
+      "source_path": "docs/adr/0013-saas-billing-separation.md"
+    },
+    {
+      "path": "docs/adr/v35/0014-master-support-boundary.md",
+      "sha256": "2f69c867eb53f011224127df9b1447f823a7dbc1af5a3122405d0c24dbb47151",
+      "source_path": "docs/adr/0014-master-support-boundary.md"
+    },
+    {
+      "path": "docs/adr/v35/0015-web-mobile-delivery.md",
+      "sha256": "65812ba1ee193b720b063c57ebb9344b5e85a0af3c7b600e01c0a8e63fc39668",
+      "source_path": "docs/adr/0015-web-mobile-delivery.md"
+    },
+    {
+      "path": "docs/adr/v35/0016-accounting-plans-effective-dating.md",
+      "sha256": "481f5469965ba11a4499dca6ff7566e83057c8bf6a8b6c5e4bd061166b48a3dc",
+      "source_path": "docs/adr/0016-accounting-plans-effective-dating.md"
+    },
+    {
+      "path": "docs/adr/v35/0017-institutional-obligation-cash-separation.md",
+      "sha256": "16c177b42b1cd69e84ff23e9ea139b21928a1c2fd6fbeac4d8a529d3f17e23e6",
+      "source_path": "docs/adr/0017-institutional-obligation-cash-separation.md"
+    },
+    {
+      "path": "docs/adr/v35/0018-posted-financial-corrections.md",
+      "sha256": "e9b64d709d445ca30c363bbb12b4681912ab4f891c7ab4bf4bc3ef430f3acfb9",
+      "source_path": "docs/adr/0018-posted-financial-corrections.md"
+    },
+    {
+      "path": "docs/adr/v35/0019-expense-approval-policy-snapshot.md",
+      "sha256": "620e75efd6ae30d8e31153472b6b97f737bf2f8b251d39791b035d034070cbc1",
+      "source_path": "docs/adr/0019-expense-approval-policy-snapshot.md"
+    },
+    {
+      "path": "docs/adr/v35/0020-reconciliation-budget-privacy.md",
+      "sha256": "6002289a629f56bbe1e919173e338facdc5ac15a2adf447e6ee7383eb3bfde17",
+      "source_path": "docs/adr/0020-reconciliation-budget-privacy.md"
+    },
+    {
+      "path": "docs/adr/v35/0021-saas-commercial-history.md",
+      "sha256": "4a0d21ae8be453b94e8acc53d1b07ac403e28a4b25b0ea33d2d76aad061a3785",
+      "source_path": "docs/adr/0021-saas-commercial-history.md"
+    },
+    {
+      "path": "docs/adr/v35/0022-saas-plan-versioning-and-promotions.md",
+      "sha256": "a29b6aca6ed461a351211b9cfb9614095fa337c9ffbfd64bf0c5f9e016f707ab",
+      "source_path": "docs/adr/0022-saas-plan-versioning-and-promotions.md"
+    },
+    {
+      "path": "docs/adr/v35/0023-saas-dunning-late-fees-agreements.md",
+      "sha256": "ef3a62ad0b97bcb22b528aba9439892c956e174d6e8cab98d856ef8e1cc35aa2",
+      "source_path": "docs/adr/0023-saas-dunning-late-fees-agreements.md"
+    },
+    {
+      "path": "docs/adr/v35/0024-support-kanban-and-tenant-isolation.md",
+      "sha256": "7c70724954575ae4bf32e508099dbf6420e822eb7a2b1386b8c5de3c423bb006",
+      "source_path": "docs/adr/0024-support-kanban-and-tenant-isolation.md"
+    },
+    {
+      "path": "docs/adr/v35/0025-platform-settings-and-master-mfa.md",
+      "sha256": "ea2d2655e4b2ffb38ef2c3d90eff9c763bb5229b835f087a009d7c2de100a2f6",
+      "source_path": "docs/adr/0025-platform-settings-and-master-mfa.md"
+    },
+    {
+      "path": "docs/adr/v35/0026-controlled-onboarding.md",
+      "sha256": "222f1b36ec0514bba312d9094d629f9348c84f839a01cb1a7891d0571c2dfa00",
+      "source_path": "docs/adr/0026-controlled-onboarding.md"
+    },
+    {
+      "path": "docs/adr/v35/0026-safe-plan-promotion-lifecycle.md",
+      "sha256": "6e5254d3babffc004e9d77568aaf74bf1b316d0855f2df8d61e313f8f3f936ab",
+      "source_path": "docs/adr/0026-safe-plan-promotion-lifecycle.md"
+    },
+    {
+      "path": "docs/adr/v35/0027-master-support-sla-metrics.md",
+      "sha256": "6c1d0df68d0a5f85fa6b49c763cfd534399d5374bfd4b35cc0f44c3ac15df290",
+      "source_path": "docs/adr/0027-master-support-sla-metrics.md"
+    },
+    {
+      "path": "docs/adr/v35/0028-invoice-charge-breakdown.md",
+      "sha256": "a808066195a2622e2177832696173e90de8e5e3c5806f596688c761fa2473b00",
+      "source_path": "docs/adr/0028-invoice-charge-breakdown.md"
+    }
+  ],
+  "required_documents": [
+    "docs/ARCHITECTURE_REVIEW.md",
+    "docs/BOOTSTRAP.md",
+    "docs/ERD.md",
+    "docs/ERD_POST_V31.md",
+    "docs/FINANCIAL_INVARIANTS.md",
+    "docs/POST_V31_DATABASE_CONSOLIDATION.md",
+    "docs/POST_V31_STATIC_REVIEW.json",
+    "docs/RUNBOOK_SUPABASE_DEV.md",
+    "docs/SAAS_ANALYSIS_AND_DECISIONS.md",
+    "docs/SAAS_SCHEMA_DICTIONARY.md",
+    "docs/SAAS_STATIC_REVIEW.json",
+    "docs/SAAS_TARGET_ARCHITECTURE.md",
+    "docs/SCHEMA_DICTIONARY.md",
+    "docs/STATIC_REVIEW.json",
+    "docs/TEST_MATRIX_FOUNDATION.md",
+    "docs/TEST_MATRIX_POST_V31.md",
+    "docs/TEST_MATRIX_V33.md",
+    "docs/TEST_MATRIX_V35.md",
+    "docs/V33_STATIC_REVIEW.json",
+    "docs/V34_STATIC_REVIEW.json",
+    "docs/V34_VALIDATION_MATRIX.md",
+    "docs/V35_STATIC_REVIEW.json",
+    "docs/adr/v35/0001-financial-source-of-truth.md",
+    "docs/adr/v35/0002-derived-balances.md",
+    "docs/adr/v35/0003-financial-immutability.md",
+    "docs/adr/v35/0004-charge-payment-separation.md",
+    "docs/adr/v35/0005-receivable-cash-separation.md",
+    "docs/adr/v35/0006-payment-single-fact.md",
+    "docs/adr/v35/0007-versioned-recurring-rules.md",
+    "docs/adr/v35/0008-idempotency.md",
+    "docs/adr/v35/0009-period-closing.md",
+    "docs/adr/v35/0010-transactional-commands.md",
+    "docs/adr/v35/0011-legacy-non-posting.md",
+    "docs/adr/v35/0012-saas-multitenancy.md",
+    "docs/adr/v35/0013-saas-billing-separation.md",
+    "docs/adr/v35/0014-master-support-boundary.md",
+    "docs/adr/v35/0015-web-mobile-delivery.md",
+    "docs/adr/v35/0016-accounting-plans-effective-dating.md",
+    "docs/adr/v35/0017-institutional-obligation-cash-separation.md",
+    "docs/adr/v35/0018-posted-financial-corrections.md",
+    "docs/adr/v35/0019-expense-approval-policy-snapshot.md",
+    "docs/adr/v35/0020-reconciliation-budget-privacy.md",
+    "docs/adr/v35/0021-saas-commercial-history.md",
+    "docs/adr/v35/0022-saas-plan-versioning-and-promotions.md",
+    "docs/adr/v35/0023-saas-dunning-late-fees-agreements.md",
+    "docs/adr/v35/0024-support-kanban-and-tenant-isolation.md",
+    "docs/adr/v35/0025-platform-settings-and-master-mfa.md",
+    "docs/adr/v35/0026-controlled-onboarding.md",
+    "docs/adr/v35/0026-safe-plan-promotion-lifecycle.md",
+    "docs/adr/v35/0027-master-support-sla-metrics.md",
+    "docs/adr/v35/0028-invoice-charge-breakdown.md"
+  ],
+  "schema_objects": [
+    {
+      "kind": "function",
+      "name": "private.accounting_plan_for_date"
+    },
+    {
+      "kind": "function",
+      "name": "private.belongs_to_org"
+    },
+    {
+      "kind": "function",
+      "name": "private.can_read_financial_member"
+    },
+    {
+      "kind": "function",
+      "name": "private.current_expense_approval_policy"
+    },
+    {
+      "kind": "function",
+      "name": "private.current_payable_amount"
+    },
+    {
+      "kind": "function",
+      "name": "private.current_receivable_amount"
+    },
+    {
+      "kind": "function",
+      "name": "private.default_saas_plan_version"
+    },
+    {
+      "kind": "function",
+      "name": "private.guard_last_active_master"
+    },
+    {
+      "kind": "function",
+      "name": "private.guard_posted_institutional_mutation"
+    },
+    {
+      "kind": "function",
+      "name": "private.guard_published_saas_plan_version"
+    },
+    {
+      "kind": "function",
+      "name": "private.guard_published_saas_promotion_terms"
+    },
+    {
+      "kind": "function",
+      "name": "private.has_aal2"
+    },
+    {
+      "kind": "function",
+      "name": "private.has_active_support_session"
+    },
+    {
+      "kind": "function",
+      "name": "private.has_permission"
+    },
+    {
+      "kind": "function",
+      "name": "private.idempotency_begin"
+    },
+    {
+      "kind": "function",
+      "name": "private.idempotency_complete"
+    },
+    {
+      "kind": "function",
+      "name": "private.is_period_closed"
+    },
+    {
+      "kind": "function",
+      "name": "private.is_platform_staff"
+    },
+    {
+      "kind": "function",
+      "name": "private.is_self_member"
+    },
+    {
+      "kind": "function",
+      "name": "private.is_tenant_user"
+    },
+    {
+      "kind": "function",
+      "name": "private.payable_approval_satisfied"
+    },
+    {
+      "kind": "function",
+      "name": "private.populate_charge_accounting_snapshot"
+    },
+    {
+      "kind": "function",
+      "name": "private.populate_institutional_payable_snapshot"
+    },
+    {
+      "kind": "function",
+      "name": "private.populate_institutional_receivable_snapshot"
+    },
+    {
+      "kind": "function",
+      "name": "private.populate_support_ticket_opened_by_display"
+    },
+    {
+      "kind": "function",
+      "name": "private.prevent_financial_mutation"
+    },
+    {
+      "kind": "function",
+      "name": "private.prevent_non_draft_budget_mutation"
+    },
+    {
+      "kind": "function",
+      "name": "private.prevent_published_accounting_plan_mutation"
+    },
+    {
+      "kind": "function",
+      "name": "private.prevent_published_accounting_structure_mutation"
+    },
+    {
+      "kind": "function",
+      "name": "private.prevent_published_approval_policy_mutation"
+    },
+    {
+      "kind": "function",
+      "name": "private.prevent_published_budget_cycle_mutation"
+    },
+    {
+      "kind": "function",
+      "name": "private.reject_closed_period"
+    },
+    {
+      "kind": "function",
+      "name": "private.replace_plan_version_entitlements"
+    },
+    {
+      "kind": "function",
+      "name": "private.require_permission"
+    },
+    {
+      "kind": "function",
+      "name": "private.require_platform_staff"
+    },
+    {
+      "kind": "function",
+      "name": "private.resolve_category_account"
+    },
+    {
+      "kind": "function",
+      "name": "private.saas_plan_delete_block_reason"
+    },
+    {
+      "kind": "function",
+      "name": "private.saas_promotion_delete_block_reason"
+    },
+    {
+      "kind": "function",
+      "name": "private.seed_default_roles"
+    },
+    {
+      "kind": "function",
+      "name": "private.set_updated_at"
+    },
+    {
+      "kind": "function",
+      "name": "private.tenant_write_allowed"
+    },
+    {
+      "kind": "function",
+      "name": "private.validate_bank_reconciliation_match"
+    },
+    {
+      "kind": "function",
+      "name": "private.validate_category_account_mapping"
+    },
+    {
+      "kind": "function",
+      "name": "private.validate_charge_adjustment"
+    },
+    {
+      "kind": "function",
+      "name": "private.validate_charge_cancellation"
+    },
+    {
+      "kind": "function",
+      "name": "private.validate_charge_insert"
+    },
+    {
+      "kind": "function",
+      "name": "private.validate_financial_account_mapping"
+    },
+    {
+      "kind": "function",
+      "name": "private.validate_institutional_recurring_rule"
+    },
+    {
+      "kind": "function",
+      "name": "private.validate_member_credit_reversal"
+    },
+    {
+      "kind": "function",
+      "name": "private.validate_payable_allocation"
+    },
+    {
+      "kind": "function",
+      "name": "private.validate_payable_cancellation"
+    },
+    {
+      "kind": "function",
+      "name": "private.validate_payable_payment_reversal"
+    },
+    {
+      "kind": "function",
+      "name": "private.validate_payment_reversal"
+    },
+    {
+      "kind": "function",
+      "name": "private.validate_receipt_allocation"
+    },
+    {
+      "kind": "function",
+      "name": "private.validate_receipt_reversal"
+    },
+    {
+      "kind": "function",
+      "name": "private.validate_receivable_allocation"
+    },
+    {
+      "kind": "function",
+      "name": "private.validate_receivable_cancellation"
+    },
+    {
+      "kind": "function",
+      "name": "private.validate_saas_invoice_adjustment"
+    },
+    {
+      "kind": "function",
+      "name": "private.validate_saas_invoice_void"
+    },
+    {
+      "kind": "function",
+      "name": "private.validate_saas_payment_allocation"
+    },
+    {
+      "kind": "function",
+      "name": "public.allocate_payment_fifo"
+    },
+    {
+      "kind": "function",
+      "name": "public.allocate_payment_to_charge"
+    },
+    {
+      "kind": "function",
+      "name": "public.cancel_charge"
+    },
+    {
+      "kind": "function",
+      "name": "public.cancel_institutional_payable"
+    },
+    {
+      "kind": "function",
+      "name": "public.cancel_institutional_receivable"
+    },
+    {
+      "kind": "function",
+      "name": "public.close_financial_period"
+    },
+    {
+      "kind": "function",
+      "name": "public.correct_institutional_payable"
+    },
+    {
+      "kind": "function",
+      "name": "public.correct_institutional_receivable"
+    },
+    {
+      "kind": "function",
+      "name": "public.create_accounting_plan"
+    },
+    {
+      "kind": "function",
+      "name": "public.create_institutional_payable"
+    },
+    {
+      "kind": "function",
+      "name": "public.create_institutional_receivable"
+    },
+    {
+      "kind": "function",
+      "name": "public.create_manual_charge"
+    },
+    {
+      "kind": "function",
+      "name": "public.create_saas_internal_ticket"
+    },
+    {
+      "kind": "function",
+      "name": "public.create_saas_plan_draft"
+    },
+    {
+      "kind": "function",
+      "name": "public.create_saas_plan_successor_draft"
+    },
+    {
+      "kind": "function",
+      "name": "public.create_saas_promotion_draft"
+    },
+    {
+      "kind": "function",
+      "name": "public.create_saas_promotion_successor_draft"
+    },
+    {
+      "kind": "function",
+      "name": "public.create_saas_support_ticket"
+    },
+    {
+      "kind": "function",
+      "name": "public.decide_payable_approval"
+    },
+    {
+      "kind": "function",
+      "name": "public.delete_saas_plan_if_unused"
+    },
+    {
+      "kind": "function",
+      "name": "public.delete_saas_promotion_series_if_unused"
+    },
+    {
+      "kind": "function",
+      "name": "public.provision_saas_onboarding_database"
+    },
+    {
+      "kind": "function",
+      "name": "public.publish_accounting_plan"
+    },
+    {
+      "kind": "function",
+      "name": "public.publish_expense_approval_policy"
+    },
+    {
+      "kind": "function",
+      "name": "public.publish_saas_plan_version"
+    },
+    {
+      "kind": "function",
+      "name": "public.publish_saas_promotion_version"
+    },
+    {
+      "kind": "function",
+      "name": "public.register_institutional_payable_payment"
+    },
+    {
+      "kind": "function",
+      "name": "public.register_institutional_receipt"
+    },
+    {
+      "kind": "function",
+      "name": "public.register_payment"
+    },
+    {
+      "kind": "function",
+      "name": "public.reopen_financial_period"
+    },
+    {
+      "kind": "function",
+      "name": "public.reply_saas_support_ticket"
+    },
+    {
+      "kind": "function",
+      "name": "public.reverse_payment"
+    },
+    {
+      "kind": "function",
+      "name": "public.save_saas_onboarding_draft"
+    },
+    {
+      "kind": "function",
+      "name": "public.set_saas_plan_active"
+    },
+    {
+      "kind": "function",
+      "name": "public.set_saas_promotion_series_active"
+    },
+    {
+      "kind": "function",
+      "name": "public.update_saas_plan_version_draft"
+    },
+    {
+      "kind": "function",
+      "name": "public.update_saas_promotion_draft"
+    },
+    {
+      "kind": "table",
+      "name": "public.account_opening_entries"
+    },
+    {
+      "kind": "table",
+      "name": "public.accounting_account_templates"
+    },
+    {
+      "kind": "table",
+      "name": "public.accounting_accounts"
+    },
+    {
+      "kind": "table",
+      "name": "public.accounting_budget_lines"
+    },
+    {
+      "kind": "table",
+      "name": "public.accounting_plan_templates"
+    },
+    {
+      "kind": "table",
+      "name": "public.accounting_plans"
+    },
+    {
+      "kind": "table",
+      "name": "public.allocation_reversals"
+    },
+    {
+      "kind": "table",
+      "name": "public.audit_logs"
+    },
+    {
+      "kind": "table",
+      "name": "public.bank_reconciliation_match_reversals"
+    },
+    {
+      "kind": "table",
+      "name": "public.bank_reconciliation_matches"
+    },
+    {
+      "kind": "table",
+      "name": "public.bank_statement_imports"
+    },
+    {
+      "kind": "table",
+      "name": "public.bank_statement_lines"
+    },
+    {
+      "kind": "table",
+      "name": "public.budget_cycles"
+    },
+    {
+      "kind": "table",
+      "name": "public.charge_adjustments"
+    },
+    {
+      "kind": "table",
+      "name": "public.charge_batches"
+    },
+    {
+      "kind": "table",
+      "name": "public.charge_cancellations"
+    },
+    {
+      "kind": "table",
+      "name": "public.charge_plans"
+    },
+    {
+      "kind": "table",
+      "name": "public.charges"
+    },
+    {
+      "kind": "table",
+      "name": "public.data_retention_policies"
+    },
+    {
+      "kind": "table",
+      "name": "public.documents"
+    },
+    {
+      "kind": "table",
+      "name": "public.event_participants"
+    },
+    {
+      "kind": "table",
+      "name": "public.events"
+    },
+    {
+      "kind": "table",
+      "name": "public.expense_approval_policies"
+    },
+    {
+      "kind": "table",
+      "name": "public.financial_account_accounting_mappings"
+    },
+    {
+      "kind": "table",
+      "name": "public.financial_account_transfer_reversals"
+    },
+    {
+      "kind": "table",
+      "name": "public.financial_account_transfers"
+    },
+    {
+      "kind": "table",
+      "name": "public.financial_accounts"
+    },
+    {
+      "kind": "table",
+      "name": "public.financial_categories"
+    },
+    {
+      "kind": "table",
+      "name": "public.financial_category_account_mappings"
+    },
+    {
+      "kind": "table",
+      "name": "public.financial_periods"
+    },
+    {
+      "kind": "table",
+      "name": "public.fund_budget_lines"
+    },
+    {
+      "kind": "table",
+      "name": "public.fund_transfer_reversals"
+    },
+    {
+      "kind": "table",
+      "name": "public.fund_transfers"
+    },
+    {
+      "kind": "table",
+      "name": "public.funds"
+    },
+    {
+      "kind": "table",
+      "name": "public.idempotency_keys"
+    },
+    {
+      "kind": "table",
+      "name": "public.import_confirmations"
+    },
+    {
+      "kind": "table",
+      "name": "public.import_jobs"
+    },
+    {
+      "kind": "table",
+      "name": "public.import_rows"
+    },
+    {
+      "kind": "table",
+      "name": "public.institutional_payable_allocation_reversals"
+    },
+    {
+      "kind": "table",
+      "name": "public.institutional_payable_cancellations"
+    },
+    {
+      "kind": "table",
+      "name": "public.institutional_payable_corrections"
+    },
+    {
+      "kind": "table",
+      "name": "public.institutional_payable_payment_allocations"
+    },
+    {
+      "kind": "table",
+      "name": "public.institutional_payable_payment_reversals"
+    },
+    {
+      "kind": "table",
+      "name": "public.institutional_payable_payments"
+    },
+    {
+      "kind": "table",
+      "name": "public.institutional_payables"
+    },
+    {
+      "kind": "table",
+      "name": "public.institutional_receipt_allocation_reversals"
+    },
+    {
+      "kind": "table",
+      "name": "public.institutional_receipt_allocations"
+    },
+    {
+      "kind": "table",
+      "name": "public.institutional_receipt_reversals"
+    },
+    {
+      "kind": "table",
+      "name": "public.institutional_receipts"
+    },
+    {
+      "kind": "table",
+      "name": "public.institutional_receivable_cancellations"
+    },
+    {
+      "kind": "table",
+      "name": "public.institutional_receivable_corrections"
+    },
+    {
+      "kind": "table",
+      "name": "public.institutional_receivables"
+    },
+    {
+      "kind": "table",
+      "name": "public.institutional_recurring_rule_versions"
+    },
+    {
+      "kind": "table",
+      "name": "public.institutional_recurring_rules"
+    },
+    {
+      "kind": "table",
+      "name": "public.legacy_financial_records"
+    },
+    {
+      "kind": "table",
+      "name": "public.member_communication_events"
+    },
+    {
+      "kind": "table",
+      "name": "public.member_communications"
+    },
+    {
+      "kind": "table",
+      "name": "public.member_credit_reversals"
+    },
+    {
+      "kind": "table",
+      "name": "public.member_credits"
+    },
+    {
+      "kind": "table",
+      "name": "public.member_debt_agreement_events"
+    },
+    {
+      "kind": "table",
+      "name": "public.member_debt_agreement_installments"
+    },
+    {
+      "kind": "table",
+      "name": "public.member_debt_agreement_items"
+    },
+    {
+      "kind": "table",
+      "name": "public.member_debt_agreements"
+    },
+    {
+      "kind": "table",
+      "name": "public.member_offices"
+    },
+    {
+      "kind": "table",
+      "name": "public.member_user_links"
+    },
+    {
+      "kind": "table",
+      "name": "public.members"
+    },
+    {
+      "kind": "table",
+      "name": "public.mutual_assignments"
+    },
+    {
+      "kind": "table",
+      "name": "public.mutual_batches"
+    },
+    {
+      "kind": "table",
+      "name": "public.notifications"
+    },
+    {
+      "kind": "table",
+      "name": "public.office_types"
+    },
+    {
+      "kind": "table",
+      "name": "public.organization_settings"
+    },
+    {
+      "kind": "table",
+      "name": "public.organizations"
+    },
+    {
+      "kind": "table",
+      "name": "public.payable_approval_decisions"
+    },
+    {
+      "kind": "table",
+      "name": "public.payable_approval_requests"
+    },
+    {
+      "kind": "table",
+      "name": "public.payable_documents"
+    },
+    {
+      "kind": "table",
+      "name": "public.payment_methods"
+    },
+    {
+      "kind": "table",
+      "name": "public.payment_reversals"
+    },
+    {
+      "kind": "table",
+      "name": "public.payments"
+    },
+    {
+      "kind": "table",
+      "name": "public.period_events"
+    },
+    {
+      "kind": "table",
+      "name": "public.permissions"
+    },
+    {
+      "kind": "table",
+      "name": "public.platform_staff"
+    },
+    {
+      "kind": "table",
+      "name": "public.privacy_request_events"
+    },
+    {
+      "kind": "table",
+      "name": "public.privacy_requests"
+    },
+    {
+      "kind": "table",
+      "name": "public.receivable_allocations"
+    },
+    {
+      "kind": "table",
+      "name": "public.receivable_documents"
+    },
+    {
+      "kind": "table",
+      "name": "public.recurring_member_terms"
+    },
+    {
+      "kind": "table",
+      "name": "public.recurring_rule_exceptions"
+    },
+    {
+      "kind": "table",
+      "name": "public.recurring_rule_members"
+    },
+    {
+      "kind": "table",
+      "name": "public.recurring_rule_versions"
+    },
+    {
+      "kind": "table",
+      "name": "public.recurring_rules"
+    },
+    {
+      "kind": "table",
+      "name": "public.role_permissions"
+    },
+    {
+      "kind": "table",
+      "name": "public.roles"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_billing_policies"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_billing_profiles"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_collection_events"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_fiscal_documents"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_invoice_adjustments"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_invoice_items"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_invoice_voids"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_invoices"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_jobs"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_master_audit_logs"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_onboarding_runs"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_onboarding_step_events"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_payment_agreement_events"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_payment_agreement_installments"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_payment_agreement_invoices"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_payment_agreements"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_payment_allocation_reversals"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_payment_allocations"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_payment_reversals"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_payments"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_plan_entitlements"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_plan_version_entitlements"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_plan_versions"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_plans"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_platform_configuration"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_promotion_customers"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_promotion_plan_versions"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_promotion_redemptions"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_promotion_series_state"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_promotions"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_scheduled_subscription_changes"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_subscription_events"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_subscription_price_terms"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_subscriptions"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_support_sessions"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_support_ticket_events"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_support_ticket_messages"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_support_tickets"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_tenant_accounts"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_tenant_contacts"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_terms_acceptances"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_terms_versions"
+    },
+    {
+      "kind": "table",
+      "name": "public.saas_webhook_events"
+    },
+    {
+      "kind": "table",
+      "name": "public.user_profiles"
+    },
+    {
+      "kind": "table",
+      "name": "public.user_roles"
+    },
+    {
+      "kind": "table",
+      "name": "public.user_ui_preferences"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_account_member_inflow_balances"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_account_member_inflows"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_accounting_budget_vs_actual"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_active_allocations"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_bank_reconciliation_lines"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_charge_balances"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_dre_entries"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_financial_account_balances"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_financial_account_movements"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_fund_budget_vs_actual"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_institutional_payable_effective"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_institutional_receivable_effective"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_member_communication_status"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_member_credit_balances"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_member_financial_position"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_member_financial_reconciliation"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_member_statement"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_payable_approval_state"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_payment_balances"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_privacy_request_status"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_saas_active_payment_allocations"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_saas_invoice_balances"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_saas_invoice_charge_breakdown"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_saas_payment_agreement_status"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_saas_payment_balances"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_saas_plan_version_admin"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_saas_promotion_series_admin"
+    },
+    {
+      "kind": "view",
+      "name": "public.v_saas_support_ticket_metrics"
+    }
+  ]
+}

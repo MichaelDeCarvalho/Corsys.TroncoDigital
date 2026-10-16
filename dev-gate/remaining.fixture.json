@@ -1,0 +1,27 @@
+{
+  "project_ref": "szqkdekwhzxsoxorgvaz",
+  "period": "2027-01-01",
+  "date": "2027-01-03",
+  "tenant_a": {
+    "organization_id": "f2d9a9c9-e2c4-4ff3-9589-93f91fdde05b",
+    "admin_user_id": "a752dda8-4ef0-4c58-9d3b-b8fee14ec624",
+    "member_id": "12cc479d-96f2-4c6c-b2d0-b23a5c80f476",
+    "category_id": "ee4650ac-48fc-47f9-a92a-c8c634fc19e9",
+    "payment_method_id": "ffae09a8-4073-4305-9436-803daae5e5b9",
+    "financial_account_id": "a7618966-ad8e-466b-b11d-2ca52ce6372d",
+    "accounting_plan_id": "e590b159-6821-4a02-9345-1a206b6d7927",
+    "revenue_category_id": "74fe9f7d-5862-4a70-aa0d-08cab7f857e6",
+    "expense_category_id": "1f4fbca9-6413-4297-bf25-2b8327cb0447"
+  },
+  "tenant_b": {
+    "organization_id": "b112d600-bf1a-4bfd-bc1c-e9e9b749b539",
+    "admin_user_id": "559ba052-c408-4418-b806-0c0c4b8e3603",
+    "member_id": "85669304-6c0a-4bb3-80f8-cbb49c422090",
+    "category_id": "4ec5e0e1-6cc6-47fe-9a1c-dc320be26fd0",
+    "payment_method_id": "85285a18-9f45-47f5-9565-a16e4faaabd6",
+    "financial_account_id": "cf48c695-c424-4fd2-abbf-46ec5192a6c2",
+    "accounting_plan_id": "60818b45-bcd9-4d43-aa66-f840575ce303",
+    "revenue_category_id": "c7c8d094-4dec-44e6-921b-03b57512277c",
+    "expense_category_id": "c6365b74-62cb-4abe-8ea2-d406934a34f1"
+  }
+}

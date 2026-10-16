@@ -82,3 +82,4 @@ Ao afetar arquitetura, banco, auth, autorização, segurança, deploy, integraç
 - Preferir PR revisável.
 - Não assumir push direto em branch protegida.
 - Não executar deploy, migração destrutiva ou ação externa sensível sem autorização apropriada.
+

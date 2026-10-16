@@ -1,0 +1,234 @@
+{
+  "project_ref": "szqkdekwhzxsoxorgvaz",
+  "commands": [
+    {
+      "name": "allocate_payment_fifo",
+      "arguments": [
+        "p_organization_id",
+        "p_payment_id",
+        "p_accounting_period"
+      ]
+    },
+    {
+      "name": "allocate_payment_to_charge",
+      "arguments": [
+        "p_organization_id",
+        "p_payment_id",
+        "p_charge_id",
+        "p_amount",
+        "p_accounting_period",
+        "p_idempotency_key"
+      ]
+    },
+    {
+      "name": "cancel_charge",
+      "arguments": [
+        "p_organization_id",
+        "p_charge_id",
+        "p_accounting_period",
+        "p_reason"
+      ]
+    },
+    {
+      "name": "cancel_institutional_payable",
+      "arguments": [
+        "p_organization_id",
+        "p_payable_id",
+        "p_accounting_period",
+        "p_reason"
+      ]
+    },
+    {
+      "name": "cancel_institutional_receivable",
+      "arguments": [
+        "p_organization_id",
+        "p_receivable_id",
+        "p_accounting_period",
+        "p_reason"
+      ]
+    },
+    {
+      "name": "close_financial_period",
+      "arguments": [
+        "p_organization_id",
+        "p_period",
+        "p_reason"
+      ]
+    },
+    {
+      "name": "correct_institutional_payable",
+      "arguments": [
+        "p_organization_id",
+        "p_payable_id",
+        "p_new_category_id",
+        "p_new_fund_id",
+        "p_new_description",
+        "p_new_competence",
+        "p_new_due_date",
+        "p_new_amount",
+        "p_correction_accounting_period",
+        "p_reason"
+      ]
+    },
+    {
+      "name": "correct_institutional_receivable",
+      "arguments": [
+        "p_organization_id",
+        "p_receivable_id",
+        "p_new_category_id",
+        "p_new_fund_id",
+        "p_new_description",
+        "p_new_competence",
+        "p_new_due_date",
+        "p_new_amount",
+        "p_correction_accounting_period",
+        "p_reason"
+      ]
+    },
+    {
+      "name": "create_accounting_plan",
+      "arguments": [
+        "p_organization_id",
+        "p_name",
+        "p_valid_from",
+        "p_valid_to",
+        "p_source_kind",
+        "p_source_id"
+      ]
+    },
+    {
+      "name": "create_institutional_payable",
+      "arguments": [
+        "p_organization_id",
+        "p_category_id",
+        "p_fund_id",
+        "p_description",
+        "p_counterparty_name",
+        "p_competence",
+        "p_issue_date",
+        "p_due_date",
+        "p_accounting_period",
+        "p_amount",
+        "p_idempotency_key"
+      ]
+    },
+    {
+      "name": "create_institutional_receivable",
+      "arguments": [
+        "p_organization_id",
+        "p_category_id",
+        "p_fund_id",
+        "p_description",
+        "p_counterparty_name",
+        "p_competence",
+        "p_issue_date",
+        "p_due_date",
+        "p_accounting_period",
+        "p_amount",
+        "p_idempotency_key"
+      ]
+    },
+    {
+      "name": "create_manual_charge",
+      "arguments": [
+        "p_organization_id",
+        "p_member_id",
+        "p_category_id",
+        "p_description",
+        "p_competence",
+        "p_issue_date",
+        "p_due_date",
+        "p_accounting_period",
+        "p_amount",
+        "p_reference",
+        "p_idempotency_key"
+      ]
+    },
+    {
+      "name": "decide_payable_approval",
+      "arguments": [
+        "p_organization_id",
+        "p_approval_request_id",
+        "p_decision",
+        "p_reason"
+      ]
+    },
+    {
+      "name": "publish_accounting_plan",
+      "arguments": [
+        "p_organization_id",
+        "p_plan_id"
+      ]
+    },
+    {
+      "name": "publish_expense_approval_policy",
+      "arguments": [
+        "p_organization_id",
+        "p_policy_id"
+      ]
+    },
+    {
+      "name": "register_institutional_payable_payment",
+      "arguments": [
+        "p_organization_id",
+        "p_payable_id",
+        "p_payment_date",
+        "p_accounting_period",
+        "p_amount",
+        "p_allocate_amount",
+        "p_payment_method_id",
+        "p_financial_account_id",
+        "p_reference",
+        "p_idempotency_key"
+      ]
+    },
+    {
+      "name": "register_institutional_receipt",
+      "arguments": [
+        "p_organization_id",
+        "p_receivable_id",
+        "p_receipt_date",
+        "p_accounting_period",
+        "p_amount",
+        "p_allocate_amount",
+        "p_payment_method_id",
+        "p_financial_account_id",
+        "p_reference",
+        "p_idempotency_key"
+      ]
+    },
+    {
+      "name": "register_payment",
+      "arguments": [
+        "p_organization_id",
+        "p_member_id",
+        "p_payment_date",
+        "p_accounting_period",
+        "p_amount",
+        "p_payment_method_id",
+        "p_financial_account_id",
+        "p_reference",
+        "p_notes",
+        "p_idempotency_key"
+      ]
+    },
+    {
+      "name": "reopen_financial_period",
+      "arguments": [
+        "p_organization_id",
+        "p_period",
+        "p_reason"
+      ]
+    },
+    {
+      "name": "reverse_payment",
+      "arguments": [
+        "p_organization_id",
+        "p_payment_id",
+        "p_accounting_period",
+        "p_reason"
+      ]
+    }
+  ],
+  "captured_date": "2026-10-08"
+}

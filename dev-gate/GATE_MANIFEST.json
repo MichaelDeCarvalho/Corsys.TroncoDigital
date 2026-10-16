@@ -1,0 +1,20 @@
+{
+  "baseline": "V35",
+  "schema_migrations": 17,
+  "purpose": "Supabase DEV runtime readiness",
+  "changes_schema": false,
+  "requires_user_supabase_dev_project": true,
+  "requires_secret_key_locally_for_fixture_only": true,
+  "must_not_share_secrets_in_chat": true,
+  "blocking_gates": [
+    "migration",
+    "invariants",
+    "JWT/RLS cross-tenant",
+    "Master AAL2",
+    "financial negative tests",
+    "concurrency/idempotency"
+  ],
+  "baseline_migrations": 16,
+  "forward_fixes": 1,
+  "runtime_status": "NOT_EVALUATED"
+}

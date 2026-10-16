@@ -1,0 +1,46 @@
+{
+  "source_original_sha256": "3ac07e762c42805851b90a916b10dd71c98ae6891aeb5404372ef964af8503fc",
+  "reference": {
+    "path": "docs/pilot/v34-master-operacional.reference.html",
+    "sha256": "e0b477f2e7d0f7f53ee866235310c9de49826e460c335e0fa58ef5d6276ba71a"
+  },
+  "inventory": {
+    "path": "docs/engineering/v35-pilot-inventory.json",
+    "sha256": "ceda455b903319bc02da529541988667fb08cac1dd20d9116c00c10937674458"
+  },
+  "required_documents": [
+    "docs/V35_PILOT_PARITY.md",
+    "docs/V35_PILOT_INVENTORY.md",
+    "scripts/inventory_v35_pilot.mjs"
+  ],
+  "required_screens": [
+    "view-master",
+    "view-master-clientes",
+    "view-master-cobranca",
+    "view-master-planos",
+    "view-master-operacao",
+    "view-master-config",
+    "view-chamados",
+    "view-dashboard",
+    "view-integrantes",
+    "view-financeiro",
+    "view-inadimplencia",
+    "view-tesouraria",
+    "view-fluxo-caixa",
+    "view-contas-pagar",
+    "view-contas-receber",
+    "view-dre",
+    "view-plano-contas",
+    "view-config-dre",
+    "view-relatorios",
+    "view-cadastros",
+    "view-configuracoes"
+  ],
+  "counts": {
+    "screen_fields": 129,
+    "shared_fields": 3,
+    "dynamic_field_occurrences": 297,
+    "dynamic_fragments": 126
+  },
+  "scope": "Static source preservation only; not functional/visual parity proof."
+}

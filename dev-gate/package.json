@@ -1,0 +1,30 @@
+{
+  "name": "corsys-v35-supabase-dev-gate",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "fixture": "node --env-file=.env.dev tools/create-test-fixture.mjs",
+    "test:tenant-isolation": "node --env-file=.env.dev tests/tenant-isolation.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "check": "node tools/check.mjs",
+    "test:financial-http": "node --env-file=.env.dev tests/financial-http.mjs",
+    "test:suspension-http": "node --env-file=.env.dev tests/suspension-http.mjs blocked",
+    "test:restoration-http": "node --env-file=.env.dev tests/suspension-http.mjs restored",
+    "check:mfa-posture": "node --env-file=.env.dev tests/mfa-posture.mjs",
+    "test:financial-lifecycle": "node --env-file=.env.dev tests/financial-lifecycle.mjs",
+    "test:stage1-remaining": "node --env-file=.env.dev tests/stage1-remaining.mjs",
+    "test:master-mfa": "node --env-file=.env.dev tests/master-mfa.mjs",
+    "test:profiles-live": "node --env-file=.env.dev tests/profiles-live.mjs",
+    "test:staff-live": "node --env-file=.env.dev tests/staff-live.mjs",
+    "test:authorization-final": "node --env-file=.env.dev tests/authorization-final.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.117.2"
+  },
+  "devDependencies": {
+    "supabase": "2.119.0"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

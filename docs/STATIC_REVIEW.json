@@ -1,0 +1,12 @@
+{
+  "status": "STATIC_REVIEW_PASS",
+  "scope_note": "Static review only; PostgreSQL/Supabase execution still required.",
+  "migration_count": 5,
+  "public_table_count": 38,
+  "missing_fk_target_tables": [],
+  "tables_without_rls": [],
+  "security_definer_without_locked_search_path": [],
+  "contains_float_real_double": false,
+  "security_invoker_views": 9,
+  "immutable_fact_triggers": 14
+}

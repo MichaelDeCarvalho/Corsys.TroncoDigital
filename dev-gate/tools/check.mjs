@@ -1,0 +1,11 @@
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+const root = fileURLToPath(new URL('../', import.meta.url));
+for (const file of ['tools/dev-environment.mjs', 'tools/create-test-fixture.mjs', 'tests/tenant-isolation.mjs', 'tests/dev-environment.test.mjs', 'tools/isolation-assertions.mjs', 'tests/isolation-assertions.test.mjs', 'tools/financial-assertions.mjs', 'tests/financial-assertions.test.mjs', 'tests/financial-http.mjs', 'tests/suspension-http.mjs', 'tests/mfa-posture.mjs', 'tests/financial-lifecycle.mjs', 'tests/stage1-remaining.mjs', 'tests/master-mfa.mjs', 'tools/mfa-local.mjs', 'tests/mfa-local.test.mjs', 'tests/profiles-live.mjs', 'tests/staff-live.mjs', 'tests/authorization-final.mjs']) {
+  const result = spawnSync(process.execPath, ['--check', path.join(root, file)], { stdio: 'inherit' });
+  if (result.error || result.status !== 0) process.exit(result.status || 1);
+}
+const tests = spawnSync(process.execPath, ['--test', path.join(root, 'tests/dev-environment.test.mjs'), path.join(root, 'tests/isolation-assertions.test.mjs'), path.join(root, 'tests/financial-assertions.test.mjs'), path.join(root, 'tests/mfa-local.test.mjs')], { stdio: 'inherit' });
+process.exit(tests.status || (tests.error ? 1 : 0));
+

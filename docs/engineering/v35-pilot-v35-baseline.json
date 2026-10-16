@@ -1,0 +1,45 @@
+{
+  "source_original_sha256": "8b22ee9738f9a5173b1941960ebe16be3c813d5f38a8a16557cf087418250a5b",
+  "reference": {
+    "path": "docs/pilot/v35-planos-ofertas.reference.html",
+    "sha256": "7101811d2b0d3bcdc4bc9742913b68c32f3e840ca03034a6c5d1292a9481245e"
+  },
+  "inventory": {
+    "path": "docs/engineering/v35-pilot-v35-inventory.json",
+    "sha256": "08deb1ed52dc2895437db25c47312b9cc658b80c43f3ab620915bfe4d6e3a1d3"
+  },
+  "required_documents": [
+    "docs/V35_PILOT_V35_INVENTORY.md",
+    "docs/V35_PILOT_RECONCILIATION.md"
+  ],
+  "required_screens": [
+    "view-master",
+    "view-master-clientes",
+    "view-master-cobranca",
+    "view-master-planos",
+    "view-master-operacao",
+    "view-master-config",
+    "view-chamados",
+    "view-dashboard",
+    "view-integrantes",
+    "view-financeiro",
+    "view-inadimplencia",
+    "view-tesouraria",
+    "view-fluxo-caixa",
+    "view-contas-pagar",
+    "view-contas-receber",
+    "view-dre",
+    "view-plano-contas",
+    "view-config-dre",
+    "view-relatorios",
+    "view-cadastros",
+    "view-configuracoes"
+  ],
+  "counts": {
+    "screen_fields": 132,
+    "shared_fields": 3,
+    "dynamic_field_occurrences": 301,
+    "dynamic_fragments": 132
+  },
+  "scope": "V35 additive accepted source; historical V34 baseline remains protected. Static preservation is not runtime parity."
+}

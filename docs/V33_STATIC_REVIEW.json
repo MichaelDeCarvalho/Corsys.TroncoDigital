@@ -1,0 +1,18 @@
+{
+  "status": "STATIC_REVIEW_PASS",
+  "migration_count": 14,
+  "public_tables": 135,
+  "rls_enabled_tables": 135,
+  "missing_rls": [],
+  "security_invoker_views": 24,
+  "security_definer_without_locked_search_path": [],
+  "checks": {
+    "published_plan_version_backfill_before_guard": true,
+    "published_versions_can_coexist": true,
+    "default_plan_version_resolver": true,
+    "invoice_adjustment_lower_bound": true,
+    "agreement_status_derived": true,
+    "ticket_internal_events_hidden_from_tenant": true,
+    "runtime_postgresql_executed": false
+  }
+}

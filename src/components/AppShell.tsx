@@ -1,45 +1,25 @@
-import { Home, Menu } from 'lucide-react'
+import { Home, Users, MessagesSquare, LogOut, Wallet, Settings, ShieldCheck } from 'lucide-react'
 import type { ReactNode } from 'react'
 
-export function AppShell({ children }: { children: ReactNode }) {
-  return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-slate-950/95 px-4 py-3 backdrop-blur md:hidden">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">Corsys</p>
-            <p className="font-semibold">Tronco Digital</p>
-          </div>
-          <button type="button" className="rounded-xl border border-white/10 p-2 text-slate-200" aria-label="Abrir navegação">
-            <Menu size={20} />
-          </button>
-        </div>
-      </header>
+export type Page = 'home' | 'members' | 'finance' | 'support' | 'structure' | 'master'
+const navigation = [{ id: 'home' as const, label: 'Início', Icon: Home }, { id: 'members' as const, label: 'Integrantes', Icon: Users }, { id: 'finance' as const, label: 'Financeiro', Icon: Wallet }, { id: 'support' as const, label: 'Chamados', Icon: MessagesSquare }, { id: 'structure' as const, label: 'Plano de Contas', Icon: Settings }]
 
-      <div className="mx-auto grid min-h-screen max-w-[1600px] md:grid-cols-[260px_1fr]">
-        <aside className="hidden border-r border-white/10 bg-slate-950 p-6 md:block">
-          <div className="mb-10">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">Corsys</p>
-            <h1 className="mt-1 text-xl font-semibold">Tronco Digital</h1>
-            <p className="mt-2 text-sm text-slate-400">V35</p>
-          </div>
-          <nav aria-label="Navegação principal">
-            <button type="button" className="flex w-full items-center gap-3 rounded-xl bg-white/10 px-3 py-2.5 text-left text-sm text-white">
-              <Home size={18} />
-              Início
-            </button>
-          </nav>
-        </aside>
-
-        <main className="min-w-0 p-4 pb-24 sm:p-6 md:p-8 md:pb-8">{children}</main>
-      </div>
-
-      <nav aria-label="Navegação móvel" className="fixed inset-x-0 bottom-0 z-20 border-t border-white/10 bg-slate-950/95 px-2 py-2 backdrop-blur md:hidden">
-        <button type="button" className="mx-auto flex min-h-14 w-24 flex-col items-center justify-center gap-1 rounded-xl px-2 text-[11px] text-cyan-300">
-          <Home size={19} />
-          <span>Início</span>
-        </button>
-      </nav>
+export function AppShell({ children, page, showMaster = false, onNavigate, onSignOut, email }: { children: ReactNode; page: Page; showMaster?: boolean; onNavigate: (page: Page) => void; onSignOut: () => void; email: string }) {
+  function links() {
+    return [...navigation, ...(showMaster ? [{ id: 'master' as const, label: 'Master SaaS', Icon: ShieldCheck }] : [])].map(({ id, label, Icon }) => <button key={id} type="button" aria-current={page === id ? 'page' : undefined} onClick={() => onNavigate(id)}><Icon size={20} aria-hidden="true" /><span>{label}</span></button>)
+  }
+  return <div className="app-layout">
+    <a className="skip-link" href="#main">Pular para conteúdo</a>
+    <aside className="sidebar">
+      <div className="brand"><span className="brand-mark">T</span><span>CORSYS<strong>Tronco Digital</strong></span></div>
+      <p className="nav-caption">Sua Loja</p><nav className="side-nav" aria-label="Navegação principal">{links()}</nav>
+      <div className="sidebar-footer"><span className="status-dot" />Ambiente DEV<span className="version">V35</span></div>
+    </aside>
+    <div className="app-body">
+      <header className="topbar"><span className="mobile-brand">Tronco Digital</span><p className="subtle account-email">{email}</p><button type="button" className="quiet" onClick={onSignOut}><LogOut size={17} aria-hidden="true" />Sair</button></header>
+      <main id="main">{children}</main>
     </div>
-  )
+    <nav className={showMaster ? 'mobile-nav has-master' : 'mobile-nav'} aria-label="Navegação móvel">{links()}</nav>
+  </div>
 }
+

@@ -1,0 +1,71 @@
+{
+  "source": "corsys-v35-supabase-dev-gate.zip",
+  "source_sha256": "2679c70bcf64b4c914d30fdd84778f13bae915e1ae278d71b7b0d684db8ef98b",
+  "baseline_migrations": [
+    {
+      "path": "supabase/migrations/202609040001_foundation.sql",
+      "sha256": "a9809cfb3878067754684d427416a41d4c7f0eb8d5b9a639ee5df3f6cd3b6150"
+    },
+    {
+      "path": "supabase/migrations/202609040002_financial_core.sql",
+      "sha256": "314ea1cfde196f89fdc567bf0de1823bc456b8cad2aba51af97a65704d736088"
+    },
+    {
+      "path": "supabase/migrations/202609040003_financial_views.sql",
+      "sha256": "3703b1fc87f45ee3aa1a337d5ab80855ceaed136441e67cf3dec38f2d071be66"
+    },
+    {
+      "path": "supabase/migrations/202609040004_security_rls.sql",
+      "sha256": "e27ad546d800b7b9116d86bd386f493906d9adcd13556b855e9f3faf847ae0be"
+    },
+    {
+      "path": "supabase/migrations/202609040005_financial_commands.sql",
+      "sha256": "2c0346bb2146f210b1d882a194beb18170a5f80811343ea613db3a3730ac4ffc"
+    },
+    {
+      "path": "supabase/migrations/202609080006_saas_platform.sql",
+      "sha256": "ba6c86d0c58945b2f37663e01f067f1ef1560004ed04b74c60e6fcafb5cc6853"
+    },
+    {
+      "path": "supabase/migrations/202609080007_saas_security.sql",
+      "sha256": "e7788a7f49ccba0a0f25bb24a90bef240fa71c3f5640b63e4f376438d8af3ee3"
+    },
+    {
+      "path": "supabase/migrations/202609080008_post_v31_accounting_domain.sql",
+      "sha256": "c825f13a40672159f62c3a922dba9d821c32aaca17cfc8c9db98ee0d72a406e2"
+    },
+    {
+      "path": "supabase/migrations/202609080009_institutional_finance.sql",
+      "sha256": "23c36043dd5f3ea310a604299d8c8de4d01d05135b6f8fe104e2cc7e57f2f731"
+    },
+    {
+      "path": "supabase/migrations/202609080010_operational_controls.sql",
+      "sha256": "b43062b822c58e61a31dabde62fd0c1566f0f517012414b37503ee1d3ec03e00"
+    },
+    {
+      "path": "supabase/migrations/202609080011_saas_commercial_refinements.sql",
+      "sha256": "0f919346bb1b86e3d15f32d82ad164de80cd7dcc6aebcf304908adc26def2622"
+    },
+    {
+      "path": "supabase/migrations/202609080012_post_v31_views_security.sql",
+      "sha256": "5f02fd2fc04f9f9f9273a52ad18a42d5fbe521a8bac6109e8a12d49edad59260"
+    },
+    {
+      "path": "supabase/migrations/202609080013_post_v31_commands.sql",
+      "sha256": "28c766eda5247f4f14bbb13104c3be5d4936c1a3a917db1623e3efb367895011"
+    },
+    {
+      "path": "supabase/migrations/202609090014_v33_saas_control_plane.sql",
+      "sha256": "6492bfb90e219f76d125c7854cd8c2611331c9b311eddb237340a943a4a02b0e"
+    },
+    {
+      "path": "supabase/migrations/202609100015_v34_master_operations.sql",
+      "sha256": "63f941890208f533bdb181612372e0e6bea9d5b6a99974ded532871f4b2e86ed"
+    },
+    {
+      "path": "supabase/migrations/202609100016_v35_plan_promotion_lifecycle.sql",
+      "sha256": "7e268fc97cfab8ce28056d26f2c8be3a034d5f20494c3b886dbed9cf8d0381c0"
+    }
+  ],
+  "runtime_status": "NOT_EVALUATED"
+}

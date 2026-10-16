@@ -1,0 +1,15 @@
+# DEV — fechamento da matriz de recursos e views
+
+Etapa1 ainda aberta, novo HTTP não executado. Staff live/MFA/refresh aprovado separadamente. Este gate usa só os admins A/B existentes, sem MFA/roles/status changes.
+
+seed_dev_final_idor.sql aplicado uma vez: dois rascunhos de política mode=off válidos somente2030 e duas solicitações MANUAIS fictícias de aprovação sobre payables fictícios100 do gate2027. Não simula geração automática de aprovação, não muda approval_required do fato original nem homologa política de negócio. Solicitações servem à autorização de approve. Não altera assinaturas, Auth, grants ou valores originais.
+
+npm run test:authorization-final usa final-authorization.fixture.json. Exige identidade real/getUser, fatos próprios, policies draft e zero decisões anteriores. Cria só dois rascunhos de plano2030 por duplicação própria. Em ambas identidades testa own organization com IDs estrangeiros elegíveis: source de plano, plano draft, policy draft, approval request, payable/receivable em correção e cancelamento (oito negativas23503 por tenant). Recurso estrangeiro qualificado é lido pelo dono legítimo antes do teste. Só depois de todas negativas publica policy futuraoff e aprova solicitação fictícia própria, confere ator/audit único e valor original100 preservado. Homologação completa das regras/configuração/aprovação continua nas etapas2/3; não inferir publicação positiva de plano contábil desse teste de ownership.
+
+28 views capturadas no catálogo real. 24 SELECTs de tenant/views administrativas, dois grants backend-only negados42501, demais views com filtro organization_id e consultas cruzadas explícitas. Dez views financeiras/conta/DRE/approval exigem fatos próprios positivos. Views sem fatos próprios registram INFO, não equivalem a homologação positiva do domínio. Views administrativas sem organization_id devem retornar zero para tenant. Nenhum HTTP erro de rede/permissão inesperada conta como isolamento aprovado.
+
+Preparação: 12 testes locais/sintaxe PASS. verify_dev_final_authorization.sql passou nas duas identidades em ROLLBACK: 28views, oito negativas, own source duplicate, publicação policy/decisão positivos. Claims simuladas não substituem execução HTTP.
+
+Extrair pacote dev-gate em pasta nova, copiar .env.dev privado da cópia anterior. npm ci; npm run check; set SUPABASE_DEV_PROJECT_REF fixo; npm run test:authorization-final. Não repetir stage1-remaining (integrante já tem fatos), nem gates já aprovados. Não sobrescrever env preenchido. Enviar somente saída/erro, jamais senhas/tokens/env.
+
+Tag DEV FINAL AUTHORIZATION UUID. Em erro informar tag, inspecionar drafts/policy/decisions antes de repetir. Fatos/configurações futuras fictícias persistem, não apagar ledger/decisões/auditoria. Nenhuma janela temporária de roles/status/periods é aberta por este gate. Resultado não homologa produto inteiro/produção. Ao PASS, revisar critérios/evidências e publicar estado de encerramento da etapa1 se nenhuma pendência crítica permanecer.

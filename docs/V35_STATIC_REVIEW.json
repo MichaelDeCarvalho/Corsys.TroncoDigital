@@ -1,0 +1,19 @@
+{
+  "status": "STATIC_REVIEW_PASS",
+  "migration_count": 16,
+  "public_tables": 138,
+  "rls_enabled_tables": 138,
+  "missing_rls": [],
+  "security_invoker_views": 28,
+  "security_definer_without_locked_search_path": [],
+  "v35_checks": {
+    "plan_identity_snapshots": true,
+    "plan_safe_delete": true,
+    "plan_activation": true,
+    "promotion_draft_commands": true,
+    "promotion_safe_delete": true,
+    "promotion_activation": true,
+    "admin_history_views": true,
+    "runtime_postgresql_executed": false
+  }
+}

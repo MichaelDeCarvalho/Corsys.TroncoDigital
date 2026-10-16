@@ -1,0 +1,497 @@
+{
+  "project_ref": "szqkdekwhzxsoxorgvaz",
+  "organization": "Michael - jobmcc",
+  "environment": "DEV",
+  "applied_at": "2026-10-02",
+  "migrations": [
+    {
+      "version": "20261002201615",
+      "name": "202609040001_foundation",
+      "source_path": "supabase/migrations/202609040001_foundation.sql",
+      "path": "supabase/migrations/20261002201615_202609040001_foundation.sql",
+      "sha256": "a9809cfb3878067754684d427416a41d4c7f0eb8d5b9a639ee5df3f6cd3b6150"
+    },
+    {
+      "version": "20261002201625",
+      "name": "202609040002_financial_core",
+      "source_path": "supabase/migrations/202609040002_financial_core.sql",
+      "path": "supabase/migrations/20261002201625_202609040002_financial_core.sql",
+      "sha256": "314ea1cfde196f89fdc567bf0de1823bc456b8cad2aba51af97a65704d736088"
+    },
+    {
+      "version": "20261002201633",
+      "name": "202609040003_financial_views",
+      "source_path": "supabase/migrations/202609040003_financial_views.sql",
+      "path": "supabase/migrations/20261002201633_202609040003_financial_views.sql",
+      "sha256": "3703b1fc87f45ee3aa1a337d5ab80855ceaed136441e67cf3dec38f2d071be66"
+    },
+    {
+      "version": "20261002201644",
+      "name": "202609040004_security_rls",
+      "source_path": "supabase/migrations/202609040004_security_rls.sql",
+      "path": "supabase/migrations/20261002201644_202609040004_security_rls.sql",
+      "sha256": "e27ad546d800b7b9116d86bd386f493906d9adcd13556b855e9f3faf847ae0be"
+    },
+    {
+      "version": "20261002201702",
+      "name": "202609040005_financial_commands",
+      "source_path": "supabase/migrations/202609040005_financial_commands.sql",
+      "path": "supabase/migrations/20261002201702_202609040005_financial_commands.sql",
+      "sha256": "2c0346bb2146f210b1d882a194beb18170a5f80811343ea613db3a3730ac4ffc"
+    },
+    {
+      "version": "20261002201717",
+      "name": "202609080006_saas_platform",
+      "source_path": "supabase/migrations/202609080006_saas_platform.sql",
+      "path": "supabase/migrations/20261002201717_202609080006_saas_platform.sql",
+      "sha256": "ba6c86d0c58945b2f37663e01f067f1ef1560004ed04b74c60e6fcafb5cc6853"
+    },
+    {
+      "version": "20261002201731",
+      "name": "202609080007_saas_security",
+      "source_path": "supabase/migrations/202609080007_saas_security.sql",
+      "path": "supabase/migrations/20261002201731_202609080007_saas_security.sql",
+      "sha256": "e7788a7f49ccba0a0f25bb24a90bef240fa71c3f5640b63e4f376438d8af3ee3"
+    },
+    {
+      "version": "20261002201750",
+      "name": "202609080008_post_v31_accounting_domain",
+      "source_path": "supabase/migrations/202609080008_post_v31_accounting_domain.sql",
+      "path": "supabase/migrations/20261002201750_202609080008_post_v31_accounting_domain.sql",
+      "sha256": "c825f13a40672159f62c3a922dba9d821c32aaca17cfc8c9db98ee0d72a406e2"
+    },
+    {
+      "version": "20261002201851",
+      "name": "202609080009_institutional_finance",
+      "source_path": "supabase/migrations/202609080009_institutional_finance.sql",
+      "path": "supabase/migrations/20261002201851_202609080009_institutional_finance.sql",
+      "sha256": "fcd3d3e866d4d3ca40640e96f975b063b00bd8d840f0887fc7f729ed9374ba77"
+    },
+    {
+      "version": "20261002201902",
+      "name": "202609080010_operational_controls",
+      "source_path": "supabase/migrations/202609080010_operational_controls.sql",
+      "path": "supabase/migrations/20261002201902_202609080010_operational_controls.sql",
+      "sha256": "b43062b822c58e61a31dabde62fd0c1566f0f517012414b37503ee1d3ec03e00"
+    },
+    {
+      "version": "20261002201915",
+      "name": "202609080011_saas_commercial_refinements",
+      "source_path": "supabase/migrations/202609080011_saas_commercial_refinements.sql",
+      "path": "supabase/migrations/20261002201915_202609080011_saas_commercial_refinements.sql",
+      "sha256": "0f919346bb1b86e3d15f32d82ad164de80cd7dcc6aebcf304908adc26def2622"
+    },
+    {
+      "version": "20261002201927",
+      "name": "202609080012_post_v31_views_security",
+      "source_path": "supabase/migrations/202609080012_post_v31_views_security.sql",
+      "path": "supabase/migrations/20261002201927_202609080012_post_v31_views_security.sql",
+      "sha256": "5f02fd2fc04f9f9f9273a52ad18a42d5fbe521a8bac6109e8a12d49edad59260"
+    },
+    {
+      "version": "20261002201945",
+      "name": "202609080013_post_v31_commands",
+      "source_path": "supabase/migrations/202609080013_post_v31_commands.sql",
+      "path": "supabase/migrations/20261002201945_202609080013_post_v31_commands.sql",
+      "sha256": "28c766eda5247f4f14bbb13104c3be5d4936c1a3a917db1623e3efb367895011"
+    },
+    {
+      "version": "20261002202042",
+      "name": "202609090014_v33_saas_control_plane",
+      "source_path": "supabase/migrations/202609090014_v33_saas_control_plane.sql",
+      "path": "supabase/migrations/20261002202042_202609090014_v33_saas_control_plane.sql",
+      "sha256": "c6055db890300383532b0dc0bce8ea455ca76b5a8f6dcc422477df63ef034aa8"
+    },
+    {
+      "version": "20261002202054",
+      "name": "202609100015_v34_master_operations",
+      "source_path": "supabase/migrations/202609100015_v34_master_operations.sql",
+      "path": "supabase/migrations/20261002202054_202609100015_v34_master_operations.sql",
+      "sha256": "63f941890208f533bdb181612372e0e6bea9d5b6a99974ded532871f4b2e86ed"
+    },
+    {
+      "version": "20261002202107",
+      "name": "202609100016_v35_plan_promotion_lifecycle",
+      "source_path": "supabase/migrations/202609100016_v35_plan_promotion_lifecycle.sql",
+      "path": "supabase/migrations/20261002202107_202609100016_v35_plan_promotion_lifecycle.sql",
+      "sha256": "7e268fc97cfab8ce28056d26f2c8be3a034d5f20494c3b886dbed9cf8d0381c0"
+    },
+    {
+      "version": "20261002202116",
+      "name": "20261002043647_v35_admin_view_permissions",
+      "source_path": "supabase/migrations/20261002043647_v35_admin_view_permissions.sql",
+      "path": "supabase/migrations/20261002202116_20261002043647_v35_admin_view_permissions.sql",
+      "sha256": "4cb0902ec4cc376f40280d6f7f29beafcaaee387604de0e68ffa72b95f391721"
+    },
+    {
+      "version": "20261002202518",
+      "name": "harden_anonymous_rpc_permissions",
+      "source_path": "supabase/migrations/20261002202432_harden_anonymous_rpc_permissions.sql",
+      "path": "supabase/migrations/20261002202518_harden_anonymous_rpc_permissions.sql",
+      "sha256": "771b046d172d2839adbca051dfe5c6f170042272e5270c8fc1f7ad17feb8480a"
+    },
+    {
+      "version": "20261002230031",
+      "name": "support_policy_helper_permissions",
+      "source_path": "supabase/migrations/20261002225950_support_policy_helper_permissions.sql",
+      "path": "supabase/migrations/20261002230031_support_policy_helper_permissions.sql",
+      "sha256": "dcb11fa71c1753db551ead2e457427a07cd8832b74d757d0451afc2f9569c5f0"
+    },
+    {
+      "version": "20261008195936",
+      "name": "member_profile_commands",
+      "source_path": "supabase/migrations/20261008195347_member_profile_commands.sql",
+      "path": "supabase/migrations/20261008195936_member_profile_commands.sql",
+      "sha256": "e05af063e194a74f581dae489f03965e32bb11909fff8956a9dbd8e28b2f2f01",
+      "applied_at": "2026-10-08",
+      "note": "Generated by pinned CLI, aligned with version assigned by connector; additive RPC/helpers and member timestamp trigger only."
+    },
+    {
+      "version": "20261008201550",
+      "name": "member_configuration_schedule",
+      "source_path": "supabase/migrations/20261008201008_member_configuration_schedule.sql",
+      "path": "supabase/migrations/20261008201550_member_configuration_schedule.sql",
+      "sha256": "002951799913fb2b1c1d1582e5cc34df14426808f39eddaef743563d92a2877b",
+      "applied_at": "2026-10-08",
+      "note": "Generated by pinned CLI and aligned to connector version; append-only future member configuration; no ledger rewrite."
+    },
+    {
+      "version": "20261008202409",
+      "name": "member_configuration_finite_amounts",
+      "source_path": "supabase/migrations/20261008202258_member_configuration_finite_amounts.sql",
+      "path": "supabase/migrations/20261008202409_member_configuration_finite_amounts.sql",
+      "sha256": "a32b3a985418074a72f1a46f2e8010eab1d218b6e56959c5d40a50658387b797",
+      "applied_at": "2026-10-08",
+      "note": "Forward-only server validation: finite numeric amount bounded to numeric(14,2); preserves grants, RLS and existing data."
+    },
+    {
+      "version": "20261008203643",
+      "name": "tenant_monthly_rule_catalog",
+      "source_path": "supabase/migrations/20261008203110_tenant_monthly_rule_catalog.sql",
+      "path": "supabase/migrations/20261008203643_tenant_monthly_rule_catalog.sql",
+      "sha256": "c7e75db76ffee24bef74090996cb93531c7286915dc45fb0bacb8f04514d26a4",
+      "applied_at": "2026-10-08",
+      "note": "Three authorized catalog/price RPCs; no change to existing category flags, RLS, grants on tables or financial facts."
+    },
+    {
+      "version": "20261008211155",
+      "name": "member_term_transition",
+      "source_path": "supabase/migrations/20261008211155_member_term_transition.sql",
+      "path": "supabase/migrations/20261008211155_member_term_transition.sql",
+      "sha256": "334b7c4b2fb9edf21990f1fe567b5c99eaa20d9a1ce3e4e3030147b14866451c",
+      "applied_at": "2026-10-08",
+      "note": "Future-only member term succession/closing RPC. Applied DEV; returns to general rule when closed. Only term boundaries/history changed, no ledger. Tested with SQL ROLLBACK; HTTP/JWT and concurrent live clients pending."
+    },
+    {
+      "version": "20261009011416",
+      "name": "tenant_treasury_catalog_commands",
+      "source_path": "supabase/migrations/20261009011416_tenant_treasury_catalog_commands.sql",
+      "path": "supabase/migrations/20261009011416_tenant_treasury_catalog_commands.sql",
+      "sha256": "f2d4cfc8175d995a97eb8f3073fa1a0adef6eceddfeb2b689f88f69689db856d",
+      "applied_at": "2026-10-09",
+      "note": "Two tenant-safe RPCs create/status for accounts, funds and methods; settings.manage, idempotency and audit; only DEV, no ledger writes or table grants."
+    },
+    {
+      "version": "20261009011533",
+      "name": "treasury_catalog_scope_error_fix",
+      "source_path": "supabase/migrations/20261009011533_treasury_catalog_scope_error_fix.sql",
+      "path": "supabase/migrations/20261009011533_treasury_catalog_scope_error_fix.sql",
+      "sha256": "493773818ad015e586fabea836b3012ea7483a62c962addb984998e61294218a",
+      "applied_at": "2026-10-09",
+      "note": "Additive correction to distinguish absent/foreign item 23503 from stale status 40001 after dynamic EXECUTE; no other permission/data changes."
+    },
+    {
+      "version": "20261009012944",
+      "name": "tenant_identity_commands",
+      "source_path": "supabase/migrations/20261009012944_tenant_identity_commands.sql",
+      "path": "supabase/migrations/20261009012944_tenant_identity_commands.sql",
+      "sha256": "8e7c13f6898b9309d90081915ca938625a62d0b32136df343d00ba4a90e86fed",
+      "applied_at": "2026-10-09",
+      "note": "Identity settings RPC requires settings.manage; optimistic update, idempotency, sanitization, audit excludes private values."
+    },
+    {
+      "version": "20261009013042",
+      "name": "tenant_settings_monotonic_version",
+      "source_path": "supabase/migrations/20261009013042_tenant_settings_monotonic_version.sql",
+      "path": "supabase/migrations/20261009013042_tenant_settings_monotonic_version.sql",
+      "sha256": "f0dce8782b777d4cfa0d9894eabb9187cbb7e176ad433702e3b2e548d78f6da0",
+      "applied_at": "2026-10-09",
+      "note": "Only organization_settings updated_at trigger replaced by monotonic wall-clock version; SQL rollback verified."
+    },
+    {
+      "version": "20261009014331",
+      "name": "tenant_accounting_drafts_and_mappings",
+      "source_path": "supabase/migrations/20261009014331_tenant_accounting_drafts_and_mappings.sql",
+      "path": "supabase/migrations/20261009014331_tenant_accounting_drafts_and_mappings.sql",
+      "sha256": "7d95c6476da37526224920f173a7468633c6ad9a7588bc8cc57bb00ad7eb8b8e",
+      "applied_at": "2026-10-09",
+      "note": "Future-only idempotent draft plan creation; maps categories/cash accounts only inside drafts with tenant scope, nature validation, lock, audit. Uses existing 91 account template; no published plan or ledger changes."
+    },
+    {
+      "version": "20261009041818",
+      "name": "accounting_plan_prepublication_preview",
+      "source_path": "supabase/migrations/20261009041818_accounting_plan_prepublication_preview.sql",
+      "path": "supabase/migrations/20261009041818_accounting_plan_prepublication_preview.sql",
+      "sha256": "0b499ae41fe256ef250ac1896f10ed985e56f83619b85d9275048ef0909cd2a7",
+      "applied_at": "2026-10-09",
+      "note": "Read-only, accounting.manage-scoped prepublication diagnostics for draft/published status, future vigence, published overlaps, analytic hierarchy/cycles, completeness of active category and cash mappings and invalid inactive/wrong-nature links. No publishing/ledger modification. SQL A/B ROLLBACK."
+    },
+    {
+      "version": "20261009162535",
+      "name": "validated_accounting_plan_publication",
+      "source_path": "supabase/migrations/20261009162535_validated_accounting_plan_publication.sql",
+      "path": "supabase/migrations/20261009162535_validated_accounting_plan_publication.sql",
+      "sha256": "e7a02237ea8d42cdbeb29756c67bbacb501cc4a0e67bc3a14c48b8e876e5aa67",
+      "applied_at": "2026-10-09",
+      "note": "Atomic future-dated accounting publication validates readiness under tenant/plan row locks and five SHARE table locks. Idempotent authorized audited RPC; direct authenticated legacy publish revoked. SQL A/B ROLLBACK PASS. DEV only; HTTP JWT/concurrency/real visual not evaluated."
+    },
+    {
+      "version": "20261009165809",
+      "name": "tenant_scoped_accounting_publication_guard",
+      "source_path": "supabase/migrations/20261009165809_tenant_scoped_accounting_publication_guard.sql",
+      "path": "supabase/migrations/20261009165809_tenant_scoped_accounting_publication_guard.sql",
+      "sha256": "fa26e5428d04e30b5e44dc7046047b70f591a442efcd0fcd666ba967a6127a5b",
+      "applied_at": "2026-10-09",
+      "note": "Six before-row accounting/catalog triggers lock organization row per tenant, prevent unmapped account/category activation and published-structure mutation; removes 5 global SHARE locks, aligns mapping lock order, financial accounts default inactive. No production/ledger changes; SQL rollback tests pass; independent-session HTTP/DB lock test inconclusive."
+    },
+    {
+      "version": "20261009174649",
+      "name": "member_payment_reversal_idempotent",
+      "source_path": "supabase/migrations/20261009174649_member_payment_reversal_idempotent.sql",
+      "path": "supabase/migrations/20261009174649_member_payment_reversal_idempotent.sql",
+      "sha256": "6b39309eaa1b2438f08811e20a576df84bfce74d7569f46a7b5a74c592eee68b",
+      "applied_at": "2026-10-09",
+      "note": "Idempotent audited wrapper around reverse_payment, preserves allocation reversals; authenticated/payments.reverse only, no new facts unless called."
+    },
+    {
+      "version": "20261009175437",
+      "name": "tenant_dre_monthly_report",
+      "source_path": "supabase/migrations/20261009175437_tenant_dre_monthly_report.sql",
+      "path": "supabase/migrations/20261009175437_tenant_dre_monthly_report.sql",
+      "sha256": "24a3c6e35ceae32705b1cbf5efab2b69e4617da654812280a149964acfc88a8a",
+      "applied_at": "2026-10-09",
+      "note": "Authorized reports.read only monthly DRE grouping from v_dre_entries, maximum 12 competencies, no cash/budget claims, read-only."
+    },
+    {
+      "version": "20261009181235",
+      "name": "payable_approval_idempotent_decisions",
+      "source_path": "supabase/migrations/20261009181235_payable_approval_idempotent_decisions.sql",
+      "path": "supabase/migrations/20261009181235_payable_approval_idempotent_decisions.sql",
+      "sha256": "37214fe24aa1db9114633211a0c7e08c5ad323699b70b70c95c9121160d68041",
+      "applied_at": "2026-10-09",
+      "note": "Authorization approvals.review, one-time immutable vote and idempotent retry; wraps existing decide_payable_approval. DEV only."
+    },
+    {
+      "version": "20261009184116",
+      "name": "monthly_member_generation_preview_and_commit",
+      "path": "supabase/migrations/20261009184116_monthly_member_generation_preview_and_commit.sql",
+      "source_path": "supabase/migrations/20261009184116_monthly_member_generation_preview_and_commit.sql",
+      "sha256": "bf8c111ec152654ed9db004055deb6b13e9458aa8d5f065b16712f83dac0a36a",
+      "applied_at": "2026-10-09",
+      "note": "Preview and audited generation of per-member recurring monthly charge batches with exemption/override, fingerprint and idempotency."
+    },
+    {
+      "version": "20261009184801",
+      "name": "member_charge_cancellation_and_period_idempotency",
+      "path": "supabase/migrations/20261009184801_member_charge_cancellation_and_period_idempotency.sql",
+      "source_path": "supabase/migrations/20261009184801_member_charge_cancellation_and_period_idempotency.sql",
+      "sha256": "069f6dab39bc829a4e74ab33c6bfe8f5c5672f9cf771ac1ecae6d03d4e8ac693",
+      "applied_at": "2026-10-09",
+      "note": "Idempotent cancellation and financial period close/reopen wrappers over existing immutable event commands."
+    },
+    {
+      "version": "20261009190304",
+      "name": "tenant_financial_dashboard_kpis",
+      "path": "supabase/migrations/20261009190304_tenant_financial_dashboard_kpis.sql",
+      "source_path": "supabase/migrations/20261009190304_tenant_financial_dashboard_kpis.sql",
+      "sha256": "a1136d5f51ed702a3b4b72506916ae2fd129987f4280f57fa23a8ebe046e1d0a",
+      "applied_at": "2026-10-09",
+      "note": "Read-only six server-computed tenant finance dashboard KPIs; permission finance.read."
+    },
+    {
+      "version": "20261009190647",
+      "name": "tenant_delinquency_paginated_report",
+      "path": "supabase/migrations/20261009190647_tenant_delinquency_paginated_report.sql",
+      "source_path": "supabase/migrations/20261009190647_tenant_delinquency_paginated_report.sql",
+      "sha256": "7fceb76b6b0947c3adc96777bc59924cd6c6f5f5085e410287c3913571084769",
+      "applied_at": "2026-10-09",
+      "note": "Read-only paginated delinquency by member, remaining credits explicitly separate, tenant-finance authorization."
+    },
+    {
+      "version": "20261010003754",
+      "name": "institutional_obligation_cancellation_idempotent",
+      "path": "supabase/migrations/20261010003754_institutional_obligation_cancellation_idempotent.sql",
+      "source_path": "supabase/migrations/20261010003754_institutional_obligation_cancellation_idempotent.sql",
+      "sha256": "4fc6bbd7e37dc8eb1fd5de23d4a31661538bdfe3beff2996a98d1eee2e7be2cd",
+      "applied_at": "2026-10-10",
+      "note": "Idempotent cancellation of institutional payable/receivable open amounts, preserved original events."
+    },
+    {
+      "version": "20261010004023",
+      "name": "institutional_correction_idempotent_optimistic",
+      "path": "supabase/migrations/20261010004023_institutional_correction_idempotent_optimistic.sql",
+      "source_path": "supabase/migrations/20261010004023_institutional_correction_idempotent_optimistic.sql",
+      "sha256": "d4df0c78994f99d6e7109dcc744a37c85257bbbf51ba23869f2127620e60ad6d",
+      "applied_at": "2026-10-10",
+      "note": "Optimistically guarded, idempotent and audited institution corrections via existing financial commands."
+    },
+    {
+      "version": "20261010004540",
+      "name": "master_readonly_overview_tenant_directory",
+      "path": "supabase/migrations/20261010004540_master_readonly_overview_tenant_directory.sql",
+      "source_path": "supabase/migrations/20261010004540_master_readonly_overview_tenant_directory.sql",
+      "sha256": "d8201338e0cf5ebd44638d4d397230fd5d2e46e1a15e7399f9ef26fbab6e19b5",
+      "applied_at": "2026-10-10",
+      "note": "Read-only platform Master overview and tenant directory with enforced AAL2 and platform staff MASTER."
+    },
+    {
+      "version": "20261010005826",
+      "name": "master_tenant_support_idempotent_reply",
+      "path": "supabase/migrations/20261010005826_master_tenant_support_idempotent_reply.sql",
+      "source_path": "supabase/migrations/20261010005826_master_tenant_support_idempotent_reply.sql",
+      "sha256": "ef565ccf7cef7bbb5bc661c6afffc8c2a1f1d98f2e0b36080db308184f99b410",
+      "applied_at": "2026-10-10",
+      "note": "Master MFA/AAL2-only idempotent reply to tenant support tickets, audit and status transition via existing command; explicitly excludes internal tickets."
+    },
+    {
+      "version": "20261010010836",
+      "name": "master_plan_draft_publication_idempotent",
+      "path": "supabase/migrations/20261010010836_master_plan_draft_publication_idempotent.sql",
+      "source_path": "supabase/migrations/20261010010836_master_plan_draft_publication_idempotent.sql",
+      "sha256": "56052e24f65cec66c0f14883e04996c6f561f3686cb2f4481d29e0076545bc7d",
+      "applied_at": "2026-10-10",
+      "note": "Master MFA-only plan drafts and explicit idempotent publication, existing CI gates."
+    },
+    {
+      "version": "20261010205431",
+      "name": "master_client_360_summary",
+      "path": "supabase/migrations/20261010205431_master_client_360_summary.sql",
+      "source_path": "supabase/migrations/20261010205431_master_client_360_summary.sql",
+      "sha256": "62306842980d43bbccd922d4c06cfeea970e2dc9336f6b9d91eadb80c0746e47",
+      "applied_at": "2026-10-10",
+      "note": "Read-only MASTER MFA client 360 from SaaS subscriptions, invoice balances and support; no impersonation."
+    },
+    {
+      "version": "20261010205909",
+      "name": "master_onboarding_strict_idempotency",
+      "path": "supabase/migrations/20261010205909_master_onboarding_strict_idempotency.sql",
+      "source_path": "supabase/migrations/20261010205909_master_onboarding_strict_idempotency.sql",
+      "sha256": "642819e1dc9987114c05aaec7bc006c331f5f92dcbcb4375226bbb91bc51eeb9",
+      "applied_at": "2026-10-10",
+      "note": "Strict immutable draft key/payload replay; permission MASTER/AAL2 and transaction advisory lock; no duplicate saved events."
+    },
+    {
+      "version": "20261010210329",
+      "name": "master_promotion_draft_publication_idempotent",
+      "path": "supabase/migrations/20261010210329_master_promotion_draft_publication_idempotent.sql",
+      "source_path": "supabase/migrations/20261010210329_master_promotion_draft_publication_idempotent.sql",
+      "sha256": "3df5fdd0fe8bd9258460a1f7a8a795c2adf8dd3fb6c3d645bd8143f8759c9452",
+      "applied_at": "2026-10-10",
+      "note": "MASTER/AAL2-only promotion version draft and explicit publication with payload-key idempotency, immutable audit."
+    },
+    {
+      "version": "20261010210919",
+      "name": "tenant_expense_approval_policy_lifecycle",
+      "path": "supabase/migrations/20261010210919_tenant_expense_approval_policy_lifecycle.sql",
+      "source_path": "supabase/migrations/20261010210919_tenant_expense_approval_policy_lifecycle.sql",
+      "sha256": "88c0f92fbfa785b8a406a418f0bcfaa39699b6ea224cd56c4b1b67db3f514a55",
+      "applied_at": "2026-10-10",
+      "note": "Tenant approvals.manage audited/idempotent expense policy draft and publication. Published effective ranges may not overlap."
+    },
+    {
+      "version": "20261010211529",
+      "name": "master_promotion_successor_idempotent",
+      "path": "supabase/migrations/20261010211529_master_promotion_successor_idempotent.sql",
+      "source_path": "supabase/migrations/20261010211529_master_promotion_successor_idempotent.sql",
+      "sha256": "46dfe0197a625a7aeecadae13d029b1b4ef1709d83df8c3a4d65398ba4c36db8",
+      "applied_at": "2026-10-10",
+      "note": "MASTER/AAL2 strict idempotent future-dated successor draft; publication closes prior version; audit + stale-version rejection."
+    },
+    {
+      "version": "20261010222543",
+      "name": "tenant_account_transfer_commands",
+      "path": "supabase/migrations/20261010222543_tenant_account_transfer_commands.sql",
+      "source_path": "supabase/migrations/20261010222543_tenant_account_transfer_commands.sql",
+      "sha256": "8ab135ce84fc6a582eab5db7ea4aff3305e700592a2ba74bf8623b93d6bb597e",
+      "applied_at": "2026-10-10",
+      "note": "Idempotent transfer and append-only reversal in tenant internal cash ledger; negative SQL gates PASS, positive end-to-end DB lifecycle NOT EVALUATED."
+    },
+    {
+      "version": "20261010224130",
+      "name": "tenant_daily_cash_flow_summary",
+      "path": "supabase/migrations/20261010224130_tenant_daily_cash_flow_summary.sql",
+      "source_path": "supabase/migrations/20261010224130_tenant_daily_cash_flow_summary.sql",
+      "sha256": "a50e832561a4a6fa9556c2c1c26c3bcc982afd9539996e073140b411111cab51",
+      "applied_at": "2026-10-10",
+      "note": "Cashflow RPC finance.read: daily realized receipts/expenses excluding internal transfers and opening entries; current due-date open obligations in distinct projected columns."
+    },
+    {
+      "version": "20261010224802",
+      "name": "master_tenant_search_filters",
+      "path": "supabase/migrations/20261010224802_master_tenant_search_filters.sql",
+      "source_path": "supabase/migrations/20261010224802_master_tenant_search_filters.sql",
+      "sha256": "202ba7a91f0e19643f24f216e7f18590be3f132b4f40b3fb506f5c5b6114b6ed",
+      "applied_at": "2026-10-10",
+      "note": "MASTER/AAL2-only server-side directory search for name/number/city/contact, subscription status and plan with pagination."
+    },
+    {
+      "version": "20261015001840",
+      "name": "tenant_budget_lifecycle",
+      "path": "supabase/migrations/20261015001840_tenant_budget_lifecycle.sql",
+      "source_path": "supabase/migrations/20261015001840_tenant_budget_lifecycle.sql",
+      "sha256": "d94277df8a5c7ba0b2cf5e54885f60cbb5e78e310069b5479ecbbf31ccd5e508",
+      "applied_at": "2026-10-14",
+      "note": "DEV budget draft, line mutation, reviewed publication, strict replay, tenant permission and immutable published history. SQL rollback gate PASS."
+    },
+    {
+      "version": "20261015003945",
+      "name": "tenant_bank_reconciliation",
+      "path": "supabase/migrations/20261015003945_tenant_bank_reconciliation.sql",
+      "source_path": "supabase/migrations/20261015003945_tenant_bank_reconciliation.sql",
+      "sha256": "81bdc16a8b930ab49fcb8ea3afb139fee431f7b1e6e96ef217eb6b8399b46797",
+      "applied_at": "2026-10-14",
+      "note": "DEV statement staging, validation, matching and append-only undo; independent transfer bank legs. SQL rollback A/B and positive transfer gates PASS."
+    },
+    {
+      "version": "20261016003940",
+      "name": "tenant_institutional_movement_reversal",
+      "path": "supabase/migrations/20261016003940_tenant_institutional_movement_reversal.sql",
+      "source_path": "supabase/migrations/20261016003940_tenant_institutional_movement_reversal.sql",
+      "sha256": "ce10d717e154bf773a8dff0bb4979e95767a7205c1198f77875268ceeb0ca297",
+      "applied_at": "2026-10-15",
+      "note": "DEV institutional settlement reversal; permission/idempotency, obligation-before-fact locks, period lock, immutable events and bank-match guard. A/B SQL rollback: four positives and 44 expected denials PASS; signed UI pending."
+    },
+    {
+      "version": "20261016212643",
+      "name": "tenant_institutional_monthly_generation",
+      "path": "supabase/migrations/20261016212643_tenant_institutional_monthly_generation.sql",
+      "source_path": "supabase/migrations/20261016212643_tenant_institutional_monthly_generation.sql",
+      "sha256": "ad18c56147c61f242cb54f21e3b30ae40c14762c31dc856fe134355001108c89",
+      "applied_at": "2026-10-16",
+      "note": "DEV monthly institutional rule create/status/preview/generate. One immutable obligation per rule/competence; automatic payable approval request preserved. SQL A/B rollback 4 positive/56 negative PASS; UI QA pending."
+    },
+    {
+      "version": "20261016215748",
+      "name": "tenant_institutional_monthly_lock_compatibility",
+      "path": "supabase/migrations/20261016215748_tenant_institutional_monthly_lock_compatibility.sql",
+      "source_path": "supabase/migrations/20261016215748_tenant_institutional_monthly_lock_compatibility.sql",
+      "sha256": "8a6fa2d8a5b46fa1c4701a533a761027397e21b3713f45bb5d11166727c477be",
+      "applied_at": "2026-10-16",
+      "note": "DEV only: use NO KEY UPDATE on organization row in three monthly commands to avoid FK KEY SHARE upgrade deadlocks. Prior migration preserved. SQL 4 positive/56 negative rollback PASS; real HTTP retest pending."
+    },
+    {
+      "version": "20261016220039",
+      "name": "tenant_institutional_monthly_conflict_http",
+      "path": "supabase/migrations/20261016220039_tenant_institutional_monthly_conflict_http.sql",
+      "source_path": "supabase/migrations/20261016220039_tenant_institutional_monthly_conflict_http.sql",
+      "sha256": "106f2bbed52627f3de895c5ae08e56f52703a568c88fa86547c2b57276adf2f9",
+      "applied_at": "2026-10-16",
+      "note": "DEV monthly status/preview business conflicts return PT409 rather than 40001 to avoid PostgREST retry loop. SQL 4 positive/56 negative rollback PASS."
+    }
+  ],
+  "baseline_patches": {
+    "009": "Replace invalid unique(organization_id,id) in cancellation tables with payable_id / receivable_id before first successful application.",
+    "014": "Preserve existing invoice balance view column order and append new columns before first successful application."
+  },
+  "source_manifest": "v35-source-manifest.json (original package hashes; historical, not deployed checksum)"
+}
