@@ -1,3 +1,29 @@
+## Recorrência mensal B homologada; A pendente — 2026-10-16
+
+Commit41f4ead0d9fcbd1aba25de051d29a0edbaecca6a enviado ao PR4.
+Preview53304611-1bb5-44ee-b5dd-6d82186301f0 no alias v35-finance; sem mudar tráfego.
+HTTP200 e bytes iguais: index SHA256 bc60dbc159138767802a4c059740eb46910e046ed204187c06dd11c93c9df246;
+app-C2dtEIhP.js 8579ffba8fd44ff663fefd3de99906e3211fc9094862e24aab1ceaa06eb4f47a;
+CSS0093a8ed83ea769e899c4d5f058f245129a9761a3c70633c091fbaf4722ce172.
+UI real B: cadastro de despesa/receitaR$1, prévia, emissão, cancelamento e
+regra desativada PASS; prévia bloqueia repetição inclusive após cancelamento.
+Regra despesa1d792556-5a99-4454-8b7f-57cb92d346de;
+obrigação abf5b027-c9e9-4f4d-8d60-c684824858e5.
+Regra receita79578aa9-20c7-4ade-9b65-ee98b57f03fe;
+obrigação49afaf80-2542-44fa-8794-c8f5f0e3d96c.
+Read-back SQL: ambas inativas, obrigações canceladas/integrity_ok/aberto0,
+nenhuma obrigação institucional aberta B e saldoR$10.
+Desktop1912/client1897 sem overflow; mobile390/client375/scroll375 e prévia
+visualmente legível. Viewport restaurado. Não comprova paridade das21 telas.
+292 testes/tipos/build,12 gates DEV, gramática SQL e preservação PASS.
+CI295/run38970341421 NÃO EXECUTOU jobs: GitHub informa pagamento pendente ou
+limite de gastos atingido. Logs404 e stepsvazios confirmados; anotação lida na UI.
+Não alterar billing nem declarar CI PASS. Usuário informado para regularizar.
+Login A solicitado somente para NOVA recorrência; sessão B ainda no Edge4,
+aba1875274888. Não repetir HTTP/UI estornos anteriores. HTTP concorrente mensal
+não avaliado; SQL com claims simuladas4positivos/56negativos PASS rollback.
+Etapa2/anual/especial/reajuste/negociação/multiaprovadores/21telas abertos.
+
 ## Incremento mensal institucional — 2026-10-16
 
 Migration56 aplicada DEV e interface de regras mensais implementada: cadastro,

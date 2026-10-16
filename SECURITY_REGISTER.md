@@ -1,3 +1,7 @@
+## Atualização de evidências — 2026-10-16
+
+UI mensal B concluída e limpeza SQL PASS (saldo10, obrigações canceladas/integrity_ok, regras inativas). UI A e concorrência HTTP mensal pendentes. CI295 bloqueada por billing GitHub antes de iniciar jobs; checks locais PASS.
+
 ## Recorrência mensal institucional — 2026-10-16
 
 Verificado: autorização server-side, idempotência, isolamento por organização,

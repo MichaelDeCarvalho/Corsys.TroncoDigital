@@ -1,6 +1,6 @@
 # ADR-0029 — Geração mensal institucional
 
-Data: 2026-10-16. Estado: implementado no DEV, homologação UI pendente.
+Data: 2026-10-16. Estado: implementado no DEV, homologação UI B concluída, A pendente.
 
 ## Decisão
 
@@ -16,5 +16,5 @@ Ajustar vencimento ao último dia válido. Não gerar caixa nem agendamento auto
 
 Sem novas tabelas/grants/RLS. UI mantém chave em resultado incerto e descarta
 prévias obsoletas. 292 testes/tipos/build PASS; SQL rollback A/B com 4 positivos e
-56 rejeições esperadas PASS. Homologação UI/HTTP mensal pendente. Anual/especial,
+56 rejeições esperadas PASS. UI B homologada e limpa; UI A e concorrência HTTP mensal pendentes. Anual/especial,
 reajuste e aprovação por múltiplas identidades não estão concluídos por este ADR.
