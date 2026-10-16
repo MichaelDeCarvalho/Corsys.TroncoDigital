@@ -1,3 +1,21 @@
+## Revisão de conflitos HTTP históricos — PARCIAL — 2026-10-16
+
+Base: PR#4/feat/v35-dev-gate-20261002 SHA944b8bc; revisão isolada PR#5
+https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/pull/5
+branch fix/v35-http-conflicts-review-20261016, draft, sem merge/produção.
+Recorrência mensal institucional HTTP/UI A/B continua PASS e não foi repetida.
+Auditoria READ-ONLY no Supabase DEV szqkdekwhzxsoxorgvaz:13 RPCs public,
+17 raises explícitos40001 e0 private; todos conflitos de estado/versão.
+Documentação docs/V35_HTTP_CONFLICT_AUDIT.md atualizada e11 componentes UI
+passaram a reconhecer PT409 como conflito definitivo, preservando40001 legado.
+Dois testes de regressão PT409 adicionados a mensalidades e Master.
+Nenhuma migration/grant/RLS/seed ou escrita no banco; comportamento HTTP novo
+ainda NÃO AVALIADO. CI inicial#301 iniciou para cb58e54; checar CI do commit
+final do handoff antes de declarar PASS. Atenção a retries HTTP409 em supabase-js.
+PRÓXIMA AÇÃO ÚNICA: verificar CI e diff PR#5, então preparar migration nova
+e teste SQL rollback para os17 raises, seguido por HTTP real A/B e read-back
+sem reabrir QA mensal A/B. Etapa2 e21telas continuam abertas.
+
 ## Recorrência mensal: aceite UI/HTTP A/B concluído — 2026-10-16
 
 B RESULT PASS no preview6959e115/commitae1d4a6: quatro tabelas estrangeiras
