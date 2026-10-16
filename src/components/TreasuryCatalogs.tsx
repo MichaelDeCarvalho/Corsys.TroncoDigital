@@ -55,12 +55,12 @@ export function TreasuryCatalogs({ client, organizationId }: { client: SupabaseC
     } catch (cause) {
       if (!mounted.current) return
       const code = (cause as { code?: string } | null)?.code
-      if (['22023', '23503', '23505', '23514', '40001', '42501', '28000'].includes(code ?? '')) {
+      if (['22023', '23503', '23505', '23514', '40001','PT409', '42501', '28000'].includes(code ?? '')) {
         command.current = null
         setUncertain(false)
-        setConflict(code === '40001')
+        setConflict((code === '40001' || code === 'PT409'))
         setError(
-          code === '40001' ? 'A situação do cadastro mudou. Atualize os dados antes de alterar novamente.' :
+          (code === '40001' || code === 'PT409') ? 'A situação do cadastro mudou. Atualize os dados antes de alterar novamente.' :
           code === '23505' ? 'Já existe um cadastro com esse nome nesta Loja.' :
           code === '23514' ? 'A conta financeira só pode ser ativada quando existir mapeamento contábil em todos os planos publicados aplicáveis. Prepare um sucessor.' :
           code === '42501' || code === '28000' ? 'Seu acesso ou a assinatura da Loja não permite esta alteração.' :
