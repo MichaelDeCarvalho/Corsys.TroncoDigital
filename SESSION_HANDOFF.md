@@ -1,3 +1,22 @@
+## Conexão Supabase — nova conta adicionada — 2026-10-15
+
+Navegador Edge atual id4, Supabase tab1875274733 no projeto correto
+szqkdekwhzxsoxorgvaz, organização Michael - jobmcc/fblwfnjkisduhzuylazo.
+Plugin ainda listava somente Distribuição/Catálogo/Água e SQL DEV negado.
+Pela UI ChatGPT > Plugins > Supabase > Gerenciar > Conectar outra conta,
+foi iniciado OAuth na sessão correta; organização Michael - jobmcc selecionada.
+O proprietário clicou Authorize ChatGPT e confirmou FEITO. Retorno OAuth observado
+ e configurações agora mostram DUAS contas com mesmo nome Conta de Michael no
+Supabase. Controles de conta estão desabilitados nesta UI, inclusive após reload.
+Não remover a antiga: ela atende outros projetos. Não pedir nova autorização OAuth.
+Consulta/listagem por ferramentas DEPOIS do consentimento ainda usa conta antiga
+ e nega o DEV. Nova conexão persistida não equivale a roteamento deste chat corrigido.
+Próximo: proprietário recarregar este chat/cliente e reenviar menção Supabase;
+verificar list_projects + consulta read-only ao DEV antes de migration. Se ainda
+falhar, tratar seleção/roteamento multiaccount no cliente; não reduzir RLS/grants,
+transferir projetos, buscar tokens ou presumir solução. Sem alterações no banco,
+sem nova migration ou publicação nesta tentativa. Repo funcional permanece37879f6.
+
 ## Estado vigente — jornadas financeiras A/B concluídas — 2026-10-15
 
 Este bloco substitui as pendências de login/jornada B nos registros anteriores.
