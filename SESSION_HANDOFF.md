@@ -1,3 +1,26 @@
+## Preview e jornada institucional B — 2026-10-16
+
+Commit funcional f0ac5ec, 269 testes/40 arquivos, tipos/build PASS; CI #290,
+run38967138712 success. Publicado somente como versão isolada
+841a8aa5-5353-4f57-a517-df89e2bc0a9f, alias v35-finance preservado, sem alterar
+tráfego. HTML/JS/CSS HTTP200 e iguais ao build; JS index-CmPGR9WU.js SHA256
+c9c7cf698be3d89fa09b96ed3cdd5bde489745626447d6bda7aa15086496c384.
+CSS index-CIurdFNA.css SHA2560093a8ed83ea769e899c4d5f058f245129a9761a3c70633c091fbaf4722ce172.
+B no Edge: despesaR$1 e receitaR$1 criadas, liquidadas integralmente, estornadas
+com confirmação ESTORNAR; obrigação reabriu automaticamente emR$1 e depois foi
+cancelada. Sem nova emissão ou alteração de fatos originais. Read-back SQL B:
+saldo origemR$10, duas obrigações canceladas/aberto0, dois movimentos estornados,
+duas auditorias institutional_movement.reverse. Histórico de teste preservado.
+Despesa b84f6a6c-33d3-40df-b497-40e21082c714; pagamento
+df07315b-31a3-4ecb-b3c0-199626f47e69. Receita
+3e0c4d4f-2186-4aff-8b40-15456fd8820c; recebimento
+537d75b6-e41b-4e6a-bec2-eee51d912cc8. Referências DEV QA REVERSAL B ...20261016.
+Mobile390x844 observado: client/document375, sem overflow global; histórico tem
+rolagem horizontal própria. Override restaurado. Não é paridade integral21 telas.
+Solicitado login DEV A na mesma origem para repetir apenas este novo escopo.
+Aba atual1875274888, Edge id4; preservar. Não repetir B/seed/OAuth.
+Ainda pendentes A UI, concorrência real nova e demais requisitos da Etapa2.
+
 ## Estado vigente — acesso restaurado e estorno institucional — 2026-10-15
 
 Supabase multiaccount agora expõe seleção de conexão nas ferramentas. Conexão

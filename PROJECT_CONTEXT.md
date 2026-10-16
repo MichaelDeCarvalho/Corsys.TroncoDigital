@@ -1,5 +1,14 @@
 # PROJECT CONTEXT — Corsys.TroncoDigital
 
+## Marco atual — estorno institucional B — 2026-10-16
+
+Conexão administrativa restaurada, migration55 e estorno institucional implementado.
+Commit f0ac5ec:269 testes/tipos/build PASS, CI #290 success. Preview841a8aa5 no
+alias v35-finance. Jornada B completa pela UI (despesa/receitaR$1, liquidação,
+estorno, reabertura e cancelamento), read-back SQL saldoR$10/abertos0/auditorias2.
+Login A solicitado para concluir o mesmo novo escopo. IDs/hashes no handoff.
+Etapa2 aberta; sem merge/PROD e sem repetir jornadas básicas anteriores.
+
 ## Estado vigente — conexão Supabase restaurada — 2026-10-15
 
 Ferramentas agora permitem escolher conta; TroncoDigital DEV acessível por SQL.
