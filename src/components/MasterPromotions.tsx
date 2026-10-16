@@ -46,9 +46,10 @@ export function MasterPromotions({client}:{client:SupabaseClient}){
   }catch(e){
    if(!mounted.current)return
    const code=(e as {code?:string}|null)?.code??''
-   if(['22023','23503','23505','23514','42501','28000','55000'].includes(code)){
+   if(['22023','23503','23505','23514','42501','28000','55000','PT409'].includes(code)){
     cmd.current=null;setUncertain(false)
-    setError(code==='42501'||code==='28000'?'Operação exclusiva MASTER com MFA ativo.':
+    setError(code==='PT409'?'A oferta foi alterada. Atualize o catálogo antes de criar uma nova versão.':
+     code==='42501'||code==='28000'?'Operação exclusiva MASTER com MFA ativo.':
      'Operação recusada. Confira as datas, regras e histórico antes de tentar novamente.')
    }else{
     setUncertain(true);setError('Resposta não confirmada. Verifique o envio para repetir a mesma chave e parâmetros.')
