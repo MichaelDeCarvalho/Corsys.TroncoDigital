@@ -469,6 +469,24 @@
       "sha256": "ad18c56147c61f242cb54f21e3b30ae40c14762c31dc856fe134355001108c89",
       "applied_at": "2026-10-16",
       "note": "DEV monthly institutional rule create/status/preview/generate. One immutable obligation per rule/competence; automatic payable approval request preserved. SQL A/B rollback 4 positive/56 negative PASS; UI QA pending."
+    },
+    {
+      "version": "20261016215748",
+      "name": "tenant_institutional_monthly_lock_compatibility",
+      "path": "supabase/migrations/20261016215748_tenant_institutional_monthly_lock_compatibility.sql",
+      "source_path": "supabase/migrations/20261016215748_tenant_institutional_monthly_lock_compatibility.sql",
+      "sha256": "8a6fa2d8a5b46fa1c4701a533a761027397e21b3713f45bb5d11166727c477be",
+      "applied_at": "2026-10-16",
+      "note": "DEV only: use NO KEY UPDATE on organization row in three monthly commands to avoid FK KEY SHARE upgrade deadlocks. Prior migration preserved. SQL 4 positive/56 negative rollback PASS; real HTTP retest pending."
+    },
+    {
+      "version": "20261016220039",
+      "name": "tenant_institutional_monthly_conflict_http",
+      "path": "supabase/migrations/20261016220039_tenant_institutional_monthly_conflict_http.sql",
+      "source_path": "supabase/migrations/20261016220039_tenant_institutional_monthly_conflict_http.sql",
+      "sha256": "106f2bbed52627f3de895c5ae08e56f52703a568c88fa86547c2b57276adf2f9",
+      "applied_at": "2026-10-16",
+      "note": "DEV monthly status/preview business conflicts return PT409 rather than 40001 to avoid PostgREST retry loop. SQL 4 positive/56 negative rollback PASS."
     }
   ],
   "baseline_patches": {

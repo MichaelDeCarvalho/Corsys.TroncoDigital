@@ -27,6 +27,15 @@ function confirm(){
  fireEvent.submit(screen.getByRole('form',{name:'Confirmar emissão institucional'}))
 }
 describe('institutional monthly UI',()=>{
+ it('treats PT409 as a known conflict, clears stale preview and requires a fresh review',async()=>{
+  const f=fixture();f.rpc.mockResolvedValueOnce({data:preview,error:null}).mockResolvedValueOnce({data:null,error:{code:'PT409'}})
+  render(<InstitutionalMonthly client={f.client} organizationId={org}/>);await consult();confirm()
+  await screen.findByText('A regra ou a prévia mudou. Atualize e confira uma nova prévia.')
+  expect(screen.queryByRole('form',{name:'Confirmar emissão institucional'})).not.toBeInTheDocument()
+  expect(screen.queryByRole('button',{name:'Verificar operação recorrente com a mesma chave'})).not.toBeInTheDocument()
+  expect(screen.getByRole('button',{name:'Conferir prévia institucional'})).toBeEnabled()
+ })
+
  it('does not generate from preview; requires typed confirmation and sends the reviewed fingerprint',async()=>{
   const f=fixture();render(<InstitutionalMonthly client={f.client} organizationId={org}/>);await consult()
   expect(f.rpc).toHaveBeenCalledTimes(1);expect(screen.getByRole('button',{name:'Confirmar emissão institucional'})).toBeDisabled()

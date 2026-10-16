@@ -4,14 +4,14 @@
 
 Este bloco substitui os estados operacionais históricos abaixo. Requisitos e
 critérios de aceite permanecem integrais. Base desta consolidação: `be62954`,
-branch `feat/v35-dev-gate-20261002`, PR draft #4; 55 migrations DEV.
+branch `feat/v35-dev-gate-20261002`, PR draft #4; 56 migrations DEV.
 
 | Frente | Implementado e verificado | Falta para aceite integral |
 |---|---|---|
 | Orçamento | Draft/linhas/publicação/consulta; jornadas UI A/B e execução acima de 100% | Matriz completa de papéis e integração visual integral |
 | Transferências | Duas contas mapeadas por Loja QA autorizada; UI A/B com estorno; HTTP replay/disputa de saldo A/B; DRE preservada | Demais papéis, período fechado/suspensão sob HTTP e paridade integral |
 | Conciliação | OFX A/CSV B persistidos, validados, conciliados/desfeitos pela UI; replay/disputa HTTP B | Demais papéis, formatos adicionais e paridade integral |
-| Recorrência mensal | Prévia/geração e regras históricas; testes SQL rollback e componentes | Mensal A/B autenticada concluída; faltam recorrências especiais/anuais/institucionais do inventário |
+| Recorrência mensal | Integrantes e institucional mensal: cadastro/prévia/emissão/cancelamento/desativação UI A/B; SQL rollback e componentes | Disputa HTTP mensal em diagnóstico; faltam especiais/anuais/reajuste do inventário |
 | Cobranças/pagamentos | Avulsa/cancelamento, registro/alocação/estorno; testes SQL rollback e componentes | Jornada básica A/B concluída; faltam negociação/parcelamento/eventos previstos |
 | Obrigações/aprovações | Cadastro/liquidação/correção/cancelamento, política e decisão | Criação/correção/cancelamento A/B concluídos; estorno institucional UI/HTTP A/B concluído; faltam multiaprovador e histórico completo |
 | Fechamento | Eventos de fechamento/reabertura e testes SQL rollback | Bloqueio de avulsa e reabertura A/B concluídos; faltam demais comandos/papéis/suspensão em HTTP |

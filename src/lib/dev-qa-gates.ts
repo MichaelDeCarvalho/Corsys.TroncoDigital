@@ -26,6 +26,6 @@ export function assertQAOneReversal(rs:Result[]){
 export function assertQAMonthlyRace(rs:Result[],sameKey:boolean){
  if(rs.length!==2)throw Error('Monthly race requires two responses')
  if(sameKey){const id=assertQAUUID(rs[0]);if(assertQAUUID(rs[1])!==id)throw Error('Monthly replay differs');return id}
- if(rs.filter(r=>!r.error).length!==1||rs.filter(r=>r.error?.code==='40001').length!==1)throw Error('Monthly race not proven')
+ if(rs.filter(r=>!r.error).length!==1||rs.filter(r=>r.error?.code==='PT409').length!==1)throw Error('Monthly race not proven')
  return assertQAUUID(rs.find(r=>!r.error)!)
 }

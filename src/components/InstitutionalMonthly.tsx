@@ -34,9 +34,9 @@ function MonthlyPanel({client,organizationId}:Props){
   }catch(cause){
    if(!mounted.current)return
    const code=(cause as {code?:string}|null)?.code??''
-   if(['22023','22003','23502','23503','23505','23514','40001','42501','28000','55000'].includes(code)){
+   if(['22023','22003','23502','23503','23505','23514','40001','PT409','42501','28000','55000'].includes(code)){
     request.current=null;setUncertain(false);resetPreview()
-    setError(code==='42501'||code==='28000'?'Seu perfil ou a assinatura da Loja não permite esta operação.':code==='40001'?'A regra ou a prévia mudou. Atualize e confira uma nova prévia.':'Operação rejeitada. Confira vigência, categoria, plano contábil, competência e duplicidade.')
+    setError(code==='42501'||code==='28000'?'Seu perfil ou a assinatura da Loja não permite esta operação.':(code==='40001'||code==='PT409')?'A regra ou a prévia mudou. Atualize e confira uma nova prévia.':'Operação rejeitada. Confira vigência, categoria, plano contábil, competência e duplicidade.')
    }else{setUncertain(true);setError('Resultado não confirmado. Verifique novamente com a mesma chave antes de iniciar outra operação.')}
   }finally{guard.current=false;if(mounted.current)setPending(false)}
  }

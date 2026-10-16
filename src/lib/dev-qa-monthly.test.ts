@@ -5,7 +5,7 @@ import {runMonthlyHTTPQA} from './dev-qa-monthly'
 const id='a4dec375-abec-4f42-bdf7-23597e2376b3',org='94b84958-4dd9-435d-9a4e-244220835d70'
 it('requires same UUID for simultaneous replay and exactly one 40001 loser for distinct keys',()=>{
  expect(assertQAMonthlyRace([{data:id,error:null},{data:id,error:null}],true)).toBe(id)
- expect(assertQAMonthlyRace([{data:id,error:null},{data:null,error:{code:'40001'}}],false)).toBe(id)
+ expect(assertQAMonthlyRace([{data:id,error:null},{data:null,error:{code:'PT409'}}],false)).toBe(id)
  for(const loser of ['23505','42501','transport'])expect(()=>assertQAMonthlyRace([{data:id,error:null},{data:null,error:{code:loser}}],false)).toThrow()
  expect(()=>assertQAMonthlyRace([{data:id,error:null},{data:id,error:null}],false)).toThrow()
  expect(()=>assertQAMonthlyRace([{data:id,error:null},{data:org,error:null}],true)).toThrow()
@@ -35,5 +35,8 @@ it('restores inactive QA rule when preview fails before creating any obligation'
   await expect(runMonthlyHTTPQA(c,vi.fn())).rejects.toThrow('Monthly preview invalid')
   expect(active).toBe(false)
   expect(rpc.mock.calls.filter(([name])=>name==='set_tenant_institutional_monthly_rule_status')).toHaveLength(2)
+  await expect(runMonthlyHTTPQA(c,vi.fn())).rejects.toThrow('Monthly preview invalid')
+  const cleanupKeys=rpc.mock.calls.filter(([name,args])=>name==='set_tenant_institutional_monthly_rule_status'&&args.p_active===false).map(([,args])=>args.p_idempotency_key)
+  expect(cleanupKeys).toHaveLength(2);expect(new Set(cleanupKeys).size).toBe(2);expect(active).toBe(false)
  }finally{vi.useRealTimers()}
 })

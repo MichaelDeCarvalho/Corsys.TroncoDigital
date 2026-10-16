@@ -1,3 +1,22 @@
+## Regressão concorrente mensal em correção — 2026-10-16
+
+UI mensal A/B concluída e cleanup SQL saldo10/canceladas/regras inativas.
+CI296 e297 SUCCESS: billing resolvido. Novo gate HTTP A falhou em chaves distintas:
+replay mesma chave passou, um fato/auditoria por competência, mas outro pedido
+timeout15s; não registrar PASS. TentativasA somente despesaNov2026–Jun2027
+canceladas; sem recebimento/pagamento e saldo10. Deadlocks observados2.
+Migration57/20261016215748 aplica NO KEY UPDATE na organização (3comandos);
+58/20261016220039 usa PT409 para conflito de negócio, evitando retry infinito
+PostgREST com40001 conforme fonte oficial. Não editar56/57 após aplicadas.
+Helper cleanup agora usa chave única por execução e verifica regra inativa,
+obrigação cancelada/integrity_ok/aberto0 e saldo10. Corrigido replay antigo de
+cleanup que deixara regraA ativa; UI desativou e SQL confirmou inativa.
+Gate final usa Jul/Ago2027, vazio preflight A/B, R$1 por operação. Próximo publicar
+e executar com A atual. B depois depende login. Não repetirmeses comhistórico.
+SQL rollback4positivos/56negativos PASS após58;294 testes/tipos/build PASS,
+mais regressão PT409 e cleanup em25 testes focados PASS; preservação58 PASS.
+Outros40001 históricos precisam auditoria antes de fechar Etapa2. ADR0030.
+
 ## Mensal institucional UI A/B concluída — HTTP em preparo — 2026-10-16
 
 UI A concluiu cadastro/prévia/emissãoR$1/cancelamento/desativação para despesa e

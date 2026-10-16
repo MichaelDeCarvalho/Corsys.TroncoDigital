@@ -46,9 +46,9 @@ begin
    then raise exception 'positive preview mismatch';end if;
    perform public.set_tenant_institutional_monthly_rule_status(t.org,rule,true,false,tag,tag||' deactivate');
    begin perform public.generate_institutional_monthly_obligation(t.org,rule,'2026-10-01',preview->>'fingerprint',tag,gen_random_uuid()::text);
-    raise exception 'stale preview accepted';exception when serialization_failure then checks:=checks+1;end;
+    raise exception 'stale preview accepted';exception when sqlstate 'PT409' then checks:=checks+1;end;
    begin perform public.set_tenant_institutional_monthly_rule_status(t.org,rule,true,false,tag,gen_random_uuid()::text);
-    raise exception 'stale status accepted';exception when serialization_failure then checks:=checks+1;end;
+    raise exception 'stale status accepted';exception when sqlstate 'PT409' then checks:=checks+1;end;
    preview:=public.preview_institutional_monthly_generation(t.org,rule,'2026-10-01');
    begin perform public.generate_institutional_monthly_obligation(t.org,rule,'2026-10-01',preview->>'fingerprint',tag,gen_random_uuid()::text);
     raise exception 'inactive generation accepted';exception when check_violation then checks:=checks+1;end;
@@ -92,7 +92,7 @@ begin
     and p.approval_required and p.approval_min_approvers=2 and r.minimum_approvers=2 and r.amount_snapshot=1)
    then raise exception 'generation failed to preserve the configured approval request';end if;
    begin perform public.generate_institutional_monthly_obligation(t.org,rule,'2026-10-01',preview->>'fingerprint',tag,key||' duplicate');
-    raise exception 'second emission accepted';exception when serialization_failure then checks:=checks+1;end;
+    raise exception 'second emission accepted';exception when sqlstate 'PT409' then checks:=checks+1;end;
    perform public.cancel_tenant_institutional_obligation_idempotent(t.org,fact,direction,'2026-10-01',tag,tag||' cancel');
    preview:=public.preview_institutional_monthly_generation(t.org,rule,'2026-10-01');
    if (preview->>'ready')::boolean or preview->>'existing_id'<>fact::text then raise exception 'canceled history lost generation guard';end if;
