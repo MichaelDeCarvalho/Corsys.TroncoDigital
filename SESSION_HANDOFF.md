@@ -1,3 +1,12 @@
+## Checkpoint — 19/10/2026: CI #311 e pendência HTTP real
+
+- CI #311, run 39330807587, commit 7f59856e0cd224c019b5cba7b79a5869bcf757cb: SUCCESS; jobs static e frontend SUCCESS (SQL grammar/preservation, frontend tests/check/build sem upload).
+- Fixture catálogo A/B restringiu UPDATE user_roles por user_id + organization_id; SQL DEV com ROLLBACK: DEV_TREASURY_CATALOG_ROLLBACK_PASS.
+- Fixture identidade com mesmo ajuste, mas gate SQL completo bloqueado pelo controle de segurança da ferramenta: NAO EXECUTADO, não é PASS.
+- Read-back DEV: 13 RPCs alvo, 17 PT409, zero 40001 explícito, SECURITY DEFINER e search_path intactos.
+- HTTP A/B autenticado, isolamento entre tenants, idempotência e contagem de requests: NAO EXECUTADO. Browser conectado indisponível; não houve aquisição/exposição de JWT. db.retry=false e CI não equivalem a trace HTTP real.
+- PR #5 draft; sem merge ou deploy. Gates de identidade e HTTP real A/B devem ocorrer em ambiente autorizado com captura de status/código/retries e read-back/cleanup.
+
 ## Checkpoint 19/10/2026 — correção dos conflitos HTTP legados
 
 - PR #5 draft, branch `fix/v35-http-conflicts-review-20261016`. CI #302 do commit 822d313: SUCCESS.
