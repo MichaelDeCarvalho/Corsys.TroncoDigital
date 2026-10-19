@@ -1,3 +1,7 @@
+## Execução contínua — HTTP A/B ampliado e anual implementado — 19/10/2026
+
+HTTP novo A/B PASS: nove operações, 69 chamadas/69 requests por identidade; cobertura legada 10/13 mais reajuste institucional. Snapshots financeiros inalterados, auditorias únicas, cleanup de regras confirmado; deadlocks seguem 2. Não repetir esses gates. Migration61/20261019233739 anual DEV aplicada; SQL A/B28 negativas rollback PASS; UI anual implementada, homologação real ainda pendente. Suíte 307 testes PASS e um teste adicional de cleanup anual PASS. Evidências em docs/V35_EXECUTION_20261019_CONTINUED.md. Próximo: homologar anual/correção no navegador B atual, depois A; Master/AAL2 e estorno ainda separados. SessãoB Edge3/aba1875275285. Sem merge/PROD; execução continua entre incrementos conforme autorização.
+
 ## Reajuste institucional UI A/B aprovado — 19/10/2026
 
 Sessão A confirmou outubro R$1 e novembro R$2 no preview `94c5078e`, sem emissão de obrigação ou pagamento. Cleanup e readback SQL A/B: regras `9b72101b-fb78-43f0-afb4-cedf2511f429` (A) e `8d31ed2e-90a5-4964-8c26-4e2c5ebddfc8` (B) inativas, zero obrigações, uma auditoria de reajuste por regra e saldo R$10 por Loja. UI A deixa de ser pendência; não solicitar login para repetir esse gate. CI #315/run39340656215 do commit `7e11a49` SUCCESS. Nenhum código, build, migration ou deploy novo nesta rodada; apenas homologação e documentação. Próximo escopo: HTTP específico de reajuste e cobertura das 11 RPCs legadas restantes; Etapa 2 e demais requisitos seguem abertos. Sessão A preservada no Edge3/aba1875275275.

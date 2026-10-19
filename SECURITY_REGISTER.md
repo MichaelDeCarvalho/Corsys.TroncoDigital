@@ -1,3 +1,7 @@
+## Controles da anuidade e gates HTTP — 19/10/2026
+
+HTTP real A/B ampliado: 10/13 RPCs legadas e reajuste novo PASS; nenhuma generalização para Master/AAL2 ou corrida de alocação do estorno. Anual DEV exige settings.manage/institutional.manage e assinatura apta; sem RLS/tabelas novas, anon revogado. SQL28 negativas rollback PASS; real anual pendente. Quatro avisos de definer autenticado refletem o desenho existente com controle interno; demais avisos anteriores preservados. Evidências em docs/V35_EXECUTION_20261019_CONTINUED.md.
+
 ## Incremento Work — 19/10/2026
 
 Reajuste institucional: autorização servidor/settings.manage, versão otimista/PT409, idempotência e bloqueio de obrigações emitidas. Gate SQL A/B36rejeições PASS rollback. HTTP legado apenas identidade/catálogo2/13 PASS; não generalizar. Advisors sinalizam RPCs definer autenticadas e senha vazada desabilitada; sem correção ampla nesta rodada. Detalhes, links e limites em docs/V35_EXECUTION_20261019.md.

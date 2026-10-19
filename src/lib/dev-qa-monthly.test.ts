@@ -3,7 +3,7 @@ import {vi,expect,it} from 'vitest'
 import {assertQAMonthlyRace} from './dev-qa-gates'
 import {runMonthlyHTTPQA} from './dev-qa-monthly'
 const id='a4dec375-abec-4f42-bdf7-23597e2376b3',org='94b84958-4dd9-435d-9a4e-244220835d70'
-it('requires same UUID for simultaneous replay and exactly one 40001 loser for distinct keys',()=>{
+it('requires same UUID for simultaneous replay and exactly one PT409 loser for distinct keys',()=>{
  expect(assertQAMonthlyRace([{data:id,error:null},{data:id,error:null}],true)).toBe(id)
  expect(assertQAMonthlyRace([{data:id,error:null},{data:null,error:{code:'PT409'}}],false)).toBe(id)
  for(const loser of ['23505','42501','transport'])expect(()=>assertQAMonthlyRace([{data:id,error:null},{data:null,error:{code:loser}}],false)).toThrow()

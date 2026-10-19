@@ -504,7 +504,16 @@
       "source_path": "supabase/migrations/20261019230916_institutional_recurring_price_schedule.sql",
       "sha256": "ab122111e3de5d0b479a20f15e4cd41854476c9e22b18a8a4d2e9d4f57eadd2a",
       "applied_at": "2026-10-19",
-      "note": "DEV future institutional prices. SQL A/B payable/receivable rollback PASS, 36 expected denials. Signed HTTP/UI pending."
+      "note": "DEV future institutional prices. SQL A/B payable/receivable rollback PASS, 36 expected denials. Signed HTTP/UI recorded in V35_EXECUTION_20261019.md."
+    },
+    {
+      "version": "20261019233739",
+      "name": "institutional_annual_recurrence",
+      "path": "supabase/migrations/20261019233739_institutional_annual_recurrence.sql",
+      "source_path": "supabase/migrations/20261019233739_institutional_annual_recurrence.sql",
+      "sha256": "32675cae2c82b72933098a5b1c1494d9a64df868ab1d7387e3eba57403b9f438",
+      "applied_at": "2026-10-19",
+      "note": "DEV annual institutional commands only. Monthly functions preserved; anniversary anchored to initial price version. SQL A/B rollback PASS with 28 expected denials. UI/HTTP homologation pending."
     }
   ],
   "baseline_patches": {

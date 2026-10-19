@@ -1,3 +1,7 @@
+## Continuação operacional — 19/10/2026
+
+Lote HTTP A/B ampliado aprovado: cobertura10/13 legadas e reajuste novo, sem alteração financeira. Recorrência institucional anual implementada com migration61 DEV e gate SQL A/B rollback PASS; homologação real pendente. Evidências em docs/V35_EXECUTION_20261019_CONTINUED.md. Não encerrar Etapa2 nem repetir os gates já aprovados.
+
 ## Execução Work — 19/10/2026
 
 Identidade SQL rollback e HTTP real A/B de identidade/catálogo PASS. Reajuste institucional futuro implementado e migration60 aplicada somente DEV; SQL A/B rollback PASS. Etapa2 aberta: cobertura HTTP legada e homologação completa não concluídas. Evidências e limites em docs/V35_EXECUTION_20261019.md.

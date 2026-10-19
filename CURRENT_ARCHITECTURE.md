@@ -1,3 +1,7 @@
+## Recorrência institucional anual — 19/10/2026
+
+Quatro RPCs anuais aditivas usam as tabelas institucionais existentes; funções mensais preservadas. O mês da primeira versão de preço fixa o aniversário, incluído no fingerprint, sem deslocamento por reajuste. Interface escolhe RPC por frequência e valida o mês anual. Mesmos controles de autorização, período, idempotência, aprovação e caixa. ADR-0032; migration61 DEV. SQL A/B rollback PASS, homologação real pendente. Evidências em docs/V35_EXECUTION_20261019_CONTINUED.md.
+
 ## Reajuste institucional futuro — 19/10/2026
 
 RPC schedule_institutional_recurring_price versiona preços existentes com settings.manage, idempotência, locks e PT409. Bloqueia vigência com obrigações emitidas, sem reescrever fatos. UI exige prévia/REAJUSTAR e conserva chave em transporte incerto. ADR-0031; migration60 DEV. Evidências/limites em docs/V35_EXECUTION_20261019.md.

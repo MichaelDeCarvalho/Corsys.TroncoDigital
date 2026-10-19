@@ -27,6 +27,32 @@ function confirm(){
  fireEvent.submit(screen.getByRole('form',{name:'Confirmar emissão institucional'}))
 }
 describe('institutional monthly UI',()=>{
+ it('routes annual creation to a separate command with explicit anniversary competence',async()=>{
+  const f=fixture();render(<InstitutionalMonthly client={f.client} organizationId={org}/>);await select()
+  fireEvent.change(screen.getByLabelText('Periodicidade institucional'),{target:{value:'annual'}})
+  fireEvent.change(screen.getByLabelText('Descrição da regra institucional'),{target:{value:'Anuidade QA'}})
+  fireEvent.change(screen.getByLabelText('Categoria da regra institucional'),{target:{value:category}})
+  fireEvent.change(screen.getByLabelText('Fornecedor ou origem recorrente'),{target:{value:'DEV QA fornecedor'}})
+  fireEvent.change(screen.getByLabelText('Valor anual institucional (R$)'),{target:{value:'1,00'}})
+  fireEvent.change(screen.getByLabelText('Vigência inicial institucional'),{target:{value:'2027-02'}})
+  fireEvent.change(screen.getByLabelText('Justificativa da nova regra'),{target:{value:'DEV QA anuidade'}})
+  fireEvent.submit(screen.getByRole('form',{name:'Cadastrar recorrência institucional'}))
+  await waitFor(()=>expect(f.rpc).toHaveBeenCalledWith('create_tenant_institutional_annual_rule',expect.objectContaining({p_valid_from:'2027-02-01',p_amount:'1.00'})))
+ })
+ it('uses annual preview/generation and refuses emission outside the anniversary month',async()=>{
+  const annual={...rule,frequency:'annual' as const},f=fixture({institutional_recurring_rules:[annual]})
+  f.rpc.mockImplementation(async(name,args)=>({data:name==='preview_institutional_annual_generation'
+   ?{...preview,frequency:'annual',annual_month:2,competence:args?.p_competence,due_date:args?.p_competence==='2027-02-01'?'2027-02-28':'2026-10-31',ready:args?.p_competence==='2027-02-01'}:fact,error:null}))
+  render(<InstitutionalMonthly client={f.client} organizationId={org}/>);await select()
+  fireEvent.click(screen.getByRole('button',{name:'Conferir prévia institucional'}))
+  await screen.findByText('Emissão anual somente no mês 02.')
+  expect(screen.queryByRole('form',{name:'Confirmar emissão institucional'})).not.toBeInTheDocument()
+  fireEvent.change(screen.getByLabelText('Competência da emissão institucional'),{target:{value:'2027-02'}})
+  fireEvent.click(screen.getByRole('button',{name:'Conferir prévia institucional'}));await screen.findByText('Uma obrigação pronta para emissão.')
+  confirm();await screen.findByText(/Operação recorrente institucional confirmada/)
+  expect(f.rpc).toHaveBeenCalledWith('generate_institutional_annual_obligation',expect.objectContaining({p_competence:'2027-02-01'}))
+  expect(f.rpc.mock.calls.some(([name])=>name==='generate_institutional_monthly_obligation')).toBe(false)
+ })
  it('schedules a reviewed future price and invalidates the old generation preview',async()=>{
   const f=fixture();render(<InstitutionalMonthly client={f.client} organizationId={org}/>);await consult()
   fireEvent.change(screen.getByLabelText('Novo valor institucional (R$)'),{target:{value:'2,50'}})
@@ -124,7 +150,7 @@ describe('institutional monthly response integrity',()=>{
   {institutional_recurring_rules:[rule,rule]},
   {institutional_recurring_rules:Array.from({length:151},()=>rule)},
   {institutional_recurring_rules:[{...rule,due_day:32}]},
-  {institutional_recurring_rules:[{...rule,frequency:'annual'}]},
+  {institutional_recurring_rules:[{...rule,frequency:'weekly'}]},
  ])('rejects unsafe catalog %j',async override=>{
   const f=fixture(override);await expect(loadInstitutionalMonthlyCatalog(f.client,org,new AbortController().signal)).rejects.toThrow()
  })
