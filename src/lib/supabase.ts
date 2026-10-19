@@ -8,6 +8,9 @@ export function getSupabaseClient(): SupabaseClient {
 
   const env = readPublicEnv()
   client = createClient(env.supabaseUrl, env.supabasePublishableKey, {
+    // Financial mutations already handle uncertain outcomes with explicit idempotency keys.
+    // Avoid automatic retries of definitive PT409 business conflicts.
+    db: { retry: false },
     global: {
       fetch: (url, options) => fetch(url, {
         ...options,
