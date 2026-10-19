@@ -13,8 +13,8 @@ select updated_at into v_old from public.organization_settings where organizatio
 perform public.save_tenant_identity(t.org::uuid,v_old,null,'loja@example.invalid',null,'Outra rua',null,'Curitiba','PR','BR','DEV change setting',gen_random_uuid()::text);
 select updated_at into v_new from public.organization_settings where organization_id=t.org::uuid;
 if v_new<=v_old then raise exception 'timestamp not monotonic';end if;
-begin perform public.save_tenant_identity(t.org::uuid,v_old,null,null,null,null,null,null,null,'BR','DEV stale',gen_random_uuid()::text);raise exception 'stale allowed';exception when serialization_failure then null;end;
-begin perform public.save_tenant_identity(t.org::uuid,null,null,null,null,null,null,null,null,'BR','DEV exists',gen_random_uuid()::text);raise exception 'duplicate creation';exception when serialization_failure then null;end;
+begin perform public.save_tenant_identity(t.org::uuid,v_old,null,null,null,null,null,null,null,'BR','DEV stale',gen_random_uuid()::text);raise exception 'stale allowed';exception when sqlstate 'PT409' then null;end;
+begin perform public.save_tenant_identity(t.org::uuid,null,null,null,null,null,null,null,null,'BR','DEV exists',gen_random_uuid()::text);raise exception 'duplicate creation';exception when sqlstate 'PT409' then null;end;
 begin perform public.save_tenant_identity(t.org::uuid,v_new,null,'invalid-email',null,null,null,null,null,'BR','DEV invalid',gen_random_uuid()::text);raise exception 'invalid email allowed';exception when invalid_parameter_value then null;end;
 if (select count(*) from public.audit_logs where action='organization.identity_save' and organization_id=t.org::uuid)<>2 then raise exception 'audit wrong';end if;
 if exists(select 1 from public.audit_logs where action='organization.identity_save' and organization_id=t.org::uuid and (coalesce(before_data::text,'')||coalesce(after_data::text,'')) like '%dev-pix-private%') then raise exception 'audit secret leaked';end if;
