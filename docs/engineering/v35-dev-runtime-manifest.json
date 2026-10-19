@@ -487,6 +487,24 @@
       "sha256": "106f2bbed52627f3de895c5ae08e56f52703a568c88fa86547c2b57276adf2f9",
       "applied_at": "2026-10-16",
       "note": "DEV monthly status/preview business conflicts return PT409 rather than 40001 to avoid PostgREST retry loop. SQL 4 positive/56 negative rollback PASS."
+    },
+    {
+      "version": "20261019205415",
+      "name": "legacy_business_http_conflicts_pt409",
+      "path": "supabase/migrations/20261019205415_legacy_business_http_conflicts_pt409.sql",
+      "source_path": "supabase/migrations/20261019205415_legacy_business_http_conflicts_pt409.sql",
+      "sha256": "e9188b60b6838bbce3bf1043fc1e160a4e54f3818184e7c7834c8fb654bc3ecf",
+      "applied_at": "2026-10-19",
+      "note": "DEV only: 13 RPCs / 17 PT409 conflicts. Identity SQL rollback and signed HTTP A/B identity/catalog PASS; remaining legacy RPC HTTP not evaluated."
+    },
+    {
+      "version": "20261019230916",
+      "name": "institutional_recurring_price_schedule",
+      "path": "supabase/migrations/20261019230916_institutional_recurring_price_schedule.sql",
+      "source_path": "supabase/migrations/20261019230916_institutional_recurring_price_schedule.sql",
+      "sha256": "ab122111e3de5d0b479a20f15e4cd41854476c9e22b18a8a4d2e9d4f57eadd2a",
+      "applied_at": "2026-10-19",
+      "note": "DEV future institutional prices. SQL A/B payable/receivable rollback PASS, 36 expected denials. Signed HTTP/UI pending."
     }
   ],
   "baseline_patches": {

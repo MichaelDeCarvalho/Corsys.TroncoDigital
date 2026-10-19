@@ -1,4 +1,5 @@
 import {getSupabaseClient} from './lib/supabase'
+import {runLegacyConflictHTTPQA} from './lib/dev-qa-conflicts'
 import {runMonthlyHTTPQA} from './lib/dev-qa-monthly'
 import {runInstitutionalHTTPQA} from './lib/dev-qa-institutional'
 import {assertQADenied as denied,assertQARows as rows,assertQAUUID as uuid,assertQAOneWinner as winner,assertQABrowserTarget} from './lib/dev-qa-gates'
@@ -79,4 +80,4 @@ async function bank(){
  if(detail.some(l=>Number(l.matched_amount)!==0))throw Error('Bank cleanup failed')
  report('Bank cleanup: zero matched amount PASS')
 }
-void session().then(t=>{identity.textContent='Sessão DEV '+t.label+' validada. Somente fixtures autorizadas.';add('Verificar isolamento HTTP',isolation);add('Testar concorrência de transferências',transfers);if(t.label==='B')add('Testar concorrência de conciliação',bank);add('Testar estornos institucionais HTTP e concorrência',()=>runInstitutionalHTTPQA(c,report));add('Testar recorrência institucional HTTP e concorrência',()=>runMonthlyHTTPQA(c,report))}).catch(()=>{identity.textContent='Entre primeiro na aplicação DEV com a identidade de teste A ou B.'})
+void session().then(t=>{identity.textContent='Sessão DEV '+t.label+' validada. Somente fixtures autorizadas.';add('Verificar isolamento HTTP',isolation);add('Testar HTTP 409 identidade e catálogo',()=>runLegacyConflictHTTPQA(c,report));add('Testar concorrência de transferências',transfers);if(t.label==='B')add('Testar concorrência de conciliação',bank);add('Testar estornos institucionais HTTP e concorrência',()=>runInstitutionalHTTPQA(c,report));add('Testar recorrência institucional HTTP e concorrência',()=>runMonthlyHTTPQA(c,report))}).catch(()=>{identity.textContent='Entre primeiro na aplicação DEV com a identidade de teste A ou B.'})

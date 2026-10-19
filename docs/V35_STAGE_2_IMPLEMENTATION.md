@@ -1,3 +1,7 @@
+## Work — 19/10/2026
+
+Identidade SQL rollback resolvida; HTTP identidade/catálogo A/B PASS com contagem real e cleanup. Reajuste institucional futuro implementado/migration60 DEV/SQL36negativas rollback PASS; UI/HTTP do reajuste ainda pendentes neste checkpoint. Evidências consolidadas em V35_EXECUTION_20261019.md. Etapa2 permanece aberta, demais requisitos preservados.
+
 ## Recorrência mensal: aceite UI/HTTP A/B concluído — 2026-10-16
 
 B RESULT PASS no preview6959e115/commitae1d4a6: quatro tabelas estrangeiras

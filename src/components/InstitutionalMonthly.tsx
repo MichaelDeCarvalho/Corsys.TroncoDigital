@@ -70,6 +70,17 @@ function MonthlyPanel({client,organizationId}:Props){
   resetPreview();void run({name:'set_tenant_institutional_monthly_rule_status',args:{p_organization_id:organizationId,p_rule_id:candidate.id,
    p_expected_active:candidate.active,p_active:!candidate.active,p_reason:why,p_idempotency_key:crypto.randomUUID()}})
  }
+ function price(e:FormEvent<HTMLFormElement>){
+  e.preventDefault();if(locked||!candidate||!preview?.version_id||preview.rule_id!==candidate.id)return
+  const d=new FormData(e.currentTarget),get=(k:string)=>String(d.get(k)??'').trim()
+  try{
+   const amount=normalizedAmount(get('amount')),from=month(get('from')),why=get('reason')
+   if(Number(amount)<=0||why.length<3||get('confirmation')!=='REAJUSTAR')throw Error('Confira valor, vigência e confirmação do reajuste.')
+   const args={p_organization_id:organizationId,p_rule_id:candidate.id,p_expected_version_id:preview.version_id,
+    p_amount:amount,p_valid_from:from,p_reason:why,p_idempotency_key:crypto.randomUUID()}
+   resetPreview();void run({name:'schedule_institutional_recurring_price',args})
+  }catch(cause){setError((cause as Error).message)}
+ }
  return <section className="panel member-editor" aria-label="Recorrências mensais institucionais">
   <div className="section-title"><h2>Recorrências mensais institucionais</h2><button className="secondary" disabled={locked} onClick={()=>{resetPreview();setError('');setSaved(false);setRevision(n=>n+1)}}>Atualizar regras institucionais</button></div>
   <p className="subtle">Cadastre uma despesa ou receita mensal e confira a prévia antes de emitir a obrigação. A emissão não movimenta caixa nem registra pagamento. Dias 29–31 são ajustados ao último dia do mês.</p>
@@ -101,12 +112,22 @@ function MonthlyPanel({client,organizationId}:Props){
      <label htmlFor="im-confirm">Digite GERAR para emitir a obrigação</label><input id="im-confirm" value={confirmation} required onChange={e=>setConfirmation(e.target.value)} autoComplete="off"/>
      <button type="submit" disabled={confirmation!=='GERAR'||reason.trim().length<3}>Confirmar emissão institucional</button>
     </fieldset></form>}
+   {preview.version_id&&candidate?.active&&<form aria-label="Programar reajuste institucional" onSubmit={price}><fieldset disabled={locked||previewPending}>
+    <legend>Reajuste futuro de {preview.name}</legend>
+    <p>O novo valor vale para emissões futuras. Obrigações já emitidas e valores anteriores são preservados. Escolha uma vigência posterior ao último reajuste, sem obrigações já emitidas a partir dela.</p>
+    <div className="member-form-grid">
+     <div><label htmlFor="im-price-amount">Novo valor institucional (R$)</label><input id="im-price-amount" name="amount" inputMode="decimal" required/></div>
+     <div><label htmlFor="im-price-from">Início do reajuste institucional</label><input id="im-price-from" name="from" type="month" required/></div>
+     <div><label htmlFor="im-price-reason">Motivo do reajuste institucional</label><input id="im-price-reason" name="reason" minLength={3} maxLength={500} required/></div>
+     <div><label htmlFor="im-price-confirm">Digite REAJUSTAR para confirmar</label><input id="im-price-confirm" name="confirmation" required autoComplete="off"/></div>
+    </div><button type="submit">Confirmar reajuste institucional</button>
+   </fieldset></form>}
    </section>}
    {candidate&&<form aria-label="Alterar situação da regra institucional" onSubmit={status}><fieldset disabled={locked}><legend>{candidate.active?'Desativar':'Reativar'} {candidate.name}</legend>
     <p className="subtle">O histórico e as obrigações já emitidas permanecem preservados.</p><label htmlFor="im-status-reason">Justificativa da situação da regra</label><input id="im-status-reason" name="reason" minLength={3} maxLength={500} required/>
     <button type="submit" className="secondary">{candidate.active?'Desativar regra institucional':'Reativar regra institucional'}</button>
    </fieldset></form>}
-   <p className="subtle">Regras mensais institucionais, até 150 por consulta. Anuidades, cobranças especiais e reajustes futuros têm fluxos próprios ainda pendentes.</p>
+   <p className="subtle">Regras mensais institucionais, até 150 por consulta. Anuidades e cobranças especiais têm fluxos próprios ainda pendentes.</p>
   </>}
  </section>
 }

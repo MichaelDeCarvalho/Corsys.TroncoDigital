@@ -39,7 +39,7 @@ export function MemberForm({ client, organizationId, member, onSaved, onCancel, 
       if (!mounted.current) return
       const code = (failure as { code?: string } | null)?.code
       if ((code === '40001' || code === 'PT409')) {
-        submission.current = null; setConflict(true)
+        submission.current = null; setUncertain(false); setConflict(true)
         setError('Este cadastro foi alterado por outra operação. Sua edição não foi salva. Atualize o cadastro antes de editar novamente.')
       } else if (['22023', '42501', '23503', '28000'].includes(code ?? '')) {
         submission.current = null; setUncertain(false)

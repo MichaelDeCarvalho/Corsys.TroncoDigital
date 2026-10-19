@@ -1,3 +1,7 @@
+## Reajuste institucional futuro — 19/10/2026
+
+RPC schedule_institutional_recurring_price versiona preços existentes com settings.manage, idempotência, locks e PT409. Bloqueia vigência com obrigações emitidas, sem reescrever fatos. UI exige prévia/REAJUSTAR e conserva chave em transporte incerto. ADR-0031; migration60 DEV. Evidências/limites em docs/V35_EXECUTION_20261019.md.
+
 ## Regressão concorrente mensal em correção — 2026-10-16
 
 UI mensal A/B concluída e cleanup SQL saldo10/canceladas/regras inativas.

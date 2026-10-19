@@ -1,3 +1,7 @@
+## Execução Work — 19/10/2026
+
+Identidade SQL rollback e HTTP real A/B de identidade/catálogo PASS. Reajuste institucional futuro implementado e migration60 aplicada somente DEV; SQL A/B rollback PASS. Etapa2 aberta: cobertura HTTP legada e homologação completa não concluídas. Evidências e limites em docs/V35_EXECUTION_20261019.md.
+
 ## Mensal institucional UI A/B e HTTP A PASS — 2026-10-16
 
 Estado autoritativo: migrations57/20261016215748 e58/20261016220039 aplicadas DEV.

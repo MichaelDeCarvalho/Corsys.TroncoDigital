@@ -1,3 +1,7 @@
+## Work — 19/10/2026: identidade resolvida, HTTP A/B parcial e reajuste
+
+Identidade SQL rollback PASS; HTTP identidade/catálogo A/B 10calls/10requests cada, cleanup confirmado. Cobertura:2/13 RPCs legadas, outras11 ainda pendentes. CI312 do head retomado1d9249d SUCCESS. Reajuste futuro implementado, migration60/20261019230916 DEV, SQL4combinações/36negativas rollback PASS. Regressão MemberForm falhou antes/passou após correção. Ver docs/V35_EXECUTION_20261019.md para IDs, testes, riscos e estado de publicação. Não repetir mensal aprovado. Etapa2 aberta; sem merge/PROD.
+
 ## Checkpoint — 19/10/2026: CI #311 e pendência HTTP real
 
 - CI #311, run 39330807587, commit 7f59856e0cd224c019b5cba7b79a5869bcf757cb: SUCCESS; jobs static e frontend SUCCESS (SQL grammar/preservation, frontend tests/check/build sem upload).

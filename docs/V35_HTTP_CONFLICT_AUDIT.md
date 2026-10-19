@@ -1,3 +1,7 @@
+## Estado vigente Work — 19/10/2026
+
+Supersede checkpoints históricos abaixo: identidade SQL rollback PASS; HTTP identidade/catálogo A/B PASS (10calls/10requests por identidade, cleanup confirmado). Cobertura2/13, outras11 pendentes. CI312/head1d9249d SUCCESS. SDK instalado e docs atuais não repetem POST por409; db.retry=false é explícito. Não confundir com retry interno PostgREST40001. Evidência e fontes: V35_EXECUTION_20261019.md.
+
 
 ## Execução 19/10/2026 — DEV
 

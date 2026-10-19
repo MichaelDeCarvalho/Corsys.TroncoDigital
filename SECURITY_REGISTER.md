@@ -1,3 +1,7 @@
+## Incremento Work — 19/10/2026
+
+Reajuste institucional: autorização servidor/settings.manage, versão otimista/PT409, idempotência e bloqueio de obrigações emitidas. Gate SQL A/B36rejeições PASS rollback. HTTP legado apenas identidade/catálogo2/13 PASS; não generalizar. Advisors sinalizam RPCs definer autenticadas e senha vazada desabilitada; sem correção ampla nesta rodada. Detalhes, links e limites em docs/V35_EXECUTION_20261019.md.
+
 ## Regressão concorrente mensal em correção — 2026-10-16
 
 UI mensal A/B concluída e cleanup SQL saldo10/canceladas/regras inativas.

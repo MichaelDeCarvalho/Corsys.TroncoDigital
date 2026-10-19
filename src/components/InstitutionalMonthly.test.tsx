@@ -27,6 +27,28 @@ function confirm(){
  fireEvent.submit(screen.getByRole('form',{name:'Confirmar emissão institucional'}))
 }
 describe('institutional monthly UI',()=>{
+ it('schedules a reviewed future price and invalidates the old generation preview',async()=>{
+  const f=fixture();render(<InstitutionalMonthly client={f.client} organizationId={org}/>);await consult()
+  fireEvent.change(screen.getByLabelText('Novo valor institucional (R$)'),{target:{value:'2,50'}})
+  fireEvent.change(screen.getByLabelText('Início do reajuste institucional'),{target:{value:'2027-01'}})
+  fireEvent.change(screen.getByLabelText('Motivo do reajuste institucional'),{target:{value:'DEV reajuste autorizado'}})
+  fireEvent.change(screen.getByLabelText('Digite REAJUSTAR para confirmar'),{target:{value:'REAJUSTAR'}})
+  fireEvent.submit(screen.getByRole('form',{name:'Programar reajuste institucional'}))
+  await screen.findByText(/Operação recorrente institucional confirmada/)
+  expect(f.rpc).toHaveBeenCalledWith('schedule_institutional_recurring_price',{
+   p_organization_id:org,p_rule_id:ruleId,p_expected_version_id:fact,p_amount:'2.50',p_valid_from:'2027-01-01',
+   p_reason:'DEV reajuste autorizado',p_idempotency_key:expect.any(String)})
+  expect(screen.queryByRole('form',{name:'Confirmar emissão institucional'})).not.toBeInTheDocument()
+ })
+ it('does not schedule an unconfirmed price',async()=>{
+  const f=fixture();render(<InstitutionalMonthly client={f.client} organizationId={org}/>);await consult()
+  fireEvent.change(screen.getByLabelText('Novo valor institucional (R$)'),{target:{value:'2,50'}})
+  fireEvent.change(screen.getByLabelText('Início do reajuste institucional'),{target:{value:'2027-01'}})
+  fireEvent.change(screen.getByLabelText('Motivo do reajuste institucional'),{target:{value:'DEV reajuste autorizado'}})
+  fireEvent.submit(screen.getByRole('form',{name:'Programar reajuste institucional'}))
+  await screen.findByText('Confira valor, vigência e confirmação do reajuste.')
+  expect(f.rpc).toHaveBeenCalledTimes(1)
+ })
  it('treats PT409 as a known conflict, clears stale preview and requires a fresh review',async()=>{
   const f=fixture();f.rpc.mockResolvedValueOnce({data:preview,error:null}).mockResolvedValueOnce({data:null,error:{code:'PT409'}})
   render(<InstitutionalMonthly client={f.client} organizationId={org}/>);await consult();confirm()
