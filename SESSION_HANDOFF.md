@@ -1,3 +1,7 @@
+## Evidência final deste incremento — 19/10/2026
+
+Código df436a25018b6080d1275a95cfa666e2f179da13 enviado ao PR5; CI313/run39340174874 SUCCESS,43arquivos/304testes PASS. Preview94c5078e (aliasv35-finance), bytes remotos index/app/QA conferidos. UI reajuste B PASS desktop/mobile375sem overflow; regra8d31ed2e-90a5-4964-8c26-4e2c5ebddfc8 inativa,zero obrigações,uma auditoria, outubro1/novembro2. LoginA solicitado para novo reajusteUI; sessãoB preservada na aba1875275275 Edge3. HTTP legado identidade/catálogo A/B já PASS,não repetir. Outras11RPCs continuamHTTPpendentes. GateSQLidentidade resolvido; reajusteSQL36negativas rollbackPASS. Próxima ação: finalizarUIA do reajuste e HTTPespecífico, mantendo demais requisitosEtapa2 abertos; nenhuma alteração emPROD/merge.
+
 ## Work — 19/10/2026: identidade resolvida, HTTP A/B parcial e reajuste
 
 Identidade SQL rollback PASS; HTTP identidade/catálogo A/B 10calls/10requests cada, cleanup confirmado. Cobertura:2/13 RPCs legadas, outras11 ainda pendentes. CI312 do head retomado1d9249d SUCCESS. Reajuste futuro implementado, migration60/20261019230916 DEV, SQL4combinações/36negativas rollback PASS. Regressão MemberForm falhou antes/passou após correção. Ver docs/V35_EXECUTION_20261019.md para IDs, testes, riscos e estado de publicação. Não repetir mensal aprovado. Etapa2 aberta; sem merge/PROD.

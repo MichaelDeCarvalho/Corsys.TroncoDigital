@@ -1,3 +1,7 @@
+## Atualização de evidência — 19/10/2026
+
+CI313/df436a2 SUCCESS,304testes. ReajusteUIB desktop/mobile PASS,regra fictícia inativa/zeroobrigações; UIA eHTTPespecífico ainda pendentes. Preview94c5078e/assets conferidos. Ver V35_EXECUTION_20261019.md. Etapa2 não concluída.
+
 ## Work — 19/10/2026
 
 Identidade SQL rollback resolvida; HTTP identidade/catálogo A/B PASS com contagem real e cleanup. Reajuste institucional futuro implementado/migration60 DEV/SQL36negativas rollback PASS; UI/HTTP do reajuste ainda pendentes neste checkpoint. Evidências consolidadas em V35_EXECUTION_20261019.md. Etapa2 permanece aberta, demais requisitos preservados.
