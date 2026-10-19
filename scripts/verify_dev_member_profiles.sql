@@ -26,7 +26,7 @@ for t in select * from (values
  v_again := public.save_member_profile(t.org::uuid,v_id,v_time,v_profile||'{"status":"away"}','DEV edit test',gen_random_uuid()::text);
  select updated_at into v_new_time from public.members where id=v_id;
  if v_again<>v_id or v_new_time<=v_time or not exists(select 1 from public.members where id=v_id and status='away') then raise exception 'edit/version failed'; end if;
- begin perform public.save_member_profile(t.org::uuid,v_id,v_time,v_profile,'DEV stale edit',gen_random_uuid()::text); raise exception 'stale edit accepted'; exception when serialization_failure then null; end;
+ begin perform public.save_member_profile(t.org::uuid,v_id,v_time,v_profile,'DEV stale edit',gen_random_uuid()::text); raise exception 'stale edit accepted'; exception when sqlstate 'PT409' then null; end;
  execute 'reset role';
  if (select count(*) from public.audit_logs where entity_id=v_id and action in ('member.create','member.update'))<>2 then raise exception 'audit count failed'; end if;
  if exists(select 1 from public.audit_logs where entity_id=v_id and (before_data::text like '%private notes%' or after_data::text like '%fiction@%' or technical_context::text like '%private notes%')) then raise exception 'audit contains contact/notes'; end if;
