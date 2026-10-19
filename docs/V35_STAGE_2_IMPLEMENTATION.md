@@ -1,3 +1,7 @@
+## Reajuste institucional UI A/B — 19/10/2026
+
+Gate UI A concluído no preview `94c5078e`; outubro R$1 e novembro R$2. Cleanup SQL A/B confirmou regras inativas, zero obrigações, uma auditoria por reajuste e saldo R$10 por Loja. Não repetir UI A/B de reajuste. CI #315/7e11a49 SUCCESS. Concorrência HTTP específica e demais requisitos da Etapa 2 continuam pendentes; evidências em V35_EXECUTION_20261019.md.
+
 ## Atualização de evidência — 19/10/2026
 
 CI #313/df436a2 SUCCESS, 304 testes. Reajuste UI B desktop/mobile PASS, regra fictícia inativa e zero obrigações; UI A e HTTP específico ainda pendentes. Preview `94c5078e`, assets conferidos. Ver V35_EXECUTION_20261019.md. Etapa 2 não concluída.
@@ -577,4 +581,3 @@ Visual autenticado desktop/mobile e deploy deste incremento ainda não verificad
 
 Contratos de criação/edição de integrante e termos, com validação server-side, autorização members.write, ID estrangeiro negado, auditoria e vigência. Conferir permissões/ADRs antes de escolher contrato; members.write foi conferida no catálogo e utilizada no incremento acima; o texto abaixo preserva a conciliação inicial.
 Mensalidade/isenção não devem ser campos soltos que alteram valores históricos. Manter layout único entre todas as lojas.
-
