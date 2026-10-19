@@ -21,7 +21,7 @@ for t in select * from (values
  if not exists(select 1 from public.recurring_member_terms where id=v_old and effective_to=(v_from+interval '1 month')::date and term_type='exempt')
  or not exists(select 1 from public.recurring_member_terms where id=v_new and effective_to is null and override_amount=150.50)
  then raise exception 'term boundary/value invalid'; end if;
- begin perform public.transition_member_term(t.org::uuid,t.member::uuid,v_old,(v_from+interval '3 months')::date,'standard',null,'DEV stale',gen_random_uuid()::text); raise exception 'stale transition accepted'; exception when serialization_failure then null; end;
+ begin perform public.transition_member_term(t.org::uuid,t.member::uuid,v_old,(v_from+interval '3 months')::date,'standard',null,'DEV stale',gen_random_uuid()::text); raise exception 'stale transition accepted'; exception when sqlstate 'PT409' then null; end;
  begin perform public.transition_member_term(t.org::uuid,t.foreign_member::uuid,v_new,(v_from+interval '3 months')::date,'standard',null,'DEV foreign',gen_random_uuid()::text); raise exception 'cross-tenant member accepted'; exception when foreign_key_violation then null; end;
  begin perform public.transition_member_term(t.org::uuid,t.member::uuid,v_new,(v_from+interval '3 months')::date,'override_amount','NaN'::numeric,'DEV NaN',gen_random_uuid()::text); raise exception 'NaN accepted'; exception when invalid_parameter_value then null; end;
  begin perform public.transition_member_term(t.org::uuid,t.member::uuid,v_new,(v_from+interval '3 months')::date,'override_amount','Infinity'::numeric,'DEV Infinity',gen_random_uuid()::text); raise exception 'Infinity accepted'; exception when invalid_parameter_value then null; end;
