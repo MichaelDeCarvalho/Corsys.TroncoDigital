@@ -74,7 +74,7 @@ begin
      perform public.publish_validated_accounting_plan(t.org::uuid,v_plan,
        v_start,(v_end-interval '1 month')::date,'Invalid expected dates',gen_random_uuid()::text);
      raise exception 'stale dates accepted';
-   exception when serialization_failure then null;
+   exception when sqlstate 'PT409' then null;
    end;
 
    v_key:=gen_random_uuid()::text;
@@ -92,7 +92,7 @@ begin
      perform public.publish_validated_accounting_plan(t.org::uuid,v_plan,
        v_start,v_end,'Second publication rejected',gen_random_uuid()::text);
      raise exception 'published plan unexpectedly republished';
-   exception when serialization_failure then null;
+   exception when sqlstate 'PT409' then null;
    end;
 
    begin
