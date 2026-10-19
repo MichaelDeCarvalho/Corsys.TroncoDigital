@@ -1,6 +1,6 @@
 ## Atualização de evidência — 19/10/2026
 
-CI313/df436a2 SUCCESS,304testes. ReajusteUIB desktop/mobile PASS,regra fictícia inativa/zeroobrigações; UIA eHTTPespecífico ainda pendentes. Preview94c5078e/assets conferidos. Ver V35_EXECUTION_20261019.md. Etapa2 não concluída.
+CI #313/df436a2 SUCCESS, 304 testes. Reajuste UI B desktop/mobile PASS, regra fictícia inativa e zero obrigações; UI A e HTTP específico ainda pendentes. Preview `94c5078e`, assets conferidos. Ver V35_EXECUTION_20261019.md. Etapa 2 não concluída.
 
 ## Work — 19/10/2026
 
