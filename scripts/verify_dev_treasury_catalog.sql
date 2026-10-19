@@ -29,7 +29,7 @@ for t in select * from (values
  v_key:=gen_random_uuid()::text;
  if public.set_treasury_catalog_status(t.org::uuid,'fund',v_fund,true,false,'DEV fund deactivation',v_key)<>v_fund then raise exception 'fund status return invalid';end if;
  if public.set_treasury_catalog_status(t.org::uuid,'fund',v_fund,true,false,'DEV fund deactivation',v_key)<>v_fund then raise exception 'status retry invalid';end if;
- begin perform public.set_treasury_catalog_status(t.org::uuid,'fund',v_fund,true,false,'DEV stale',gen_random_uuid()::text);raise exception 'stale status accepted';exception when serialization_failure then null;end;
+ begin perform public.set_treasury_catalog_status(t.org::uuid,'fund',v_fund,true,false,'DEV stale',gen_random_uuid()::text);raise exception 'stale status accepted';exception when sqlstate 'PT409' then null;end;
  perform public.set_treasury_catalog_status(t.org::uuid,'fund',v_fund,false,true,'DEV reactivate fund',gen_random_uuid()::text);
  perform public.set_treasury_catalog_status(t.org::uuid,'method',v_method,true,false,'DEV method status',gen_random_uuid()::text);
  perform public.set_treasury_catalog_status(t.org::uuid,'method',v_method,false,true,'DEV reactivate method',gen_random_uuid()::text);
