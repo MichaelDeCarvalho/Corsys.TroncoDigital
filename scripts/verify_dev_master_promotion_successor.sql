@@ -30,7 +30,7 @@ begin
   'DEV stale successor','STALE','percent',20,'once',null,
   '2027-03-01T12:00:00Z',null,'new_customers',100,false,gen_random_uuid()::text);
   raise exception 'Stale promotion version accepted';
- exception when serialization_failure then null;end;
+ exception when sqlstate 'PT409' then null;end;
  execute 'reset role';
  if (select count(*) from public.saas_promotions)<>prior_count+2 then raise exception 'Unexpected promotion count';end if;
 end $$;
