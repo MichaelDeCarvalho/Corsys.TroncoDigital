@@ -1,3 +1,11 @@
+## Checkpoint 19/10/2026 — correção dos conflitos HTTP legados
+
+- PR #5 draft, branch `fix/v35-http-conflicts-review-20261016`. CI #302 do commit 822d313: SUCCESS.
+- Migration 59 `20261019205415_legacy_business_http_conflicts_pt409.sql`: aplicada apenas ao Supabase DEV e adicionada ao GitHub; 13 funções/17 conflitos. Read-back confirmou PT409, sem 40001 nas 13 RPCs, SECURITY DEFINER/search_path intactos.
+- Supabase JS `db.retry=false` para evitar retry automático HTTP 409. Scripts SQL com exceções de conflito atualizados.
+- Gate membro perfil SQL rollback PASS. Gate identidade não executado por bloqueio de segurança da ferramenta. Gate catálogo FAIL devido a fixture user_roles/roles FK. Ambos permanecem pendentes; não declarar QA geral aprovado.
+- CI do head atual e HTTP real A/B pendentes. Nenhum merge, deploy ou alteração de produção.
+
 ## Revisão de conflitos HTTP históricos — PARCIAL — 2026-10-16
 
 Base: PR#4/feat/v35-dev-gate-20261002 SHA944b8bc; revisão isolada PR#5
