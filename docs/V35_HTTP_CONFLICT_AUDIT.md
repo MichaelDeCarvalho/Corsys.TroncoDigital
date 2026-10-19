@@ -1,3 +1,11 @@
+
+## Execução 19/10/2026 — DEV
+
+- CI #302 do checkpoint anterior: SUCCESS.
+- Migration `20261019205415_legacy_business_http_conflicts_pt409.sql` aplicada ao Supabase DEV e versionada no PR #5: 13 RPCs, 17 raises `40001` substituídos por `PT409`. Read-back: zero `40001` explícitos nessas funções, SECURITY DEFINER e search_path preservados.
+- `src/lib/supabase.ts`: `db.retry=false`, para impedir retries automáticos de HTTP 409 em comandos financeiros. Sem deploy.
+- Gate `verify_dev_member_profiles.sql`: PASS (ROLLBACK). Gate `verify_dev_tenant_identity.sql`: bloqueado pelo controle de segurança da ferramenta (NÃO EXECUTADO). Gate `verify_dev_treasury_catalog.sql`: FAIL por fixture `user_roles_organization_id_role_id_fkey` (não é prova de falha PT409; necessita corrigir fixture e reexecutar).
+- CI da revisão atual, HTTP A/B com JWT real, validação de demais gates e análise de regressão: PENDENTES. Não mesclar nem promover produção.
 # Conflitos HTTP históricos — auditoria DEV em 2026-10-16
 
 ## Escopo e evidência
