@@ -20,15 +20,15 @@ if (select count(*) from public.audit_logs where action='organization.identity_s
 if exists(select 1 from public.audit_logs where action='organization.identity_save' and organization_id=t.org::uuid and (coalesce(before_data::text,'')||coalesce(after_data::text,'')) like '%dev-pix-private%') then raise exception 'audit secret leaked';end if;
 begin update public.organization_settings set phone='unsafe' where organization_id=t.org::uuid;raise exception 'direct write';exception when insufficient_privilege then null;end;
 execute 'reset role';
-update public.user_roles set role_id=(select r.id from public.roles r where r.organization_id=t.org::uuid and r.code='TREASURER') where user_id=t.uid::uuid;
+update public.user_roles set role_id=(select r.id from public.roles r where r.organization_id=t.org::uuid and r.code='TREASURER') where user_id=t.uid::uuid and organization_id=t.org::uuid;
 execute 'set local role authenticated';
 begin perform public.save_tenant_identity(t.org::uuid,null,null,null,null,null,null,null,null,'BR','DEV treasurer',gen_random_uuid()::text);raise exception 'treasurer allowed';exception when insufficient_privilege then null;end;
 execute 'reset role';
-update public.user_roles set role_id=(select r.id from public.roles r where r.organization_id=t.org::uuid and r.code='VIEWER') where user_id=t.uid::uuid;
+update public.user_roles set role_id=(select r.id from public.roles r where r.organization_id=t.org::uuid and r.code='VIEWER') where user_id=t.uid::uuid and organization_id=t.org::uuid;
 execute 'set local role authenticated';
 begin perform public.save_tenant_identity(t.org::uuid,null,null,null,null,null,null,null,null,'BR','DEV viewer',gen_random_uuid()::text);raise exception 'viewer allowed';exception when insufficient_privilege then null;end;
 execute 'reset role';
-update public.user_roles set role_id=(select r.id from public.roles r where r.organization_id=t.org::uuid and r.code='ADMIN') where user_id=t.uid::uuid;
+update public.user_roles set role_id=(select r.id from public.roles r where r.organization_id=t.org::uuid and r.code='ADMIN') where user_id=t.uid::uuid and organization_id=t.org::uuid;
 update public.saas_subscriptions set status='suspended' where organization_id=t.org::uuid;
 execute 'set local role authenticated';
 begin perform public.save_tenant_identity(t.org::uuid,null,null,null,null,null,null,null,null,'BR','DEV suspended',gen_random_uuid()::text);raise exception 'suspended allowed';exception when insufficient_privilege then null;end;
