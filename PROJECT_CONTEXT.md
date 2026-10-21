@@ -1,5 +1,7 @@
 ## Continuação operacional — 21/10/2026
 
+CI323/c6b2fd2 SUCCESS. Revalidação real B em duas abas preservou Loja/formulário; ágape UI B desktop/mobile375 sem overflow PASS, cobrança a4c4db6d cancelada/open0/integrity true. Mútuas agora têm UI com distribuição explícita, prévia da classificação/total, histórico e recuperação idempotente; seis testes focados PASS e build DEV PASS. HTTP/UI mútuas ainda a homologar. Repasse neutro continua lacuna: guard atual de member_receivable exige receita; não declarar esse tratamento pronto.
+
 Ágapes HTTP B19/19 PASS, UI A/B pendente. Corrigida perda de formulário em revalidação da mesma identidade (regressão antes/depois,23 testes App/recuperação PASS), sem ignorar Auth/RLS/MFA. Backend mútuas migration66 DEV, SQL A/B36 negativas rollback PASS nas faixas documentadas; UI/HTTP a concluir. ADR-0035/0036. Agrupar testes de A após aproveitar sessão B.
 
 Ágapes com participantes/cobranças implementados, migration65 DEV, SQL A/B26 negativas rollback e8 testes focados PASS; homologação real pendente. Histórico de aprovações B com voto existente e mobile PASS, CI321/2bd3391 SUCCESS. ADR-0034 e evidências de21/out.

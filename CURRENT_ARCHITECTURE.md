@@ -1,5 +1,7 @@
 ## Continuidade e mútuas — 21/10/2026
 
+Finance→Mútuas por faixa usa RPCs66 e leitura RLS de mutual_batches/assignments/balances. Distribuição por número ou atribuição explícita de toda a faixa; alterar faixa invalida distribuição/prévia. Prévia verifica tenant, soma em centavos, vínculos e natureza/código reais, exige GERAR. Envio incerto conserva comando/chave; rejeição definitiva desbloqueia. Histórico paginado20, detalhes conferem cada cobrança. Sem pagamento ou alteração de classificação. Natureza neutra/repasse ainda depende de evolução contábil específica.
+
 Auth preserva Workspace apenas na revalidação da mesma identidade validada; inert durante getUser/escopo, sem pular verificação ou manter acesso inválido. Lojas/Master são relidos sem desmontar seleção ainda autorizada. ADR-0035. Backend mútuas reutiliza lote/vínculos/charges com atribuições explícitas, classe contábil existente e fingerprint/idempotência, migration66 DEV, SQL A/B PASS; UI/HTTP pendentes. ADR-0036.
 
 ## Ágapes — 21/10/2026
