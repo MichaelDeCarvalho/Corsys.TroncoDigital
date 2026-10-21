@@ -1,3 +1,17 @@
+## Continuidade DEV — migrações de negociação sincronizadas — 2026-10-21
+
+Branch PR #5: `fix/v35-http-conflicts-review-20261016`. Banco DEV `szqkdekwhzxsoxorgvaz`.
+A revisão do GitHub possuía 61 migrações; o banco já tinha 63 (duas de 19/10 ainda sem arquivo na branch).
+Recuperados dos statements persistidos pelo Supabase e versionados, sem reaplicar SQL:
+- `20261019235201_member_debt_agreement_commands.sql`: prévia com fingerprint e comando idempotente de acordo;
+- `20261019235427_member_agreement_source_date_guard.sql`: guarda a data de emissão das cobranças originais na prévia.
+Comparação texto a texto com os statements do banco: ambas EXATAS (acréscimo apenas da quebra de linha final).
+Read-back somente leitura: RPCs `preview_member_debt_agreement` e `create_member_debt_agreement` têm SECURITY DEFINER, search_path vazio, EXECUTE por authenticated e não por anon; quatro tabelas de acordos com RLS ligado.
+Não foram executadas jornadas SQL positivas/negativas, HTTP/JWT, concorrência ou UI dessa nova funcionalidade neste incremento; não declarar acordo homologado.
+Nenhuma migration reaplicada, nenhum seed, merge, alteração de tráfego ou produção.
+Próximo: executar testes rollback de negociação em QA A/B, especialmente fingerprint obsoleto, competência, isolamento e idempotência; depois integrar/homologar interface.
+Continua pendente a homologação anual HTTP/navegador A/B e três RPCs legadas separadas (correção institucional, estorno e Master/AAL2). Não repetir gates já homologados em 19/10.
+
 ## Execução contínua — HTTP A/B ampliado e anual implementado — 19/10/2026
 
 HTTP novo A/B PASS: nove operações, 69 chamadas/69 requests por identidade; cobertura legada 10/13 mais reajuste institucional. Snapshots financeiros inalterados, auditorias únicas, cleanup de regras confirmado; deadlocks seguem 2. Não repetir esses gates. Migration61/20261019233739 anual DEV aplicada; SQL A/B28 negativas rollback PASS; UI anual implementada, homologação real ainda pendente. Suíte 307 testes PASS e um teste adicional de cleanup anual PASS. Evidências em docs/V35_EXECUTION_20261019_CONTINUED.md. Próximo: homologar anual/correção no navegador B atual, depois A; Master/AAL2 e estorno ainda separados. SessãoB Edge3/aba1875275285. Sem merge/PROD; execução continua entre incrementos conforme autorização.
