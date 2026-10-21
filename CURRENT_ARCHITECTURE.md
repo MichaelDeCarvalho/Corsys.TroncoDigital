@@ -1,3 +1,7 @@
+## Ágapes — 21/10/2026
+
+Prévia/comando usam events/event_participants e charges(source_kind=event), categoria/classificação publicada, participantes ativos do tenant, locks compatíveis, fingerprint e idempotência. Gratuidade não cria dívida; cobranças canceladas conservam vínculos. UI consulta histórico e situação de participantes. Migration65 DEV, ADR-0034, SQL A/B rollback PASS; HTTP/UI reais pendentes.
+
 ## Revisão e histórico — 21/10/2026
 
 Migration64 DEV conserva KEY SHARE de FKs com NO KEY UPDATE do integrante e ordena locks de cobranças como FIFO. SQL A/B PASS; probe paralelo do conector inconclusivo. ApprovalHistory consulta snapshots/decisões existentes por tenant, com paginação e validação de atores únicos; nenhuma escrita ou nova permissão. Multiaprovação com dois atores SQL rollback PASS; homologação browser não equivale a esse teste. Negociação HTTP/UI A/B aprovada. Ver docs/V35_EXECUTION_20261021.md.

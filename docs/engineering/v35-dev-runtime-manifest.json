@@ -541,6 +541,15 @@
       "sha256": "2ff3961e24fdd9f7682cb62594d4355fd29cb03daf758cee474d0bf9206faad2",
       "applied_at": "2026-10-21",
       "note": "DEV agreement member NO KEY UPDATE and charge lock order matching existing FIFO. SQL A/B 30 denials rollback PASS. Concurrent holder probe inconclusive through connector."
+    },
+    {
+      "version": "20261021225055",
+      "name": "agape_event_charge_commands",
+      "path": "supabase/migrations/20261021225055_agape_event_charge_commands.sql",
+      "source_path": "supabase/migrations/20261021225055_agape_event_charge_commands.sql",
+      "sha256": "9a2c197a0e69c0f109097cde19bdfdae5d636732a906b40011ad7c34ff654b5a",
+      "applied_at": "2026-10-21",
+      "note": "DEV agape event preview/create, existing tables/RLS preserved. SQL A/B 26 denials rollback PASS; paid/free participation, idempotency and canceled history. HTTP/UI pending."
     }
   ],
   "baseline_patches": {

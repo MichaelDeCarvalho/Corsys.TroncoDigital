@@ -1,3 +1,7 @@
+## Continuação — ágapes — 21/10/2026
+
+CI321/2bd3391 SUCCESS, preview46c8d288. Histórico B com voto existente e mobile PASS somente leitura; sem novos votos/pagamentos. Ágapes implementados: migration65 DEV, SQL A/B26 negativas rollback PASS,8 testes focados UI/contrato/cleanup PASS. Publicar novo preview/CI e executar gate novo de ágapes + UI B atual, depois A. Helper execução única paga/gratuita, cancela somente cobrança fictícia e verifica caixa10; não exige mudar categorias. SessãoB Edge3/aba1875275295 autenticada na interface. Eventos/participantes0 após SQL rollback. ADR-0034 e docs/V35_EXECUTION_20261021.md. Demais gates já aprovados não repetir.
+
 ## Estado verificado — 21/10/2026
 
 Anuidade/correção HTTP A/B PASS35/35 cada; cobertura legada11/13 A/B. Negociação HTTP A/B PASS14/14 e UI desktop/mobile A/B PASS; quatro originais+12 parcelas fictícios cancelados, flags das duas categorias restauradas false, caixa10 A/B, deadlocks2. Não repetir. Preview934d9d02; CI320/7afea27 SUCCESS. Migration64 DEV corrige lock do integrante e alinha ordem FIFO; SQL A/B30 negativas PASS, probe concorrente via conector INCONCLUSIVO. Multiaprovação SQL A/B16 negativas rollback PASS com dois atores, sem grants persistidos. Histórico de aprovações implementado e9 testes focados PASS; publicar preview/CI e verificar interface. Evidências em docs/V35_EXECUTION_20261021.md. SessãoB Edge3/aba1875275295 autenticada; preservar. Continuar ágapes/mútuas/especiais e paridade, além de HTTP específico estorno/MasterAAL2. Sem merge do PR/PROD; execução autorizada continua.

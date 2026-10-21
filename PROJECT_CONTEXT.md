@@ -1,5 +1,7 @@
 ## Continuação operacional — 21/10/2026
 
+Ágapes com participantes/cobranças implementados, migration65 DEV, SQL A/B26 negativas rollback e8 testes focados PASS; homologação real pendente. Histórico de aprovações B com voto existente e mobile PASS, CI321/2bd3391 SUCCESS. ADR-0034 e evidências de21/out.
+
 Anuidade/correção A/B e negociação/parcelamento HTTP/UI desktop/mobile A/B aprovados; cleanup confirmado. Cobertura HTTP legada11/13 A/B. CI320/7afea27 SUCCESS; migration64 DEV ajusta compatibilidade de locks/FIFO. Multiaprovação SQL com dois atores A/B e rollback PASS; histórico de votos implementado, homologação browser ainda parcial. Estado/evidências: docs/V35_EXECUTION_20261021.md. Etapa2 aberta; não repetir gates aprovados.
 
 ## Continuação operacional — 19/10/2026

@@ -467,6 +467,10 @@ Agente aplicou sete transições guardadas entre WAITs. SQL final: A/B ADMIN pr�
 
 Nova função `public.transition_member_term` (SECURITY DEFINER autenticada): uso restrito por `private.require_permission(settings.manage)`, `search_path` vazio, `anon` sem EXECUTE, e verificações SQL negativas A/B, TREASURER, VIEWER e assinatura suspensa em transações revertidas. Operação atômica e auditada; valores e datas são validados no servidor. A presença de SECURITY DEFINER demanda revisão contínua, não indica auditoria integral. HTTP/JWT e concorrência simultânea ainda **não avaliados**.
 
+## Ágapes — 21/10/2026
+
+Migration65 somente DEV: autorização charges.create+members.read, limite200, categoria/contabilidade e integrantes do tenant, período aberto, locks, fingerprint, idempotência e PT409. Sem INSERT direto/novo grant em tabelas; anon sem EXECUTE. SQL A/B26 negativas rollback PASS e testes de resposta perdida/escopo PASS. HTTP/UI reais pendentes; não alegar gate integrado completo. ADR-0034.
+
 ## Revisão — 21/10/2026
 
 Negociação HTTP/UI A/B aprovada com cleanup/flags restauradas e caixa preservado. Migration64 reduz risco potencial de locks incompatíveis e alinha ordem FIFO; SQL PASS, probe paralelo do conector inconclusivo. Histórico de aprovações usa RLS/permissões existentes, paginação e validação de escopo/votantes. Multiaprovação SQL A/B16 negativas PASS; vínculos temporários de aprovação nunca commitados e readback limpo. Aprovação real com dois JWTs na mesma despesa ainda não executada. Evidências/limites em docs/V35_EXECUTION_20261021.md.
