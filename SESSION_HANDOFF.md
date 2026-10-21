@@ -1,3 +1,17 @@
+## Continuidade DEV — migrações de negociação sincronizadas — 2026-10-21
+
+Branch PR #5: `fix/v35-http-conflicts-review-20261016`. Banco DEV `szqkdekwhzxsoxorgvaz`.
+A revisão do GitHub possuía 61 migrações; o banco já tinha 63 (duas de 19/10 ainda sem arquivo na branch).
+Recuperados dos statements persistidos pelo Supabase e versionados, sem reaplicar SQL:
+- `20261019235201_member_debt_agreement_commands.sql`: prévia com fingerprint e comando idempotente de acordo;
+- `20261019235427_member_agreement_source_date_guard.sql`: guarda a data de emissão das cobranças originais na prévia.
+Comparação texto a texto com os statements do banco: ambas EXATAS (acréscimo apenas da quebra de linha final).
+Read-back somente leitura: RPCs `preview_member_debt_agreement` e `create_member_debt_agreement` têm SECURITY DEFINER, search_path vazio, EXECUTE por authenticated e não por anon; quatro tabelas de acordos com RLS ligado.
+Não foram executadas jornadas SQL positivas/negativas, HTTP/JWT, concorrência ou UI dessa nova funcionalidade neste incremento; não declarar acordo homologado.
+Nenhuma migration reaplicada, nenhum seed, merge, alteração de tráfego ou produção.
+Próximo: executar testes rollback de negociação em QA A/B, especialmente fingerprint obsoleto, competência, isolamento e idempotência; depois integrar/homologar interface.
+Continua pendente a homologação anual HTTP/navegador A/B e três RPCs legadas separadas (correção institucional, estorno e Master/AAL2). Não repetir gates já homologados em 19/10.
+
 ## Execução contínua — HTTP A/B ampliado e anual implementado — 19/10/2026
 
 HTTP legado ampliado A/B PASS69/69 cada; anual/correção B PASS35/35 e cleanup confirmado, não repetir B. Cobertura10/13 A e11/13 B. CI317/e1076df SUCCESS. Negociação/parcelamento implementados: migrations62/63 DEV, SQL A/B30 negativas rollback PASS, preservação63 PASS, suíte314 testes PASS e7 focados PASS após helper novo. UI em Financeiro → Negociar dívida; HTTP/UI real pendentes. Evidências em docs/V35_EXECUTION_20261019_CONTINUED.md. Login A solicitado; aba1875275285 Edge3 está na raiz/tela de acesso. Próximo: publicar preview novo, anual/correção A e negociação HTTP A/B. Categorias QA allow_installments continuam false; helper de negociação exige preparo temporário e restauração posterior. Master/AAL2 e estorno separados. Sem merge/PROD; continuar entre incrementos.

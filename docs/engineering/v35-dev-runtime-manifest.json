@@ -529,7 +529,7 @@
       "name": "member_agreement_source_date_guard",
       "path": "supabase/migrations/20261019235427_member_agreement_source_date_guard.sql",
       "source_path": "supabase/migrations/20261019235427_member_agreement_source_date_guard.sql",
-      "sha256": "2510b2b62dea1f4d22a8d588bc1b076d9ab3f5646a5f25d3aa67d6d5b1b0fab6",
+      "sha256": "31173a241c8057e3273ae7847810cc4922e5adc5fc86fbcbf5978d945decc0c7",
       "applied_at": "2026-10-19",
       "note": "DEV agreement commands only; existing tables/RLS preserved. A/B rollback PASS with 30 denials, partial payment preservation, exact cents and reversal behavior. UI/HTTP pending."
     }

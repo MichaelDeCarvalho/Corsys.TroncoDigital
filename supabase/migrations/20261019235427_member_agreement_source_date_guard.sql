@@ -55,4 +55,3 @@ begin
 end $$;
 revoke all on function public.preview_member_debt_agreement(uuid,uuid,uuid[],numeric,integer,date,date) from public,anon,authenticated;
 grant execute on function public.preview_member_debt_agreement(uuid,uuid,uuid[],numeric,integer,date,date) to authenticated;
-
