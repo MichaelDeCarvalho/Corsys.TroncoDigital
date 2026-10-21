@@ -467,6 +467,10 @@ Agente aplicou sete transições guardadas entre WAITs. SQL final: A/B ADMIN pr�
 
 Nova função `public.transition_member_term` (SECURITY DEFINER autenticada): uso restrito por `private.require_permission(settings.manage)`, `search_path` vazio, `anon` sem EXECUTE, e verificações SQL negativas A/B, TREASURER, VIEWER e assinatura suspensa em transações revertidas. Operação atômica e auditada; valores e datas são validados no servidor. A presença de SECURITY DEFINER demanda revisão contínua, não indica auditoria integral. HTTP/JWT e concorrência simultânea ainda **não avaliados**.
 
+## Sessão e mútuas — 21/10/2026
+
+Mesma identidade previamente verificada pode manter DOM montado e inert durante revalidação; getUser/escopo seguem obrigatórios. Erro, logout, usuário diferente e Loja revogada ocultam/removem o contexto anterior. Nenhum token novo em logs/storage e autorização permanece no servidor.23 testes de sessão/recuperação PASS, gate real pendente. Mútuas66 DEV: números/atribuições limitados e completos, tenant e contabilidade, período, locks/fingerprint/idempotência; SQL A/B36 negativas rollback PASS. UI/HTTP pendentes. ADR-0035/0036.
+
 ## Ágapes — 21/10/2026
 
 Migration65 somente DEV: autorização charges.create+members.read, limite200, categoria/contabilidade e integrantes do tenant, período aberto, locks, fingerprint, idempotência e PT409. Sem INSERT direto/novo grant em tabelas; anon sem EXECUTE. SQL A/B26 negativas rollback PASS e testes de resposta perdida/escopo PASS. HTTP/UI reais pendentes; não alegar gate integrado completo. ADR-0034.

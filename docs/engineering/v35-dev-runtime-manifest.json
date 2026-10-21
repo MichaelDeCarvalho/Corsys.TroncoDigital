@@ -550,6 +550,15 @@
       "sha256": "9a2c197a0e69c0f109097cde19bdfdae5d636732a906b40011ad7c34ff654b5a",
       "applied_at": "2026-10-21",
       "note": "DEV agape event preview/create, existing tables/RLS preserved. SQL A/B 26 denials rollback PASS; paid/free participation, idempotency and canceled history. HTTP/UI pending."
+    },
+    {
+      "version": "20261021230557",
+      "name": "mutual_batch_commands",
+      "path": "supabase/migrations/20261021230557_mutual_batch_commands.sql",
+      "source_path": "supabase/migrations/20261021230557_mutual_batch_commands.sql",
+      "sha256": "919beb0cbbc61dd85de6a93f5ebfb2ab044f8d6fc809eca47344c3dc9dc76816",
+      "applied_at": "2026-10-21",
+      "note": "DEV explicit mutual number assignments. Existing tables/RLS preserved. SQL A/B ranges710-721 and722-745,36 expected denials rollback PASS. UI/HTTP pending."
     }
   ],
   "baseline_patches": {

@@ -1,3 +1,7 @@
+## Continuidade de sessão e mútuas — 21/10/2026
+
+Ágapes HTTP B PASS19/19 (pago/gratuito), cobrança cancelada e caixa10, não repetir helper. UI B apenas prévia: revalidação desmontou a tela antes da confirmação. Regressão reproduzida; fix useAuth/Workspace preserva mesma identidade, bloqueia interações enquanto verifica, recarrega escopo sem perder Loja válida e oculta usuário/escopo inválido. App+recuperação23 PASS; publicar preview e testar refresh real com segunda aba QA, sem tokens. Backend mútuas migration66 DEV SQL A/B36 negativas rollback PASS, faixas710–721/722–745; implementar UI/HTTP. ADR-0035/0036 e docs/V35_EXECUTION_20261021.md. SessãoB Edge3/aba1875275295 autenticada; aproveitar B e agrupar A depois, conforme usuário. Não encerrar após este incremento nem repetir gates aprovados.
+
 ## Continuação — ágapes — 21/10/2026
 
 CI321/2bd3391 SUCCESS, preview46c8d288. Histórico B com voto existente e mobile PASS somente leitura; sem novos votos/pagamentos. Ágapes implementados: migration65 DEV, SQL A/B26 negativas rollback PASS,8 testes focados UI/contrato/cleanup PASS. Publicar novo preview/CI e executar gate novo de ágapes + UI B atual, depois A. Helper execução única paga/gratuita, cancela somente cobrança fictícia e verifica caixa10; não exige mudar categorias. SessãoB Edge3/aba1875275295 autenticada na interface. Eventos/participantes0 após SQL rollback. ADR-0034 e docs/V35_EXECUTION_20261021.md. Demais gates já aprovados não repetir.

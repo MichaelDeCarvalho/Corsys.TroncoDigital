@@ -1,3 +1,7 @@
+## Continuidade e mútuas — 21/10/2026
+
+Auth preserva Workspace apenas na revalidação da mesma identidade validada; inert durante getUser/escopo, sem pular verificação ou manter acesso inválido. Lojas/Master são relidos sem desmontar seleção ainda autorizada. ADR-0035. Backend mútuas reutiliza lote/vínculos/charges com atribuições explícitas, classe contábil existente e fingerprint/idempotência, migration66 DEV, SQL A/B PASS; UI/HTTP pendentes. ADR-0036.
+
 ## Ágapes — 21/10/2026
 
 Prévia/comando usam events/event_participants e charges(source_kind=event), categoria/classificação publicada, participantes ativos do tenant, locks compatíveis, fingerprint e idempotência. Gratuidade não cria dívida; cobranças canceladas conservam vínculos. UI consulta histórico e situação de participantes. Migration65 DEV, ADR-0034, SQL A/B rollback PASS; HTTP/UI reais pendentes.
