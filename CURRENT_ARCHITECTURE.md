@@ -1,3 +1,7 @@
+## Revisão e histórico — 21/10/2026
+
+Migration64 DEV conserva KEY SHARE de FKs com NO KEY UPDATE do integrante e ordena locks de cobranças como FIFO. SQL A/B PASS; probe paralelo do conector inconclusivo. ApprovalHistory consulta snapshots/decisões existentes por tenant, com paginação e validação de atores únicos; nenhuma escrita ou nova permissão. Multiaprovação com dois atores SQL rollback PASS; homologação browser não equivale a esse teste. Negociação HTTP/UI A/B aprovada. Ver docs/V35_EXECUTION_20261021.md.
+
 ## Negociação de débitos — 19/10/2026
 
 Prévia/comando reutilizam tabelas de acordos existentes, cobranças replacement e ajustes imutáveis; somente saldo aberto é transferido, preservando pagamentos e caixa. Exigem charges.create+charges.adjust, locks, fingerprint e idempotência. Categoria/plano conservados; até24 parcelas com centavos exatos e datas ancoradas. UI com confirmação e recuperação de envio incerto, histórico e parcelas. ADR-0033; migrations62/63 DEV; SQL A/B rollback PASS. Homologação HTTP/UI real pendente.

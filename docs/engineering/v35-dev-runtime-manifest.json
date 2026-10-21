@@ -532,6 +532,15 @@
       "sha256": "31173a241c8057e3273ae7847810cc4922e5adc5fc86fbcbf5978d945decc0c7",
       "applied_at": "2026-10-19",
       "note": "DEV agreement commands only; existing tables/RLS preserved. A/B rollback PASS with 30 denials, partial payment preservation, exact cents and reversal behavior. UI/HTTP pending."
+    },
+    {
+      "version": "20261021223703",
+      "name": "member_agreement_lock_compatibility",
+      "path": "supabase/migrations/20261021223703_member_agreement_lock_compatibility.sql",
+      "source_path": "supabase/migrations/20261021223703_member_agreement_lock_compatibility.sql",
+      "sha256": "2ff3961e24fdd9f7682cb62594d4355fd29cb03daf758cee474d0bf9206faad2",
+      "applied_at": "2026-10-21",
+      "note": "DEV agreement member NO KEY UPDATE and charge lock order matching existing FIFO. SQL A/B 30 denials rollback PASS. Concurrent holder probe inconclusive through connector."
     }
   ],
   "baseline_patches": {

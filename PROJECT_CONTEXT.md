@@ -1,3 +1,7 @@
+## Continuação operacional — 21/10/2026
+
+Anuidade/correção A/B e negociação/parcelamento HTTP/UI desktop/mobile A/B aprovados; cleanup confirmado. Cobertura HTTP legada11/13 A/B. CI320/7afea27 SUCCESS; migration64 DEV ajusta compatibilidade de locks/FIFO. Multiaprovação SQL com dois atores A/B e rollback PASS; histórico de votos implementado, homologação browser ainda parcial. Estado/evidências: docs/V35_EXECUTION_20261021.md. Etapa2 aberta; não repetir gates aprovados.
+
 ## Continuação operacional — 19/10/2026
 
 Lote HTTP A/B ampliado aprovado: cobertura10/13 legadas A e11/13 B após anuidade/correção B (35 chamadas/35 requisições). Anuidade A aguarda login. Negociação/parcelamento implementados com migrations62/63 DEV, SQL A/B30 negativas rollback PASS e UI testada localmente; HTTP/UI real pendentes. CI317/e1076df SUCCESS. Evidências em docs/V35_EXECUTION_20261019_CONTINUED.md. Não encerrar Etapa2 nem repetir os gates já aprovados.

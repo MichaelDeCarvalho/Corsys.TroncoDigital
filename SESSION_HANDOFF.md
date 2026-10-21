@@ -1,3 +1,7 @@
+## Estado verificado — 21/10/2026
+
+Anuidade/correção HTTP A/B PASS35/35 cada; cobertura legada11/13 A/B. Negociação HTTP A/B PASS14/14 e UI desktop/mobile A/B PASS; quatro originais+12 parcelas fictícios cancelados, flags das duas categorias restauradas false, caixa10 A/B, deadlocks2. Não repetir. Preview934d9d02; CI320/7afea27 SUCCESS. Migration64 DEV corrige lock do integrante e alinha ordem FIFO; SQL A/B30 negativas PASS, probe concorrente via conector INCONCLUSIVO. Multiaprovação SQL A/B16 negativas rollback PASS com dois atores, sem grants persistidos. Histórico de aprovações implementado e9 testes focados PASS; publicar preview/CI e verificar interface. Evidências em docs/V35_EXECUTION_20261021.md. SessãoB Edge3/aba1875275295 autenticada; preservar. Continuar ágapes/mútuas/especiais e paridade, além de HTTP específico estorno/MasterAAL2. Sem merge do PR/PROD; execução autorizada continua.
+
 ## Continuidade DEV — migrações de negociação sincronizadas — 2026-10-21
 
 Branch PR #5: `fix/v35-http-conflicts-review-20261016`. Banco DEV `szqkdekwhzxsoxorgvaz`.

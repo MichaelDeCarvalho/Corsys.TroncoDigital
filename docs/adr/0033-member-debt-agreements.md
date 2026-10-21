@@ -12,4 +12,6 @@ Limites deliberados deste incremento: até 50 débitos de uma categoria e classi
 
 A UI exige prévia e confirmação `NEGOCIAR`; edição invalida a prévia. Em transporte incerto mantém payload/chave e bloqueia alterações até verificar o envio. Erros definitivos descartam a chave e exigem nova prévia. Histórico e parcelas são consultados por organização/integrante, com limites e validação de soma/escopo.
 
+Revisão21/10: migration64 usa NO KEY UPDATE no integrante para compatibilidade com FKs e ordena locks de cobranças por vencimento/emissão/id, igual ao FIFO existente. Preserva62/63 aplicadas. SQL30 negativas após64 PASS; HTTP/UI B após64 PASS, A antes64 PASS. Probe de duas sessões pelo conector inconclusivo; não é prova de ausência absoluta de deadlock.
+
 Migrations aditivas #62 `20261019235201` e #63 `20261019235427` aplicadas somente DEV. A segunda impede negociação retroativa anterior à emissão; a primeira aplicada é preservada. SQL A/B rollback PASS com 30 negativas, arredondamento, datas, pagamentos parciais e estorno posterior. Evidência de UI/HTTP deve ser registrada separadamente; simulação não é homologação real.
