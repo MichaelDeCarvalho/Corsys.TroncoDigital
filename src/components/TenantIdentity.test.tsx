@@ -53,14 +53,16 @@ describe('Tenant identity', () => {
     await waitFor(() => expect(rpc).toHaveBeenCalledTimes(2))
     expect(rpc.mock.calls[1]).toEqual(rpc.mock.calls[0])
   })
-  it('blocks stale submissions until the user refreshes the record', async () => {
+  it.each(['40001', 'PT409'])('blocks stale submissions (%s) until the user refreshes the record', async (code) => {
     const { client, rpc } = mock()
-    rpc.mockResolvedValueOnce({ data: null, error: { code: '40001' } })
+    rpc.mockResolvedValueOnce({ data: null, error: { code } })
     render(<TenantIdentity client={client} organizationId={org} />)
     await screen.findByLabelText('Telefone')
     fireEvent.change(screen.getByLabelText('Motivo da atualização'), { target: { value: 'Atualização institucional' } })
     fireEvent.submit(screen.getByRole('form', { name: 'Configurar identidade da Loja' }))
     await screen.findByText('Os dados da Loja foram alterados. Atualize antes de salvar novamente.')
+    expect(rpc).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('button', { name: 'Verificar envio' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Salvar identidade da Loja' })).toBeDisabled()
     fireEvent.click(screen.getByRole('button', { name: 'Atualizar dados' }))
     await waitFor(() => expect(screen.getByRole('button', { name: 'Salvar identidade da Loja' })).not.toBeDisabled())

@@ -11,6 +11,20 @@ function setup(rpc = vi.fn().mockResolvedValue({ data: resultId, error: null }),
 }
 
 describe('Member save flow', () => {
+  it('releases an uncertain command after a definitive PT409 so the user can reload or cancel', async () => {
+    const member = { id: resultId, organization_id: 'org-a', full_name: 'Teste', status: 'active', updated_at: '2026-10-08T10:00:00.123456+00:00' }
+    const rpc = vi.fn().mockRejectedValueOnce(new Error('network')).mockResolvedValueOnce({ data: null, error: { code: 'PT409' } })
+    const { onSaved } = setup(rpc, member)
+    fireEvent.change(screen.getByLabelText('Motivo do registro'), { target: { value: 'Correção cadastral' } })
+    fireEvent.submit(screen.getByRole('form', { name: 'Cadastro de integrante' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Verificar e confirmar envio' }))
+    await screen.findByText('Este cadastro foi alterado por outra operação. Sua edição não foi salva. Atualize o cadastro antes de editar novamente.')
+    expect(screen.queryByRole('button', { name: 'Verificar e confirmar envio' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Cancelar' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Atualizar cadastro' })).toBeEnabled()
+    expect(onSaved).not.toHaveBeenCalled()
+    expect(rpc.mock.calls[1]).toEqual(rpc.mock.calls[0])
+  })
   it('guards duplicate submissions and sends the selected tenant, cadastral fields and idempotency key', async () => {
     let resolve!: (value: unknown) => void
     const pending = new Promise(done => { resolve = done })

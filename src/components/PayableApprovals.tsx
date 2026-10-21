@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import {ApprovalHistory} from './ApprovalHistory'
 
 type Approval = {
  organization_id:string;payable_id:string;approval_required:boolean;
@@ -15,6 +16,7 @@ export function PayableApprovals({client,organizationId}:{client:SupabaseClient;
  const [uncertain,setUncertain]=useState(false)
  const [error,setError]=useState(''),[saved,setSaved]=useState(false)
  const [decision,setDecision]=useState('approve')
+ const [history,setHistory]=useState(false)
  const command=useRef<{name:string;args:Record<string,unknown>}|null>(null)
  const guard=useRef(false),mounted=useRef(false)
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false}},[])
@@ -96,5 +98,7 @@ export function PayableApprovals({client,organizationId}:{client:SupabaseClient;
    </form>}
    <p className="subtle">A fila está limitada a 150 solicitações. Se houver mais registros, o sistema bloqueia a consulta em vez de apresentar uma lista incompleta.</p>
   </>}
+  <button className="secondary" type="button" disabled={pending||uncertain} aria-expanded={history} onClick={()=>setHistory(x=>!x)}>{history?'Fechar histórico':'Consultar histórico de aprovações'}</button>
+  {history&&<ApprovalHistory key={`${organizationId}:${revision}`} client={client} organizationId={organizationId}/>}
  </section>
 }

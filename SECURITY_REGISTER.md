@@ -1,3 +1,11 @@
+## Controles da anuidade e gates HTTP — 19/10/2026
+
+HTTP real A/B ampliado: 10/13 RPCs legadas e reajuste novo PASS; nenhuma generalização para Master/AAL2 ou corrida de alocação do estorno. Anual DEV exige settings.manage/institutional.manage e assinatura apta; sem RLS/tabelas novas, anon revogado. SQL28 negativas rollback PASS; real anual pendente. Quatro avisos de definer autenticado refletem o desenho existente com controle interno; demais avisos anteriores preservados. Evidências em docs/V35_EXECUTION_20261019_CONTINUED.md.
+
+## Incremento Work — 19/10/2026
+
+Reajuste institucional: autorização servidor/settings.manage, versão otimista/PT409, idempotência e bloqueio de obrigações emitidas. Gate SQL A/B36rejeições PASS rollback. HTTP legado apenas identidade/catálogo2/13 PASS; não generalizar. Advisors sinalizam RPCs definer autenticadas e senha vazada desabilitada; sem correção ampla nesta rodada. Detalhes, links e limites em docs/V35_EXECUTION_20261019.md.
+
 ## Regressão concorrente mensal em correção — 2026-10-16
 
 UI mensal A/B concluída e cleanup SQL saldo10/canceladas/regras inativas.
@@ -458,4 +466,20 @@ Agente aplicou sete transições guardadas entre WAITs. SQL final: A/B ADMIN pr�
 ## Registro — 2026-10-08 (DEV)
 
 Nova função `public.transition_member_term` (SECURITY DEFINER autenticada): uso restrito por `private.require_permission(settings.manage)`, `search_path` vazio, `anon` sem EXECUTE, e verificações SQL negativas A/B, TREASURER, VIEWER e assinatura suspensa em transações revertidas. Operação atômica e auditada; valores e datas são validados no servidor. A presença de SECURITY DEFINER demanda revisão contínua, não indica auditoria integral. HTTP/JWT e concorrência simultânea ainda **não avaliados**.
+
+## Sessão e mútuas — 21/10/2026
+
+Mesma identidade previamente verificada pode manter DOM montado e inert durante revalidação; getUser/escopo seguem obrigatórios. Erro, logout, usuário diferente e Loja revogada ocultam/removem o contexto anterior. Nenhum token novo em logs/storage e autorização permanece no servidor.23 testes de sessão/recuperação PASS, gate real pendente. Mútuas66 DEV: números/atribuições limitados e completos, tenant e contabilidade, período, locks/fingerprint/idempotência; SQL A/B36 negativas rollback PASS. UI/HTTP pendentes. ADR-0035/0036.
+
+## Ágapes — 21/10/2026
+
+Migration65 somente DEV: autorização charges.create+members.read, limite200, categoria/contabilidade e integrantes do tenant, período aberto, locks, fingerprint, idempotência e PT409. Sem INSERT direto/novo grant em tabelas; anon sem EXECUTE. SQL A/B26 negativas rollback PASS e testes de resposta perdida/escopo PASS. HTTP/UI reais pendentes; não alegar gate integrado completo. ADR-0034.
+
+## Revisão — 21/10/2026
+
+Negociação HTTP/UI A/B aprovada com cleanup/flags restauradas e caixa preservado. Migration64 reduz risco potencial de locks incompatíveis e alinha ordem FIFO; SQL PASS, probe paralelo do conector inconclusivo. Histórico de aprovações usa RLS/permissões existentes, paginação e validação de escopo/votantes. Multiaprovação SQL A/B16 negativas PASS; vínculos temporários de aprovação nunca commitados e readback limpo. Aprovação real com dois JWTs na mesma despesa ainda não executada. Evidências/limites em docs/V35_EXECUTION_20261021.md.
+
+## Negociação — 19/10/2026
+
+Migrations62/63 aditivas DEV, sem ampliar escrita em tabelas/RLS. Duas permissões internas, isolamento, limite de entradas, período aberto, locks e fingerprint, idempotência, preservação de alocações e caixa. SQL A/B rollback PASS com30 negativas; UI local cobre escopo da prévia, edição, chave incerta e PT409. HTTP/UI real ainda pendentes. Limites: não cria juros, exige mesma classificação publicada, sem cancelamento integral de acordo. Não alegar aprovação integral da Etapa2. ADR-0033.
 

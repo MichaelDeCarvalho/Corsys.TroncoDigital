@@ -1,3 +1,29 @@
+## Continuidade e mútuas — 21/10/2026
+
+Finance→Mútuas por faixa usa RPCs66 e leitura RLS de mutual_batches/assignments/balances. Distribuição por número ou atribuição explícita de toda a faixa; alterar faixa invalida distribuição/prévia. Prévia verifica tenant, soma em centavos, vínculos e natureza/código reais, exige GERAR. Envio incerto conserva comando/chave; rejeição definitiva desbloqueia. Histórico paginado20, detalhes conferem cada cobrança. Sem pagamento ou alteração de classificação. Natureza neutra/repasse ainda depende de evolução contábil específica.
+
+Auth preserva Workspace apenas na revalidação da mesma identidade validada; inert durante getUser/escopo, sem pular verificação ou manter acesso inválido. Lojas/Master são relidos sem desmontar seleção ainda autorizada. ADR-0035. Backend mútuas reutiliza lote/vínculos/charges com atribuições explícitas, classe contábil existente e fingerprint/idempotência, migration66 DEV, SQL A/B PASS; UI/HTTP pendentes. ADR-0036.
+
+## Ágapes — 21/10/2026
+
+Prévia/comando usam events/event_participants e charges(source_kind=event), categoria/classificação publicada, participantes ativos do tenant, locks compatíveis, fingerprint e idempotência. Gratuidade não cria dívida; cobranças canceladas conservam vínculos. UI consulta histórico e situação de participantes. Migration65 DEV, ADR-0034, SQL A/B rollback PASS; HTTP/UI reais pendentes.
+
+## Revisão e histórico — 21/10/2026
+
+Migration64 DEV conserva KEY SHARE de FKs com NO KEY UPDATE do integrante e ordena locks de cobranças como FIFO. SQL A/B PASS; probe paralelo do conector inconclusivo. ApprovalHistory consulta snapshots/decisões existentes por tenant, com paginação e validação de atores únicos; nenhuma escrita ou nova permissão. Multiaprovação com dois atores SQL rollback PASS; homologação browser não equivale a esse teste. Negociação HTTP/UI A/B aprovada. Ver docs/V35_EXECUTION_20261021.md.
+
+## Negociação de débitos — 19/10/2026
+
+Prévia/comando reutilizam tabelas de acordos existentes, cobranças replacement e ajustes imutáveis; somente saldo aberto é transferido, preservando pagamentos e caixa. Exigem charges.create+charges.adjust, locks, fingerprint e idempotência. Categoria/plano conservados; até24 parcelas com centavos exatos e datas ancoradas. UI com confirmação e recuperação de envio incerto, histórico e parcelas. ADR-0033; migrations62/63 DEV; SQL A/B rollback PASS. Homologação HTTP/UI real pendente.
+
+## Recorrência institucional anual — 19/10/2026
+
+Quatro RPCs anuais aditivas usam as tabelas institucionais existentes; funções mensais preservadas. O mês da primeira versão de preço fixa o aniversário, incluído no fingerprint, sem deslocamento por reajuste. Interface escolhe RPC por frequência e valida o mês anual. Mesmos controles de autorização, período, idempotência, aprovação e caixa. ADR-0032; migration61 DEV. SQL A/B rollback PASS, homologação real pendente. Evidências em docs/V35_EXECUTION_20261019_CONTINUED.md.
+
+## Reajuste institucional futuro — 19/10/2026
+
+RPC schedule_institutional_recurring_price versiona preços existentes com settings.manage, idempotência, locks e PT409. Bloqueia vigência com obrigações emitidas, sem reescrever fatos. UI exige prévia/REAJUSTAR e conserva chave em transporte incerto. ADR-0031; migration60 DEV. Evidências/limites em docs/V35_EXECUTION_20261019.md.
+
 ## Regressão concorrente mensal em correção — 2026-10-16
 
 UI mensal A/B concluída e cleanup SQL saldo10/canceladas/regras inativas.

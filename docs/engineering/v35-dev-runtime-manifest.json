@@ -487,6 +487,78 @@
       "sha256": "106f2bbed52627f3de895c5ae08e56f52703a568c88fa86547c2b57276adf2f9",
       "applied_at": "2026-10-16",
       "note": "DEV monthly status/preview business conflicts return PT409 rather than 40001 to avoid PostgREST retry loop. SQL 4 positive/56 negative rollback PASS."
+    },
+    {
+      "version": "20261019205415",
+      "name": "legacy_business_http_conflicts_pt409",
+      "path": "supabase/migrations/20261019205415_legacy_business_http_conflicts_pt409.sql",
+      "source_path": "supabase/migrations/20261019205415_legacy_business_http_conflicts_pt409.sql",
+      "sha256": "e9188b60b6838bbce3bf1043fc1e160a4e54f3818184e7c7834c8fb654bc3ecf",
+      "applied_at": "2026-10-19",
+      "note": "DEV only: 13 RPCs / 17 PT409 conflicts. Identity SQL rollback and signed HTTP A/B identity/catalog PASS; remaining legacy RPC HTTP not evaluated."
+    },
+    {
+      "version": "20261019230916",
+      "name": "institutional_recurring_price_schedule",
+      "path": "supabase/migrations/20261019230916_institutional_recurring_price_schedule.sql",
+      "source_path": "supabase/migrations/20261019230916_institutional_recurring_price_schedule.sql",
+      "sha256": "ab122111e3de5d0b479a20f15e4cd41854476c9e22b18a8a4d2e9d4f57eadd2a",
+      "applied_at": "2026-10-19",
+      "note": "DEV future institutional prices. SQL A/B payable/receivable rollback PASS, 36 expected denials. Signed HTTP/UI recorded in V35_EXECUTION_20261019.md."
+    },
+    {
+      "version": "20261019233739",
+      "name": "institutional_annual_recurrence",
+      "path": "supabase/migrations/20261019233739_institutional_annual_recurrence.sql",
+      "source_path": "supabase/migrations/20261019233739_institutional_annual_recurrence.sql",
+      "sha256": "32675cae2c82b72933098a5b1c1494d9a64df868ab1d7387e3eba57403b9f438",
+      "applied_at": "2026-10-19",
+      "note": "DEV annual institutional commands only. Monthly functions preserved; anniversary anchored to initial price version. SQL A/B rollback PASS with 28 expected denials. UI/HTTP homologation pending."
+    },
+    {
+      "version": "20261019235201",
+      "name": "member_debt_agreement_commands",
+      "path": "supabase/migrations/20261019235201_member_debt_agreement_commands.sql",
+      "source_path": "supabase/migrations/20261019235201_member_debt_agreement_commands.sql",
+      "sha256": "306bd4674d7295d00df2f1b188f42039b1c4db29aa57099796899eb612d08bcb",
+      "applied_at": "2026-10-19",
+      "note": "DEV agreement commands only; existing tables/RLS preserved. A/B rollback PASS with 30 denials, partial payment preservation, exact cents and reversal behavior. UI/HTTP pending."
+    },
+    {
+      "version": "20261019235427",
+      "name": "member_agreement_source_date_guard",
+      "path": "supabase/migrations/20261019235427_member_agreement_source_date_guard.sql",
+      "source_path": "supabase/migrations/20261019235427_member_agreement_source_date_guard.sql",
+      "sha256": "31173a241c8057e3273ae7847810cc4922e5adc5fc86fbcbf5978d945decc0c7",
+      "applied_at": "2026-10-19",
+      "note": "DEV agreement commands only; existing tables/RLS preserved. A/B rollback PASS with 30 denials, partial payment preservation, exact cents and reversal behavior. UI/HTTP pending."
+    },
+    {
+      "version": "20261021223703",
+      "name": "member_agreement_lock_compatibility",
+      "path": "supabase/migrations/20261021223703_member_agreement_lock_compatibility.sql",
+      "source_path": "supabase/migrations/20261021223703_member_agreement_lock_compatibility.sql",
+      "sha256": "2ff3961e24fdd9f7682cb62594d4355fd29cb03daf758cee474d0bf9206faad2",
+      "applied_at": "2026-10-21",
+      "note": "DEV agreement member NO KEY UPDATE and charge lock order matching existing FIFO. SQL A/B 30 denials rollback PASS. Concurrent holder probe inconclusive through connector."
+    },
+    {
+      "version": "20261021225055",
+      "name": "agape_event_charge_commands",
+      "path": "supabase/migrations/20261021225055_agape_event_charge_commands.sql",
+      "source_path": "supabase/migrations/20261021225055_agape_event_charge_commands.sql",
+      "sha256": "9a2c197a0e69c0f109097cde19bdfdae5d636732a906b40011ad7c34ff654b5a",
+      "applied_at": "2026-10-21",
+      "note": "DEV agape event preview/create, existing tables/RLS preserved. SQL A/B 26 denials rollback PASS; paid/free participation, idempotency and canceled history. HTTP/UI pending."
+    },
+    {
+      "version": "20261021230557",
+      "name": "mutual_batch_commands",
+      "path": "supabase/migrations/20261021230557_mutual_batch_commands.sql",
+      "source_path": "supabase/migrations/20261021230557_mutual_batch_commands.sql",
+      "sha256": "919beb0cbbc61dd85de6a93f5ebfb2ab044f8d6fc809eca47344c3dc9dc76816",
+      "applied_at": "2026-10-21",
+      "note": "DEV explicit mutual number assignments. Existing tables/RLS preserved. SQL A/B ranges710-721 and722-745,36 expected denials rollback PASS. UI/HTTP pending."
     }
   ],
   "baseline_patches": {

@@ -44,9 +44,9 @@ export function BudgetManagement({client,organizationId}:{client:SupabaseClient;
   }catch(cause){
    if(!mounted.current)return
    const code=(cause as {code?:string}|null)?.code??''
-   if(['22023','23503','23505','23514','42501','28000','55000','40001'].includes(code)){
+   if(['22023','23503','23505','23514','42501','28000','55000','40001','PT409'].includes(code)){
     pending.current=null;setUncertain(false);setRevision(v=>v+1)
-    setError(code==='40001'?'O orçamento mudou. Confira os dados atualizados antes de reenviar.':
+    setError((code === '40001' || code === 'PT409')?'O orçamento mudou. Confira os dados atualizados antes de reenviar.':
      code==='42501'||code==='28000'?'Seu perfil ou assinatura não permite gerenciar orçamentos.':
      code==='55000'?'Este orçamento já foi publicado e não pode ser alterado. Crie outro ciclo.':
      'O banco recusou a operação. Confira nome, competência, conta ativa em plano publicado, fundo e valores.')

@@ -36,6 +36,46 @@ function mockClient(options: { user?: User | null; orgs?: typeof orgA[]; respond
 }
 
 describe('Login and session boundary', () => {
+  it.each(['TOKEN_REFRESHED','SIGNED_IN'])('preserves the current screen and form while revalidating the same identity on %s', async event => {
+    const mock=mockClient({orgs:[orgA,orgB]});render(<ConnectedApp client={mock.client}/>);await screen.findByText('Integrante A')
+    fireEvent.change(screen.getByLabelText('Loja'),{target:{value:orgB.id}});await screen.findByText('Integrante B')
+    fireEvent.click(within(screen.getByRole('navigation',{name:'Navegação principal'})).getByRole('button',{name:'Integrantes'}))
+    fireEvent.change(screen.getByLabelText('Buscar integrante'),{target:{value:'Preenchimento preservado'}})
+    const pending=deferred<{data:{user:User};error:null}>();mock.auth.getUser.mockReturnValueOnce(pending.promise)
+    mock.emit(event,{user:userA})
+    expect(screen.getByLabelText('Buscar integrante')).toHaveValue('Preenchimento preservado')
+    expect(screen.getByLabelText('Buscar integrante').closest('[inert]')).not.toBeNull()
+    await waitFor(()=>expect(mock.auth.getUser).toHaveBeenCalledTimes(2))
+    await act(async()=>{pending.resolve({data:{user:{...userA}},error:null});await pending.promise})
+    expect(screen.getByLabelText('Buscar integrante')).toHaveValue('Preenchimento preservado')
+    expect(screen.getByLabelText('Buscar integrante').closest('[inert]')).toBeNull()
+    expect(screen.getByLabelText('Loja')).toHaveValue(orgB.id)
+    await waitFor(()=>expect(mock.from.mock.calls.filter(([table])=>table==='organizations')).toHaveLength(2))
+  })
+  it('rechecks organization scope on refresh and removes a revoked selected tenant',async()=>{
+    let orgReads=0
+    const mock=mockClient({respond:async(table,id)=>({data:table==='organizations'?(++orgReads===1?[orgA,orgB]:[orgA]):table==='members'?[member(id,id===orgB.id?'Integrante B':'Integrante A')]:[],error:null})})
+    render(<ConnectedApp client={mock.client}/>);await screen.findByText('Integrante A')
+    fireEvent.change(screen.getByLabelText('Loja'),{target:{value:orgB.id}});await screen.findByText('Integrante B')
+    mock.auth.getUser.mockResolvedValueOnce({data:{user:{...userA}},error:null});mock.emit('TOKEN_REFRESHED',{user:userA})
+    await waitFor(()=>expect(screen.getByLabelText('Loja')).toHaveValue(orgA.id));await screen.findByText('Integrante A')
+    expect(screen.queryByText('Integrante B')).not.toBeInTheDocument()
+  })
+  it('hides the preserved workspace if background identity validation fails', async()=>{
+    const mock=mockClient();render(<ConnectedApp client={mock.client}/>);await screen.findByText('Integrante A')
+    mock.auth.getUser.mockRejectedValueOnce(new Error('verification unavailable'))
+    mock.emit('TOKEN_REFRESHED',{user:userA})
+    expect(screen.getByText('Integrante A').closest('[inert]')).not.toBeNull()
+    await screen.findByText('Não foi possível validar sua sessão. Verifique a conexão e tente novamente.')
+    expect(screen.queryByText('Integrante A')).not.toBeInTheDocument()
+  })
+  it('hides old tenant data immediately when the auth event identifies a different user',async()=>{
+    const mock=mockClient();render(<ConnectedApp client={mock.client}/>);await screen.findByText('Integrante A')
+    mock.auth.getUser.mockRejectedValueOnce(new Error('new user not verified'))
+    mock.emit('SIGNED_IN',{user:{...userA,id:'user-b'}})
+    expect(screen.queryByText('Integrante A')).not.toBeInTheDocument()
+    await screen.findByRole('alert')
+  })
   it('keeps tenant data hidden before login and reports a failed login without retaining the password', async () => {
     const mock = mockClient({ user: null })
     mock.auth.signInWithPassword.mockResolvedValue({ data: {}, error: { message: 'invalid credentials' } })

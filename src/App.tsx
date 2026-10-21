@@ -14,7 +14,12 @@ export function ConnectedApp({ client }: { client: SupabaseClient }) {
     if (auth.status === 'authenticated' && auth.user) return <NewPassword client={client} userId={auth.user.id} onFinish={() => { void auth.signOut() }} />
     return <main className="session-screen"><div className="panel"><h1>Link de recuperação indisponível</h1><p role="alert">O link expirou, já foi utilizado ou não pôde ser validado. Solicite um novo e-mail.</p><a href={window.location.pathname}>Voltar ao acesso</a></div></main>
   }
-  if (auth.status === 'authenticated' && auth.user) return <Workspace key={auth.user.id} client={client} user={auth.user} onSignOut={() => { void auth.signOut() }} />
+  if (auth.status === 'authenticated' && auth.user) return <>
+    {auth.validating && <p role="status" className="message">Atualizando acesso…</p>}
+    <div inert={auth.validating || undefined} aria-busy={auth.validating || undefined}>
+      <Workspace key={auth.user.id} client={client} user={auth.user} onSignOut={() => { void auth.signOut() }} />
+    </div>
+  </>
   return <Login client={client} />
 }
 

@@ -36,7 +36,7 @@ begin
   v_cat_mapping:=public.set_draft_accounting_mapping(t.org::uuid,v_plan,'category',v_rule_cat,v_income,null,'DEV category mapping',v_key);
   if v_cat_mapping<>public.set_draft_accounting_mapping(t.org::uuid,v_plan,'category',v_rule_cat,v_income,null,'DEV category mapping',v_key) then raise exception 'mapping retry mismatched';end if;
   begin perform public.set_draft_accounting_mapping(t.org::uuid,v_plan,'category',v_rule_cat,v_income2,null,'DEV changed mapping',v_key);raise exception 'changed mapping key accepted';exception when invalid_parameter_value then null;end;
-  begin perform public.set_draft_accounting_mapping(t.org::uuid,v_plan,'category',v_rule_cat,v_income2,null,'DEV stale',gen_random_uuid()::text);raise exception 'stale mapping accepted';exception when serialization_failure then null;end;
+  begin perform public.set_draft_accounting_mapping(t.org::uuid,v_plan,'category',v_rule_cat,v_income2,null,'DEV stale',gen_random_uuid()::text);raise exception 'stale mapping accepted';exception when sqlstate 'PT409' then null;end;
   begin perform public.set_draft_accounting_mapping(t.org::uuid,v_plan,'category',v_rule_cat,v_cash_target,v_income,'DEV invalid nature',gen_random_uuid()::text);raise exception 'nature mismatch accepted';exception when check_violation then null;end;
   if public.set_draft_accounting_mapping(t.org::uuid,v_plan,'category',v_rule_cat,v_income2,v_income,'DEV valid successor',gen_random_uuid()::text)<>v_cat_mapping then raise exception 'mapping update changed ID';end if;
   v_cash_mapping:=public.set_draft_accounting_mapping(t.org::uuid,v_plan,'financial_account',v_cash_account,v_cash_target,null,'DEV cash mapping',gen_random_uuid()::text);

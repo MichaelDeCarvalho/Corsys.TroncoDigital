@@ -154,7 +154,7 @@ export function AccountingPrepublication({
     } catch (cause) {
       if (!active.current) return
       const code = (cause as { code?: string } | null)?.code ?? ''
-      if (['22023','23503','23514','23P01','40001','42501','28000','55000'].includes(code)) {
+      if (['22023','23503','23514','23P01','40001','PT409','42501','28000','55000'].includes(code)) {
         publication.current = null
         setPublishUncertain(false)
         setReport(null)
@@ -162,7 +162,7 @@ export function AccountingPrepublication({
         setPublishError(
           code === '23514' || code === '23P01'
             ? 'O plano perdeu as condições de publicação. Atualize os dados e execute outra verificação.'
-            : code === '40001'
+            : (code === '40001' || code === 'PT409')
               ? 'A situação ou vigência do plano mudou. Atualize antes de tentar publicar novamente.'
               : code === '42501' || code === '28000'
                 ? 'Seu acesso ou a assinatura da Loja não permite publicar planos contábeis.'

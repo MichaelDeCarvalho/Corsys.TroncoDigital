@@ -34,7 +34,7 @@ for t in select * from (values
  v_detail:=public.read_tenant_budget_detail(t.org,v_cycle);v_rev:=v_detail->>'revision';
  if jsonb_array_length(v_detail->'lines')<>1 or v_rev=v_old then raise exception 'line/revision mismatch';end if;
  begin perform public.set_tenant_budget_line(t.org,v_cycle,'fund',v_fund,'2026-09-01',300,v_old,'DEV stale gate',gen_random_uuid()::text);
- raise exception 'stale edit accepted';exception when serialization_failure then null;end;
+ raise exception 'stale edit accepted';exception when sqlstate 'PT409' then null;end;
  foreach v_bad in array array[-1::numeric,0.001::numeric,'NaN'::numeric,'Infinity'::numeric,1000000000000::numeric] loop
  begin perform public.set_tenant_budget_line(t.org,v_cycle,'fund',v_fund,'2026-09-01',v_bad,v_rev,'DEV invalid money',gen_random_uuid()::text);
  raise exception 'invalid money accepted';exception when invalid_parameter_value then null;end;
@@ -50,7 +50,7 @@ for t in select * from (values
  v_detail:=public.read_tenant_budget_detail(t.org,v_cycle);v_rev:=v_detail->>'revision';
  if jsonb_array_length(v_detail->'lines')<>1 then raise exception 'fund line not removed';end if;
  begin perform public.publish_tenant_budget(t.org,v_cycle,v_old,'DEV stale publish',gen_random_uuid()::text);
- raise exception 'stale publish accepted';exception when serialization_failure then null;end;
+ raise exception 'stale publish accepted';exception when sqlstate 'PT409' then null;end;
  v_key:=gen_random_uuid()::text;
  perform public.publish_tenant_budget(t.org,v_cycle,v_rev,'DEV rollback publish',v_key);
  perform public.publish_tenant_budget(t.org,v_cycle,v_rev,'DEV rollback publish',v_key);

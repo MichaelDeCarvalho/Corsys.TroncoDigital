@@ -1,3 +1,82 @@
+## Continuidade de sessão e mútuas — 21/10/2026
+
+Atualização: CI323/c6b2fd2 SUCCESS. Refresh real B PASS preservando campos/Loja; ágape UI B criado, histórico integrante/R$1,25 conferido e mobile375/scroll375 PASS, screenshot agape-B-mobile-20261021.jpg. Cobrança a4c4db6d cancelada via RPC normal DEV/open0/integrity true. Aba duplicada fechada pelo usuário; viewport restaurado. UI mútuas+helper HTTP implementados,6 testes focados e tipos/build PASS; publicar versão DEV e executar somente gate novo B. A ágapes/mútuas agrupados depois. Repasse neutro ainda lacuna real do guard de categoria, não declarar resolvido.
+
+Ágapes HTTP B PASS19/19 (pago/gratuito), cobrança cancelada e caixa10, não repetir helper. UI B apenas prévia: revalidação desmontou a tela antes da confirmação. Regressão reproduzida; fix useAuth/Workspace preserva mesma identidade, bloqueia interações enquanto verifica, recarrega escopo sem perder Loja válida e oculta usuário/escopo inválido. App+recuperação23 PASS; publicar preview e testar refresh real com segunda aba QA, sem tokens. Backend mútuas migration66 DEV SQL A/B36 negativas rollback PASS, faixas710–721/722–745; implementar UI/HTTP. ADR-0035/0036 e docs/V35_EXECUTION_20261021.md. SessãoB Edge3/aba1875275295 autenticada; aproveitar B e agrupar A depois, conforme usuário. Não encerrar após este incremento nem repetir gates aprovados.
+
+## Continuação — ágapes — 21/10/2026
+
+CI321/2bd3391 SUCCESS, preview46c8d288. Histórico B com voto existente e mobile PASS somente leitura; sem novos votos/pagamentos. Ágapes implementados: migration65 DEV, SQL A/B26 negativas rollback PASS,8 testes focados UI/contrato/cleanup PASS. Publicar novo preview/CI e executar gate novo de ágapes + UI B atual, depois A. Helper execução única paga/gratuita, cancela somente cobrança fictícia e verifica caixa10; não exige mudar categorias. SessãoB Edge3/aba1875275295 autenticada na interface. Eventos/participantes0 após SQL rollback. ADR-0034 e docs/V35_EXECUTION_20261021.md. Demais gates já aprovados não repetir.
+
+## Estado verificado — 21/10/2026
+
+Anuidade/correção HTTP A/B PASS35/35 cada; cobertura legada11/13 A/B. Negociação HTTP A/B PASS14/14 e UI desktop/mobile A/B PASS; quatro originais+12 parcelas fictícios cancelados, flags das duas categorias restauradas false, caixa10 A/B, deadlocks2. Não repetir. Preview934d9d02; CI320/7afea27 SUCCESS. Migration64 DEV corrige lock do integrante e alinha ordem FIFO; SQL A/B30 negativas PASS, probe concorrente via conector INCONCLUSIVO. Multiaprovação SQL A/B16 negativas rollback PASS com dois atores, sem grants persistidos. Histórico de aprovações implementado e9 testes focados PASS; publicar preview/CI e verificar interface. Evidências em docs/V35_EXECUTION_20261021.md. SessãoB Edge3/aba1875275295 autenticada; preservar. Continuar ágapes/mútuas/especiais e paridade, além de HTTP específico estorno/MasterAAL2. Sem merge do PR/PROD; execução autorizada continua.
+
+## Continuidade DEV — migrações de negociação sincronizadas — 2026-10-21
+
+Branch PR #5: `fix/v35-http-conflicts-review-20261016`. Banco DEV `szqkdekwhzxsoxorgvaz`.
+A revisão do GitHub possuía 61 migrações; o banco já tinha 63 (duas de 19/10 ainda sem arquivo na branch).
+Recuperados dos statements persistidos pelo Supabase e versionados, sem reaplicar SQL:
+- `20261019235201_member_debt_agreement_commands.sql`: prévia com fingerprint e comando idempotente de acordo;
+- `20261019235427_member_agreement_source_date_guard.sql`: guarda a data de emissão das cobranças originais na prévia.
+Comparação texto a texto com os statements do banco: ambas EXATAS (acréscimo apenas da quebra de linha final).
+Read-back somente leitura: RPCs `preview_member_debt_agreement` e `create_member_debt_agreement` têm SECURITY DEFINER, search_path vazio, EXECUTE por authenticated e não por anon; quatro tabelas de acordos com RLS ligado.
+Não foram executadas jornadas SQL positivas/negativas, HTTP/JWT, concorrência ou UI dessa nova funcionalidade neste incremento; não declarar acordo homologado.
+Nenhuma migration reaplicada, nenhum seed, merge, alteração de tráfego ou produção.
+Próximo: executar testes rollback de negociação em QA A/B, especialmente fingerprint obsoleto, competência, isolamento e idempotência; depois integrar/homologar interface.
+Continua pendente a homologação anual HTTP/navegador A/B e três RPCs legadas separadas (correção institucional, estorno e Master/AAL2). Não repetir gates já homologados em 19/10.
+
+## Execução contínua — HTTP A/B ampliado e anual implementado — 19/10/2026
+
+HTTP legado ampliado A/B PASS69/69 cada; anual/correção B PASS35/35 e cleanup confirmado, não repetir B. Cobertura10/13 A e11/13 B. CI317/e1076df SUCCESS. Negociação/parcelamento implementados: migrations62/63 DEV, SQL A/B30 negativas rollback PASS, preservação63 PASS, suíte314 testes PASS e7 focados PASS após helper novo. UI em Financeiro → Negociar dívida; HTTP/UI real pendentes. Evidências em docs/V35_EXECUTION_20261019_CONTINUED.md. Login A solicitado; aba1875275285 Edge3 está na raiz/tela de acesso. Próximo: publicar preview novo, anual/correção A e negociação HTTP A/B. Categorias QA allow_installments continuam false; helper de negociação exige preparo temporário e restauração posterior. Master/AAL2 e estorno separados. Sem merge/PROD; continuar entre incrementos.
+
+## Reajuste institucional UI A/B aprovado — 19/10/2026
+
+Sessão A confirmou outubro R$1 e novembro R$2 no preview `94c5078e`, sem emissão de obrigação ou pagamento. Cleanup e readback SQL A/B: regras `9b72101b-fb78-43f0-afb4-cedf2511f429` (A) e `8d31ed2e-90a5-4964-8c26-4e2c5ebddfc8` (B) inativas, zero obrigações, uma auditoria de reajuste por regra e saldo R$10 por Loja. UI A deixa de ser pendência; não solicitar login para repetir esse gate. CI #315/run39340656215 do commit `7e11a49` SUCCESS. Nenhum código, build, migration ou deploy novo nesta rodada; apenas homologação e documentação. Próximo escopo: HTTP específico de reajuste e cobertura das 11 RPCs legadas restantes; Etapa 2 e demais requisitos seguem abertos. Sessão A preservada no Edge3/aba1875275275.
+
+## Evidência final deste incremento — 19/10/2026
+
+Código `df436a25018b6080d1275a95cfa666e2f179da13` enviado ao PR #5; CI #313/run39340174874 SUCCESS, 43 arquivos/304 testes PASS. Preview `94c5078e` (alias `v35-finance`), bytes remotos index/app/QA conferidos. UI de reajuste B PASS desktop/mobile (375 px sem overflow); regra `8d31ed2e-90a5-4964-8c26-4e2c5ebddfc8` inativa, zero obrigações, uma auditoria, outubro R$1/novembro R$2. Login A solicitado para o novo reajuste UI; sessão B preservada na aba1875275275, Edge3. HTTP legado de identidade/catálogo A/B já PASS, não repetir. Outras 11 RPCs continuam pendentes por HTTP. Gate SQL de identidade resolvido; reajuste SQL com 36 negativas e rollback PASS. Próxima ação: finalizar UI A do reajuste e HTTP específico, mantendo os demais requisitos da Etapa 2 abertos; nenhuma alteração em produção ou merge.
+
+## Work — 19/10/2026: identidade resolvida, HTTP A/B parcial e reajuste
+
+Identidade SQL rollback PASS; HTTP identidade/catálogo A/B 10calls/10requests cada, cleanup confirmado. Cobertura:2/13 RPCs legadas, outras11 ainda pendentes. CI312 do head retomado1d9249d SUCCESS. Reajuste futuro implementado, migration60/20261019230916 DEV, SQL4combinações/36negativas rollback PASS. Regressão MemberForm falhou antes/passou após correção. Ver docs/V35_EXECUTION_20261019.md para IDs, testes, riscos e estado de publicação. Não repetir mensal aprovado. Etapa2 aberta; sem merge/PROD.
+
+## Checkpoint — 19/10/2026: CI #311 e pendência HTTP real
+
+- CI #311, run 39330807587, commit 7f59856e0cd224c019b5cba7b79a5869bcf757cb: SUCCESS; jobs static e frontend SUCCESS (SQL grammar/preservation, frontend tests/check/build sem upload).
+- Fixture catálogo A/B restringiu UPDATE user_roles por user_id + organization_id; SQL DEV com ROLLBACK: DEV_TREASURY_CATALOG_ROLLBACK_PASS.
+- Fixture identidade com mesmo ajuste, mas gate SQL completo bloqueado pelo controle de segurança da ferramenta: NAO EXECUTADO, não é PASS.
+- Read-back DEV: 13 RPCs alvo, 17 PT409, zero 40001 explícito, SECURITY DEFINER e search_path intactos.
+- HTTP A/B autenticado, isolamento entre tenants, idempotência e contagem de requests: NAO EXECUTADO. Browser conectado indisponível; não houve aquisição/exposição de JWT. db.retry=false e CI não equivalem a trace HTTP real.
+- PR #5 draft; sem merge ou deploy. Gates de identidade e HTTP real A/B devem ocorrer em ambiente autorizado com captura de status/código/retries e read-back/cleanup.
+
+## Checkpoint 19/10/2026 — correção dos conflitos HTTP legados
+
+- PR #5 draft, branch `fix/v35-http-conflicts-review-20261016`. CI #302 do commit 822d313: SUCCESS.
+- Migration 59 `20261019205415_legacy_business_http_conflicts_pt409.sql`: aplicada apenas ao Supabase DEV e adicionada ao GitHub; 13 funções/17 conflitos. Read-back confirmou PT409, sem 40001 nas 13 RPCs, SECURITY DEFINER/search_path intactos.
+- Supabase JS `db.retry=false` para evitar retry automático HTTP 409. Scripts SQL com exceções de conflito atualizados.
+- Gate membro perfil SQL rollback PASS. Gate identidade não executado por bloqueio de segurança da ferramenta. Gate catálogo FAIL devido a fixture user_roles/roles FK. Ambos permanecem pendentes; não declarar QA geral aprovado.
+- CI do head atual e HTTP real A/B pendentes. Nenhum merge, deploy ou alteração de produção.
+
+## Revisão de conflitos HTTP históricos — PARCIAL — 2026-10-16
+
+Base: PR#4/feat/v35-dev-gate-20261002 SHA944b8bc; revisão isolada PR#5
+https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/pull/5
+branch fix/v35-http-conflicts-review-20261016, draft, sem merge/produção.
+Recorrência mensal institucional HTTP/UI A/B continua PASS e não foi repetida.
+Auditoria READ-ONLY no Supabase DEV szqkdekwhzxsoxorgvaz:13 RPCs public,
+17 raises explícitos40001 e0 private; todos conflitos de estado/versão.
+Documentação docs/V35_HTTP_CONFLICT_AUDIT.md atualizada e11 componentes UI
+passaram a reconhecer PT409 como conflito definitivo, preservando40001 legado.
+Dois testes de regressão PT409 adicionados a mensalidades e Master.
+Nenhuma migration/grant/RLS/seed ou escrita no banco; comportamento HTTP novo
+ainda NÃO AVALIADO. CI inicial#301 iniciou para cb58e54; checar CI do commit
+final do handoff antes de declarar PASS. Atenção a retries HTTP409 em supabase-js.
+PRÓXIMA AÇÃO ÚNICA: verificar CI e diff PR#5, então preparar migration nova
+e teste SQL rollback para os17 raises, seguido por HTTP real A/B e read-back
+sem reabrir QA mensal A/B. Etapa2 e21telas continuam abertas.
+
 ## Recorrência mensal: aceite UI/HTTP A/B concluído — 2026-10-16
 
 B RESULT PASS no preview6959e115/commitae1d4a6: quatro tabelas estrangeiras
@@ -851,4 +930,3 @@ Agente aplicou sete transições guardadas entre WAITs. SQL final: A/B ADMIN pr�
 ## Matriz final recursos/views preparada — 2026-10-07, após staff PASS
 
 Ver docs/DEV_FINAL_AUTHORIZATION_GATE.md. Staff/MFA/expiração/revogação/refresh concluídos. Revisão mantém etapa1 aberta pela pendência explícita de IDs elegíveis estrangeiros com own organization e views diretas/DRE. Novo test:authorization-final preparado: oito negativas por loja para plano/source/policy/request/payable/receivable, 28views (dez com fatos próprios financeiros/DRE obrigatórios), positivos de duplicação própria/policy2030off/decisão manual/audit. Duas policies draft2030off e duas solicitações MANUAIS fictícias seedadas sobre payables DEV100; não altera valores originais/current policy nem afirma fluxo automático completo de aprovação. SQL verify_dev_final_authorization.sql passou com claims simuladas/ROLLBACK; 12 testes locais/sintaxe PASS. HTTP real do novo roteiro ainda PENDENTE. Preparar pacote dev-gate público sem .env real/node_modules/QR para owner; não repetir gates já aprovados. Após PASS revisar estado final e critérios antes de encerrar1/promover2. Sem produção/custos/Auth/grants/schema.
-

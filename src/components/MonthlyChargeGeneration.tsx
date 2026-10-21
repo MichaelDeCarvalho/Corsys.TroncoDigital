@@ -65,9 +65,9 @@ export function MonthlyChargeGeneration({client,organizationId}:{
   }catch(cause){
    if(!mounted.current)return
    const code=(cause as {code?:string}|null)?.code
-   if(['22023','23503','23505','23514','40001','42501','28000','55000'].includes(code??'')){
+   if(['22023','23503','23505','23514','40001','PT409','42501','28000','55000'].includes(code??'')){
     command.current=null;setUncertain(false);setPreview(null)
-    setError(code==='40001'?
+    setError((code === '40001' || code === 'PT409')?
      'A prévia ficou desatualizada. Consulte novamente antes de gerar as cobranças.':
      code==='23514'||code==='23505'?
      'Geração bloqueada: confira mapeamentos, competência, situação da Loja e cobranças já emitidas.':

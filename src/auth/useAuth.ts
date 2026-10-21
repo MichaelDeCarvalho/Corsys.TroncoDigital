@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SupabaseClient, User } from '@supabase/supabase-js'
 
-type AuthState = { status: 'checking' | 'anonymous' | 'authenticated' | 'error'; user: User | null; error: string }
+type AuthState = { status: 'checking' | 'anonymous' | 'authenticated' | 'error'; user: User | null; error: string; validating?: boolean }
 const anonymous: AuthState = { status: 'anonymous', user: null, error: '' }
 
 export function useAuth(client: SupabaseClient) {
@@ -15,17 +15,22 @@ export function useAuth(client: SupabaseClient) {
   const mounted = useRef(false)
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const [logoutFailed, setLogoutFailed] = useState(false)
+  const verifiedUser = useRef<User | null>(null)
 
-  const verify = useCallback(async () => {
+  const verify = useCallback(async (preserveSameUser = false) => {
     const current = ++revision.current
-    setState({ status: 'checking', user: null, error: '' })
+    setState(preserveSameUser && verifiedUser.current
+      ? { status: 'authenticated', user: verifiedUser.current, error: '', validating: true }
+      : { status: 'checking', user: null, error: '' })
     try {
       const { data, error } = await client.auth.getUser()
       if (!mounted.current || current !== revision.current) return
       if (error && error.name !== 'AuthSessionMissingError') throw error
+      verifiedUser.current = data.user && !error ? data.user : null
       setState(data.user && !error ? { status: 'authenticated', user: data.user, error: '' } : anonymous)
     } catch {
       if (mounted.current && current === revision.current) {
+        verifiedUser.current = null
         setState({ status: 'error', user: null, error: 'Não foi possível validar sua sessão. Verifique a conexão e tente novamente.' })
       }
     }
@@ -41,10 +46,16 @@ export function useAuth(client: SupabaseClient) {
       if (event === 'PASSWORD_RECOVERY') recovery.current = true
       if (event === 'SIGNED_OUT') recovery.current = false
       if (event === 'SIGNED_OUT' || !session) {
+        verifiedUser.current = null
         setState(anonymous)
       } else {
-        setState({ status: 'checking', user: null, error: '' })
-        timer.current = setTimeout(() => { void verify() }, 0)
+        const preserveSameUser = !recovery.current && event !== 'PASSWORD_RECOVERY' && !!verifiedUser.current
+          && session.user.id === verifiedUser.current.id
+        if (!preserveSameUser) verifiedUser.current = null
+        setState(preserveSameUser
+          ? { status: 'authenticated', user: verifiedUser.current, error: '', validating: true }
+          : { status: 'checking', user: null, error: '' })
+        timer.current = setTimeout(() => { void verify(preserveSameUser) }, 0)
       }
     })
     return () => {
@@ -58,6 +69,7 @@ export function useAuth(client: SupabaseClient) {
   const signOut = useCallback(async () => {
     ++revision.current
     clearTimeout(timer.current)
+    verifiedUser.current = null
     setState({ status: 'checking', user: null, error: '' })
     setLogoutFailed(false)
     try {

@@ -37,7 +37,7 @@ begin
    t.org,v_pay,'payable',v_state,cp,null,'DEV stale payable',
    '2027-02-01','2027-02-20',120,'2027-02-01','DEV stale revision reject',gen_random_uuid()::text);
   raise exception 'Stale correction unexpectedly accepted';
- exception when serialization_failure then null;end;
+ exception when sqlstate 'PT409' then null;end;
  select jsonb_build_object('category_id',v.category_id,'fund_id',v.fund_id,
   'description',v.description,'competence',v.competence,'due_date',v.due_date,
   'effective_amount',v.effective_amount,'allocated_amount',v.allocated_amount)

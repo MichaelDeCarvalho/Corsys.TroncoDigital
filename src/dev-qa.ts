@@ -1,4 +1,10 @@
 import {getSupabaseClient} from './lib/supabase'
+import {runLegacyConflictHTTPQA} from './lib/dev-qa-conflicts'
+import {runRemainingLegacyHTTPQA} from './lib/dev-qa-legacy'
+import {runAnnualHTTPQA} from './lib/dev-qa-annual'
+import {runAgreementHTTPQA} from './lib/dev-qa-agreements'
+import {runAgapeHTTPQA} from './lib/dev-qa-agape'
+import {runMutualHTTPQA} from './lib/dev-qa-mutual'
 import {runMonthlyHTTPQA} from './lib/dev-qa-monthly'
 import {runInstitutionalHTTPQA} from './lib/dev-qa-institutional'
 import {assertQADenied as denied,assertQARows as rows,assertQAUUID as uuid,assertQAOneWinner as winner,assertQABrowserTarget} from './lib/dev-qa-gates'
@@ -12,6 +18,12 @@ const identity=document.querySelector('#identity')!,actions=document.querySelect
 const report=(s:string)=>{output.textContent+=(s+'\n')}
 let running=false
 async function session(){const r=await c.auth.getUser();const t=fixtures.find(f=>f.actor===r.data.user?.id);if(r.error||!t)throw Error('Expected DEV session absent');return t}
+async function revalidateSession(){
+ const before=await session(),r=await c.auth.refreshSession()
+ if(r.error||r.data.user?.id!==before.actor)throw Error('DEV session refresh not confirmed')
+ const after=await session();if(after.actor!==before.actor)throw Error('DEV identity changed during refresh')
+ report(`Sessão DEV ${after.label} revalidada; nenhuma credencial exibida PASS`)
+}
 const date=()=>new Date().toISOString().slice(0,10)
 function add(label:string,run:()=>Promise<void>){const b=document.createElement('button');b.textContent=label;b.onclick=async()=>{if(running)return;running=true;for(const el of actions.querySelectorAll('button'))el.disabled=true;output.textContent='';try{await run();report('RESULT: PASS')}catch(e){report('RESULT: FAIL '+(e as Error).message)}finally{running=false;for(const el of actions.querySelectorAll('button'))el.disabled=false}};actions.append(b)}
 async function isolation(){
@@ -79,4 +91,4 @@ async function bank(){
  if(detail.some(l=>Number(l.matched_amount)!==0))throw Error('Bank cleanup failed')
  report('Bank cleanup: zero matched amount PASS')
 }
-void session().then(t=>{identity.textContent='Sessão DEV '+t.label+' validada. Somente fixtures autorizadas.';add('Verificar isolamento HTTP',isolation);add('Testar concorrência de transferências',transfers);if(t.label==='B')add('Testar concorrência de conciliação',bank);add('Testar estornos institucionais HTTP e concorrência',()=>runInstitutionalHTTPQA(c,report));add('Testar recorrência institucional HTTP e concorrência',()=>runMonthlyHTTPQA(c,report))}).catch(()=>{identity.textContent='Entre primeiro na aplicação DEV com a identidade de teste A ou B.'})
+void session().then(t=>{identity.textContent='Sessão DEV '+t.label+' validada. Somente fixtures autorizadas.';add('Revalidar sessão DEV',revalidateSession);add('Verificar isolamento HTTP',isolation);add('Testar HTTP 409 identidade e catálogo',()=>runLegacyConflictHTTPQA(c,report));add('Testar demais conflitos legados e reajuste HTTP',()=>runRemainingLegacyHTTPQA(c,report));add('Testar anuidade e correção HTTP',()=>runAnnualHTTPQA(c,report));add('Testar negociação e parcelas HTTP',()=>runAgreementHTTPQA(c,report));add('Testar ágapes HTTP',()=>runAgapeHTTPQA(c,report));add('Testar mútuas HTTP',()=>runMutualHTTPQA(c,report));add('Testar concorrência de transferências',transfers);if(t.label==='B')add('Testar concorrência de conciliação',bank);add('Testar estornos institucionais HTTP e concorrência',()=>runInstitutionalHTTPQA(c,report));add('Testar recorrência institucional HTTP e concorrência',()=>runMonthlyHTTPQA(c,report))}).catch(()=>{identity.textContent='Entre primeiro na aplicação DEV com a identidade de teste A ou B.'})
