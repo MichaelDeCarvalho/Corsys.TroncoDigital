@@ -9,6 +9,7 @@ import { PayableApprovals } from './PayableApprovals'
 import { ApprovalPolicies } from './ApprovalPolicies'
 import { MonthlyChargeGeneration } from './MonthlyChargeGeneration'
 import { ManualCharges } from './ManualCharges'
+import { MemberAgreements } from './MemberAgreements'
 import { FinancialPeriods } from './FinancialPeriods'
 import { TreasuryBalances } from './TreasuryBalances'
 import { AccountTransfers } from './AccountTransfers'
@@ -22,7 +23,7 @@ import { FinanceIntegrityError, financeSources, formatDate, formatMoney, loadFin
 const statusLabels: Record<string, string> = { open: 'Em aberto', paid: 'Liquidada', partially_paid: 'Parcialmente liquidada', cancelled: 'Cancelada', posted: 'Contabilizada', approved: 'Aprovada', pending: 'Pendente', missing_request: 'Aprovação não solicitada', not_required: 'Dispensada', rejected: 'Rejeitada' }
 
 export function Finance({ client, organizationId }: { client: SupabaseClient; organizationId: string }) {
-  const [kind, setKind] = useState<FinanceKind | 'memberPayments' | 'dre' | 'institutional' | 'institutionalMonthly' | 'approvals' | 'monthly' | 'manual' | 'periods' | 'treasury' | 'budget' | 'budgetManagement' | 'delinquency' | 'approvalPolicies' | 'transfers' | 'cashflow' | 'reconciliation'>('charges')
+  const [kind, setKind] = useState<FinanceKind | 'agreements' | 'memberPayments' | 'dre' | 'institutional' | 'institutionalMonthly' | 'approvals' | 'monthly' | 'manual' | 'periods' | 'treasury' | 'budget' | 'budgetManagement' | 'delinquency' | 'approvalPolicies' | 'transfers' | 'cashflow' | 'reconciliation'>('charges')
   return <>
     <div className="finance-sections" role="group" aria-label="Consultas financeiras">
       {(Object.keys(financeSources) as FinanceKind[]).map(id => <button className="secondary" key={id} aria-pressed={kind === id} onClick={() => setKind(id)}>{financeSources[id].label}</button>)}
@@ -34,6 +35,7 @@ export function Finance({ client, organizationId }: { client: SupabaseClient; or
       <button className="secondary" aria-pressed={kind === 'approvalPolicies'} onClick={() => setKind('approvalPolicies')}>Políticas de aprovação</button>
       <button className="secondary" aria-pressed={kind === 'monthly'} onClick={() => setKind('monthly')}>Gerar mensalidades</button>
       <button className="secondary" aria-pressed={kind === 'manual'} onClick={() => setKind('manual')}>Cobranças avulsas</button>
+      <button className="secondary" aria-pressed={kind === 'agreements'} onClick={() => setKind('agreements')}>Negociar dívida</button>
       <button className="secondary" aria-pressed={kind === 'periods'} onClick={() => setKind('periods')}>Fechamento mensal</button>
       <button className="secondary" aria-pressed={kind === 'treasury'} onClick={() => setKind('treasury')}>Caixa e bancos</button>
       <button className="secondary" aria-pressed={kind === 'transfers'} onClick={() => setKind('transfers')}>Transferências</button>
@@ -60,6 +62,8 @@ export function Finance({ client, organizationId }: { client: SupabaseClient; or
       ? <MonthlyChargeGeneration key={organizationId} client={client} organizationId={organizationId} />
       : kind === 'manual'
       ? <ManualCharges key={organizationId} client={client} organizationId={organizationId} />
+      : kind === 'agreements'
+      ? <MemberAgreements key={organizationId} client={client} organizationId={organizationId} />
       : kind === 'periods'
       ? <FinancialPeriods key={organizationId} client={client} organizationId={organizationId} />
       : kind === 'treasury'

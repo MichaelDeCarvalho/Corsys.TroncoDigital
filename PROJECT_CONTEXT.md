@@ -1,6 +1,6 @@
 ## Continuação operacional — 19/10/2026
 
-Lote HTTP A/B ampliado aprovado: cobertura10/13 legadas e reajuste novo, sem alteração financeira. Recorrência institucional anual implementada com migration61 DEV e gate SQL A/B rollback PASS; homologação real pendente. Evidências em docs/V35_EXECUTION_20261019_CONTINUED.md. Não encerrar Etapa2 nem repetir os gates já aprovados.
+Lote HTTP A/B ampliado aprovado: cobertura10/13 legadas A e11/13 B após anuidade/correção B (35 chamadas/35 requisições). Anuidade A aguarda login. Negociação/parcelamento implementados com migrations62/63 DEV, SQL A/B30 negativas rollback PASS e UI testada localmente; HTTP/UI real pendentes. CI317/e1076df SUCCESS. Evidências em docs/V35_EXECUTION_20261019_CONTINUED.md. Não encerrar Etapa2 nem repetir os gates já aprovados.
 
 ## Execução Work — 19/10/2026
 

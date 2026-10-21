@@ -467,3 +467,7 @@ Agente aplicou sete transições guardadas entre WAITs. SQL final: A/B ADMIN pr�
 
 Nova função `public.transition_member_term` (SECURITY DEFINER autenticada): uso restrito por `private.require_permission(settings.manage)`, `search_path` vazio, `anon` sem EXECUTE, e verificações SQL negativas A/B, TREASURER, VIEWER e assinatura suspensa em transações revertidas. Operação atômica e auditada; valores e datas são validados no servidor. A presença de SECURITY DEFINER demanda revisão contínua, não indica auditoria integral. HTTP/JWT e concorrência simultânea ainda **não avaliados**.
 
+## Negociação — 19/10/2026
+
+Migrations62/63 aditivas DEV, sem ampliar escrita em tabelas/RLS. Duas permissões internas, isolamento, limite de entradas, período aberto, locks e fingerprint, idempotência, preservação de alocações e caixa. SQL A/B rollback PASS com30 negativas; UI local cobre escopo da prévia, edição, chave incerta e PT409. HTTP/UI real ainda pendentes. Limites: não cria juros, exige mesma classificação publicada, sem cancelamento integral de acordo. Não alegar aprovação integral da Etapa2. ADR-0033.
+

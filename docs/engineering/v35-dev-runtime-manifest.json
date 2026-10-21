@@ -514,6 +514,24 @@
       "sha256": "32675cae2c82b72933098a5b1c1494d9a64df868ab1d7387e3eba57403b9f438",
       "applied_at": "2026-10-19",
       "note": "DEV annual institutional commands only. Monthly functions preserved; anniversary anchored to initial price version. SQL A/B rollback PASS with 28 expected denials. UI/HTTP homologation pending."
+    },
+    {
+      "version": "20261019235201",
+      "name": "member_debt_agreement_commands",
+      "path": "supabase/migrations/20261019235201_member_debt_agreement_commands.sql",
+      "source_path": "supabase/migrations/20261019235201_member_debt_agreement_commands.sql",
+      "sha256": "306bd4674d7295d00df2f1b188f42039b1c4db29aa57099796899eb612d08bcb",
+      "applied_at": "2026-10-19",
+      "note": "DEV agreement commands only; existing tables/RLS preserved. A/B rollback PASS with 30 denials, partial payment preservation, exact cents and reversal behavior. UI/HTTP pending."
+    },
+    {
+      "version": "20261019235427",
+      "name": "member_agreement_source_date_guard",
+      "path": "supabase/migrations/20261019235427_member_agreement_source_date_guard.sql",
+      "source_path": "supabase/migrations/20261019235427_member_agreement_source_date_guard.sql",
+      "sha256": "2510b2b62dea1f4d22a8d588bc1b076d9ab3f5646a5f25d3aa67d6d5b1b0fab6",
+      "applied_at": "2026-10-19",
+      "note": "DEV agreement commands only; existing tables/RLS preserved. A/B rollback PASS with 30 denials, partial payment preservation, exact cents and reversal behavior. UI/HTTP pending."
     }
   ],
   "baseline_patches": {

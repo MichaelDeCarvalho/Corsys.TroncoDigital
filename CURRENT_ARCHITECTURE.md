@@ -1,3 +1,7 @@
+## Negociação de débitos — 19/10/2026
+
+Prévia/comando reutilizam tabelas de acordos existentes, cobranças replacement e ajustes imutáveis; somente saldo aberto é transferido, preservando pagamentos e caixa. Exigem charges.create+charges.adjust, locks, fingerprint e idempotência. Categoria/plano conservados; até24 parcelas com centavos exatos e datas ancoradas. UI com confirmação e recuperação de envio incerto, histórico e parcelas. ADR-0033; migrations62/63 DEV; SQL A/B rollback PASS. Homologação HTTP/UI real pendente.
+
 ## Recorrência institucional anual — 19/10/2026
 
 Quatro RPCs anuais aditivas usam as tabelas institucionais existentes; funções mensais preservadas. O mês da primeira versão de preço fixa o aniversário, incluído no fingerprint, sem deslocamento por reajuste. Interface escolhe RPC por frequência e valida o mês anual. Mesmos controles de autorização, período, idempotência, aprovação e caixa. ADR-0032; migration61 DEV. SQL A/B rollback PASS, homologação real pendente. Evidências em docs/V35_EXECUTION_20261019_CONTINUED.md.
