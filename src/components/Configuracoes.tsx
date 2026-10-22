@@ -19,27 +19,25 @@ export function Configuracoes({ client, organizationId }: { client: SupabaseClie
             <h3>Assinatura e Plano SaaS</h3>
             <span className="subtle">Plano ativo</span>
           </div>
-          <p><strong>Plano V35 Enterprise</strong> · Ativo com suporte a multi-inquilino.</p>
-          <p className="subtle">Faturamento gerenciado pela plataforma Master SaaS.</p>
+          <p className="subtle">O status da assinatura é gerenciado pela plataforma Master SaaS.</p>
         </section>
 
         <section className="panel">
           <div className="section-title">
             <h3>Governança e Auditoria</h3>
-            <span className="subtle">Trilha imutável</span>
+            <span className="subtle">Trilha de auditoria</span>
           </div>
-          <p>Todas as movimentações financeiras, alterações cadastrais e aprovações possuem identificador de idempotência e trilha de auditoria.</p>
-          <span className="pill">Compliance V35</span>
+          <p>O sistema aplica identificadores de idempotência para garantir a rastreabilidade das movimentações e alterações.</p>
         </section>
       </div>
 
       <section className="panel" style={{ marginTop: '24px' }}>
         <div className="section-title">
-          <h3>Privacidade, LGPD e Continuidade</h3>
-          <span className="subtle">Conformidade e backups</span>
+          <h3>Privacidade e Conformidade</h3>
+          <span className="subtle">Gestão de dados</span>
         </div>
         <p className="subtle">
-          O sistema opera com isolamento de dados por Loja (Row Level Security). Backups, restauração e exportações LGPD são executados de forma segura sob governança da plataforma.
+          A conformidade com políticas de privacidade e a gestão de dados seguem as normas da plataforma e as políticas de segurança ativas no backend.
         </p>
       </section>
     </div>

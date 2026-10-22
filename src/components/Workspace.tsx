@@ -45,7 +45,7 @@ export function Workspace({ client, user, onSignOut }: { client: SupabaseClient;
   }, [client, user, retry])
   const organization = organizations.find(row => row.id === selected)
   return <div inert={scopeChecking||undefined} aria-busy={scopeChecking||undefined}><AppShell page={page} showMaster={masterAvailable} onNavigate={setPage} onSignOut={onSignOut} email={user.email ?? 'Minha conta'}>
-    <section className="workspace-heading"><div><p className="eyebrow">Área da Loja</p><h1>{page === 'home' ? 'Visão geral' : page === 'members' ? 'Integrantes' : page === 'cadastros' ? 'Cadastros' : page === 'finance' ? 'Financeiro' : page === 'structure' ? 'Plano de Contas' : page === 'configuracoes' ? 'Configurações' : page === 'master' ? 'Master SaaS' : 'Atendimento'}</h1><p className="subtle">Acompanhe as informações da sua organização.</p></div>
+    <section className="workspace-heading"><div><p className="eyebrow">Área da Loja</p><h1>{page === 'home' ? 'Visão geral' : page === 'members' ? 'Integrantes' : page === 'cadastros' ? 'Cadastros' : page === 'finance' ? 'Financeiro' : page === 'structure' ? 'Plano de Contas' : page === 'dre-config' ? 'Configurações DRE' : page === 'configuracoes' ? 'Configurações' : page === 'master' ? 'Master SaaS' : 'Atendimento'}</h1><p className="subtle">Acompanhe as informações da sua organização.</p></div>
       {page !== 'master' && !!organizations.length && <div className="org-selector"><label htmlFor="organization">Loja</label><select id="organization" value={selected} onChange={e => setSelected(e.target.value)}>{organizations.map(row => <option key={row.id} value={row.id}>{row.name}</option>)}</select></div>}
     </section>
     {page === 'master' ? (
