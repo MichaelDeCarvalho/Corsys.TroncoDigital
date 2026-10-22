@@ -6,7 +6,7 @@ import { parsePublicEnv } from './src/config/env'
 
 export default defineConfig(({ command, mode }) => {
   const buildEnv = { ...loadEnv(mode, process.cwd(), 'VITE_'), ...process.env }
-  if (command === 'build' && (buildEnv.VITE_SUPABASE_URL || buildEnv.VITE_SUPABASE_PUBLISHABLE_KEY)) {
+  if (command === 'build') {
     parsePublicEnv(buildEnv)
   }
   const devQA = buildEnv.VITE_DEV_QA_ENABLED === 'true'
@@ -15,7 +15,7 @@ export default defineConfig(({ command, mode }) => {
   server: {
     host: '0.0.0.0',
     port: 3000,
-    allowedHosts: true,
+    allowedHosts: ['.run.app', 'localhost', '127.0.0.1'],
   },
   plugins: [react(), tailwindcss()],
   build: devQA ? { rollupOptions: { input: { app: 'index.html', qa: 'dev-qa.html' } } } : undefined,
