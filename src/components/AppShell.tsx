@@ -1,25 +1,153 @@
-import { Home, Users, MessagesSquare, LogOut, Wallet, Settings, ShieldCheck } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
+import { Home, Users, Wallet, MessagesSquare, Settings, ShieldCheck, LogOut, Menu, X } from 'lucide-react'
 
 export type Page = 'home' | 'members' | 'finance' | 'support' | 'structure' | 'master'
-const navigation = [{ id: 'home' as const, label: 'Início', Icon: Home }, { id: 'members' as const, label: 'Integrantes', Icon: Users }, { id: 'finance' as const, label: 'Financeiro', Icon: Wallet }, { id: 'support' as const, label: 'Chamados', Icon: MessagesSquare }, { id: 'structure' as const, label: 'Plano de Contas', Icon: Settings }]
 
-export function AppShell({ children, page, showMaster = false, onNavigate, onSignOut, email }: { children: ReactNode; page: Page; showMaster?: boolean; onNavigate: (page: Page) => void; onSignOut: () => void; email: string }) {
-  function links() {
-    return [...navigation, ...(showMaster ? [{ id: 'master' as const, label: 'Master SaaS', Icon: ShieldCheck }] : [])].map(({ id, label, Icon }) => <button key={id} type="button" aria-current={page === id ? 'page' : undefined} onClick={() => onNavigate(id)}><Icon size={20} aria-hidden="true" /><span>{label}</span></button>)
+const pageTitles: Record<Page, string> = {
+  home: 'Painel Geral',
+  members: 'Integrantes',
+  finance: 'Financeiro',
+  structure: 'Plano de Contas',
+  support: 'Chamados',
+  master: 'Painel Master SaaS',
+}
+
+const navItems = [
+  { id: 'home' as const, label: 'Início', Icon: Home },
+  { id: 'members' as const, label: 'Integrantes', Icon: Users },
+  { id: 'finance' as const, label: 'Financeiro', Icon: Wallet },
+  { id: 'structure' as const, label: 'Plano de Contas', Icon: Settings },
+  { id: 'support' as const, label: 'Chamados', Icon: MessagesSquare },
+]
+
+export function AppShell({
+  children,
+  page,
+  showMaster = false,
+  onNavigate,
+  onSignOut,
+  email,
+}: {
+  children: ReactNode
+  page: Page
+  showMaster?: boolean
+  onNavigate: (page: Page) => void
+  onSignOut: () => void
+  email: string
+}) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  function handleNavigate(target: Page) {
+    onNavigate(target)
+    setMobileMenuOpen(false)
   }
-  return <div className="app-layout">
-    <a className="skip-link" href="#main">Pular para conteúdo</a>
-    <aside className="sidebar">
-      <div className="brand"><span className="brand-mark">T</span><span>CORSYS<strong>Tronco Digital</strong></span></div>
-      <p className="nav-caption">Sua Loja</p><nav className="side-nav" aria-label="Navegação principal">{links()}</nav>
-      <div className="sidebar-footer"><span className="status-dot" />Ambiente DEV<span className="version">V35</span></div>
-    </aside>
-    <div className="app-body">
-      <header className="topbar"><span className="mobile-brand">Tronco Digital</span><p className="subtle account-email">{email}</p><button type="button" className="quiet" onClick={onSignOut}><LogOut size={17} aria-hidden="true" />Sair</button></header>
-      <main id="main">{children}</main>
+
+  function userInitials(value: string) {
+    const namePart = value.split('@')[0]
+    const parts = namePart.split(/[._-]/).filter(Boolean)
+    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
+    return value.slice(0, 2).toUpperCase()
+  }
+
+  const allItems = [
+    ...navItems,
+    ...(showMaster ? [{ id: 'master' as const, label: 'Master SaaS', Icon: ShieldCheck }] : []),
+  ]
+
+  return (
+    <div className="app-layout">
+      <a className="skip-link" href="#main">Pular para conteúdo</a>
+      <div
+        className={`sidebar-backdrop ${mobileMenuOpen ? 'open' : ''}`}
+        onClick={() => setMobileMenuOpen(false)}
+        aria-hidden="true"
+      />
+      <aside className={`sidebar ${mobileMenuOpen ? 'open' : ''}`} id="sidebar">
+        <div className="brand">
+          <div className="brand-mark" aria-hidden="true">CT</div>
+          {page === 'master' ? (
+            <div className="brand-master-copy">
+              <h1>Corsys</h1>
+              <small>Tronco Digital · Gestão SaaS</small>
+            </div>
+          ) : (
+            <div className="brand-tenant-copy">
+              <h1>Corsys Tesouraria</h1>
+              <small>Loja Maçônica</small>
+            </div>
+          )}
+        </div>
+
+        <nav className="side-nav" aria-label="Navegação principal">
+          {allItems.map(({ id, label, Icon }) => (
+            <button
+              key={id}
+              type="button"
+              aria-current={page === id ? 'page' : undefined}
+              onClick={() => handleNavigate(id)}
+            >
+              <Icon size={18} aria-hidden="true" />
+              <span>{label}</span>
+            </button>
+          ))}
+        </nav>
+
+        <div className="sidebar-footer">
+          <span className="status-dot" aria-hidden="true" />
+          <span>Ambiente DEV</span>
+          <span className="version">V35</span>
+        </div>
+      </aside>
+
+      <div className="app-body">
+        <header className="topbar">
+          <div className="top-left">
+            <button
+              type="button"
+              className="ghost mobile-menu"
+              id="mobileMenu"
+              aria-label={mobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              {mobileMenuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
+            </button>
+            <div className="topbar-title-block">
+              <span className="eyebrow">{page === 'master' ? 'Gestão SaaS' : 'Loja Maçônica'}</span>
+              <h2 className="topbar-page-title">{pageTitles[page] ?? 'Área da Loja'}</h2>
+            </div>
+          </div>
+          <div className="top-actions">
+            <div className="top-user" title="Usuário conectado">
+              <div className="avatar" aria-hidden="true">{userInitials(email)}</div>
+              <div className="top-user-meta">
+                <b className="account-email">{email}</b>
+                <span className="subtle">{page === 'master' ? 'Gestão global da plataforma' : 'Administração da Loja'}</span>
+              </div>
+            </div>
+            <button type="button" className="quiet logout-btn" onClick={onSignOut} aria-label="Sair">
+              <LogOut size={16} aria-hidden="true" />
+              <span>Sair</span>
+            </button>
+          </div>
+        </header>
+
+        <main id="main">{children}</main>
+      </div>
+
+      <nav className={showMaster ? 'mobile-nav has-master' : 'mobile-nav'} aria-label="Navegação móvel">
+        {allItems.map(({ id, label, Icon }) => (
+          <button
+            key={id}
+            type="button"
+            aria-current={page === id ? 'page' : undefined}
+            onClick={() => handleNavigate(id)}
+          >
+            <Icon size={18} aria-hidden="true" />
+            <span>{label}</span>
+          </button>
+        ))}
+      </nav>
     </div>
-    <nav className={showMaster ? 'mobile-nav has-master' : 'mobile-nav'} aria-label="Navegação móvel">{links()}</nav>
-  </div>
+  )
 }
 
