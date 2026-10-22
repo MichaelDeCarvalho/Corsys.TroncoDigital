@@ -8,6 +8,8 @@ import { MasterConsole } from './MasterConsole'
 import { loadMasterOverview } from '../lib/master-console'
 import { FinancialStructure } from './FinancialStructure'
 import { Members } from './Members'
+import { Cadastros } from './Cadastros'
+import { Configuracoes } from './Configuracoes'
 import { loadOrganizations, loadTenantData, openTicket, type Organization, type TenantData } from '../lib/tenant-data'
 
 const statuses: Record<string, string> = { active: 'Ativo', inactive: 'Inativo', new: 'Novo', triage: 'Em triagem', working: 'Em atendimento', waiting_client: 'Aguardando retorno', resolved: 'Resolvido', closed: 'Fechado' }
@@ -43,7 +45,7 @@ export function Workspace({ client, user, onSignOut }: { client: SupabaseClient;
   }, [client, user, retry])
   const organization = organizations.find(row => row.id === selected)
   return <div inert={scopeChecking||undefined} aria-busy={scopeChecking||undefined}><AppShell page={page} showMaster={masterAvailable} onNavigate={setPage} onSignOut={onSignOut} email={user.email ?? 'Minha conta'}>
-    <section className="workspace-heading"><div><p className="eyebrow">Área da Loja</p><h1>{page === 'home' ? 'Visão geral' : page === 'members' ? 'Integrantes' : page === 'finance' ? 'Financeiro' : page === 'structure' ? 'Plano de Contas' : page === 'master' ? 'Master SaaS' : 'Atendimento'}</h1><p className="subtle">Acompanhe as informações da sua organização.</p></div>
+    <section className="workspace-heading"><div><p className="eyebrow">Área da Loja</p><h1>{page === 'home' ? 'Visão geral' : page === 'members' ? 'Integrantes' : page === 'cadastros' ? 'Cadastros' : page === 'finance' ? 'Financeiro' : page === 'structure' ? 'Plano de Contas' : page === 'configuracoes' ? 'Configurações' : page === 'master' ? 'Master SaaS' : 'Atendimento'}</h1><p className="subtle">Acompanhe as informações da sua organização.</p></div>
       {page !== 'master' && !!organizations.length && <div className="org-selector"><label htmlFor="organization">Loja</label><select id="organization" value={selected} onChange={e => setSelected(e.target.value)}>{organizations.map(row => <option key={row.id} value={row.id}>{row.name}</option>)}</select></div>}
     </section>
     {page === 'master' ? (
@@ -73,6 +75,8 @@ function TenantPanel({ client, organization, page, onNavigate }: { client: Supab
   return <>
     {page === 'structure' && <FinancialStructure key={organization.id} client={client} organizationId={organization.id} />}
     {page === 'finance' && <Finance key={organization.id} client={client} organizationId={organization.id} />}
+    {page === 'cadastros' && <Cadastros members={data.members} client={client} organizationId={organization.id} onSaved={() => setRevision(v => v + 1)} onReload={() => setRevision(v => v + 1)} />}
+    {page === 'configuracoes' && <Configuracoes client={client} organizationId={organization.id} />}
     {sent && page === 'support' && <p role="status" className="message">Chamado enviado. A lista foi atualizada.</p>}
     {page === 'home' && <>
       <section className="hero-card"><div><span className="pill">{organization.status === 'active' ? 'Loja ativa' : 'Loja inativa'}</span><h2>{organization.name}</h2><p>Um espaço para cuidar da sua Loja, dos seus integrantes e do seu atendimento.</p></div><Building2 size={58} strokeWidth={1.2} aria-hidden="true" /></section>

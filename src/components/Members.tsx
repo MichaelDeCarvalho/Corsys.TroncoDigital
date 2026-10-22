@@ -100,6 +100,7 @@ export function Members({
   const [paymentMap, setPaymentMap] = useState<Record<string, string>>({})
   const [financialError, setFinancialError] = useState<string | null>(null)
   const [integrityMismatch, setIntegrityMismatch] = useState(false)
+  const isFinancialUnavailable = !!financialError || integrityMismatch || !client
 
   const [statement, setStatement] = useState<StatementEntry[]>([])
   const [statementLoading, setStatementLoading] = useState(false)
@@ -525,7 +526,8 @@ export function Members({
                   const openAmount = pos?.open ?? 0
                   const creditAmount = pos?.credit ?? 0
                   const isExempt = term?.exempt ?? false
-                  const fee = term?.amount != null ? formatMoney(term.amount) : isExempt ? 'R$ 0,00' : '—'
+                  const isFinancialUnavailable = !!financialError || integrityMismatch || !client
+                  const fee = term?.amount != null ? (isFinancialUnavailable ? 'Indisponível' : formatMoney(term.amount)) : isExempt ? 'R$ 0,00' : '—'
                   const status = computeStatus(openAmount, creditAmount, lastPay)
 
                   return (
@@ -586,8 +588,8 @@ export function Members({
                       <td>{member.degree_or_office || 'Não informado'}</td>
                       <td className="money">{fee}</td>
                       <td>{isExempt ? 'Sim' : 'Não'}</td>
-                      <td className="money period-open">{formatMoney(openAmount)}</td>
-                      <td className="money period-credit">{formatMoney(creditAmount)}</td>
+                      <td className="money period-open">{isFinancialUnavailable ? 'Indisponível' : formatMoney(openAmount)}</td>
+                      <td className="money period-credit">{isFinancialUnavailable ? 'Indisponível' : formatMoney(creditAmount)}</td>
                       <td className="period-last-payment">{lastPay ? formatDate(lastPay) : '—'}</td>
                       <td>{member.whatsapp || member.phone || member.email || 'Não informado'}</td>
                     </tr>
@@ -597,10 +599,10 @@ export function Members({
               <tfoot>
                 <tr className="table-total-row">
                   <td colSpan={4}>TOTAL DOS INTEGRANTES EXIBIDOS</td>
-                  <td className="money" id="memberMonthlyTotal">{formatMoney(totalMonthly)}</td>
+                  <td className="money" id="memberMonthlyTotal">{isFinancialUnavailable ? 'Indisponível' : formatMoney(totalMonthly)}</td>
                   <td></td>
-                  <td className="money period-open" id="memberOpenTotal">{formatMoney(totalOpen)}</td>
-                  <td className="money period-credit" id="memberCreditTotal">{formatMoney(totalCredit)}</td>
+                  <td className="money period-open" id="memberOpenTotal">{isFinancialUnavailable ? 'Indisponível' : formatMoney(totalOpen)}</td>
+                  <td className="money period-credit" id="memberCreditTotal">{isFinancialUnavailable ? 'Indisponível' : formatMoney(totalCredit)}</td>
                   <td colSpan={2}></td>
                 </tr>
               </tfoot>

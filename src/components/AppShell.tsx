@@ -1,23 +1,27 @@
 import { useState, type ReactNode } from 'react'
 import { Home, Users, Wallet, MessagesSquare, Settings, ShieldCheck, LogOut, Menu, X } from 'lucide-react'
 
-export type Page = 'home' | 'members' | 'finance' | 'support' | 'structure' | 'master'
+export type Page = 'home' | 'members' | 'cadastros' | 'finance' | 'structure' | 'support' | 'configuracoes' | 'master'
 
 const pageTitles: Record<Page, string> = {
   home: 'Painel Geral',
   members: 'Integrantes',
+  cadastros: 'Cadastros',
   finance: 'Financeiro',
   structure: 'Plano de Contas',
   support: 'Chamados',
+  configuracoes: 'Configurações',
   master: 'Painel Master SaaS',
 }
 
 const navItems = [
   { id: 'home' as const, label: 'Início', Icon: Home },
   { id: 'members' as const, label: 'Integrantes', Icon: Users },
+  { id: 'cadastros' as const, label: 'Cadastros', Icon: Users },
   { id: 'finance' as const, label: 'Financeiro', Icon: Wallet },
   { id: 'structure' as const, label: 'Plano de Contas', Icon: Settings },
   { id: 'support' as const, label: 'Chamados', Icon: MessagesSquare },
+  { id: 'configuracoes' as const, label: 'Configurações', Icon: Settings },
 ]
 
 export function AppShell({
