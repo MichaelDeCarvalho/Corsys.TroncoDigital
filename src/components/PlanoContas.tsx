@@ -27,7 +27,6 @@ export function PlanoContas({ client, organizationId }: { client: SupabaseClient
       {tab === 'plano' && (
         <section className="panel">
           <AccountingPlans client={client} organizationId={organizationId} />
-          <AccountingPrepublication client={client} organizationId={organizationId} />
         </section>
       )}
 
@@ -36,11 +35,11 @@ export function PlanoContas({ client, organizationId }: { client: SupabaseClient
       )}
 
       {tab === 'contas' && (
-        <TreasuryCatalogs client={client} organizationId={organizationId} />
+        <TreasuryCatalogs client={client} organizationId={organizationId} kindFilter={['account', 'fund']} />
       )}
 
       {tab === 'pagamentos' && (
-        <TreasuryCatalogs client={client} organizationId={organizationId} />
+        <TreasuryCatalogs client={client} organizationId={organizationId} kindFilter={['method']} />
       )}
     </div>
   )

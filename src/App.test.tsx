@@ -131,6 +131,7 @@ describe('Tenant workspace', () => {
     render(<Workspace client={mock.client} user={userA} onSignOut={vi.fn()} />)
     await screen.findByText('Integrante A')
     fireEvent.click(within(screen.getByRole('navigation', { name: 'Navegação principal' })).getByRole('button', { name: 'Plano de Contas' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Categorias e Regras' }))
     await screen.findByRole('form', { name: 'Cadastrar categoria financeira' })
     expect(mock.from).toHaveBeenCalledWith('financial_categories')
     expect(mock.from).toHaveBeenCalledWith('recurring_rules')

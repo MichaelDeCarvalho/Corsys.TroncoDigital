@@ -6,10 +6,10 @@ type PendingCommand = { name: string; args: Record<string, unknown> }
 const kindNames: Record<TreasuryKind, string> = { account: 'Conta financeira', fund: 'Fundo', method: 'Forma de pagamento' }
 const types: Record<string, string> = { bank: 'Conta bancária', pix: 'Conta PIX', cash: 'Caixa', other: 'Outra conta' }
 
-export function TreasuryCatalogs({ client, organizationId }: { client: SupabaseClient; organizationId: string }) {
+export function TreasuryCatalogs({ client, organizationId, kindFilter }: { client: SupabaseClient; organizationId: string; kindFilter?: TreasuryKind[] }) {
   const [data, setData] = useState<TreasuryCatalogsData | null>(null)
   const [revision, setRevision] = useState(0)
-  const [kind, setKind] = useState<TreasuryKind>('account')
+  const [kind, setKind] = useState<TreasuryKind>(kindFilter?.[0] ?? 'account')
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
   const [pending, setPending] = useState(false)
@@ -117,10 +117,10 @@ export function TreasuryCatalogs({ client, organizationId }: { client: SupabaseC
   const disabled = pending || uncertain || conflict
   const lists: { kind: TreasuryKind; title: string; items: TreasuryItem[] }[] = data
     ? [
-      { kind: 'account', title: 'Contas financeiras', items: data.accounts },
-      { kind: 'fund', title: 'Fundos', items: data.funds },
-      { kind: 'method', title: 'Formas de pagamento', items: data.methods },
-    ] : []
+      { kind: 'account' as TreasuryKind, title: 'Contas financeiras', items: data.accounts },
+      { kind: 'fund' as TreasuryKind, title: 'Fundos', items: data.funds },
+      { kind: 'method' as TreasuryKind, title: 'Formas de pagamento', items: data.methods },
+    ].filter(g => !kindFilter || kindFilter.includes(g.kind)) : []
   return <section className="treasury-catalogs" aria-label="Contas, fundos e formas de pagamento">
     <div className="section-title"><h2>Contas, fundos e formas de pagamento</h2>
       <button type="button" className="secondary" disabled={pending || uncertain} onClick={refresh}>Atualizar cadastros</button>
@@ -134,8 +134,9 @@ export function TreasuryCatalogs({ client, organizationId }: { client: SupabaseC
           <div className="member-form-grid">
             <div><label htmlFor="treasury-kind">Tipo de cadastro</label>
               <select id="treasury-kind" value={kind} onChange={e => setKind(e.target.value as TreasuryKind)}>
-                <option value="account">Conta financeira</option><option value="fund">Fundo</option>
-                <option value="method">Forma de pagamento</option>
+                {(!kindFilter || kindFilter.includes('account')) && <option value="account">Conta financeira</option>}
+                {(!kindFilter || kindFilter.includes('fund')) && <option value="fund">Fundo</option>}
+                {(!kindFilter || kindFilter.includes('method')) && <option value="method">Forma de pagamento</option>}
               </select></div>
             <div><label htmlFor="treasury-name">Nome</label><input id="treasury-name" name="name" required maxLength={120} /></div>
             {kind === 'account' && <>

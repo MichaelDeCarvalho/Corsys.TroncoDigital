@@ -6,7 +6,8 @@ import { Finance } from './Finance'
 import { FinancialDashboard } from './FinancialDashboard'
 import { MasterConsole } from './MasterConsole'
 import { loadMasterOverview } from '../lib/master-console'
-import { FinancialStructure } from './FinancialStructure'
+import { PlanoContas } from './PlanoContas'
+import { DreConfig } from './DreConfig'
 import { Members } from './Members'
 import { Cadastros } from './Cadastros'
 import { Configuracoes } from './Configuracoes'
@@ -73,7 +74,8 @@ function TenantPanel({ client, organization, page, onNavigate }: { client: Supab
   if (error || !data) return <div className="panel"><p role="alert" className="message error">{error}</p><button className="secondary" onClick={() => setRevision(value => value + 1)}>Tentar novamente</button></div>
   const open = data.tickets.filter(ticket => !['resolved', 'closed'].includes(ticket.status))
   return <>
-    {page === 'structure' && <FinancialStructure key={organization.id} client={client} organizationId={organization.id} />}
+    {page === 'structure' && <PlanoContas key={organization.id} client={client} organizationId={organization.id} />}
+    {page === 'dre-config' && <DreConfig key={organization.id} client={client} organizationId={organization.id} />}
     {page === 'finance' && <Finance key={organization.id} client={client} organizationId={organization.id} />}
     {page === 'cadastros' && <Cadastros members={data.members} client={client} organizationId={organization.id} onSaved={() => setRevision(v => v + 1)} onReload={() => setRevision(v => v + 1)} />}
     {page === 'configuracoes' && <Configuracoes client={client} organizationId={organization.id} />}
