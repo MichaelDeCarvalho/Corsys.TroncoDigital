@@ -98,16 +98,33 @@ export function Members({
   const [financialMap, setFinancialMap] = useState<Record<string, FinancialPosition>>({})
   const [termMap, setTermMap] = useState<Record<string, TermInfo>>({})
   const [paymentMap, setPaymentMap] = useState<Record<string, string>>({})
+  const [financialError, setFinancialError] = useState<string | null>(null)
+  const [integrityMismatch, setIntegrityMismatch] = useState(false)
 
   const [statement, setStatement] = useState<StatementEntry[]>([])
   const [statementLoading, setStatementLoading] = useState(false)
+  const [statementError, setStatementError] = useState<string | null>(null)
   const [toast, setToast] = useState('')
+
+  // Clear financial state on organization switch
+  useEffect(() => {
+    setFinancialMap({})
+    setTermMap({})
+    setPaymentMap({})
+    setStatement([])
+    setFinancialError(null)
+    setIntegrityMismatch(false)
+    setStatementError(null)
+    setDrawerMember(null)
+  }, [organizationId])
 
   // Load real financial positions and active terms if client is available
   useEffect(() => {
     if (!client || !organizationId) return
     const controller = new AbortController()
     let active = true
+    setFinancialError(null)
+    setIntegrityMismatch(false)
 
     Promise.all([
       client.from('v_member_financial_position')
@@ -126,9 +143,17 @@ export function Members({
         .abortSignal(controller.signal),
     ]).then(([posRes, termRes, payRes]) => {
       if (!active) return
+      if (posRes.error || termRes.error || payRes.error) {
+        setFinancialError('Falha de leitura nas views financeiras autorizadas.')
+        return
+      }
       if (posRes.data) {
         const pMap: Record<string, FinancialPosition> = {}
+        let hasIntegrityIssue = false
         for (const row of posRes.data) {
+          if (row.integrity_ok === false) {
+            hasIntegrityIssue = true
+          }
           pMap[row.member_id] = {
             open: Number(row.open_receivables || 0),
             credit: Number(row.available_credit || 0),
@@ -136,6 +161,9 @@ export function Members({
           }
         }
         setFinancialMap(pMap)
+        if (hasIntegrityIssue) {
+          setIntegrityMismatch(true)
+        }
       }
       if (termRes.data) {
         const tMap: Record<string, TermInfo> = {}
@@ -158,8 +186,10 @@ export function Members({
         }
         setPaymentMap(lastMap)
       }
-    }).catch(() => {
-      // Graceful fallback on permission or read issue
+    }).catch(err => {
+      if (active && err?.name !== 'AbortError') {
+        setFinancialError('Erro de conexão ao carregar posições financeiras.')
+      }
     })
 
     return () => {
@@ -168,18 +198,22 @@ export function Members({
     }
   }, [client, organizationId])
 
-  // Load statement when drawer opens for a member
+  // Load statement when drawer opens for a member, filtered by period [startDate, endDate]
   useEffect(() => {
     if (!drawerMember || !client || !organizationId) {
       setStatement([])
+      setStatementError(null)
       return
     }
     const targetMember = drawerMember
     const supabaseClient = client
     const targetOrgId = organizationId
+    const selStart = startDate
+    const selEnd = endDate
     const controller = new AbortController()
     let active = true
     setStatementLoading(true)
+    setStatementError(null)
 
     async function loadStatement() {
       try {
@@ -193,15 +227,27 @@ export function Members({
 
         if (!active) return
 
+        if (res.error) {
+          setStatementError('Erro ao consultar extrato financeiro.')
+          setStatement([])
+          return
+        }
+
         if (res.data) {
           let running = 0
-          const items: StatementEntry[] = res.data.map(row => {
+          const items: StatementEntry[] = []
+          for (const row of res.data) {
             const d = Number(row.debit || 0)
             const c = Number(row.credit || 0)
             running += d - c
+            const eventDateStr = row.event_at ? row.event_at.slice(0, 10) : ''
+            // Apply period filtering if event date is within [selStart, selEnd]
+            if (eventDateStr && (eventDateStr < selStart || eventDateStr > selEnd)) {
+              continue
+            }
             const val = d > 0 ? d : c
-            return {
-              date: row.event_at ? formatDate(row.event_at.slice(0, 10)) : '—',
+            items.push({
+              date: eventDateStr ? formatDate(eventDateStr) : '—',
               description: row.description || row.event_type || 'Lançamento',
               competence: row.competence || '—',
               qty: 1,
@@ -209,12 +255,15 @@ export function Members({
               debit: d,
               credit: c,
               balance: running,
-            }
-          })
+            })
+          }
           setStatement(items)
         }
-      } catch {
-        if (active) setStatement([])
+      } catch (err: unknown) {
+        if (active && (err as Error)?.name !== 'AbortError') {
+          setStatementError('Falha de conexão ao carregar extrato.')
+          setStatement([])
+        }
       } finally {
         if (active) setStatementLoading(false)
       }
@@ -226,7 +275,7 @@ export function Members({
       active = false
       controller.abort()
     }
-  }, [drawerMember, client, organizationId])
+  }, [drawerMember, client, organizationId, startDate, endDate])
 
   // Filter members
   const filtered = useMemo(() => {
@@ -342,6 +391,17 @@ export function Members({
           </div>
           <span className="badge">{activeCount} ativos</span>
         </div>
+
+        {financialError && (
+          <div role="alert" style={{ background: '#FEF2F2', border: '1px solid #F87171', color: '#991B1B', padding: '12px 16px', borderRadius: '8px', marginBottom: '16px' }}>
+            <strong>Atenção:</strong> {financialError}
+          </div>
+        )}
+        {integrityMismatch && (
+          <div role="alert" style={{ background: '#FFFBEB', border: '1px solid #FBBF24', color: '#92400E', padding: '12px 16px', borderRadius: '8px', marginBottom: '16px' }}>
+            <strong>Alerta de Integridade:</strong> Divergência detectada nas views financeiras (`integrity_ok=false`). Saldos parciais bloqueados por segurança.
+          </div>
+        )}
 
         <div className="member-controls">
           <div className="search-group">

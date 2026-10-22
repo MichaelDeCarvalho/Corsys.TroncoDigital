@@ -36,4 +36,61 @@ describe('Member consultation', () => {
     fireEvent.click(screen.getByText('João Carvalho'))
     expect(details).not.toHaveAttribute('open')
   })
+
+  it('displays financial error alert when financial query fails', async () => {
+    const mockClient = {
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            order: vi.fn().mockReturnValue({
+              limit: vi.fn().mockReturnValue({
+                abortSignal: vi.fn().mockResolvedValue({ data: null, error: new Error('Permission denied') })
+              })
+            }),
+            abortSignal: vi.fn().mockResolvedValue({ data: null, error: new Error('Permission denied') })
+          })
+        })
+      })
+    } as any
+
+    render(<Members members={members} client={mockClient} organizationId="org-1" />)
+    const alert = await screen.findByText(/Falha de leitura nas views financeiras autorizadas/i)
+    expect(alert).toBeInTheDocument()
+  })
+
+  it('triggers integrity mismatch warning when integrity_ok is false', async () => {
+    const mockClient = {
+      from: vi.fn().mockImplementation((table: string) => {
+        if (table === 'v_member_financial_position') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                abortSignal: vi.fn().mockResolvedValue({
+                  data: [{ member_id: 'a', open_receivables: 100, available_credit: 0, net_position: 100, integrity_ok: false }],
+                  error: null
+                })
+              })
+            })
+          }
+        }
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              order: vi.fn().mockReturnValue({
+                limit: vi.fn().mockReturnValue({
+                  abortSignal: vi.fn().mockResolvedValue({ data: [], error: null })
+                })
+              }),
+              abortSignal: vi.fn().mockResolvedValue({ data: [], error: null })
+            })
+          })
+        }
+      })
+    } as any
+
+    render(<Members members={members} client={mockClient} organizationId="org-1" />)
+    const warning = await screen.findByText(/Alerta de Integridade/i)
+    expect(warning).toBeInTheDocument()
+  })
 })
+
