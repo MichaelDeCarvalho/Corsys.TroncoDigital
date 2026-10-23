@@ -11,6 +11,7 @@ import { DreConfig } from './DreConfig'
 import { Members } from './Members'
 import { Cadastros } from './Cadastros'
 import { Configuracoes } from './Configuracoes'
+import { DelinquencyReport } from './DelinquencyReport'
 import { loadOrganizations, loadTenantData, openTicket, type Organization, type TenantData } from '../lib/tenant-data'
 
 const statuses: Record<string, string> = { active: 'Ativo', inactive: 'Inativo', new: 'Novo', triage: 'Em triagem', working: 'Em atendimento', waiting_client: 'Aguardando retorno', resolved: 'Resolvido', closed: 'Fechado' }
@@ -77,6 +78,7 @@ function TenantPanel({ client, organization, page, onNavigate }: { client: Supab
     {page === 'structure' && <PlanoContas key={organization.id} client={client} organizationId={organization.id} />}
     {page === 'dre-config' && <DreConfig key={organization.id} client={client} organizationId={organization.id} />}
     {page === 'finance' && <Finance key={organization.id} client={client} organizationId={organization.id} />}
+    {page === 'inadimplencia' && <DelinquencyReport key={organization.id} client={client} organizationId={organization.id} />}
     {page === 'cadastros' && <Cadastros members={data.members} client={client} organizationId={organization.id} onSaved={() => setRevision(v => v + 1)} onReload={() => setRevision(v => v + 1)} />}
     {page === 'configuracoes' && <Configuracoes client={client} organizationId={organization.id} />}
     {sent && page === 'support' && <p role="status" className="message">Chamado enviado. A lista foi atualizada.</p>}

@@ -18,9 +18,7 @@ export function DreConfig({ client, organizationId }: { client: SupabaseClient; 
           <span className="subtle">Regime e cobertura</span>
         </div>
         <p>A DRE reflete os fatos contábeis classificados conforme o plano contábil vigente para esta Loja.</p>
-        <div className="callout">
-          <strong>Regime atual:</strong> Competência.
-        </div>
+        <p className="subtle">O regime de contabilização é definido pela estrutura contábil ativa no backend.</p>
       </section>
 
       <section className="panel" style={{ marginTop: '24px' }}>
@@ -32,7 +30,7 @@ export function DreConfig({ client, organizationId }: { client: SupabaseClient; 
           A configuração dos períodos comparativos e o tratamento de contas patrimoniais seguem os padrões definidos na estrutura contábil da plataforma.
         </p>
         <p className="subtle">
-          <em>Nota: A persistência de preferências de apresentação do DRE depende da ativação de recursos de configuração institucional.</em>
+          <em>Nota: A persistência de preferências de apresentação do DRE depende de configuração institucional no backend.</em>
         </p>
       </section>
     </div>
