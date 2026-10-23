@@ -1,22 +1,68 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { vi } from 'vitest'
 import { Finance } from './Finance'
 
 type RecordRow = Record<string, unknown>
 type Result = { data: RecordRow[] | null; error: { message: string } | null }
-const row = (id = 'charge-1', extra: RecordRow = {}) => ({ charge_id: id, organization_id: 'org-a', description: `Mensalidade ${id}`, due_date: '2026-10-01', effective_amount: '150.10', open_amount: '50.10', is_cancelled: false, settlement_status: 'partially_paid', integrity_ok: true, ...extra })
+const row = (id = 'charge-1', extra: RecordRow = {}) => ({
+  charge_id: id,
+  organization_id: 'org-a',
+  description: `Mensalidade ${id}`,
+  due_date: '2026-10-01',
+  competence: '2026-10-01',
+  effective_amount: '150.10',
+  open_amount: '50.10',
+  is_cancelled: false,
+  settlement_status: 'partially_paid',
+  integrity_ok: true,
+  ...extra,
+})
 
 function mockClient(respond: (view: string, organization: string, from: number, to: number) => Promise<Result>) {
-  const requests: { view: string; organization: string; from: number; to: number; signal: AbortSignal }[] = []
+  const requests: {
+    view: string
+    organization: string
+    from: number
+    to: number
+    signal: AbortSignal
+    filters: { eq: Record<string, string>; gte: Record<string, string>; lte: Record<string, string> }
+  }[] = []
+
   const from = vi.fn((view: string) => {
     let organization = ''; let start = 0; let end = 0
+    const eqFilters: Record<string, string> = {}
+    const gteFilters: Record<string, string> = {}
+    const lteFilters: Record<string, string> = {}
+
     const chain = {
       select: (_: string) => chain,
-      eq: (_: string, id: string) => { organization = id; return chain },
+      eq: (col: string, val: string) => {
+        if (col === 'organization_id') organization = val
+        eqFilters[col] = val
+        return chain
+      },
+      gte: (col: string, val: string) => {
+        gteFilters[col] = val
+        return chain
+      },
+      lte: (col: string, val: string) => {
+        lteFilters[col] = val
+        return chain
+      },
       order: (_: string, __?: unknown) => chain,
       range: (a: number, b: number) => { start = a; end = b; return chain },
-      abortSignal: (signal: AbortSignal) => { requests.push({ view, organization, from: start, to: end, signal }); return respond(view, organization, start, end) },
+      abortSignal: (signal: AbortSignal) => {
+        requests.push({
+          view,
+          organization,
+          from: start,
+          to: end,
+          signal,
+          filters: { eq: { ...eqFilters }, gte: { ...gteFilters }, lte: { ...lteFilters } },
+        })
+        return respond(view, organization, start, end)
+      },
     }
     return chain
   })
@@ -29,11 +75,51 @@ describe('Financial consultation', () => {
     render(<Finance client={mock.client} organizationId="org-a" />)
     await screen.findByText('Mensalidade charge-1')
     expect(screen.getByText('01/10/2026')).toBeInTheDocument()
+    expect(screen.getByText('10/2026')).toBeInTheDocument()
     expect(screen.getByRole('cell', { name: /^R\$\s150,10$/ })).toBeInTheDocument()
     expect(screen.getByRole('cell', { name: /^R\$\s50,10$/ })).toBeInTheDocument()
     expect(screen.getByText('Parcialmente liquidada')).toBeInTheDocument()
     expect(mock.requests[0].organization).toBe('org-a')
     expect(screen.getByText(/não representam saldo de caixa/)).toBeInTheDocument()
+  })
+
+  it('filters by accounting competence without confusing it with due date', async () => {
+    const mock = mockClient(async () => ({ data: [row()], error: null }))
+    render(<Finance client={mock.client} organizationId="org-a" />)
+    await screen.findByText('Mensalidade charge-1')
+
+    const select = screen.getByLabelText('Filtrar por competência')
+    fireEvent.change(select, { target: { value: '2026-09' } })
+
+    await waitFor(() => {
+      const lastReq = mock.requests.at(-1)
+      expect(lastReq?.filters.eq.competence).toBe('2026-09-01')
+      expect(lastReq?.filters.gte.due_date).toBeUndefined()
+    })
+  })
+
+  it('filters by due date range and resets page index', async () => {
+    const mock = mockClient(async (_, __, start) => ({
+      data: start === 0 ? Array.from({ length: 26 }, (_, i) => row(`charge-${i}`)) : [row('p2')],
+      error: null,
+    }))
+    render(<Finance client={mock.client} organizationId="org-a" />)
+    await screen.findByText('Mensalidade charge-0')
+
+    // Go to next page
+    fireEvent.click(screen.getByRole('button', { name: 'Próxima' }))
+    await screen.findByText('Mensalidade p2')
+    expect(mock.requests.at(-1)?.from).toBe(25)
+
+    // Change start due date
+    const startInput = screen.getByLabelText('Data inicial de vencimento')
+    fireEvent.change(startInput, { target: { value: '2026-10-05' } })
+
+    await waitFor(() => {
+      const lastReq = mock.requests.at(-1)
+      expect(lastReq?.filters.gte.due_date).toBe('2026-10-05')
+      expect(lastReq?.from).toBe(0) // Reset to page 0
+    })
   })
 
   it('paginates with lookahead instead of displaying an incomplete global total', async () => {

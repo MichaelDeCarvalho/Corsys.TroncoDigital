@@ -71,4 +71,37 @@ describe('Member overdue report',()=>{
   await screen.findByRole('alert')
   expect(screen.queryByText('Nenhum integrante com cobrança vencida nesta página.')).not.toBeInTheDocument()
  })
+
+ it('renders 4 aging bucket cards with V35 attributes without inventing fake global sums',async()=>{
+  const {client}=fixture()
+  const {container}=render(<DelinquencyReport client={client} organizationId="org-a"/>)
+  await screen.findByText('Integrante DEV')
+
+  expect(container.querySelector('[data-delinquency-bucket="up30"]')).toBeInTheDocument()
+  expect(container.querySelector('[data-delinquency-bucket="31-60"]')).toBeInTheDocument()
+  expect(container.querySelector('[data-delinquency-bucket="61-90"]')).toBeInTheDocument()
+  expect(container.querySelector('[data-delinquency-bucket="over90"]')).toBeInTheDocument()
+
+  const unavailableNotices=screen.getAllByText('Indisponível (depende de RPC de agregação global no backend)')
+  expect(unavailableNotices).toHaveLength(4)
+ })
+
+ it('calculates days overdue and bucket per member and shows notice on bucket selection',async()=>{
+  const {client}=fixture()
+  const {container}=render(<DelinquencyReport client={client} organizationId="org-a"/>)
+  await screen.findByText('Integrante DEV')
+
+  // Set reference date to 2026-09-20 (oldest_due is 2026-09-10 => 10 days overdue => up30)
+  const dateInput=screen.getByLabelText('Data de referência para cálculo dos dias em atraso:')
+  fireEvent.change(dateInput,{target:{value:'2026-09-20'}})
+
+  await screen.findByText('10 dias')
+  expect(container.querySelector('tbody .pill')?.textContent).toBe('Até 30 dias')
+
+  // Click a bucket card
+  const up30Card=container.querySelector('[data-delinquency-bucket="up30"]')!
+  fireEvent.click(up30Card)
+
+  await screen.findByText(/O filtro por faixa no servidor depende de extensão na RPC/)
+ })
 })
