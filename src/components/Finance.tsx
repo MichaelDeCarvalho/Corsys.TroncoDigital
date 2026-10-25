@@ -20,6 +20,11 @@ import { BudgetReport } from './BudgetReport'
 import { BudgetManagement } from './BudgetManagement'
 import { BankReconciliation } from './BankReconciliation'
 import { DelinquencyReport } from './DelinquencyReport'
+import { ContasPagar } from './ContasPagar'
+import { ContasReceber } from './ContasReceber'
+import { Tesouraria } from './Tesouraria'
+import { FluxoCaixa } from './FluxoCaixa'
+import { DreView } from './DreView'
 import { FinanceIntegrityError, financeSources, formatCompetence, formatDate, formatMoney, loadFinancePage, type FinanceKind, type FinanceRow, type FinanceFilters } from '../lib/finance-data'
 
 const statusLabels: Record<string, string> = { open: 'Em aberto', paid: 'Liquidada', partially_paid: 'Parcialmente liquidada', cancelled: 'Cancelada', posted: 'Contabilizada', approved: 'Aprovada', pending: 'Pendente', missing_request: 'Aprovação não solicitada', not_required: 'Dispensada', rejected: 'Rejeitada' }
@@ -74,8 +79,12 @@ export function Finance({ client, organizationId }: { client: SupabaseClient; or
     <p className="subtle">Cobranças e obrigações são separadas dos pagamentos. Os valores em aberto não representam saldo de caixa.</p>
     {kind === 'memberPayments'
       ? <MemberPayments key={organizationId} client={client} organizationId={organizationId} />
+      : kind === 'payables'
+      ? <ContasPagar key={organizationId} client={client} organizationId={organizationId} />
+      : kind === 'receivables'
+      ? <ContasReceber key={organizationId} client={client} organizationId={organizationId} />
       : kind === 'dre'
-      ? <DreReport key={organizationId} client={client} organizationId={organizationId} />
+      ? <DreView key={organizationId} client={client} organizationId={organizationId} />
       : kind === 'institutional'
       ? <InstitutionalOperations key={organizationId} client={client} organizationId={organizationId} />
       : kind === 'institutionalMonthly'
@@ -97,13 +106,13 @@ export function Finance({ client, organizationId }: { client: SupabaseClient; or
       : kind === 'periods'
       ? <FinancialPeriods key={organizationId} client={client} organizationId={organizationId} />
       : kind === 'treasury'
-      ? <TreasuryBalances key={organizationId} client={client} organizationId={organizationId} />
+      ? <Tesouraria key={organizationId} client={client} organizationId={organizationId} />
       : kind === 'transfers'
       ? <AccountTransfers key={organizationId} client={client} organizationId={organizationId} />
       : kind === 'reconciliation'
       ? <BankReconciliation key={organizationId} client={client} organizationId={organizationId} />
       : kind === 'cashflow'
-      ? <DailyCashFlow key={organizationId} client={client} organizationId={organizationId} />
+      ? <FluxoCaixa key={organizationId} client={client} organizationId={organizationId} />
       : kind === 'budget'
       ? <BudgetReport key={organizationId} client={client} organizationId={organizationId} />
       : kind === 'budgetManagement'

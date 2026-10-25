@@ -12,6 +12,11 @@ import { Members } from './Members'
 import { Cadastros } from './Cadastros'
 import { Configuracoes } from './Configuracoes'
 import { DelinquencyReport } from './DelinquencyReport'
+import { ContasPagar } from './ContasPagar'
+import { ContasReceber } from './ContasReceber'
+import { Tesouraria } from './Tesouraria'
+import { FluxoCaixa } from './FluxoCaixa'
+import { DreView } from './DreView'
 import { loadOrganizations, loadTenantData, openTicket, type Organization, type TenantData } from '../lib/tenant-data'
 
 const statuses: Record<string, string> = { active: 'Ativo', inactive: 'Inativo', new: 'Novo', triage: 'Em triagem', working: 'Em atendimento', waiting_client: 'Aguardando retorno', resolved: 'Resolvido', closed: 'Fechado' }
@@ -77,6 +82,11 @@ function TenantPanel({ client, organization, page, onNavigate }: { client: Supab
   return <>
     {page === 'structure' && <PlanoContas key={organization.id} client={client} organizationId={organization.id} />}
     {page === 'dre-config' && <DreConfig key={organization.id} client={client} organizationId={organization.id} />}
+    {page === 'contas-pagar' && <ContasPagar key={organization.id} client={client} organizationId={organization.id} />}
+    {page === 'contas-receber' && <ContasReceber key={organization.id} client={client} organizationId={organization.id} />}
+    {page === 'tesouraria' && <Tesouraria key={organization.id} client={client} organizationId={organization.id} />}
+    {page === 'fluxo-caixa' && <FluxoCaixa key={organization.id} client={client} organizationId={organization.id} />}
+    {page === 'dre' && <DreView key={organization.id} client={client} organizationId={organization.id} />}
     {page === 'finance' && <Finance key={organization.id} client={client} organizationId={organization.id} />}
     {page === 'inadimplencia' && <DelinquencyReport key={organization.id} client={client} organizationId={organization.id} />}
     {page === 'cadastros' && <Cadastros members={data.members} client={client} organizationId={organization.id} onSaved={() => setRevision(v => v + 1)} onReload={() => setRevision(v => v + 1)} />}

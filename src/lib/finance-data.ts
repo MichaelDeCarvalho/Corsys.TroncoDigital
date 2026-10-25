@@ -15,6 +15,18 @@ export type FinanceFilters = {
   startDate?: string
   endDate?: string
 }
+export const statusLabels: Record<string, string> = {
+  open: 'Em aberto',
+  paid: 'Liquidada',
+  partially_paid: 'Parcialmente liquidada',
+  cancelled: 'Cancelada',
+  posted: 'Contabilizada',
+  approved: 'Aprovada',
+  pending: 'Pendente',
+  missing_request: 'Aprovação não solicitada',
+  not_required: 'Dispensada',
+  rejected: 'Rejeitada',
+}
 export const FINANCE_PAGE_SIZE = 25
 export const financeSources = {
   charges: { label: 'Cobranças de integrantes', view: 'v_charge_balances', id: 'charge_id', status: 'settlement_status' },

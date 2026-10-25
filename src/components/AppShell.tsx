@@ -1,13 +1,33 @@
 import { useState, type ReactNode } from 'react'
 import { Home, Users, Wallet, MessagesSquare, Settings, ShieldCheck, LogOut, Menu, X } from 'lucide-react'
 
-export type Page = 'home' | 'members' | 'cadastros' | 'finance' | 'inadimplencia' | 'structure' | 'dre-config' | 'support' | 'configuracoes' | 'master'
+export type Page =
+  | 'home'
+  | 'members'
+  | 'cadastros'
+  | 'contas-pagar'
+  | 'contas-receber'
+  | 'tesouraria'
+  | 'fluxo-caixa'
+  | 'dre'
+  | 'finance'
+  | 'inadimplencia'
+  | 'structure'
+  | 'dre-config'
+  | 'support'
+  | 'configuracoes'
+  | 'master'
 
 const pageTitles: Record<Page, string> = {
   home: 'Painel Geral',
   members: 'Integrantes',
   cadastros: 'Cadastros',
-  finance: 'Financeiro',
+  'contas-pagar': 'Contas a Pagar',
+  'contas-receber': 'Contas a Receber',
+  tesouraria: 'Tesouraria',
+  'fluxo-caixa': 'Fluxo de Caixa',
+  dre: 'DRE Contábil',
+  finance: 'Financeiro Geral',
   inadimplencia: 'Inadimplência',
   structure: 'Plano de Contas',
   'dre-config': 'Configurações DRE',
@@ -20,6 +40,11 @@ const navItems = [
   { id: 'home' as const, label: 'Início', Icon: Home },
   { id: 'members' as const, label: 'Integrantes', Icon: Users },
   { id: 'cadastros' as const, label: 'Cadastros', Icon: Users },
+  { id: 'contas-pagar' as const, label: 'Contas a Pagar', Icon: Wallet },
+  { id: 'contas-receber' as const, label: 'Contas a Receber', Icon: Wallet },
+  { id: 'tesouraria' as const, label: 'Tesouraria', Icon: Wallet },
+  { id: 'fluxo-caixa' as const, label: 'Fluxo de Caixa', Icon: Wallet },
+  { id: 'dre' as const, label: 'DRE Contábil', Icon: Wallet },
   { id: 'finance' as const, label: 'Financeiro', Icon: Wallet },
   { id: 'inadimplencia' as const, label: 'Inadimplência', Icon: Wallet },
   { id: 'structure' as const, label: 'Plano de Contas', Icon: Settings },
