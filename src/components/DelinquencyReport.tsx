@@ -8,6 +8,7 @@ import {
   calculateDaysOverdue,
   classifyMemberBucket,
   formatBucketLabel,
+  formatBucketRangeLabel,
   type DelinquencyBucketId,
 } from '../lib/delinquency-report'
 import { createDelinquencyCsv, loadDelinquencyExport } from '../lib/delinquency-export'
@@ -105,8 +106,34 @@ export function DelinquencyReport({ client, organizationId }: { client: Supabase
     }
   }
 
+  const pageBucketStats = AGING_BUCKETS.map(b => {
+    if (!result?.rows) return { count: 0, items: 0, amount: 0, valid: false }
+    let itemsSum = 0
+    let amountSum = 0
+    let rowCount = 0
+    let valid = true
+
+    for (const m of result.rows) {
+      const days = calculateDaysOverdue(m.oldest_due, referenceDate)
+      const bucketId = classifyMemberBucket(days)
+      if (bucketId === b.id) {
+        rowCount++
+        const items = Number(m.overdue_items)
+        const amt = Number(m.overdue_amount)
+        if (!Number.isInteger(items) || items < 1 || isNaN(amt) || amt <= 0) {
+          valid = false
+        } else {
+          itemsSum += items
+          amountSum += amt
+        }
+      }
+    }
+
+    return { count: rowCount, items: itemsSum, amount: amountSum, valid }
+  })
+
   return (
-    <section className="panel" aria-label="Relatório de inadimplência">
+    <section className="panel" aria-label="Relatório de inadimplência" id="delinquency-report-container">
       <div className="section-title">
         <h2>Inadimplência por integrante</h2>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -135,35 +162,52 @@ export function DelinquencyReport({ client, organizationId }: { client: Supabase
         aria-label="Faixas de atraso"
         style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', margin: '1rem 0' }}
       >
-        {AGING_BUCKETS.map(b => (
-          <div
-            key={b.id}
-            className="panel stat-card"
-            data-delinquency-bucket={b.id}
-            role="button"
-            tabIndex={0}
-            aria-pressed={selectedBucket === b.id}
-            onClick={() => setSelectedBucket(curr => curr === b.id ? null : b.id)}
-            style={{
-              padding: '0.75rem',
-              border: selectedBucket === b.id ? '2px solid var(--primary, #0284c7)' : '1px solid var(--border-color, #e5e7eb)',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              background: 'var(--card-bg, inherit)',
-            }}
-          >
-            <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.25rem' }}>{b.label}</div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--muted, #666)' }}>Total da faixa:</div>
-            <div style={{ fontSize: '0.82rem', fontWeight: 500, color: '#dc2626', marginTop: '0.25rem' }}>
-              Indisponível (depende de RPC de agregação global no backend)
+        {AGING_BUCKETS.map((b, idx) => {
+          const stats = pageBucketStats[idx]
+          return (
+            <div
+              key={b.id}
+              className="panel stat-card"
+              data-delinquency-bucket={b.id}
+              role="button"
+              tabIndex={0}
+              aria-pressed={selectedBucket === b.id}
+              onClick={() => setSelectedBucket(curr => curr === b.id ? null : b.id)}
+              style={{
+                padding: '0.75rem',
+                border: selectedBucket === b.id ? '2px solid var(--primary, #0284c7)' : '1px solid var(--border-color, #e5e7eb)',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                background: 'var(--card-bg, inherit)',
+              }}
+            >
+              <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>{b.label}</span>
+                <span className="pill" style={{ fontSize: '0.72rem', padding: '0.1rem 0.35rem' }}>{b.rangeLabel}</span>
+              </div>
+              
+              {result?.rows && stats.valid && stats.count > 0 ? (
+                <div style={{ fontSize: '0.75rem', color: 'var(--muted, #4b5563)', margin: '0.2rem 0' }}>
+                  Página: {stats.count} integrante(s) • {stats.items} cobr.
+                </div>
+              ) : result?.rows && !stats.valid ? (
+                <div style={{ fontSize: '0.75rem', color: '#dc2626', margin: '0.2rem 0' }}>
+                  Página: Indisponível
+                </div>
+              ) : null}
+
+              <div style={{ fontSize: '0.78rem', color: 'var(--muted, #666)' }}>Total da faixa:</div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 500, color: '#dc2626', marginTop: '0.15rem' }}>
+                Indisponível (depende de RPC de agregação global no backend)
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       {selectedBucket && (
         <p className="subtle" style={{ margin: '0.5rem 0 1rem', padding: '0.5rem', background: 'var(--highlight, #f3f4f6)', borderRadius: '4px' }}>
-          Faixa selecionada: <strong>{AGING_BUCKETS.find(b => b.id === selectedBucket)?.label}</strong>. O filtro por faixa no servidor depende de extensão na RPC <code>read_tenant_delinquency</code>; para evitar distorção estatística na página de 25 registros, a listagem geral ordenada por saldo devedor é exibida.
+          Faixa selecionada: <strong>{AGING_BUCKETS.find(b => b.id === selectedBucket)?.label} ({AGING_BUCKETS.find(b => b.id === selectedBucket)?.rangeLabel})</strong>. O filtro por faixa no servidor depende de extensão na RPC <code>read_tenant_delinquency</code>; para evitar distorção estatística na página de 25 registros, a listagem geral ordenada por saldo devedor é exibida.
         </p>
       )}
 

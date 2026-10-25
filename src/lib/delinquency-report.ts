@@ -27,10 +27,10 @@ export async function loadDelinquencyPage(client:SupabaseClient,org:string,page:
 }
 
 export const AGING_BUCKETS = [
-  { id: 'up30', label: 'Até 30 dias', min: 0, max: 30 },
-  { id: '31-60', label: '31 a 60 dias', min: 31, max: 60 },
-  { id: '61-90', label: '61 a 90 dias', min: 61, max: 90 },
-  { id: 'over90', label: 'Mais de 90 dias', min: 91, max: Infinity },
+  { id: 'up30', label: 'Até 30 dias', rangeLabel: '0-30 dias', min: 0, max: 30 },
+  { id: '31-60', label: '31 a 60 dias', rangeLabel: '31-60 dias', min: 31, max: 60 },
+  { id: '61-90', label: '61 a 90 dias', rangeLabel: '61-90 dias', min: 61, max: 90 },
+  { id: 'over90', label: 'Mais de 90 dias', rangeLabel: '>90 dias', min: 91, max: Infinity },
 ] as const
 
 export type DelinquencyBucketId = typeof AGING_BUCKETS[number]['id']
@@ -66,4 +66,10 @@ export function formatBucketLabel(bucketId: DelinquencyBucketId | null): string 
   if (!bucketId) return 'Em dia'
   const found = AGING_BUCKETS.find(b => b.id === bucketId)
   return found ? found.label : 'Indefinido'
+}
+
+export function formatBucketRangeLabel(bucketId: DelinquencyBucketId | null): string {
+  if (!bucketId) return '0 dias'
+  const found = AGING_BUCKETS.find(b => b.id === bucketId)
+  return found ? found.rangeLabel : 'Indefinido'
 }
