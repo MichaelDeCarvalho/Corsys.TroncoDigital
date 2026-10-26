@@ -22,16 +22,21 @@ export function ContasPagar({ client, organizationId }: { client: SupabaseClient
     setResult(null)
     setError('')
 
+    const mappedType = typeFilter === 'Fixa' ? 'fixed' : typeFilter === 'Variável' ? 'variable' : undefined
+    const mappedStatus = statusFilter === 'Pendente' ? 'pending' : statusFilter === 'Pago' ? 'paid' : statusFilter === 'Vencido' ? 'overdue' : undefined
+
     loadFinancePage(client, organizationId, 'payables', page, controller.signal, {
       competence: competence || undefined,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
+      expenseClassification: mappedType,
+      status: mappedStatus,
     })
       .then(data => { if (live) setResult(data) })
       .catch(() => { if (live) setError('Não foi possível carregar a lista de contas a pagar.') })
 
     return () => { live = false; controller.abort() }
-  }, [client, organizationId, page, competence, startDate, endDate])
+  }, [client, organizationId, page, competence, startDate, endDate, typeFilter, statusFilter])
 
   return (
     <div className="contas-pagar-view">
@@ -46,7 +51,7 @@ export function ContasPagar({ client, organizationId }: { client: SupabaseClient
         {/* KPIs */}
         <div className="metric-grid" style={{ margin: '1rem 0' }}>
           <article className="panel metric">
-            <p className="eyebrow">A pagar</p>
+            <p className="eyebrow">A pagar (nesta página)</p>
             <strong>
               {result ? (
                 (() => {
@@ -55,17 +60,17 @@ export function ContasPagar({ client, organizationId }: { client: SupabaseClient
                 })()
               ) : '…'}
             </strong>
-            <span className="subtle">Lançamentos abertos</span>
+            <span className="subtle">Somente página atual ({result?.rows.length ?? 0} carregados)</span>
           </article>
           <article className="panel metric">
             <p className="eyebrow">Aprovação</p>
-            <strong>Alinhada</strong>
-            <span className="subtle">Fila de alçada</span>
+            <strong>Fila de alçada</strong>
+            <span className="subtle">Verificação por políticas</span>
           </article>
           <article className="panel metric">
-            <p className="eyebrow">Fixas e Variáveis</p>
-            <strong>Classificadas</strong>
-            <span className="subtle">Competência e centro de custo</span>
+            <p className="eyebrow">Classificação</p>
+            <strong>Por tipo de despesa</strong>
+            <span className="subtle">Fixas e variáveis</span>
           </article>
         </div>
 
@@ -139,30 +144,37 @@ export function ContasPagar({ client, organizationId }: { client: SupabaseClient
         ) : !result.rows.length ? (
           <p className="empty">Nenhuma conta a pagar encontrada para os filtros selecionados.</p>
         ) : (
-          <div className="finance-table" role="region" aria-label="Resumo de contas a pagar" tabIndex={0}>
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Descrição</th>
-                  <th scope="col">Vencimento</th>
-                  <th scope="col">Valor efetivo</th>
-                  <th scope="col">Em aberto</th>
-                  <th scope="col">Situação</th>
-                </tr>
-              </thead>
-              <tbody>
-                {result.rows.map(row => (
-                  <tr key={row.id}>
-                    <th scope="row">{row.description}</th>
-                    <td>{formatDate(row.dueDate)}</td>
-                    <td>{formatMoney(row.amount)}</td>
-                    <td>{formatMoney(row.openAmount)}</td>
-                    <td><span className="pill">{statusLabels[row.status] ?? row.status}</span></td>
+          <>
+            <div className="finance-table" role="region" aria-label="Resumo de contas a pagar" tabIndex={0}>
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Descrição</th>
+                    <th scope="col">Vencimento</th>
+                    <th scope="col">Valor efetivo</th>
+                    <th scope="col">Em aberto</th>
+                    <th scope="col">Situação</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {result.rows.map(row => (
+                    <tr key={row.id}>
+                      <th scope="row">{row.description}</th>
+                      <td>{formatDate(row.dueDate)}</td>
+                      <td>{formatMoney(row.amount)}</td>
+                      <td>{formatMoney(row.openAmount)}</td>
+                      <td><span className="pill">{statusLabels[row.status] ?? row.status}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="finance-pagination" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', margin: '0.75rem 0' }}>
+              <button className="secondary" disabled={page === 0} onClick={() => setPage(p => Math.max(0, p - 1))}>Anterior</button>
+              <span role="status">Página {page + 1} ({result.rows.length} registros)</span>
+              <button className="secondary" disabled={!result.hasNext} onClick={() => setPage(p => p + 1)}>Próxima</button>
+            </div>
+          </>
         )}
       </section>
 

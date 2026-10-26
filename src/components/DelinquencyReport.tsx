@@ -188,11 +188,11 @@ export function DelinquencyReport({ client, organizationId }: { client: Supabase
               
               {result?.rows && stats.valid && stats.count > 0 ? (
                 <div style={{ fontSize: '0.75rem', color: 'var(--muted, #4b5563)', margin: '0.2rem 0' }}>
-                  Página: {stats.count} integrante(s) • {stats.items} cobr.
+                  Somente página atual: {stats.count} integrante(s) • {stats.items} cobr.
                 </div>
               ) : result?.rows && !stats.valid ? (
                 <div style={{ fontSize: '0.75rem', color: '#dc2626', margin: '0.2rem 0' }}>
-                  Página: Indisponível
+                  Somente página atual: Indisponível
                 </div>
               ) : null}
 
@@ -224,7 +224,7 @@ export function DelinquencyReport({ client, organizationId }: { client: Supabase
       </div>
 
       <p className="subtle" style={{ fontSize: '0.85rem', marginBottom: '1rem' }}>
-        A tendência histórica e os totais consolidados por faixa dependem de agregação global no servidor e não são derivados de páginas parciais.
+        A classificação por faixa é baseada no vencimento mais antigo (<code>oldest_due</code>) de cada integrante. A consulta <code>read_tenant_delinquency</code> utiliza a data atual do banco (<code>current_date</code>); a alteração da data de referência recalcula os dias em atraso na exibição local sem simular fotografias históricas passadas/futuras do banco.
       </p>
 
       {denied && <p className="subtle">Seu perfil não possui permissão para consultar a inadimplência da Loja.</p>}

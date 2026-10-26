@@ -10,27 +10,51 @@ export function ContasReceber({ client, organizationId }: { client: SupabaseClie
   const [originFilter, setOriginFilter] = useState<'all' | 'member' | 'institutional'>('all')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
-  const [page, setPage] = useState(0)
-  const [result, setResult] = useState<{ rows: FinanceRow[]; hasNext: boolean } | null>(null)
+  const [memberPage, setMemberPage] = useState(0)
+  const [institutionalPage, setInstitutionalPage] = useState(0)
+  const [memberResult, setMemberResult] = useState<{ rows: FinanceRow[]; hasNext: boolean } | null>(null)
+  const [institutionalResult, setInstitutionalResult] = useState<{ rows: FinanceRow[]; hasNext: boolean } | null>(null)
   const [error, setError] = useState('')
 
   useEffect(() => {
     const controller = new AbortController()
     let live = true
-    setResult(null)
     setError('')
 
-    const kind = originFilter === 'member' ? 'charges' : 'receivables'
-
-    loadFinancePage(client, organizationId, kind, page, controller.signal, {
+    const filterObj = {
       startDate: startDate || undefined,
       endDate: endDate || undefined,
+    }
+
+    const promises: Promise<void>[] = []
+
+    if (originFilter === 'all' || originFilter === 'member') {
+      promises.push(
+        loadFinancePage(client, organizationId, 'charges', memberPage, controller.signal, filterObj)
+          .then(data => { if (live) setMemberResult(data) })
+      )
+    } else {
+      setMemberResult(null)
+    }
+
+    if (originFilter === 'all' || originFilter === 'institutional') {
+      promises.push(
+        loadFinancePage(client, organizationId, 'receivables', institutionalPage, controller.signal, filterObj)
+          .then(data => { if (live) setInstitutionalResult(data) })
+      )
+    } else {
+      setInstitutionalResult(null)
+    }
+
+    Promise.all(promises).catch(() => {
+      if (live) setError('Não foi possível carregar as contas a receber.')
     })
-      .then(data => { if (live) setResult(data) })
-      .catch(() => { if (live) setError('Não foi possível carregar as contas a receber.') })
 
     return () => { live = false; controller.abort() }
-  }, [client, organizationId, page, originFilter, startDate, endDate])
+  }, [client, organizationId, memberPage, institutionalPage, originFilter, startDate, endDate])
+
+  const isLoading = (originFilter === 'all' || originFilter === 'member') && memberResult === null ||
+                    (originFilter === 'all' || originFilter === 'institutional') && institutionalResult === null
 
   return (
     <div className="contas-receber-view">
@@ -68,7 +92,11 @@ export function ContasReceber({ client, organizationId }: { client: SupabaseClie
             <select
               id="receivableOriginFilter"
               value={originFilter}
-              onChange={e => { setOriginFilter(e.target.value as 'all' | 'member' | 'institutional'); setPage(0) }}
+              onChange={e => {
+                setOriginFilter(e.target.value as 'all' | 'member' | 'institutional')
+                setMemberPage(0)
+                setInstitutionalPage(0)
+              }}
             >
               <option value="all">Todas as origens</option>
               <option value="member">Integrantes</option>
@@ -83,7 +111,7 @@ export function ContasReceber({ client, organizationId }: { client: SupabaseClie
               type="date"
               data-date-target="receivable-start"
               value={startDate}
-              onChange={e => { setStartDate(e.target.value); setPage(0) }}
+              onChange={e => { setStartDate(e.target.value); setMemberPage(0); setInstitutionalPage(0) }}
             />
           </div>
 
@@ -94,7 +122,7 @@ export function ContasReceber({ client, organizationId }: { client: SupabaseClie
               type="date"
               data-date-target="receivable-end"
               value={endDate}
-              onChange={e => { setEndDate(e.target.value); setPage(0) }}
+              onChange={e => { setEndDate(e.target.value); setMemberPage(0); setInstitutionalPage(0) }}
             />
           </div>
 
@@ -102,44 +130,107 @@ export function ContasReceber({ client, organizationId }: { client: SupabaseClie
             <button
               type="button"
               className="secondary"
-              onClick={() => { setOriginFilter('all'); setStartDate(''); setEndDate(''); setPage(0) }}
+              onClick={() => { setOriginFilter('all'); setStartDate(''); setEndDate(''); setMemberPage(0); setInstitutionalPage(0) }}
             >
               Limpar filtros
             </button>
           </div>
         </div>
 
-        {/* Table */}
+        {/* Tables */}
         {error ? (
           <p role="alert" className="message error">{error}</p>
-        ) : !result ? (
+        ) : isLoading ? (
           <p role="status">Consultando contas a receber…</p>
-        ) : !result.rows.length ? (
-          <p className="empty">Nenhum recebível encontrado para a consulta efetuada.</p>
         ) : (
-          <div className="finance-table" role="region" aria-label="Resumo de contas a receber" tabIndex={0}>
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Descrição</th>
-                  <th scope="col">Vencimento</th>
-                  <th scope="col">Valor previsto</th>
-                  <th scope="col">Em aberto</th>
-                  <th scope="col">Situação</th>
-                </tr>
-              </thead>
-              <tbody>
-                {result.rows.map(row => (
-                  <tr key={row.id}>
-                    <th scope="row">{row.description}</th>
-                    <td>{formatDate(row.dueDate)}</td>
-                    <td>{formatMoney(row.amount)}</td>
-                    <td>{formatMoney(row.openAmount)}</td>
-                    <td><span className="pill">{statusLabels[row.status] ?? row.status}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            {/* Member charges section */}
+            {(originFilter === 'all' || originFilter === 'member') && (
+              <div className="receivables-origin-section">
+                <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+                  Cobranças de Integrantes (v_charge_balances)
+                </h3>
+                {!memberResult || !memberResult.rows.length ? (
+                  <p className="empty">Nenhuma cobrança de integrante encontrada para a consulta efetuada.</p>
+                ) : (
+                  <>
+                    <div className="finance-table" role="region" aria-label="Cobranças de integrantes a receber" tabIndex={0}>
+                      <table>
+                        <thead>
+                          <tr>
+                            <th scope="col">Descrição</th>
+                            <th scope="col">Vencimento</th>
+                            <th scope="col">Valor previsto</th>
+                            <th scope="col">Em aberto</th>
+                            <th scope="col">Situação</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {memberResult.rows.map(row => (
+                            <tr key={row.id}>
+                              <th scope="row">{row.description}</th>
+                              <td>{formatDate(row.dueDate)}</td>
+                              <td>{formatMoney(row.amount)}</td>
+                              <td>{formatMoney(row.openAmount)}</td>
+                              <td><span className="pill">{statusLabels[row.status] ?? row.status}</span></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="finance-pagination" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', margin: '0.5rem 0' }}>
+                      <button className="secondary" disabled={memberPage === 0} onClick={() => setMemberPage(p => Math.max(0, p - 1))}>Anterior</button>
+                      <span role="status">Página {memberPage + 1} ({memberResult.rows.length} cobranças)</span>
+                      <button className="secondary" disabled={!memberResult.hasNext} onClick={() => setMemberPage(p => p + 1)}>Próxima</button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Institutional receivables section */}
+            {(originFilter === 'all' || originFilter === 'institutional') && (
+              <div className="receivables-origin-section">
+                <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+                  Títulos Institucionais a Receber (v_institutional_receivable_effective)
+                </h3>
+                {!institutionalResult || !institutionalResult.rows.length ? (
+                  <p className="empty">Nenhum título institucional a receber encontrado para a consulta efetuada.</p>
+                ) : (
+                  <>
+                    <div className="finance-table" role="region" aria-label="Títulos institucionais a receber" tabIndex={0}>
+                      <table>
+                        <thead>
+                          <tr>
+                            <th scope="col">Descrição</th>
+                            <th scope="col">Vencimento</th>
+                            <th scope="col">Valor previsto</th>
+                            <th scope="col">Em aberto</th>
+                            <th scope="col">Situação</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {institutionalResult.rows.map(row => (
+                            <tr key={row.id}>
+                              <th scope="row">{row.description}</th>
+                              <td>{formatDate(row.dueDate)}</td>
+                              <td>{formatMoney(row.amount)}</td>
+                              <td>{formatMoney(row.openAmount)}</td>
+                              <td><span className="pill">{statusLabels[row.status] ?? row.status}</span></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="finance-pagination" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', margin: '0.5rem 0' }}>
+                      <button className="secondary" disabled={institutionalPage === 0} onClick={() => setInstitutionalPage(p => Math.max(0, p - 1))}>Anterior</button>
+                      <span role="status">Página {institutionalPage + 1} ({institutionalResult.rows.length} títulos)</span>
+                      <button className="secondary" disabled={!institutionalResult.hasNext} onClick={() => setInstitutionalPage(p => p + 1)}>Próxima</button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         )}
       </section>

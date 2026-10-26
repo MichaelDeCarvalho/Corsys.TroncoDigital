@@ -142,7 +142,7 @@ describe('Financial consultation', () => {
     await screen.findByText('Energia')
     expect(screen.getByText('Aprovada')).toBeInTheDocument()
     fireEvent.click(within(screen.getByRole('group', { name: 'Consultas financeiras' })).getByRole('button', { name: 'Contas a receber' }))
-    await screen.findByText('Nenhum recebível encontrado para a consulta efetuada.')
+    await screen.findByText('Nenhum título institucional a receber encontrado para a consulta efetuada.')
     expect(mock.requests.at(-1)?.view).toBe('v_institutional_receivable_effective')
     expect(screen.queryByText('Energia')).not.toBeInTheDocument()
   })

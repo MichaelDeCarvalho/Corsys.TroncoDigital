@@ -4,40 +4,57 @@ import { vi } from 'vitest'
 import { ContasReceber } from './ContasReceber'
 
 function mockClient() {
-  const from = vi.fn().mockReturnValue({
-    select: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    gte: vi.fn().mockReturnThis(),
-    lte: vi.fn().mockReturnThis(),
-    order: vi.fn().mockReturnThis(),
-    range: vi.fn().mockReturnThis(),
-    limit: vi.fn().mockReturnThis(),
-    abortSignal: vi.fn().mockResolvedValue({
-      data: [
-        {
-          receivable_id: 'r1',
-          organization_id: 'org-1',
-          description: 'Doação Institucional',
-          due_date: '2026-10-20',
-          competence: '2026-10-01',
-          effective_amount: '500.00',
-          open_amount: '500.00',
-          integrity_ok: true,
-          is_canceled: false,
-        },
-      ],
-      error: null,
-    }),
+  const from = vi.fn().mockImplementation((table: string) => {
+    const isCharges = table === 'v_charge_balances'
+    return {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      gte: vi.fn().mockReturnThis(),
+      lte: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      range: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      abortSignal: vi.fn().mockResolvedValue({
+        data: [
+          isCharges
+            ? {
+                charge_id: 'c1',
+                organization_id: 'org-1',
+                description: 'Mensalidade de Outubro',
+                due_date: '2026-10-10',
+                competence: '2026-10-01',
+                effective_amount: '120.00',
+                open_amount: '120.00',
+                integrity_ok: true,
+                is_cancelled: false,
+                settlement_status: 'open',
+              }
+            : {
+                receivable_id: 'r1',
+                organization_id: 'org-1',
+                description: 'Doação Institucional',
+                due_date: '2026-10-20',
+                competence: '2026-10-01',
+                effective_amount: '500.00',
+                open_amount: '500.00',
+                integrity_ok: true,
+                is_canceled: false,
+              },
+        ],
+        error: null,
+      }),
+    }
   })
   const rpc = vi.fn().mockResolvedValue({ data: [], error: null })
   return { client: { from, rpc } as unknown as SupabaseClient }
 }
 
 describe('ContasReceber view', () => {
-  it('renders receivables overview and allows navigation across sub-tabs', async () => {
+  it('renders receivables overview displaying both origins when originFilter is all', async () => {
     const { client } = mockClient()
     render(<ContasReceber client={client} organizationId="org-1" />)
 
+    await screen.findByText('Mensalidade de Outubro')
     await screen.findByText('Doação Institucional')
     expect(screen.getByText('Sem misturar com caixa')).toBeInTheDocument()
 
@@ -46,5 +63,18 @@ describe('ContasReceber view', () => {
     fireEvent.click(paymentsTab)
 
     expect(paymentsTab).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('filters by origin when selecting Integrantes or Receitas Institucionais', async () => {
+    const { client } = mockClient()
+    render(<ContasReceber client={client} organizationId="org-1" />)
+
+    await screen.findByText('Mensalidade de Outubro')
+
+    const originSelect = screen.getByLabelText('Origem dos recebíveis')
+    fireEvent.change(originSelect, { target: { value: 'member' } })
+
+    await screen.findByText('Mensalidade de Outubro')
+    expect(screen.queryByText('Doação Institucional')).not.toBeInTheDocument()
   })
 })

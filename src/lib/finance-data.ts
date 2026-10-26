@@ -14,6 +14,8 @@ export type FinanceFilters = {
   competence?: string
   startDate?: string
   endDate?: string
+  expenseClassification?: string
+  status?: string
 }
 export const statusLabels: Record<string, string> = {
   open: 'Em aberto',
@@ -54,8 +56,23 @@ export async function loadFinancePage(
   if (!Number.isSafeInteger(page) || page < 0) throw new Error('Invalid page')
   const source = financeSources[kind]
   const cancellation = kind === 'charges' ? 'is_cancelled' : 'is_canceled'
-  const fields = [...new Set([source.id, 'organization_id', 'description', 'competence', 'due_date', 'effective_amount', 'open_amount', 'integrity_ok', cancellation, source.status])].join(',')
+  const fields = [...new Set([source.id, 'organization_id', 'description', 'competence', 'due_date', 'effective_amount', 'open_amount', 'integrity_ok', cancellation, source.status, ...(kind === 'payables' ? ['expense_classification'] : [])])].join(',')
   let query = client.from(source.view).select(fields).eq('organization_id', organizationId)
+
+  if (filters?.expenseClassification && kind === 'payables') {
+    query = query.eq('expense_classification', filters.expenseClassification)
+  }
+
+  if (filters?.status) {
+    const todayIso = new Date().toISOString().slice(0, 10)
+    if (filters.status === 'pending') {
+      query = query.gt('open_amount', 0).eq(cancellation, false)
+    } else if (filters.status === 'paid') {
+      query = query.eq('open_amount', 0).eq(cancellation, false)
+    } else if (filters.status === 'overdue') {
+      query = query.gt('open_amount', 0).eq(cancellation, false).lt('due_date', todayIso)
+    }
+  }
 
   if (filters?.competence) {
     if (!/^\d{4}-\d{2}$/.test(filters.competence)) {

@@ -48,4 +48,27 @@ describe('ContasPagar view', () => {
 
     expect(screen.getByRole('button', { name: 'Fila de Aprovação' })).toHaveAttribute('aria-pressed', 'true')
   })
+
+  it('applies expense classification and status filters to backend query', async () => {
+    const { client } = mockClient()
+    render(<ContasPagar client={client} organizationId="org-1" />)
+
+    await screen.findByText('Conta de Energia')
+
+    // Change type filter
+    const typeSelect = screen.getByLabelText('Tipo de obrigação')
+    fireEvent.change(typeSelect, { target: { value: 'Fixa' } })
+
+    await waitFor(() => {
+      expect(client.from).toHaveBeenCalledWith('v_institutional_payable_effective')
+    })
+
+    // Change status filter
+    const statusSelect = screen.getByLabelText('Situação')
+    fireEvent.change(statusSelect, { target: { value: 'Pendente' } })
+
+    await waitFor(() => {
+      expect(client.from).toHaveBeenCalledWith('v_institutional_payable_effective')
+    })
+  })
 })

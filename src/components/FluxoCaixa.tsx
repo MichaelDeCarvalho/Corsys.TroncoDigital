@@ -63,7 +63,7 @@ export function FluxoCaixa({ client, organizationId }: { client: SupabaseClient;
       </section>
 
       {/* Embed DailyCashFlow */}
-      <DailyCashFlow key={`${organizationId}:${mode}`} client={client} organizationId={organizationId} />
+      <DailyCashFlow key={`${organizationId}:${mode}`} client={client} organizationId={organizationId} viewMode={mode} />
     </div>
   )
 }
