@@ -77,4 +77,23 @@ describe('ContasReceber view', () => {
     await screen.findByText('Mensalidade de Outubro')
     expect(screen.queryByText('Doação Institucional')).not.toBeInTheDocument()
   })
+
+  it('renders error message when query fails', async () => {
+    const from = vi.fn().mockImplementation(() => ({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      gte: vi.fn().mockReturnThis(),
+      lte: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      range: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      abortSignal: vi.fn().mockRejectedValue(new Error('Network error')),
+    }))
+    const failClient = { from, rpc: vi.fn() } as unknown as SupabaseClient
+
+    render(<ContasReceber client={failClient} organizationId="org-1" />)
+
+    await screen.findByText('Não foi possível carregar as contas a receber.')
+    expect(screen.getByText('Não foi possível carregar as contas a receber.')).toBeInTheDocument()
+  })
 })

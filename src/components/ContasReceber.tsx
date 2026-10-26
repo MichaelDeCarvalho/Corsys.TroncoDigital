@@ -20,6 +20,8 @@ export function ContasReceber({ client, organizationId }: { client: SupabaseClie
     const controller = new AbortController()
     let live = true
     setError('')
+    setMemberResult(null)
+    setInstitutionalResult(null)
 
     const filterObj = {
       startDate: startDate || undefined,
@@ -33,8 +35,6 @@ export function ContasReceber({ client, organizationId }: { client: SupabaseClie
         loadFinancePage(client, organizationId, 'charges', memberPage, controller.signal, filterObj)
           .then(data => { if (live) setMemberResult(data) })
       )
-    } else {
-      setMemberResult(null)
     }
 
     if (originFilter === 'all' || originFilter === 'institutional') {
@@ -42,8 +42,6 @@ export function ContasReceber({ client, organizationId }: { client: SupabaseClie
         loadFinancePage(client, organizationId, 'receivables', institutionalPage, controller.signal, filterObj)
           .then(data => { if (live) setInstitutionalResult(data) })
       )
-    } else {
-      setInstitutionalResult(null)
     }
 
     Promise.all(promises).catch(() => {

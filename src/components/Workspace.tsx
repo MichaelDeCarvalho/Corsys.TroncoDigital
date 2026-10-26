@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { Users, MessagesSquare, Building2, ArrowUpRight, RefreshCw } from 'lucide-react'
+import { Users, MessagesSquare, Building2, ArrowUpRight, RefreshCw, Wallet, FileText, AlertTriangle, TrendingUp } from 'lucide-react'
 import type { SupabaseClient, User } from '@supabase/supabase-js'
 import { AppShell, type Page } from './AppShell'
 import { Finance } from './Finance'
@@ -17,6 +17,8 @@ import { ContasReceber } from './ContasReceber'
 import { Tesouraria } from './Tesouraria'
 import { FluxoCaixa } from './FluxoCaixa'
 import { DreView } from './DreView'
+import { Relatorios } from './Relatorios'
+import { DailyCashFlow } from './DailyCashFlow'
 import { loadOrganizations, loadTenantData, openTicket, type Organization, type TenantData } from '../lib/tenant-data'
 
 const statuses: Record<string, string> = { active: 'Ativo', inactive: 'Inativo', new: 'Novo', triage: 'Em triagem', working: 'Em atendimento', waiting_client: 'Aguardando retorno', resolved: 'Resolvido', closed: 'Fechado' }
@@ -52,7 +54,7 @@ export function Workspace({ client, user, onSignOut }: { client: SupabaseClient;
   }, [client, user, retry])
   const organization = organizations.find(row => row.id === selected)
   return <div inert={scopeChecking||undefined} aria-busy={scopeChecking||undefined}><AppShell page={page} showMaster={masterAvailable} onNavigate={setPage} onSignOut={onSignOut} email={user.email ?? 'Minha conta'}>
-    <section className="workspace-heading"><div><p className="eyebrow">Área da Loja</p><h1>{page === 'home' ? 'Visão geral' : page === 'members' ? 'Integrantes' : page === 'cadastros' ? 'Cadastros' : page === 'finance' ? 'Financeiro' : page === 'structure' ? 'Plano de Contas' : page === 'dre-config' ? 'Configurações DRE' : page === 'configuracoes' ? 'Configurações' : page === 'master' ? 'Master SaaS' : 'Atendimento'}</h1><p className="subtle">Acompanhe as informações da sua organização.</p></div>
+    <section className="workspace-heading"><div><p className="eyebrow">Área da Loja</p><h1>{page === 'home' ? 'Visão geral' : page === 'members' ? 'Integrantes' : page === 'cadastros' ? 'Cadastros' : page === 'finance' ? 'Financeiro' : page === 'structure' ? 'Plano de Contas' : page === 'dre-config' ? 'Configurações DRE' : page === 'configuracoes' ? 'Configurações' : page === 'relatorios' ? 'Relatórios Gerenciais' : page === 'master' ? 'Master SaaS' : 'Atendimento'}</h1><p className="subtle">Acompanhe as informações da sua organização.</p></div>
       {page !== 'master' && !!organizations.length && <div className="org-selector"><label htmlFor="organization">Loja</label><select id="organization" value={selected} onChange={e => setSelected(e.target.value)}>{organizations.map(row => <option key={row.id} value={row.id}>{row.name}</option>)}</select></div>}
     </section>
     {page === 'master' ? (
@@ -89,12 +91,58 @@ function TenantPanel({ client, organization, page, onNavigate }: { client: Supab
     {page === 'dre' && <DreView key={organization.id} client={client} organizationId={organization.id} />}
     {page === 'finance' && <Finance key={organization.id} client={client} organizationId={organization.id} />}
     {page === 'inadimplencia' && <DelinquencyReport key={organization.id} client={client} organizationId={organization.id} />}
+    {page === 'relatorios' && <Relatorios key={organization.id} client={client} organizationId={organization.id} />}
     {page === 'cadastros' && <Cadastros members={data.members} client={client} organizationId={organization.id} onSaved={() => setRevision(v => v + 1)} onReload={() => setRevision(v => v + 1)} />}
     {page === 'configuracoes' && <Configuracoes client={client} organizationId={organization.id} />}
     {sent && page === 'support' && <p role="status" className="message">Chamado enviado. A lista foi atualizada.</p>}
     {page === 'home' && <>
-      <section className="hero-card"><div><span className="pill">{organization.status === 'active' ? 'Loja ativa' : 'Loja inativa'}</span><h2>{organization.name}</h2><p>Um espaço para cuidar da sua Loja, dos seus integrantes e do seu atendimento.</p></div><Building2 size={58} strokeWidth={1.2} aria-hidden="true" /></section>
+      <section className="hero-card"><div><span className="pill">{organization.status === 'active' ? 'Loja ativa' : 'Loja inativa'}</span><h2>{organization.name}</h2><p>Painel Gerencial de Tesouraria e Acompanhamento Integrado.</p></div><Building2 size={58} strokeWidth={1.2} aria-hidden="true" /></section>
+      
+      {/* 6 Financial KPIs from RPC */}
       <FinancialDashboard client={client} organizationId={organization.id} />
+
+      {/* Quick Action Shortcuts */}
+      <section className="panel" aria-label="Ações rápidas da Tesouraria">
+        <div className="section-title">
+          <h2>Atalhos e Ações Rápidas</h2>
+        </div>
+        <div className="metric-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
+          <button type="button" className="panel metric" style={{ textAlign: 'left', cursor: 'pointer' }} onClick={() => onNavigate('contas-pagar')}>
+            <Wallet size={20} aria-hidden="true" style={{ color: 'var(--primary-color, #1e3a8a)' }} />
+            <strong style={{ fontSize: '0.95rem', marginTop: '0.25rem', display: 'block' }}>Contas a Pagar</strong>
+            <span className="subtle">Gestão e aprovações</span>
+          </button>
+          <button type="button" className="panel metric" style={{ textAlign: 'left', cursor: 'pointer' }} onClick={() => onNavigate('contas-receber')}>
+            <Wallet size={20} aria-hidden="true" style={{ color: 'var(--primary-color, #1e3a8a)' }} />
+            <strong style={{ fontSize: '0.95rem', marginTop: '0.25rem', display: 'block' }}>Contas a Receber</strong>
+            <span className="subtle">Integrantes e receitas</span>
+          </button>
+          <button type="button" className="panel metric" style={{ textAlign: 'left', cursor: 'pointer' }} onClick={() => onNavigate('tesouraria')}>
+            <TrendingUp size={20} aria-hidden="true" style={{ color: 'var(--primary-color, #1e3a8a)' }} />
+            <strong style={{ fontSize: '0.95rem', marginTop: '0.25rem', display: 'block' }}>Tesouraria & Bancos</strong>
+            <span className="subtle">Saldos e conciliação</span>
+          </button>
+          <button type="button" className="panel metric" style={{ textAlign: 'left', cursor: 'pointer' }} onClick={() => onNavigate('fluxo-caixa')}>
+            <TrendingUp size={20} aria-hidden="true" style={{ color: 'var(--primary-color, #1e3a8a)' }} />
+            <strong style={{ fontSize: '0.95rem', marginTop: '0.25rem', display: 'block' }}>Fluxo de Caixa</strong>
+            <span className="subtle">Movimentações diárias</span>
+          </button>
+          <button type="button" className="panel metric" style={{ textAlign: 'left', cursor: 'pointer' }} onClick={() => onNavigate('inadimplencia')}>
+            <AlertTriangle size={20} aria-hidden="true" style={{ color: 'var(--primary-color, #1e3a8a)' }} />
+            <strong style={{ fontSize: '0.95rem', marginTop: '0.25rem', display: 'block' }}>Inadimplência</strong>
+            <span className="subtle">Faixas de atraso</span>
+          </button>
+          <button type="button" className="panel metric" style={{ textAlign: 'left', cursor: 'pointer' }} onClick={() => onNavigate('relatorios')}>
+            <FileText size={20} aria-hidden="true" style={{ color: 'var(--primary-color, #1e3a8a)' }} />
+            <strong style={{ fontSize: '0.95rem', marginTop: '0.25rem', display: 'block' }}>Relatórios</strong>
+            <span className="subtle">Demonstrativos V35</span>
+          </button>
+        </div>
+      </section>
+
+      {/* Daily Cash Flow Section */}
+      <DailyCashFlow client={client} organizationId={organization.id} />
+
       <div className="metric-grid"><article className="panel metric"><Users size={23} aria-hidden="true" /><p>Integrantes carregados</p><strong>{data.members.length}</strong><button className="text-button" onClick={() => onNavigate('members')}>Ver integrantes <ArrowUpRight size={16} aria-hidden="true" /></button></article><article className="panel metric"><MessagesSquare size={23} aria-hidden="true" /><p>Chamados abertos carregados</p><strong>{open.length}</strong><button className="text-button" onClick={() => onNavigate('support')}>Acompanhar chamados <ArrowUpRight size={16} aria-hidden="true" /></button></article><article className="panel info-card"><p className="eyebrow">Atendimento</p><h3>Precisa de ajuda?</h3><p>Abra um chamado para acompanhar sua solicitação junto ao suporte.</p><button className="secondary" onClick={() => onNavigate('support')}>Ir para atendimento</button></article></div>
       <section className="panel"><div className="section-title"><h2>Integrantes da Loja</h2><button className="text-button" onClick={() => onNavigate('members')}>Ver lista</button></div><MemberList members={data.members.slice(0, 5)} /></section>
     </>}

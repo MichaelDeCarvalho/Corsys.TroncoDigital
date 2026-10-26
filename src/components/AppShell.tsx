@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { Home, Users, Wallet, MessagesSquare, Settings, ShieldCheck, LogOut, Menu, X } from 'lucide-react'
+import { Home, Users, Wallet, MessagesSquare, Settings, ShieldCheck, LogOut, Menu, X, FileText } from 'lucide-react'
 
 export type Page =
   | 'home'
@@ -12,6 +12,7 @@ export type Page =
   | 'dre'
   | 'finance'
   | 'inadimplencia'
+  | 'relatorios'
   | 'structure'
   | 'dre-config'
   | 'support'
@@ -29,6 +30,7 @@ const pageTitles: Record<Page, string> = {
   dre: 'DRE Contábil',
   finance: 'Financeiro Geral',
   inadimplencia: 'Inadimplência',
+  relatorios: 'Relatórios Gerenciais',
   structure: 'Plano de Contas',
   'dre-config': 'Configurações DRE',
   support: 'Chamados',
@@ -47,6 +49,7 @@ const navItems = [
   { id: 'dre' as const, label: 'DRE Contábil', Icon: Wallet },
   { id: 'finance' as const, label: 'Financeiro', Icon: Wallet },
   { id: 'inadimplencia' as const, label: 'Inadimplência', Icon: Wallet },
+  { id: 'relatorios' as const, label: 'Relatórios', Icon: FileText },
   { id: 'structure' as const, label: 'Plano de Contas', Icon: Settings },
   { id: 'dre-config' as const, label: 'Config. DRE', Icon: Settings },
   { id: 'support' as const, label: 'Chamados', Icon: MessagesSquare },
