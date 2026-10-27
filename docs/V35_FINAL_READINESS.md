@@ -1,94 +1,177 @@
-# CORSYS TRONCO DIGITAL V35 — RELATÓRIO FINAL DE PRONTIDÃO E HOMOLOGAÇÃO DEV
+# CORSYS TRONCO DIGITAL V35 — RELATÓRIO FINAL DE PRONTIDÃO E GATE DE EVIDÊNCIAS DEV
 
 **Documento:** `docs/V35_FINAL_READINESS.md`  
 **Data:** 27 de Outubro de 2026  
-**Ambiente:** Homologação DEV / Supabase Local & Vite SPA  
-**Commit-Base:** `9efc424` / `HEAD`  
-**Escopo:** Estabilização Final, Gate de Qualidade e Matriz das 21 Telas da V35
+**Ambiente:** Homologação DEV / Supabase Sandbox & Vite SPA  
+**Commit-Base Verificado:** `e63f3c7` / `HEAD`  
+**Escopo:** Gate Final de Evidências, Correções Pontuais e Prontidão para Piloto Supervisionado
 
 ---
 
 ## 1. RESUMO EXECUTIVO
 
-A versão V35 do Corsys Tronco Digital consolida a entrega arquitetural dos seis lotes funcionais da plataforma:
-1. **Lote 1:** Fundação, Autenticação, RBAC, Isolamento Multi-tenant e Gestão de Integrantes.
-2. **Lote 2:** Plano de Contas Institucional, Cadastros Gerais e Configuração Contábil da DRE.
-3. **Lote 3:** Tesouraria Integrada (Saldos, Transferências, Conciliação Bancária, Contas a Pagar com Aprovação, Contas a Receber, Fluxo de Caixa Diário e DRE Dinâmica).
-4. **Lote 4:** Dashboard Geral da Tesouraria e Relatórios Gerenciais com Integridade Financeira Autoritativa.
-5. **Lote 5:** Atendimento da Loja (`view-chamados`) com tratamento de incerteza de rede e integridade de mensagens.
-6. **Lote 6:** Console Master SaaS com 6 visões segregadas (`view-master`, `view-master-clientes`, `view-master-cobranca`, `view-master-planos`, `view-master-operacao`, `view-master-config`) com proteção AAL2/MFA e separação rigorosa entre consultas sob demanda e operações de escrita autorizadas.
+O presente relatório consolida a auditoria final da versão V35 do Corsys Tronco Digital após as correções pontuais do Comando 11. Todas as 21 telas do sistema foram mapeadas diretamente contra os arquivos fonte do repositório, componentes de renderização (`Workspace.tsx` e `MasterConsole.tsx`), fontes de dados e testes existentes.
 
-O Quality Gate da suíte completa registrou **100% de aprovação** nos testes automatizados, typecheck sem erros e compilação do bundle de produção verificada.
+Foi corrigido o defeito do formulário de suporte da Loja (`Chamados.tsx`), que passará a **bloquear efetivamente o reenvio** em estado incerto de rede, preservando o rascunho do usuário e oferecendo reconciliação ativa contra o servidor ou liberação explícita de rascunho.
+
+Não foram assumidas afirmações hipotéticas de vulnerabilidade de segredos, esclarecendo que a tabela `saas_platform_configuration` armazena unicamente os estados públicos dos provedores (`billing_provider_status`, `email_provider_status`, `fiscal_provider_status`).
 
 ---
 
 ## 2. MATRIZ DE PRONTIDÃO DAS 21 TELAS DA V35
 
-Abaixo apresenta-se a avaliação objetiva e individual de cada uma das 21 telas previstas na arquitetura V35:
+A classificação distingue rigorosamente **APTO PARA TESTE DEV**, **PARCIAL**, **BLOQUEADO** e **NÃO AVALIADO**, desassociada do status de **APTO PARA PRODUÇÃO** (que exige homologação com dados e gateways reais de produção).
 
-| # | ID da Tela | Nome da Tela | Componente Principal | Contrato Real (Tabelas / RPCs / Views) | Testes Automatizados | Status de Prontidão | Justificativa / Dependências |
-|---|---|---|---|---|---|---|---|
-| **01** | `view-master` | Visão Executiva Master SaaS | `MasterDashboard.tsx` | `v_saas_executive_kpis`, `v_saas_mrr_trends` | `MasterDashboard.test.tsx`, `MasterConsole.test.tsx` | **APTO** | Métricas consolidadas via views agregadas com RLS Master e AAL2. |
-| **02** | `view-master-clientes` | Gestão de Assinantes (Tenants) | `MasterTenants.tsx` | `saas_tenants`, `saas_subscriptions`, `rpc/change_tenant_status` | `MasterTenants.test.tsx`, `MasterConsole.test.tsx` | **APTO** | Listagem, filtros, suspensão/reativação auditadas com isolamento estrito. |
-| **03** | `view-master-cobranca` | Faturamento SaaS e Inadimplência | `MasterBilling.tsx` | `saas_invoices`, `saas_dunning_events`, `v_saas_overdue_invoices` | `MasterBilling.test.tsx`, `MasterConsole.test.tsx` | **PARCIAL** | Operação e visualização prontas; emissão de boletos reais depende de gateway de produção (P1). |
-| **04** | `view-master-planos` | Catálogo de Planos e Ofertas | `MasterPlans.tsx` | `saas_plans`, `saas_plan_offers`, `rpc/save_saas_plan` | `MasterPlans.test.tsx`, `MasterConsole.test.tsx` | **APTO** | Cadastro e edição de planos/ofertas com paridade visual V35 e validações de preço/ciclo. |
-| **05** | `view-master-operacao` | Operação Master, Chamados e Jobs | `MasterOperations.tsx` | `saas_support_tickets`, `saas_jobs`, `rpc/reply_master_tenant_support_idempotent` | `MasterOperations.test.tsx`, `MasterConsole.test.tsx` | **PARCIAL** | Atendimento Master funcional com resposta auditada; consulta de jobs sob demanda; sessões temporárias informativas (ADR 001). |
-| **06** | `view-master-config` | Configurações Globais da Plataforma | `MasterPlatformConfig.tsx` | `saas_platform_config`, `rpc/update_saas_platform_config` | `MasterPlatformConfig.test.tsx`, `MasterConsole.test.tsx` | **APTO** | Parâmetros de tolerância, dunning, suporte e integrações com escrita auditada em `saas_platform_config`. |
-| **07** | `view-dashboard` | Painel Geral da Tesouraria | `Dashboard.tsx` | `rpc/read_tenant_financial_dashboard`, `v_treasury_balances` | `Dashboard.test.tsx`, `App.test.tsx` | **APTO** | Indicadores financeiros consolidados autoritativos sem dados fictícios. |
-| **08** | `view-integrantes` | Integrantes e Associações | `Members.tsx` | `members`, `member_associations`, `rpc/upsert_member` | `Members.test.tsx`, `App.test.tsx` | **APTO** | Gestão de membros, filtros, histórico e controle por organização. |
-| **09** | `view-financeiro` | Visão Financeira Integrada | `Financial.tsx` | `v_financial_entries`, `financial_transactions` | `Financial.test.tsx`, `App.test.tsx` | **APTO** | Lançamentos de receitas e despesas com categorização e vínculo contábil. |
-| **10** | `view-inadimplencia` | Relatório de Inadimplência | `DelinquencyReport.tsx` | `rpc/read_tenant_delinquency` | `DelinquencyReport.test.tsx`, `App.test.tsx` | **APTO** | Faixas de atraso (0-30, 31-60, 61-90, >90) calculadas com tratamento fail-safe de campos indisponíveis. |
-| **11** | `view-tesouraria` | Saldo de Contas e Conciliação | `Tesouraria.tsx`, `TreasuryBalances.tsx`, `BankReconciliation.tsx` | `v_treasury_balances`, `bank_reconciliation_batches`, `account_transfers` | `Tesouraria.test.tsx`, `TreasuryBalances.test.tsx`, `BankReconciliation.test.tsx` | **APTO** | Posições bancárias em tempo real, transferências e conciliação de extrato. |
-| **12** | `view-fluxo-caixa` | Fluxo de Caixa Diário | `DailyCashFlow.tsx` | `rpc/read_tenant_daily_cash_flow` | `DailyCashFlow.test.tsx`, `App.test.tsx` | **APTO** | Projeção e consolidação diária de entradas, saídas e saldos acumulados. |
-| **13** | `view-contas-pagar` | Contas a Pagar e Aprovações | `ContasPagar.tsx`, `InstitutionalOperations.tsx`, `PayableApprovals.tsx` | `v_institutional_payable_effective`, `payable_approvals`, `approval_policies` | `ContasPagar.test.tsx`, `InstitutionalOperations.test.tsx`, `PayableApprovals.test.tsx` | **APTO** | Workflow completo com filtros efetivos contábeis (`fixed`, `variable`), aprovação multinível e liquidação. |
-| **14** | `view-contas-receber` | Contas a Receber e Cobranças | `ContasReceber.tsx` | `v_charge_distribution_effective`, `charges`, `v_payment_balances` | `ContasReceber.test.tsx`, `App.test.tsx` | **APTO** | Consultas independentes por origem (membros, eventos, avulsos), paginação e isolamento de erros. |
-| **15** | `view-dre` | DRE — Demonstrativo Contábil | `DreReport.tsx` | `rpc/read_tenant_dre_statement`, `dre_structure_accounts` | `DreReport.test.tsx`, `App.test.tsx` | **APTO** | Estrutura vertical hierárquica por competência contábil com detalhamento analítico. |
-| **16** | `view-plano-contas` | Plano de Contas Institucional | `PlanoContas.tsx`, `ChartOfAccounts.tsx` | `chart_of_accounts`, `account_categories` | `PlanoContas.test.tsx`, `App.test.tsx` | **APTO** | Árvore sintética/analítica, bloqueio de contas com movimento e isolamento tenant. |
-| **17** | `view-config-dre` | Configuração da Estrutura da DRE | `ConfigDre.tsx`, `DreMappingConfig.tsx` | `dre_structure_accounts`, `chart_of_accounts` | `ConfigDre.test.tsx`, `App.test.tsx` | **APTO** | Mapeamento de grupos de receitas, custos e despesas para as contas do plano. |
-| **18** | `view-relatorios` | Relatórios Gerenciais | `Relatorios.tsx` | `v_payment_balances`, `v_charge_distribution_effective`, `rpc/read_tenant_financial_dashboard` | `Relatorios.test.tsx`, `App.test.tsx` | **APTO** | 5 modalidades de relatórios sem limites arbitrários e com indicação explícita de cobertura amostral. |
-| **19** | `view-cadastros` | Cadastros Gerais da Loja | `Cadastros.tsx`, `CostCenters.tsx`, `Suppliers.tsx` | `cost_centers`, `suppliers`, `expense_categories` | `Cadastros.test.tsx`, `App.test.tsx` | **APTO** | Manutenção de centros de custo, fornecedores com validação de documento e categorias. |
-| **20** | `view-configuracoes` | Configurações da Loja e Políticas | `Configuracoes.tsx`, `ApprovalPolicies.tsx` | `tenant_settings`, `approval_policies` | `Configuracoes.test.tsx`, `App.test.tsx` | **APTO** | Parâmetros de aprovação por faixa de valor e configurações organizacionais. |
-| **21** | `view-chamados` | Atendimento da Loja e Suporte | `Chamados.tsx` | `saas_support_tickets`, `saas_support_ticket_messages`, `rpc/create_saas_support_ticket`, `rpc/reply_saas_support_ticket` | `Chamados.test.tsx`, `App.test.tsx` | **PARCIAL** | Interface com guarda contra duplicidade, retenção de texto em erro de rede e ordenação determinística; pendente chave de idempotência server-side (P0). |
+| # | ID da Tela | Nome da Tela | Componente Real (`src/components/`) | Fonte de Dados Efetiva | Testes Existentes | Status de Prontidão |
+|---|---|---|---|---|---|---|
+| **01** | `view-master` | Painel Master SaaS | `MasterConsole.tsx` (`tab === 'overview'`) | `v_saas_executive_kpis`, `v_saas_mrr_trends`, `saas_tenants` via `src/lib/master-console.ts` | `MasterConsole.test.tsx` | **APTO PARA TESTE DEV** |
+| **02** | `view-master-clientes` | Clientes SaaS | `MasterConsole.tsx` (`tab === 'clients'`), `MasterClient360.tsx`, `MasterOnboarding.tsx` | `saas_tenants`, `saas_subscriptions`, `rpc/change_tenant_status` | `MasterConsole.test.tsx`, `MasterClient360.test.tsx` | **APTO PARA TESTE DEV** |
+| **03** | `view-master-cobranca` | Cobrança SaaS | `MasterBilling.tsx` | `saas_invoices`, `saas_dunning_events`, `v_saas_overdue_invoices` | `MasterBilling.test.tsx`, `MasterConsole.test.tsx` | **PARCIAL** (Depende de gateway real para boletos/PIX - P1) |
+| **04** | `view-master-planos` | Planos e Ofertas | `MasterCommercialCatalog.tsx`, `MasterPlanLifecycle.tsx`, `MasterPromotions.tsx` | `saas_plans`, `saas_plan_offers`, `rpc/save_saas_plan` | `MasterCommercialCatalog.test.tsx`, `MasterPlanLifecycle.test.tsx` | **APTO PARA TESTE DEV** |
+| **05** | `view-master-operacao` | Operação e Suporte | `MasterOperations.tsx`, `MasterSupportQueue.tsx` | `saas_support_tickets`, `saas_jobs`, `rpc/reply_master_tenant_support_idempotent` | `MasterOperations.test.tsx`, `MasterSupportQueue.test.tsx` | **PARCIAL** (Sessões efêmeras informativas dependentes de RPC - ADR 001) |
+| **06** | `view-master-config` | Configurações Globais | `MasterPlatformConfig.tsx` | `saas_platform_configuration`, `rpc/update_saas_platform_config` | `MasterPlatformConfig.test.tsx`, `MasterConsole.test.tsx` | **APTO PARA TESTE DEV** |
+| **07** | `view-dashboard` | Visão Geral da Tesouraria | `FinancialDashboard.tsx`, `DailyCashFlow.tsx` em `Workspace.tsx` | `rpc/read_tenant_financial_dashboard`, `v_treasury_balances` | `FinancialDashboard.test.tsx`, `App.test.tsx` | **APTO PARA TESTE DEV** |
+| **08** | `view-integrantes` | Integrantes | `Members.tsx` em `Workspace.tsx` | `members`, `member_associations`, `rpc/upsert_member` | `Members.test.tsx`, `App.test.tsx` | **APTO PARA TESTE DEV** |
+| **09** | `view-financeiro` | Financeiro | `Finance.tsx` em `Workspace.tsx` | `v_financial_entries`, `financial_transactions` | `Finance.test.tsx`, `App.test.tsx` | **APTO PARA TESTE DEV** |
+| **10** | `view-inadimplencia` | Inadimplência | `DelinquencyReport.tsx` em `Workspace.tsx` | `rpc/read_tenant_delinquency` | `DelinquencyReport.test.tsx`, `App.test.tsx` | **APTO PARA TESTE DEV** |
+| **11** | `view-tesouraria` | Tesouraria | `Tesouraria.tsx` (`TreasuryBalances.tsx`, `AccountTransfers.tsx`, `BankReconciliation.tsx`) | `v_treasury_balances`, `bank_reconciliation_batches` | `Tesouraria.test.tsx`, `BankReconciliation.test.tsx`, `App.test.tsx` | **APTO PARA TESTE DEV** |
+| **12** | `view-fluxo-caixa` | Fluxo de Caixa | `FluxoCaixa.tsx` (`DailyCashFlow.tsx`) em `Workspace.tsx` | `rpc/read_tenant_daily_cash_flow` | `FluxoCaixa.test.tsx`, `App.test.tsx` | **APTO PARA TESTE DEV** |
+| **13** | `view-contas-pagar` | Contas a Pagar | `ContasPagar.tsx` (`InstitutionalOperations.tsx`, `PayableApprovals.tsx`) | `v_institutional_payable_effective`, `payable_approvals` | `ContasPagar.test.tsx`, `InstitutionalOperations.test.tsx` | **APTO PARA TESTE DEV** |
+| **14** | `view-contas-receber` | Contas a Receber | `ContasReceber.tsx` (`MemberPayments.tsx`, `ManualCharges.tsx`) | `v_charge_distribution_effective`, `charges`, `v_payment_balances` | `ContasReceber.test.tsx`, `App.test.tsx` | **APTO PARA TESTE DEV** |
+| **15** | `view-dre` | Demonstrativo DRE | `DreView.tsx` (`DreReport.tsx`, `BudgetReport.tsx`) em `Workspace.tsx` | `rpc/read_tenant_dre_statement`, `dre_structure_accounts` | `DreView.test.tsx`, `DreReport.test.tsx`, `App.test.tsx` | **APTO PARA TESTE DEV** |
+| **16** | `view-plano-contas` | Plano de Contas | `PlanoContas.tsx` (`AccountingPlans.tsx`) em `Workspace.tsx` | `chart_of_accounts`, `account_categories` | `PlanoContas.test.tsx`, `AccountingPlans.test.tsx`, `App.test.tsx` | **APTO PARA TESTE DEV** |
+| **17** | `view-config-dre` | Configuração DRE | `DreConfig.tsx` em `Workspace.tsx` | `dre_structure_accounts`, `chart_of_accounts` | `App.test.tsx` | **APTO PARA TESTE DEV** |
+| **18** | `view-relatorios` | Relatórios Gerenciais | `Relatorios.tsx` em `Workspace.tsx` | `v_payment_balances`, `v_charge_distribution_effective` | `Relatorios.test.tsx`, `App.test.tsx` | **APTO PARA TESTE DEV** |
+| **19** | `view-cadastros` | Cadastros Gerais | `Cadastros.tsx` em `Workspace.tsx` | `cost_centers`, `suppliers`, `expense_categories` | `App.test.tsx` | **APTO PARA TESTE DEV** |
+| **20** | `view-configuracoes` | Configurações | `Configuracoes.tsx` (`ApprovalPolicies.tsx`, `TenantIdentity.tsx`) | `tenant_settings`, `approval_policies` | `ApprovalPolicies.test.tsx`, `App.test.tsx` | **APTO PARA TESTE DEV** |
+| **21** | `view-chamados` | Atendimento | `Chamados.tsx` em `Workspace.tsx` | `saas_support_tickets`, `saas_support_ticket_messages`, `rpc/create_saas_support_ticket` | `Chamados.test.tsx`, `App.test.tsx` | **PARCIAL** (Pendente migration com `p_idempotency_key` no SQL das RPCs - P0) |
 
----
-
-## 3. CLASSIFICAÇÃO DE PENDÊNCIAS E GAPS TÉCNICOS
-
-### 3.1 Prioridade P0 — Bloqueia Operação Segura em Produção
-1. **Idempotência Server-side em Tickets do Tenant (`create_saas_support_ticket` e `reply_saas_support_ticket`)**:
-   - *Diagnóstico*: As funções SQL criadas na migration `20261002202042_202609090014_v33_saas_control_plane.sql` não possuem o parâmetro `p_idempotency_key`, ao contrário da RPC de Master `reply_master_tenant_support_idempotent`.
-   - *Mitigação Implementada no Frontend*: O componente `Chamados.tsx` desabilita envio duplo, retém o rascunho em caso de timeout de rede e exige checagem de histórico pelo usuário antes de novo envio.
-   - *Ação Requerida*: Criar migration backend adicionando `p_idempotency_key` determinística às RPCs do tenant.
-2. **Armazenamento de Segredos de Gateway de Pagamento e E-mail**:
-   - *Diagnóstico*: As chaves de provedor (Stripe, Asaas, SendGrid, etc.) não devem residir em texto plano na tabela `saas_platform_config`.
-   - *Ação Requerida*: Implementar integração com Google Cloud KMS ou Supabase Vault com permissões restritas ao service role.
-
-### 3.2 Prioridade P1 — Bloqueia Funcionalidade Contratada
-1. **Conector Real de Gateway de Pagamentos e Boletos/PIX**:
-   - *Diagnóstico*: A emissão de cobranças em `MasterBilling.tsx` e `ContasReceber.tsx` registra o débito no ledger contábil, mas o webhook de liquidação automatizada de terceiros requer endpoint HTTP com assinatura e conciliação em lote.
-   - *Ação Requerida*: Homologar webhooks de gateway financeiro em ambiente de produção com rota de ingestão protegida.
-2. **Sessões Temporárias Interativas de Suporte Master (ADR 001)**:
-   - *Diagnóstico*: O painel em `MasterOperations.tsx` apresenta as diretrizes de segurança, mas a emissão de token efêmero com expiração determinística e permissão `read_only` exige implementação da respectiva RPC no backend.
-
-### 3.3 Prioridade P2 — Melhorias e Roadmap Futuro
-1. **Paginação Dinâmica Contínua de Mensagens de Chamado (> 200 mensagens)**:
-   - *Diagnóstico*: A consulta atual busca até 200 mensagens com ordenação determinística (`created_at ASC, id ASC`) e alerta o usuário sobre o limite. Uma paginação em cursor reverso é recomendada para tickets muito extensos.
-2. **Notificações em Tempo Real via WebSocket (Supabase Realtime)**:
-   - *Diagnóstico*: Consultas de jobs assíncronos (`saas_jobs`) operam sob demanda via botão "Atualizar". A adoção de canais de streaming é uma melhoria futura de usabilidade.
+### Resumo dos Status para Piloto Supervisionado:
+- **APTO PARA TESTE DEV:** 18 telas
+- **PARCIAL:** 3 telas (`view-master-cobranca`, `view-master-operacao`, `view-chamados`)
+- **BLOQUEADO:** 0 telas
+- **NÃO AVALIADO:** 0 telas
+- **APTO PARA PRODUÇÃO:** 0 telas (depende de homologação real de produção)
 
 ---
 
-## 4. EVIDÊNCIA DE VERIFICAÇÃO AUTOMATIZADA
+## 3. ESPECIFICAÇÃO DE MIGRATION SQL IDEMPOTENTE (P0 BACKEND)
 
-- **Typecheck (`tsc --noEmit`)**: 0 erros.
-- **Suíte de Testes Unitários e de Integração (`vitest`)**:
-  - `src/App.test.tsx`: 18/18 testes passando.
-  - `src/components/Chamados.test.tsx`: 4/4 testes passando.
-  - `src/components/MasterOperations.test.tsx`: 3/3 testes passando.
-  - `src/components/MasterConsole.test.tsx`: 6/6 testes passando.
-  - `src/components/MasterPlatformConfig.test.tsx`: 3/3 testes passando.
-  - Testes financeiros, tesouraria, relatórios e cadastros: 100% de conformidade.
-- **Compilação de Produção (`vite build`)**: Concluída com sucesso (`dist/` gerado sem avisos críticos).
-- **Isolamento de Segurança (Fail-Closed)**:
-  - Todas as rotas Master exigem autenticação ativa, AAL2 (MFA verificado) e role MASTER.
-  - Todas as rotas da Loja exigem organização selecionada e associação válida do usuário.
+Abaixo consta a especificação formal da migration a ser aplicada no banco Supabase em ambiente de homologação/produção para adicionar a chave de idempotência server-side às RPCs do tenant (**NÃO APLICADA NESTA TAREFA CONFORME COMANDO 11**):
+
+```sql
+-- Migration Specification: Add idempotency support to tenant support RPCs
+-- Target File: supabase/migrations/20261028000000_v35_support_idempotency.sql
+
+CREATE OR REPLACE FUNCTION create_saas_support_ticket(
+  p_organization_id uuid,
+  p_subject text,
+  p_category text,
+  p_priority text,
+  p_message text,
+  p_idempotency_key text DEFAULT NULL
+) RETURNS uuid AS $$
+DECLARE
+  v_ticket_id uuid;
+  v_seq integer;
+BEGIN
+  -- Idempotency Check
+  IF p_idempotency_key IS NOT NULL THEN
+    SELECT id INTO v_ticket_id
+    FROM saas_support_tickets
+    WHERE organization_id = p_organization_id
+      AND idempotency_key = p_idempotency_key;
+    IF v_ticket_id IS NOT NULL THEN
+      RETURN v_ticket_id;
+    END IF;
+  END IF;
+
+  -- Create Ticket
+  INSERT INTO saas_support_tickets (organization_id, subject, category, priority, status, idempotency_key)
+  VALUES (p_organization_id, p_subject, p_category, p_priority, 'new', p_idempotency_key)
+  RETURNING id INTO v_ticket_id;
+
+  -- Create Initial Message
+  INSERT INTO saas_support_ticket_messages (organization_id, ticket_id, sender_kind, visibility, body)
+  VALUES (p_organization_id, v_ticket_id, 'tenant_user', 'customer', p_message);
+
+  RETURN v_ticket_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION reply_saas_support_ticket(
+  p_organization_id uuid,
+  p_ticket_id uuid,
+  p_message text,
+  p_idempotency_key text DEFAULT NULL
+) RETURNS uuid AS $$
+DECLARE
+  v_message_id uuid;
+BEGIN
+  -- Idempotency Check
+  IF p_idempotency_key IS NOT NULL THEN
+    SELECT id INTO v_message_id
+    FROM saas_support_ticket_messages
+    WHERE organization_id = p_organization_id
+      AND ticket_id = p_ticket_id
+      AND idempotency_key = p_idempotency_key;
+    IF v_message_id IS NOT NULL THEN
+      RETURN v_message_id;
+    END IF;
+  END IF;
+
+  -- Insert Message
+  INSERT INTO saas_support_ticket_messages (organization_id, ticket_id, sender_kind, visibility, body, idempotency_key)
+  VALUES (p_organization_id, p_ticket_id, 'tenant_user', 'customer', p_message, p_idempotency_key)
+  RETURNING id INTO v_message_id;
+
+  -- Re-open Ticket if closed
+  UPDATE saas_support_tickets
+  SET status = 'working', updated_at = now()
+  WHERE id = p_ticket_id AND organization_id = p_organization_id AND status IN ('resolved', 'closed');
+
+  RETURN v_message_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+---
+
+## 4. EVIDÊNCIAS DE TESTES E DISTINÇÃO DE AMBIENTES
+
+1. **Testes Unitários e de Componente (`npm test` / Vitest)**:
+   - **371 testes executados e APROVADOS** em 63 arquivos de teste.
+   - Utilizam mocks de cliente e JWT (`@testing-library/react` / jsdom).
+   - Validam a lógica da interface, proteção contra duplo clique, bloqueio por estado incerto e filtros em memória.
+
+2. **Testes de Integração DEV (`dev-gate`)**:
+   - Status: **NÃO EXECUTADO — AMBIENTE INDISPONÍVEL**.
+   - Os scripts em `dev-gate/tests/` dependem de arquivo `.env.dev` com credenciais ativas do Supabase DEV, inexistente no container de sandbox.
+   - Não foi falsificada execução HTTP/JWT real nem convertidos em aprovação.
+
+3. **QA Visual e Responsivo Browser**:
+   - Status: **NÃO EXECUTADO — SEM NAVEGAÇÃO REAL REGISTRADA**.
+   - Não houve sessão de navegação remota automatizada (Cypress/Playwright) com gravação de tela.
+
+---
+
+## 5. CLASSIFICAÇÃO DE BLOQUEIOS REMANESCENTES
+
+- **P0 (Bloqueia Operação Segura em Produção):**
+  - Migration SQL backend com `p_idempotency_key` nas RPCs `create_saas_support_ticket` e `reply_saas_support_ticket`. *(Atualmente mitigado no frontend por trava de reenvio, retenção de rascunhos e verificação no servidor).*
+- **P1 (Bloqueia Funcionalidade Contratada):**
+  - Homologação de conector de gateway bancário (Asaas/Iugu/Mercado Pago) para geração e liquidação automatizada de boletos/PIX em produção.
+  - Implementação de RPC server-side para emissão de sessões temporárias de suporte Master (ADR 001).
+- **P2 (Melhoria de Roadmap Futuro):**
+  - Paginação cursor-based infinita para conversas de suporte acima de 200 mensagens.
+  - Streaming em tempo real via WebSocket (Supabase Realtime) para a fila de tarefas assíncronas.
+
+---
+
+## 6. ROTEIRO MÍNIMO PARA INICIAR O PILOTO SUPERVISIONADO
+
+1. **Provisionamento do Banco DEV:** Criar a instância Supabase DEV e aplicar o schema V35 e migrations acumuladas.
+2. **Configuração do dev-gate:** Preencher `dev-gate/.env.dev` com as credenciais `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` de DEV.
+3. **Execução do Quality Gate de Autorização:** Executar `npm run check` dentro da pasta `dev-gate` para validar isolamento RLS Tenant A/B e AAL2/MFA.
+4. **Criação de Loja de Teste:** Executar o script `dev-gate/seed-dev-organizations.sql` para cadastrar a Loja de testes e vincular usuário operador.
+5. **Acompanhamento Supervisionado:** Iniciar a navegação pelo operador com acompanhamento do especialista de produto.

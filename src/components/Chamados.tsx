@@ -143,9 +143,51 @@ export function Chamados({
     setPage(0)
   }
 
+  async function handleVerifyTicketCreated() {
+    try {
+      setLoading(true)
+      const res = await loadTenantTickets(
+        client,
+        organizationId,
+        0,
+        { search: appliedSearch, statusFilter },
+        new AbortController().signal
+      )
+      if (mounted.current) {
+        setTickets(res)
+        setLoading(false)
+        const match = res.rows.find(
+          t => t.subject.toLowerCase() === newSubject.trim().toLowerCase()
+        )
+        if (match) {
+          setNewSubject('')
+          setNewMessage('')
+          setNewCategory('other')
+          setNewPriority('medium')
+          setFormSuccess(true)
+          setFormUncertain(false)
+          setFormError('')
+          setRevision(v => v + 1)
+        } else {
+          setFormError(
+            'Consulta realizada: o chamado não foi localizado na lista do servidor. O formulário foi liberado para nova tentativa.'
+          )
+          setFormUncertain(false)
+        }
+      }
+    } catch (err: any) {
+      if (mounted.current) {
+        setLoading(false)
+        setFormError(
+          'Não foi possível consultar a lista no servidor. Você pode usar a liberação manual se desejar tentar novamente.'
+        )
+      }
+    }
+  }
+
   async function handleCreateTicket(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    if (submitGuard.current || formPending) return
+    if (submitGuard.current || formPending || formUncertain) return
 
     const form = e.currentTarget
     const values = new FormData(form)
@@ -185,11 +227,11 @@ export function Chamados({
     } catch (err: any) {
       if (mounted.current) {
         // Safe treatment of network failures / unconfirmed results:
-        // Do NOT clear form inputs. Mark as uncertain and require explicit verification.
+        // Do NOT clear form inputs. Mark as uncertain and block re-submit.
         setFormUncertain(true)
         setFormError(
           err?.message ||
-            'Envio não confirmado pelo servidor. Os campos foram preservados. Atualize a lista antes de reenviar para evitar duplicação.'
+            'Envio não confirmado pelo servidor. O envio foi bloqueado para evitar duplicação. Os campos foram preservados.'
         )
       }
     } finally {
@@ -568,24 +610,34 @@ export function Chamados({
               )}
 
               {formUncertain && (
-                <div className="bg-amber-50 border border-amber-300 rounded p-3 text-xs text-amber-900 space-y-2">
+                <div className="bg-amber-50 border border-amber-300 rounded p-3 text-xs text-amber-900 space-y-2" role="alert">
                   <div className="flex items-center gap-1.5 font-semibold">
                     <AlertTriangle size={15} className="text-amber-700" aria-hidden="true" />
                     Envio não confirmado com resposta autoritativa
                   </div>
                   <p>
-                    O texto preenchido foi preservado para que não se perca. Antes de submeter novamente, verifique na
-                    lista de chamados se o chamado já foi registrado para evitar duplicidade.
+                    O envio foi temporariamente <strong>bloqueado</strong> para evitar duplicação. O texto preenchido foi preservado.
+                    Verifique se o chamado consta na lista do servidor antes de tentar novo envio.
                   </p>
-                  <button
-                    type="button"
-                    className="secondary w-full py-1 text-xs"
-                    onClick={() => {
-                      setRevision(v => v + 1)
-                    }}
-                  >
-                    Verificar na lista se foi criado
-                  </button>
+                  <div className="space-y-1.5 pt-1">
+                    <button
+                      type="button"
+                      className="secondary w-full py-1 text-xs"
+                      onClick={handleVerifyTicketCreated}
+                    >
+                      Verificar na lista se foi criado
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary w-full py-1 text-xs text-amber-900 border-amber-300 hover:bg-amber-100"
+                      onClick={() => {
+                        setFormUncertain(false)
+                        setFormError('')
+                      }}
+                    >
+                      Confirmar que não foi criado e liberar novo envio
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -593,9 +645,9 @@ export function Chamados({
                 type="submit"
                 className="primary wide w-full py-2.5 text-sm font-medium"
                 data-v34-tenant-new-ticket=""
-                disabled={formPending}
+                disabled={formPending || formUncertain}
               >
-                {formPending ? 'Enviando…' : 'Enviar chamado'}
+                {formPending ? 'Enviando…' : formUncertain ? 'Envio bloqueado (incerto)' : 'Enviar chamado'}
               </button>
 
               <p className="text-[11px] text-slate-400 text-center leading-tight">
@@ -663,29 +715,10 @@ function TicketDetails({
     }
   }, [client, organizationId, ticket.id])
 
-  async function handleReplySubmit(e: FormEvent) {
-    e.preventDefault()
-    if (!replyText.trim() || sending || replyGuard.current) return
-
-    replyGuard.current = true
-    setSending(true)
-    setSendError('')
-    setSendSuccess(false)
-    setReplyUncertain(false)
-
+  async function handleVerifyReplyDelivered() {
+    const textToCheck = replyText.trim().toLowerCase()
     try {
-      await replyTenantSupportTicket(client, {
-        organizationId,
-        ticketId: ticket.id,
-        message: replyText.trim(),
-      })
-
-      setReplyText('')
-      setSendSuccess(true)
-      setReplyUncertain(false)
-      onUpdated()
-
-      // Reload messages
+      setLoading(true)
       const res = await loadTenantTicketMessages(
         client,
         organizationId,
@@ -694,15 +727,73 @@ function TicketDetails({
       )
       setMessages(res.messages)
       setIsTruncated(res.isTruncated)
+      setLoading(false)
+
+      const found = textToCheck && res.messages.some(m => m.body.toLowerCase().includes(textToCheck))
+      if (found) {
+        setReplyText('')
+        setSendSuccess(true)
+        setReplyUncertain(false)
+        setSendError('')
+      } else {
+        setSendError('Consulta realizada: a mensagem não foi localizada no histórico. O formulário foi liberado para nova tentativa.')
+        setReplyUncertain(false)
+      }
     } catch (err: any) {
-      // Safe failure treatment: preserve replyText, mark as uncertain
+      setLoading(false)
+      setSendError('Não foi possível atualizar a conversa. Utilize o botão de confirmação manual se desejar reenviar.')
+    }
+  }
+
+  async function handleReplySubmit(e: FormEvent) {
+    e.preventDefault()
+    if (!replyText.trim() || sending || replyGuard.current || replyUncertain) return
+
+    replyGuard.current = true
+    setSending(true)
+    setSendError('')
+    setSendSuccess(false)
+    setReplyUncertain(false)
+
+    let rpcSucceeded = false
+    try {
+      await replyTenantSupportTicket(client, {
+        organizationId,
+        ticketId: ticket.id,
+        message: replyText.trim(),
+      })
+
+      rpcSucceeded = true
+      setReplyText('')
+      setSendSuccess(true)
+      setReplyUncertain(false)
+      onUpdated()
+    } catch (err: any) {
+      // Safe failure treatment: preserve replyText, mark as uncertain and block submit
       setReplyUncertain(true)
       setSendError(
-        err?.message || 'Resposta não confirmada pelo servidor. Sua mensagem foi preservada para evitar perda.'
+        err?.message || 'Resposta não confirmada pelo servidor. O reenvio foi bloqueado para evitar duplicação.'
       )
+      return
     } finally {
       replyGuard.current = false
       setSending(false)
+    }
+
+    if (rpcSucceeded) {
+      try {
+        const res = await loadTenantTicketMessages(
+          client,
+          organizationId,
+          ticket.id,
+          new AbortController().signal
+        )
+        setMessages(res.messages)
+        setIsTruncated(res.isTruncated)
+      } catch (reloadErr) {
+        // Successful RPC, but history reload failed: do NOT mark creation as uncertain
+        setSendError('Resposta enviada e confirmada pelo servidor. Clique em "Recarregar conversa" para atualizar a exibição.')
+      }
     }
   }
 
@@ -868,18 +959,33 @@ function TicketDetails({
         )}
 
         {replyUncertain && (
-          <div className="bg-amber-50 border border-amber-300 rounded p-3 text-xs text-amber-900 space-y-2">
+          <div className="bg-amber-50 border border-amber-300 rounded p-3 text-xs text-amber-900 space-y-2" role="alert">
+            <div className="flex items-center gap-1.5 font-semibold">
+              <AlertTriangle size={15} className="text-amber-700" aria-hidden="true" />
+              Envio de resposta não confirmado pelo servidor
+            </div>
             <p>
-              A entrega da resposta não foi confirmada pelo servidor. Seu texto permanece preservado acima. Recarregue a
-              conversa antes de reenviar para conferir se a mensagem já foi gravada.
+              O envio foi <strong>bloqueado</strong> para evitar duplicação. Seu texto permanece preservado acima.
             </p>
-            <button
-              type="button"
-              className="secondary py-1 px-3 text-xs"
-              onClick={() => loadMessages()}
-            >
-              Recarregar conversa para verificar entrega
-            </button>
+            <div className="space-y-1.5 pt-1">
+              <button
+                type="button"
+                className="secondary w-full py-1 px-3 text-xs"
+                onClick={handleVerifyReplyDelivered}
+              >
+                Recarregar conversa para verificar entrega
+              </button>
+              <button
+                type="button"
+                className="secondary w-full py-1 px-3 text-xs text-amber-900 border-amber-300 hover:bg-amber-100"
+                onClick={() => {
+                  setReplyUncertain(false)
+                  setSendError('')
+                }}
+              >
+                Confirmar que não foi enviada e liberar novo envio
+              </button>
+            </div>
           </div>
         )}
 
@@ -887,10 +993,10 @@ function TicketDetails({
           <button
             type="submit"
             className="primary inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium"
-            disabled={!replyText.trim() || sending}
+            disabled={!replyText.trim() || sending || replyUncertain}
           >
             <Send size={14} aria-hidden="true" />
-            {sending ? 'Enviando…' : 'Enviar resposta'}
+            {sending ? 'Enviando…' : replyUncertain ? 'Envio bloqueado (incerto)' : 'Enviar resposta'}
           </button>
         </div>
       </form>

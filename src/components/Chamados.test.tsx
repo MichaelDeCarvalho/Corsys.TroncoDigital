@@ -223,4 +223,93 @@ describe('Chamados (view-chamados)', () => {
       })
     })
   })
+
+  it('blocks re-submission when ticket creation result is uncertain and preserves text', async () => {
+    mockClient.rpc.mockImplementation((rpcName: string) => {
+      if (rpcName === 'create_saas_support_ticket') {
+        return Promise.reject(new Error('Timeout de rede ao conectar ao servidor'))
+      }
+      return Promise.resolve({ data: null, error: null })
+    })
+
+    render(<Chamados client={mockClient} organizationId={validOrgId} />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Dúvida sobre fechamento contábil')).toBeInTheDocument()
+    })
+
+    const subjectInput = screen.getByLabelText(/Assunto/i)
+    const descInput = screen.getByLabelText(/Descrição/i)
+
+    fireEvent.change(subjectInput, { target: { value: 'Falha transiente testada' } })
+    fireEvent.change(descInput, { target: { value: 'Descrição importante preservada' } })
+
+    const confirmBtn = screen.getByRole('button', { name: 'Enviar chamado' })
+    fireEvent.click(confirmBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Envio não confirmado com resposta autoritativa/i)).toBeInTheDocument()
+    })
+
+    // Button should now be disabled to prevent duplicate submit
+    const blockedBtn = screen.getByRole('button', { name: /Envio bloqueado/i })
+    expect(blockedBtn).toBeDisabled()
+
+    // Preserved fields
+    expect(subjectInput).toHaveValue('Falha transiente testada')
+    expect(descInput).toHaveValue('Descrição importante preservada')
+
+    // Explicit recovery button unblocks
+    const unblockBtn = screen.getByRole('button', { name: /Confirmar que não foi criado e liberar novo envio/i })
+    fireEvent.click(unblockBtn)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Enviar chamado' })).not.toBeDisabled()
+    })
+  })
+
+  it('blocks re-submission when reply result is uncertain and preserves text', async () => {
+    mockClient.rpc.mockImplementation((rpcName: string) => {
+      if (rpcName === 'reply_saas_support_ticket') {
+        return Promise.reject(new Error('Erro de conexão durante envio da resposta'))
+      }
+      return Promise.resolve({ data: null, error: null })
+    })
+
+    render(<Chamados client={mockClient} organizationId={validOrgId} />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Dúvida sobre fechamento contábil')).toBeInTheDocument()
+    })
+
+    const viewButtons = screen.getAllByRole('button', { name: 'Ver conversa' })
+    fireEvent.click(viewButtons[0])
+
+    await waitFor(() => {
+      expect(screen.getByText('Histórico da conversa')).toBeInTheDocument()
+    })
+
+    const replyInput = screen.getByPlaceholderText('Digite sua resposta ou esclarecimento…')
+    fireEvent.change(replyInput, { target: { value: 'Minha resposta que não deve duplicar' } })
+
+    const sendBtn = screen.getByRole('button', { name: 'Enviar resposta' })
+    fireEvent.click(sendBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Envio de resposta não confirmado pelo servidor/i)).toBeInTheDocument()
+    })
+
+    // Reply button should be disabled
+    const blockedReplyBtn = screen.getByRole('button', { name: /Envio bloqueado/i })
+    expect(blockedReplyBtn).toBeDisabled()
+    expect(replyInput).toHaveValue('Minha resposta que não deve duplicar')
+
+    // Explicit unblock button
+    const unblockReplyBtn = screen.getByRole('button', { name: /Confirmar que não foi enviada e liberar novo envio/i })
+    fireEvent.click(unblockReplyBtn)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Enviar resposta' })).not.toBeDisabled()
+    })
+  })
 })
