@@ -42,9 +42,12 @@ export type TenantTicketMessage = {
   created_at: string
 }
 
-export const SUPPORT_PAGE_SIZE = 15
+export type TenantTicketMessagesResult = {
+  messages: TenantTicketMessage[]
+  isTruncated: boolean
+}
 
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+export const SUPPORT_PAGE_SIZE = 15
 
 export type SupportFilters = {
   search?: string
@@ -95,7 +98,7 @@ export async function loadTenantTickets(
   const offset = page * SUPPORT_PAGE_SIZE
   query = query
     .order('opened_at', { ascending: false })
-    .order('id')
+    .order('id', { ascending: false })
     .range(offset, offset + SUPPORT_PAGE_SIZE)
     .abortSignal(signal)
 
@@ -124,7 +127,7 @@ export async function loadTenantTicketMessages(
   organizationId: string,
   ticketId: string,
   signal: AbortSignal
-): Promise<TenantTicketMessage[]> {
+): Promise<TenantTicketMessagesResult> {
   if (!organizationId || !ticketId || typeof organizationId !== 'string' || typeof ticketId !== 'string') {
     throw new Error('Parâmetros de conversa inválidos.')
   }
@@ -135,11 +138,12 @@ export async function loadTenantTicketMessages(
     .eq('organization_id', organizationId)
     .eq('ticket_id', ticketId)
     .order('created_at', { ascending: true })
+    .order('id', { ascending: true })
     .limit(200)
     .abortSignal(signal)
 
   if (error) throw error
-  if (!Array.isArray(data)) return []
+  if (!Array.isArray(data)) return { messages: [], isTruncated: false }
 
   for (const msg of data) {
     if (msg.organization_id !== organizationId || msg.ticket_id !== ticketId) {
@@ -147,9 +151,21 @@ export async function loadTenantTicketMessages(
     }
   }
 
-  return data as TenantTicketMessage[]
+  const isTruncated = data.length >= 200
+
+  return {
+    messages: data as TenantTicketMessage[],
+    isTruncated,
+  }
 }
 
+/**
+ * NOTA DE SEGURANÇA E LIMITAÇÃO DE PROTOCOLO (COMANDO 10):
+ * A RPC `create_saas_support_ticket` no backend não aceita chave de idempotência.
+ * O cliente não deve assumir entrega única distribuída. Em caso de erro de rede ou resposta
+ * inconclusiva, o erro é propagado e o chamador deve solicitar ao usuário a atualização
+ * da listagem antes de qualquer reenvio para prevenir duplicação de chamados.
+ */
 export async function createTenantSupportTicket(
   client: SupabaseClient,
   params: {
@@ -179,12 +195,17 @@ export async function createTenantSupportTicket(
 
   if (error) throw error
   if (typeof data !== 'string' || !data) {
-    throw new Error('Criação do chamado não confirmada pelo servidor.')
+    throw new Error('Criação do chamado não confirmada com resposta autoritativa pelo servidor.')
   }
 
   return data
 }
 
+/**
+ * NOTA DE SEGURANÇA E LIMITAÇÃO DE PROTOCOLO (COMANDO 10):
+ * A RPC `reply_saas_support_ticket` no backend não aceita chave de idempotência do cliente.
+ * Em falhas de transporte, o frontend não limpa a mensagem e oferece verificação do histórico.
+ */
 export async function replyTenantSupportTicket(
   client: SupabaseClient,
   params: {
@@ -210,7 +231,7 @@ export async function replyTenantSupportTicket(
 
   if (error) throw error
   if (typeof data !== 'string' || !data) {
-    throw new Error('Resposta ao chamado não confirmada pelo servidor.')
+    throw new Error('Resposta ao chamado não confirmada com resposta autoritativa pelo servidor.')
   }
 
   return data

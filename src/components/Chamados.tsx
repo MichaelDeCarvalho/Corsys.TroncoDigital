@@ -13,6 +13,7 @@ import {
   ArrowLeft,
   Send,
   PlusCircle,
+  AlertTriangle,
 } from 'lucide-react'
 import {
   loadTenantTickets,
@@ -81,6 +82,7 @@ export function Chamados({
   const [formPending, setFormPending] = useState(false)
   const [formError, setFormError] = useState('')
   const [formSuccess, setFormSuccess] = useState(false)
+  const [formUncertain, setFormUncertain] = useState(false)
   const submitGuard = useRef(false)
   const mounted = useRef(false)
 
@@ -143,7 +145,7 @@ export function Chamados({
 
   async function handleCreateTicket(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    if (submitGuard.current) return
+    if (submitGuard.current || formPending) return
 
     const form = e.currentTarget
     const values = new FormData(form)
@@ -159,6 +161,7 @@ export function Chamados({
     setFormPending(true)
     setFormError('')
     setFormSuccess(false)
+    setFormUncertain(false)
 
     try {
       await createTenantSupportTicket(client, {
@@ -176,13 +179,17 @@ export function Chamados({
         setNewCategory('other')
         setNewPriority('medium')
         setFormSuccess(true)
+        setFormUncertain(false)
         setRevision(v => v + 1)
       }
     } catch (err: any) {
       if (mounted.current) {
+        // Safe treatment of network failures / unconfirmed results:
+        // Do NOT clear form inputs. Mark as uncertain and require explicit verification.
+        setFormUncertain(true)
         setFormError(
           err?.message ||
-            'Não foi possível confirmar o envio. Atualize a lista antes de tentar novamente para evitar duplicidade.'
+            'Envio não confirmado pelo servidor. Os campos foram preservados. Atualize a lista antes de reenviar para evitar duplicação.'
         )
       }
     } finally {
@@ -213,7 +220,10 @@ export function Chamados({
           <button
             type="button"
             className="secondary inline-flex items-center gap-1.5 px-3 py-2 text-sm"
-            onClick={() => setRevision(v => v + 1)}
+            onClick={() => {
+              setRevision(v => v + 1)
+              setFormUncertain(false)
+            }}
             aria-label="Atualizar lista de chamados"
           >
             <RefreshCw size={16} aria-hidden="true" />
@@ -550,10 +560,33 @@ export function Chamados({
                   Chamado enviado com sucesso! A lista foi atualizada.
                 </p>
               )}
+
               {formError && (
                 <p role="alert" className="message error">
                   {formError}
                 </p>
+              )}
+
+              {formUncertain && (
+                <div className="bg-amber-50 border border-amber-300 rounded p-3 text-xs text-amber-900 space-y-2">
+                  <div className="flex items-center gap-1.5 font-semibold">
+                    <AlertTriangle size={15} className="text-amber-700" aria-hidden="true" />
+                    Envio não confirmado com resposta autoritativa
+                  </div>
+                  <p>
+                    O texto preenchido foi preservado para que não se perca. Antes de submeter novamente, verifique na
+                    lista de chamados se o chamado já foi registrado para evitar duplicidade.
+                  </p>
+                  <button
+                    type="button"
+                    className="secondary w-full py-1 text-xs"
+                    onClick={() => {
+                      setRevision(v => v + 1)
+                    }}
+                  >
+                    Verificar na lista se foi criado
+                  </button>
+                </div>
               )}
 
               <button
@@ -564,6 +597,10 @@ export function Chamados({
               >
                 {formPending ? 'Enviando…' : 'Enviar chamado'}
               </button>
+
+              <p className="text-[11px] text-slate-400 text-center leading-tight">
+                Operação com resposta autoritativa do banco. Em caso de instabilidade de rede, verifique a lista antes de reenviar.
+              </p>
             </form>
           </section>
         </div>
@@ -586,49 +623,55 @@ function TicketDetails({
   onUpdated: () => void
 }) {
   const [messages, setMessages] = useState<TenantTicketMessage[] | null>(null)
+  const [isTruncated, setIsTruncated] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [replyText, setReplyText] = useState('')
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState('')
   const [sendSuccess, setSendSuccess] = useState(false)
+  const [replyUncertain, setReplyUncertain] = useState(false)
 
+  const replyGuard = useRef(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
+  function loadMessages() {
     const controller = new AbortController()
-    let live = true
-
     setLoading(true)
     setError('')
 
     loadTenantTicketMessages(client, organizationId, ticket.id, controller.signal)
-      .then(msgs => {
-        if (live) {
-          setMessages(msgs)
-          setLoading(false)
-        }
+      .then(res => {
+        setMessages(res.messages)
+        setIsTruncated(res.isTruncated)
+        setLoading(false)
       })
-      .catch(err => {
-        if (live && !controller.signal.aborted) {
+      .catch((err: any) => {
+        if (!controller.signal.aborted) {
           setError(err?.message || 'Não foi possível carregar as mensagens deste chamado.')
           setLoading(false)
         }
       })
 
+    return controller
+  }
+
+  useEffect(() => {
+    const controller = loadMessages()
     return () => {
-      live = false
       controller.abort()
     }
   }, [client, organizationId, ticket.id])
 
   async function handleReplySubmit(e: FormEvent) {
     e.preventDefault()
-    if (!replyText.trim() || sending) return
+    if (!replyText.trim() || sending || replyGuard.current) return
 
+    replyGuard.current = true
     setSending(true)
     setSendError('')
     setSendSuccess(false)
+    setReplyUncertain(false)
 
     try {
       await replyTenantSupportTicket(client, {
@@ -639,21 +682,26 @@ function TicketDetails({
 
       setReplyText('')
       setSendSuccess(true)
+      setReplyUncertain(false)
       onUpdated()
 
       // Reload messages
-      const msgs = await loadTenantTicketMessages(
+      const res = await loadTenantTicketMessages(
         client,
         organizationId,
         ticket.id,
         new AbortController().signal
       )
-      setMessages(msgs)
+      setMessages(res.messages)
+      setIsTruncated(res.isTruncated)
     } catch (err: any) {
+      // Safe failure treatment: preserve replyText, mark as uncertain
+      setReplyUncertain(true)
       setSendError(
-        err?.message || 'Falha ao enviar resposta. Verifique a conexão e tente novamente.'
+        err?.message || 'Resposta não confirmada pelo servidor. Sua mensagem foi preservada para evitar perda.'
       )
     } finally {
+      replyGuard.current = false
       setSending(false)
     }
   }
@@ -703,10 +751,30 @@ function TicketDetails({
 
       {/* Messages Thread */}
       <div className="space-y-4">
-        <h4 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
-          <MessageCircle size={16} aria-hidden="true" />
-          Histórico da conversa
-        </h4>
+        <div className="flex items-center justify-between">
+          <h4 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+            <MessageCircle size={16} aria-hidden="true" />
+            Histórico da conversa
+          </h4>
+          <button
+            type="button"
+            className="secondary text-xs px-2.5 py-1 inline-flex items-center gap-1"
+            onClick={() => loadMessages()}
+            aria-label="Recarregar histórico da conversa"
+          >
+            <RefreshCw size={12} aria-hidden="true" />
+            Recarregar conversa
+          </button>
+        </div>
+
+        {isTruncated && (
+          <div className="bg-amber-50 border border-amber-300 rounded p-3 text-xs text-amber-900 flex items-start gap-2">
+            <AlertTriangle size={16} className="text-amber-700 flex-shrink-0 mt-0.5" aria-hidden="true" />
+            <div>
+              <strong>Atenção ao limite de consulta:</strong> Esta conversa atingiu o limite de 200 mensagens suportado nesta visão direta. Mensagens adicionais podem existir no histórico da plataforma. Para auditoria integral, contate o suporte.
+            </div>
+          </div>
+        )}
 
         {error && (
           <p role="alert" className="message error">
@@ -797,6 +865,22 @@ function TicketDetails({
           <p role="alert" className="message error">
             {sendError}
           </p>
+        )}
+
+        {replyUncertain && (
+          <div className="bg-amber-50 border border-amber-300 rounded p-3 text-xs text-amber-900 space-y-2">
+            <p>
+              A entrega da resposta não foi confirmada pelo servidor. Seu texto permanece preservado acima. Recarregue a
+              conversa antes de reenviar para conferir se a mensagem já foi gravada.
+            </p>
+            <button
+              type="button"
+              className="secondary py-1 px-3 text-xs"
+              onClick={() => loadMessages()}
+            >
+              Recarregar conversa para verificar entrega
+            </button>
+          </div>
         )}
 
         <div className="flex items-center justify-end gap-2">

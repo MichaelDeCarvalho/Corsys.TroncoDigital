@@ -93,11 +93,14 @@ describe('Chamados (view-chamados)', () => {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
                 eq: vi.fn(() => ({
-                  order: vi.fn(() => ({
-                    limit: vi.fn(() => ({
-                      abortSignal: vi.fn().mockResolvedValue({ data: mockMessages, error: null }),
-                    })),
-                  })),
+                  order: vi.fn(function () {
+                    return {
+                      order: vi.fn().mockReturnThis(),
+                      limit: vi.fn(() => ({
+                        abortSignal: vi.fn().mockResolvedValue({ data: mockMessages, error: null }),
+                      })),
+                    }
+                  }),
                 })),
               })),
             })),

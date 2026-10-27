@@ -70,20 +70,20 @@ describe('MasterOperations (view-master-operacao)', () => {
     render(<MasterOperations client={mockClient} />)
 
     expect(screen.getByText('Operação e Suporte Master')).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Chamados' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Saúde / Jobs' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Sessões de Suporte' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Equipe e Segurança' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Auditoria Master' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /Chamados/i })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /Saúde \/ Jobs/i })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /Sessões de Suporte/i })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /Equipe e Segurança/i })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /Auditoria Master/i })).toBeInTheDocument()
   })
 
   it('navigates to health/jobs tab and renders async jobs from server', async () => {
     render(<MasterOperations client={mockClient} />)
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Saúde / Jobs' }))
+    fireEvent.click(screen.getByRole('tab', { name: /Saúde \/ Jobs/i }))
 
     await waitFor(() => {
-      expect(screen.getByText('Saúde da Plataforma e Fila de Jobs')).toBeInTheDocument()
+      expect(screen.getByText(/Fila de Tarefas Assíncronas/i)).toBeInTheDocument()
       expect(screen.getByText('generate_monthly_invoices')).toBeInTheDocument()
       expect(screen.getByText('process_dunning_reminders')).toBeInTheDocument()
       expect(screen.getByText('EMAIL_PROVIDER_UNAVAILABLE')).toBeInTheDocument()
@@ -93,9 +93,9 @@ describe('MasterOperations (view-master-operacao)', () => {
   it('displays security boundary notice on support sessions tab', () => {
     render(<MasterOperations client={mockClient} />)
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Sessões de Suporte' }))
+    fireEvent.click(screen.getByRole('tab', { name: /Sessões de Suporte/i }))
 
-    expect(screen.getByText(/Escopo Estrito e Boundary de Segurança/i)).toBeInTheDocument()
+    expect(screen.getByText(/Boundary de Segurança e Imutabilidade Financeira/i)).toBeInTheDocument()
     expect(screen.getByText(/somente leitura \(read_only\)/i)).toBeInTheDocument()
   })
 })

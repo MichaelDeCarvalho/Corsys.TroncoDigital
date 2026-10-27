@@ -10,6 +10,7 @@ import {
   Clock,
   CheckCircle,
   AlertTriangle,
+  Info,
 } from 'lucide-react'
 import { MasterSupportQueue } from './MasterSupportQueue'
 import { loadPlatformJobs, type PlatformJob } from '../lib/master-config'
@@ -59,7 +60,7 @@ export function MasterOperations({ client }: { client: SupabaseClient }) {
             Operação e Suporte Master
           </h2>
           <p className="text-sm text-slate-500">
-            Monitoramento de processos assíncronos, fila de atendimento, equipe e auditoria.
+            Fila de atendimento com resposta autorizada, consulta a jobs assíncronos e diretrizes operacionais.
           </p>
         </div>
       </section>
@@ -82,7 +83,7 @@ export function MasterOperations({ client }: { client: SupabaseClient }) {
           data-operation-tab="tickets"
           onClick={() => setActiveTab('tickets')}
         >
-          Chamados
+          Chamados (Operação Funcional)
         </button>
         <button
           type="button"
@@ -96,7 +97,7 @@ export function MasterOperations({ client }: { client: SupabaseClient }) {
           data-operation-tab="health"
           onClick={() => setActiveTab('health')}
         >
-          Saúde / Jobs
+          Saúde / Jobs (Consulta sob demanda)
         </button>
         <button
           type="button"
@@ -110,7 +111,7 @@ export function MasterOperations({ client }: { client: SupabaseClient }) {
           data-operation-tab="support"
           onClick={() => setActiveTab('support')}
         >
-          Sessões de Suporte
+          Sessões de Suporte (Informativo)
         </button>
         <button
           type="button"
@@ -124,7 +125,7 @@ export function MasterOperations({ client }: { client: SupabaseClient }) {
           data-operation-tab="team"
           onClick={() => setActiveTab('team')}
         >
-          Equipe e Segurança
+          Equipe e Segurança (Governança)
         </button>
         <button
           type="button"
@@ -138,20 +139,20 @@ export function MasterOperations({ client }: { client: SupabaseClient }) {
           data-operation-tab="audit"
           onClick={() => setActiveTab('audit')}
         >
-          Auditoria Master
+          Auditoria Master (Informativo)
         </button>
       </div>
 
-      {/* Tab 1: Chamados (MasterSupportQueue) */}
+      {/* Tab 1: Chamados (MasterSupportQueue - Operação Funcional e Escrita Autorizada) */}
       {activeTab === 'tickets' && <MasterSupportQueue client={client} />}
 
-      {/* Tab 2: Saúde / Jobs */}
+      {/* Tab 2: Saúde / Jobs (Consulta pontual sob demanda à tabela saas_jobs) */}
       {activeTab === 'health' && (
         <section className="panel space-y-4">
           <div className="section-title">
             <h3 className="flex items-center gap-2">
               <Activity size={18} aria-hidden="true" />
-              Saúde da Plataforma e Fila de Jobs
+              Fila de Tarefas Assíncronas (Consulta pontual sob demanda)
             </h3>
             <button
               type="button"
@@ -159,11 +160,12 @@ export function MasterOperations({ client }: { client: SupabaseClient }) {
               onClick={() => setJobsRevision(v => v + 1)}
             >
               <RefreshCw size={14} aria-hidden="true" />
-              Atualizar jobs
+              Atualizar lista de jobs
             </button>
           </div>
           <p className="subtle text-xs">
-            Monitoramento de tarefas assíncronas persistidas (geração mensal, régua de cobrança, conciliações e webhooks).
+            Esta visualização realiza <strong>consultas pontuais sob demanda</strong> à tabela <code>saas_jobs</code> no
+            banco de dados. Não constitui monitoramento contínuo em tempo real via streaming/WebSocket.
           </p>
 
           {jobsError && (
@@ -174,7 +176,7 @@ export function MasterOperations({ client }: { client: SupabaseClient }) {
 
           {jobsLoading ? (
             <p role="status" className="py-6 text-center text-slate-500 text-sm">
-              Consultando jobs registrados no servidor…
+              Consultando tarefas assíncronas registradas no servidor…
             </p>
           ) : !jobs || jobs.length === 0 ? (
             <p className="text-sm text-slate-500 py-4">Nenhum job pendente ou executado recentemente.</p>
@@ -231,43 +233,57 @@ export function MasterOperations({ client }: { client: SupabaseClient }) {
         </section>
       )}
 
-      {/* Tab 3: Sessões de Suporte */}
+      {/* Tab 3: Sessões de Suporte (Painel Informativo — Dependência de Backend) */}
       {activeTab === 'support' && (
         <section className="panel space-y-4">
           <div className="section-title">
             <h3 className="flex items-center gap-2">
               <LifeBuoy size={18} aria-hidden="true" />
-              Sessões Temporárias de Suporte
+              Sessões Temporárias de Suporte — Diretrizes de Segurança
             </h3>
+            <span className="pill text-xs">Painel Informativo / Dependência de Backend</span>
           </div>
+
+          <div className="bg-amber-50 border border-amber-300 rounded p-4 text-xs text-amber-900 space-y-2">
+            <div className="flex items-center gap-2 font-semibold text-sm text-amber-950">
+              <Info size={16} className="text-amber-700" aria-hidden="true" />
+              Funcionalidade não implementada / Dependente de RPC de Backend (ADR 001)
+            </div>
+            <p>
+              A abertura de sessões temporárias de suporte com emissão de token efêmero com expiração determinística
+              e encerramento auditado <strong>não está disponível nesta interface</strong>. A funcionalidade depende
+              da especificação e aplicação de RPC server-side autorizada.
+            </p>
+          </div>
+
           <div className="bg-slate-50 border rounded-md p-4 text-xs text-slate-700 space-y-2">
             <p className="font-semibold text-slate-900">
-              Escopo Estrito e Boundary de Segurança (ADR 001):
+              Boundary de Segurança e Imutabilidade Financeira:
             </p>
             <p>
-              No MVP, o acesso Master não possui impersonação de usuário. Para investigar dados internos de uma Loja,
-              o operador Master abre uma sessão temporária estritamente <strong>somente leitura (read_only)</strong>,
-              informando motivo obrigatório, e toda consulta é auditada individualmente.
+              Conforme as diretrizes arquiteturais, o acesso Master não possui impersonação client-side. Sessões de
+              suporte serão estritamente <strong>somente leitura (read_only)</strong>, motivadas e auditadas.
             </p>
             <p>
-              A escrita financeira por suporte permanece tecnicamente bloqueada em todas as camadas (RLS e RPCs).
+              A escrita financeira em contas de Lojas permanece tecnicamente proibida em todas as camadas de autorização.
             </p>
           </div>
         </section>
       )}
 
-      {/* Tab 4: Equipe e Segurança */}
+      {/* Tab 4: Equipe e Segurança (Painel de Governança) */}
       {activeTab === 'team' && (
         <section className="panel space-y-4">
           <div className="section-title">
             <h3 className="flex items-center gap-2">
               <Users size={18} aria-hidden="true" />
-              Equipe da Plataforma e Controle de Acesso
+              Equipe da Plataforma e Diretrizes de Controle de Acesso
             </h3>
+            <span className="pill text-xs">Governança</span>
           </div>
           <p className="subtle text-xs">
-            Todos os operadores Master da Corsys devem possuir autenticação em dois fatores (MFA/AAL2) ativa.
-            Sessões sem AAL2 têm acesso automaticamente negado pelo banco (fail-closed).
+            A concessão de papéis da plataforma é gerenciada exclusivamente pelo banco de dados através de funções
+            administrativas com exigência compulsória de MFA (AAL2).
           </p>
 
           <div className="border rounded-md p-4 bg-slate-50 space-y-2">
@@ -276,14 +292,14 @@ export function MasterOperations({ client }: { client: SupabaseClient }) {
               <strong className="text-slate-900 text-sm">Política de Least Privilege</strong>
             </div>
             <p className="text-xs text-slate-600">
-              Papéis administrativos são particionados em <code>MASTER</code>, <code>SUPPORT</code> e <code>BILLING</code>.
-              Nenhum papel administrativo possui acesso irrestrito às contas bancárias ou chaves privadas dos tenants.
+              Papéis administrativos da Corsys são estritamente particionados em <code>MASTER</code>, <code>SUPPORT</code> e <code>BILLING</code>.
+              Nenhum papel administrativo possui acesso irrestrito às contas bancárias ou credenciais privadas dos tenants.
             </p>
           </div>
         </section>
       )}
 
-      {/* Tab 5: Auditoria Master */}
+      {/* Tab 5: Auditoria Master (Painel Informativo — Dependência de Backend) */}
       {activeTab === 'audit' && (
         <section className="panel space-y-4">
           <div className="section-title">
@@ -291,11 +307,22 @@ export function MasterOperations({ client }: { client: SupabaseClient }) {
               <FileCheck size={18} aria-hidden="true" />
               Trilha de Auditoria do Control Plane
             </h3>
+            <span className="pill text-xs">Painel Informativo / Dependência de Backend</span>
           </div>
-          <p className="subtle text-xs">
-            Eventos administrativos, alterações de planos, aprovações e ações da equipe são gravados de forma imutável
-            com actor_user_id, timestamp e idempotency_key.
-          </p>
+
+          <div className="bg-slate-50 border rounded-md p-4 text-xs text-slate-700 space-y-2">
+            <p className="font-semibold text-slate-900">
+              Persistência Server-side e Status da Interface:
+            </p>
+            <p>
+              Os eventos administrativos, alterações de planos, aprovações e ações da equipe são gravados
+              de forma imutável no banco com <code>actor_user_id</code>, timestamp e chave de idempotência.
+            </p>
+            <p>
+              A interface de consulta com filtros cronológicos, busca textual e exportação de logs de auditoria
+              depende de RPC dedicada com controle de acesso, mantida como dependência técnica de homologação.
+            </p>
+          </div>
         </section>
       )}
     </div>
