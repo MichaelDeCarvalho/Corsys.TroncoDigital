@@ -1,11 +1,27 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { FileText, Download, Info, Calendar } from 'lucide-react'
-import { DelinquencyReport } from './DelinquencyReport'
-import { DreView } from './DreView'
+import { FileText, Download, Info, Calendar, AlertTriangle, ShieldAlert } from 'lucide-react'
+import { loadFinancialDashboard, type DashboardValues } from '../lib/finance-dashboard'
+import { loadPeriodState, type PeriodState } from '../lib/periods'
+import { loadDreReport, summarizeDre, safeDreValue, type DreEntry } from '../lib/dre-report'
+import { loadAccountingCatalog, loadAccountingDetail, type Catalog, type Detail } from '../lib/accounting-plans'
 import { formatDate, formatMoney, formatCompetence, statusLabels } from '../lib/finance-data'
 
 type ReportTab = 'posicao' | 'recebimentos' | 'inadimplencia' | 'fechamento' | 'contabil'
+
+/**
+ * Escapes values for safe CSV download to prevent Formula Injection (CSV Injection).
+ * Prefixes strings starting with =, +, -, @, \t, \r with a single quote (').
+ */
+function sanitizeCsvCell(value: unknown): string {
+  if (value === null || value === undefined) return '""'
+  let str = String(value)
+  // Check for formula injection triggers
+  if (/^[=+\-@\t\r]/.test(str)) {
+    str = "'" + str
+  }
+  return `"${str.replace(/"/g, '""')}"`
+}
 
 export function Relatorios({ client, organizationId }: { client: SupabaseClient; organizationId: string }) {
   const [activeTab, setActiveTab] = useState<ReportTab>('posicao')
@@ -21,65 +37,93 @@ export function Relatorios({ client, organizationId }: { client: SupabaseClient;
   // Export Modal state for PDF / XLSX dependencies
   const [exportNotice, setExportNotice] = useState<{ format: 'PDF' | 'XLSX'; reportName: string } | null>(null)
 
-  // Posição Geral state
+  // 1. Dashboard Consolidated KPI Values (Server-calculated)
+  const [kpis, setKpis] = useState<DashboardValues | null>(null)
+  const [kpisLoading, setKpisLoading] = useState(false)
+  const [kpisError, setKpisError] = useState('')
+
+  // 1. Posição Geral Paginated Sample
+  const [posicaoPage, setPosicaoPage] = useState(0)
   const [posicaoLoading, setPosicaoLoading] = useState(false)
   const [posicaoError, setPosicaoError] = useState('')
-  const [posicaoData, setPosicaoData] = useState<{
-    totalPayables: number
-    totalPayablesOpen: number
-    totalReceivables: number
-    totalReceivablesOpen: number
-    items: Array<{
-      id: string
-      type: 'Pagar' | 'Receber' | 'Integrante'
-      description: string
-      dueDate: string
-      competence: string | null
-      amount: number
-      openAmount: number
-      status: string
-    }>
-  } | null>(null)
+  const [posicaoItems, setPosicaoItems] = useState<Array<{
+    id: string
+    type: 'Pagar' | 'Receber' | 'Integrante'
+    description: string
+    dueDate: string
+    competence: string | null
+    amount: number
+    openAmount: number
+    status: string
+  }> | null>(null)
 
-  // Recebimentos state
+  // 2. Recebimentos Paginated List (Actual Payment Events from v_payment_balances)
+  const [recebimentosPage, setRecebimentosPage] = useState(0)
   const [recebimentosLoading, setRecebimentosLoading] = useState(false)
   const [recebimentosError, setRecebimentosError] = useState('')
   const [recebimentosData, setRecebimentosData] = useState<{
-    totalReceived: number
     items: Array<{
-      id: string
-      origin: string
-      description: string
-      dueDate: string
-      competence: string | null
+      paymentId: string
+      memberId: string
+      paymentDate: string
       amount: number
-      openAmount: number
-      status: string
+      allocatedAmount: number
+      availableAmount: number
+      isReversed: boolean
     }>
+    hasNext: boolean
   } | null>(null)
 
-  // Plano de contas state
-  const [chartLoading, setChartLoading] = useState(false)
-  const [chartError, setChartError] = useState('')
-  const [chartAccounts, setChartAccounts] = useState<Array<{
-    account_code: string
-    account_name: string
-    account_type: string
-    is_active: boolean
-  }>>([])
+  // 3. Fechamento & DRE State
+  const [periodState, setPeriodState] = useState<PeriodState | null>(null)
+  const [dreEntries, setDreEntries] = useState<DreEntry[] | null>(null)
+  const [fechamentoLoading, setFechamentoLoading] = useState(false)
+  const [fechamentoError, setFechamentoError] = useState('')
 
-  // Load Posição Geral
+  // 4. Exportação Contábil State (accounting_plans / accounting_accounts)
+  const [catalog, setCatalog] = useState<Catalog | null>(null)
+  const [selectedPlanId, setSelectedPlanId] = useState<string>('')
+  const [planDetail, setPlanDetail] = useState<Detail | null>(null)
+  const [contabilLoading, setContabilLoading] = useState(false)
+  const [contabilError, setContabilError] = useState('')
+
+  // Load Financial Dashboard KPIs on mount or organizationId change
+  useEffect(() => {
+    let live = true
+    setKpisLoading(true)
+    setKpisError('')
+    setKpis(null)
+
+    loadFinancialDashboard(client, organizationId)
+      .then(data => { if (live) setKpis(data) })
+      .catch(cause => {
+        if (!live) return
+        const code = (cause as { code?: string } | null)?.code
+        if (code === '42501' || code === '28000') {
+          setKpisError('Acesso negado aos indicadores financeiros da Loja.')
+        } else {
+          setKpisError('Não foi possível verificar as posições consolidadas.')
+        }
+      })
+      .finally(() => { if (live) setKpisLoading(false) })
+
+    return () => { live = false }
+  }, [client, organizationId])
+
+  // TAB 1: Load Posição Geral Paginated Sample
   useEffect(() => {
     if (activeTab !== 'posicao') return
+    const controller = new AbortController()
     let live = true
     setPosicaoLoading(true)
     setPosicaoError('')
+    setPosicaoItems(null)
 
     async function loadPosicao() {
       try {
-        let pQuery = client.from('v_institutional_payable_effective').select('*').eq('organization_id', organizationId)
-        let rQuery = client.from('v_institutional_receivable_effective').select('*').eq('organization_id', organizationId)
-        let cQuery = client.from('v_charge_balances').select('*').eq('organization_id', organizationId)
+        let pQuery = client.from('v_institutional_payable_effective').select('payable_id, organization_id, description, due_date, competence, effective_amount, open_amount, integrity_ok, is_canceled, approval_status').eq('organization_id', organizationId)
+        let rQuery = client.from('v_institutional_receivable_effective').select('receivable_id, organization_id, description, due_date, competence, effective_amount, open_amount, integrity_ok, is_canceled').eq('organization_id', organizationId)
+        let cQuery = client.from('v_charge_balances').select('charge_id, organization_id, description, due_date, competence, effective_amount, open_amount, integrity_ok, is_cancelled, settlement_status').eq('organization_id', organizationId)
 
         if (reportStart) {
           pQuery = pQuery.gte('due_date', reportStart)
@@ -92,10 +136,13 @@ export function Relatorios({ client, organizationId }: { client: SupabaseClient;
           cQuery = cQuery.lte('due_date', reportEnd)
         }
 
+        const pageSize = 25
+        const offset = posicaoPage * pageSize
+
         const [pRes, rRes, cRes] = await Promise.all([
-          pQuery.limit(50),
-          rQuery.limit(50),
-          cQuery.limit(50),
+          pQuery.order('due_date', { ascending: false }).range(offset, offset + pageSize - 1).abortSignal(controller.signal),
+          rQuery.order('due_date', { ascending: false }).range(offset, offset + pageSize - 1).abortSignal(controller.signal),
+          cQuery.order('due_date', { ascending: false }).range(offset, offset + pageSize - 1).abortSignal(controller.signal),
         ])
 
         if (pRes.error) throw pRes.error
@@ -108,23 +155,14 @@ export function Relatorios({ client, organizationId }: { client: SupabaseClient;
         const receivables = rRes.data ?? []
         const charges = cRes.data ?? []
 
-        let totP = 0; let totPOpen = 0
-        payables.forEach(p => {
-          totP += Number(p.effective_amount || 0)
-          totPOpen += Number(p.open_amount || 0)
-        })
+        // Verify integrity
+        for (const row of [...payables, ...receivables, ...charges]) {
+          if (row.organization_id !== organizationId || row.integrity_ok !== true) {
+            throw new Error('Falha de integridade nos registros financeiros.')
+          }
+        }
 
-        let totR = 0; let totROpen = 0
-        receivables.forEach(r => {
-          totR += Number(r.effective_amount || 0)
-          totROpen += Number(r.open_amount || 0)
-        })
-        charges.forEach(c => {
-          totR += Number(c.effective_amount || 0)
-          totROpen += Number(c.open_amount || 0)
-        })
-
-        const combinedItems: Array<{
+        const items: Array<{
           id: string
           type: 'Pagar' | 'Receber' | 'Integrante'
           description: string
@@ -166,188 +204,255 @@ export function Relatorios({ client, organizationId }: { client: SupabaseClient;
           })),
         ].sort((a, b) => b.dueDate.localeCompare(a.dueDate))
 
-        setPosicaoData({
-          totalPayables: totP,
-          totalPayablesOpen: totPOpen,
-          totalReceivables: totR,
-          totalReceivablesOpen: totROpen,
-          items: combinedItems,
-        })
-      } catch {
-        if (live) setPosicaoError('Não foi possível carregar a posição financeira.')
+        setPosicaoItems(items)
+      } catch (cause) {
+        if (!live) return
+        const msg = (cause as Error)?.message
+        const code = (cause as { code?: string } | null)?.code
+        if (code === '42501' || code === '28000') {
+          setPosicaoError('Acesso negado para consultar a posição financeira da Loja.')
+        } else if (msg && msg.includes('integridade')) {
+          setPosicaoError(msg)
+        } else {
+          setPosicaoError('Não foi possível carregar a listagem de lançamentos.')
+        }
       } finally {
         if (live) setPosicaoLoading(false)
       }
     }
 
     void loadPosicao()
-    return () => { live = false }
-  }, [client, organizationId, activeTab, reportStart, reportEnd])
+    return () => { live = false; controller.abort() }
+  }, [client, organizationId, activeTab, reportStart, reportEnd, posicaoPage])
 
-  // Load Recebimentos
+  // TAB 2: Load Recebimentos Paginated (v_payment_balances)
   useEffect(() => {
     if (activeTab !== 'recebimentos') return
+    const controller = new AbortController()
     let live = true
     setRecebimentosLoading(true)
     setRecebimentosError('')
+    setRecebimentosData(null)
 
     async function loadRecebimentos() {
       try {
-        let cQuery = client.from('v_charge_balances').select('*').eq('organization_id', organizationId)
-        let rQuery = client.from('v_institutional_receivable_effective').select('*').eq('organization_id', organizationId)
+        const pageSize = 25
+        const offset = recebimentosPage * pageSize
+
+        let query = client.from('v_payment_balances')
+          .select('payment_id, organization_id, member_id, payment_date, amount, allocated_amount, available_amount, is_reversed, integrity_ok')
+          .eq('organization_id', organizationId)
+          .eq('is_reversed', false)
 
         if (reportStart) {
-          cQuery = cQuery.gte('due_date', reportStart)
-          rQuery = rQuery.gte('due_date', reportStart)
+          query = query.gte('payment_date', reportStart)
         }
         if (reportEnd) {
-          cQuery = cQuery.lte('due_date', reportEnd)
-          rQuery = rQuery.lte('due_date', reportEnd)
+          query = query.lte('payment_date', reportEnd)
         }
 
-        const [cRes, rRes] = await Promise.all([
-          cQuery.limit(50),
-          rQuery.limit(50),
-        ])
+        const { data, error } = await query
+          .order('payment_date', { ascending: false })
+          .range(offset, offset + pageSize)
+          .abortSignal(controller.signal)
 
-        if (cRes.error) throw cRes.error
-        if (rRes.error) throw rRes.error
-
+        if (error) throw error
         if (!live) return
 
-        const charges = cRes.data ?? []
-        const receivables = rRes.data ?? []
-
-        let totalReceived = 0
-        const items: Array<{
-          id: string
-          origin: string
-          description: string
-          dueDate: string
-          competence: string | null
-          amount: number
-          openAmount: number
-          status: string
-        }> = []
-
-        charges.forEach(c => {
-          const effective = Number(c.effective_amount || 0)
-          const open = Number(c.open_amount || 0)
-          const received = Math.max(0, effective - open)
-          if (received > 0 || c.settlement_status === 'paid' || c.settlement_status === 'settled') {
-            totalReceived += received
-            items.push({
-              id: String(c.charge_id),
-              origin: 'Integrante',
-              description: String(c.description || 'Cobrança'),
-              dueDate: String(c.due_date || ''),
-              competence: c.competence ? String(c.competence) : null,
-              amount: effective,
-              openAmount: open,
-              status: String(c.settlement_status || 'paid'),
-            })
+        const rows = data ?? []
+        for (const row of rows) {
+          if (row.organization_id !== organizationId || row.integrity_ok !== true) {
+            throw new Error('Falha de integridade nos registros de pagamento.')
           }
-        })
+        }
+        const activeRows = rows.filter(r => !r.is_reversed)
 
-        receivables.forEach(r => {
-          const effective = Number(r.effective_amount || 0)
-          const open = Number(r.open_amount || 0)
-          const received = Math.max(0, effective - open)
-          if (received > 0 || open === 0) {
-            totalReceived += received > 0 ? received : effective
-            items.push({
-              id: String(r.receivable_id),
-              origin: 'Institucional',
-              description: String(r.description || 'Receita'),
-              dueDate: String(r.due_date || ''),
-              competence: r.competence ? String(r.competence) : null,
-              amount: effective,
-              openAmount: open,
-              status: 'posted',
-            })
-          }
-        })
+        const hasNext = activeRows.length > pageSize
+        const items = activeRows.slice(0, pageSize).map(row => ({
+          paymentId: String(row.payment_id),
+          memberId: String(row.member_id),
+          paymentDate: String(row.payment_date),
+          amount: Number(row.amount || 0),
+          allocatedAmount: Number(row.allocated_amount || 0),
+          availableAmount: Number(row.available_amount || 0),
+          isReversed: Boolean(row.is_reversed),
+        }))
 
-        setRecebimentosData({
-          totalReceived,
-          items: items.sort((a, b) => b.dueDate.localeCompare(a.dueDate)),
-        })
-      } catch {
-        if (live) setRecebimentosError('Não foi possível carregar o relatório de recebimentos.')
+        setRecebimentosData({ items, hasNext })
+      } catch (cause) {
+        if (!live) return
+        const code = (cause as { code?: string } | null)?.code
+        if (code === '42501' || code === '28000') {
+          setRecebimentosError('Acesso negado para consultar o histórico de recebimentos.')
+        } else {
+          setRecebimentosError('Não foi possível carregar os registros de recebimentos.')
+        }
       } finally {
         if (live) setRecebimentosLoading(false)
       }
     }
 
     void loadRecebimentos()
-    return () => { live = false }
-  }, [client, organizationId, activeTab, reportStart, reportEnd])
+    return () => { live = false; controller.abort() }
+  }, [client, organizationId, activeTab, reportStart, reportEnd, recebimentosPage])
 
-  // Load Plano de Contas / Contábil
+  // TAB 4: Load Fechamento & DRE (Connected to reportCompetence)
   useEffect(() => {
-    if (activeTab !== 'contabil') return
+    if (activeTab !== 'fechamento') return
+    const controller = new AbortController()
     let live = true
-    setChartLoading(true)
-    setChartError('')
+    setFechamentoLoading(true)
+    setFechamentoError('')
+    setPeriodState(null)
+    setDreEntries(null)
 
-    async function loadChart() {
+    async function loadFechamento() {
       try {
-        const { data, error } = await client
-          .from('v_chart_of_accounts')
-          .select('account_code, account_name, account_type, is_active')
-          .eq('organization_id', organizationId)
-          .order('account_code')
+        const [pState, dreData] = await Promise.all([
+          loadPeriodState(client, organizationId, reportCompetence, controller.signal),
+          loadDreReport(client, organizationId, reportCompetence, reportCompetence),
+        ])
 
-        if (error) throw error
         if (!live) return
-        setChartAccounts(data ?? [])
-      } catch {
-        if (live) setChartError('Não foi possível carregar o plano de contas contábil.')
+        setPeriodState(pState)
+        setDreEntries(dreData)
+      } catch (cause) {
+        if (!live) return
+        const code = (cause as { code?: string } | null)?.code
+        if (code === '42501' || code === '28000') {
+          setFechamentoError('Acesso negado para consultar a DRE e fechamento desta competência.')
+        } else {
+          setFechamentoError('Não foi possível verificar a DRE para a competência solicitada.')
+        }
       } finally {
-        if (live) setChartLoading(false)
+        if (live) setFechamentoLoading(false)
       }
     }
 
-    void loadChart()
-    return () => { live = false }
+    void loadFechamento()
+    return () => { live = false; controller.abort() }
+  }, [client, organizationId, activeTab, reportCompetence])
+
+  // TAB 5: Load Plano de Contas (accounting_plans & accounting_accounts)
+  useEffect(() => {
+    if (activeTab !== 'contabil') return
+    const controller = new AbortController()
+    let live = true
+    setContabilLoading(true)
+    setContabilError('')
+    setCatalog(null)
+    setPlanDetail(null)
+
+    async function loadContabil() {
+      try {
+        const cat = await loadAccountingCatalog(client, organizationId, controller.signal)
+        if (!live) return
+        setCatalog(cat)
+        const initialPlanId = cat.plans.find(p => p.status === 'published')?.id ?? cat.plans[0]?.id ?? ''
+        setSelectedPlanId(initialPlanId)
+
+        if (initialPlanId) {
+          const detail = await loadAccountingDetail(client, organizationId, initialPlanId, controller.signal)
+          if (live) setPlanDetail(detail)
+        }
+      } catch (cause) {
+        if (!live) return
+        const code = (cause as { code?: string } | null)?.code
+        if (code === '42501' || code === '28000') {
+          setContabilError('Acesso negado para consultar o plano de contas contábil.')
+        } else {
+          setContabilError('Não foi possível carregar os planos e contas contábeis.')
+        }
+      } finally {
+        if (live) setContabilLoading(false)
+      }
+    }
+
+    void loadContabil()
+    return () => { live = false; controller.abort() }
   }, [client, organizationId, activeTab])
 
-  // CSV Generator Helpers
-  function downloadCsv(filename: string, content: string) {
-    const blob = new Blob([content], { type: 'text/csv;charset=utf-8' })
+  // Change selected accounting plan
+  async function handlePlanSelect(planId: string) {
+    setSelectedPlanId(planId)
+    if (!planId) { setPlanDetail(null); return }
+    const controller = new AbortController()
+    try {
+      setContabilLoading(true)
+      const detail = await loadAccountingDetail(client, organizationId, planId, controller.signal)
+      setPlanDetail(detail)
+    } catch {
+      setContabilError('Não foi possível carregar as contas deste plano.')
+    } finally {
+      setContabilLoading(false)
+    }
+  }
+
+  // Helper function to trigger browser CSV download safely
+  function triggerCsvDownload(filename: string, content: string) {
+    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const anchor = document.createElement('a')
     anchor.href = url
     anchor.download = filename
+    anchor.style.display = 'none'
+    document.body.appendChild(anchor)
     anchor.click()
+    document.body.removeChild(anchor)
     URL.revokeObjectURL(url)
   }
 
-  function exportPosicaoCsv() {
-    if (!posicaoData) return
-    let csv = 'ID;Tipo;Descrição;Vencimento;Competência;Valor Total;Saldo Aberto;Situação\n'
-    posicaoData.items.forEach(item => {
-      csv += `"${item.id}";"${item.type}";"${item.description.replace(/"/g, '""')}";"${formatDate(item.dueDate)}";"${formatCompetence(item.competence)}";"${item.amount.toFixed(2)}";"${item.openAmount.toFixed(2)}";"${statusLabels[item.status] ?? item.status}"\n`
+  // Export CSV for Posição Geral Page Sample
+  function exportPosicaoPageCsv() {
+    if (!posicaoItems || posicaoError) return
+    let csv = `Loja;${sanitizeCsvCell(organizationId)}\n`
+    csv += `Data de Exportacao;${sanitizeCsvCell(new Date().toISOString())}\n`
+    csv += `Filtro Inicio;${sanitizeCsvCell(reportStart || 'Sem limite')}\n`
+    csv += `Filtro Fim;${sanitizeCsvCell(reportEnd || 'Sem limite')}\n`
+    csv += `Abrangencia;${sanitizeCsvCell('Amostra da pagina ' + (posicaoPage + 1) + ' (Ate 25 por origem)')}\n\n`
+
+    csv += 'Tipo;ID;Descricao;Vencimento;Competencia;Valor Previsto;Saldo Aberto;Situacao\n'
+    posicaoItems.forEach(item => {
+      csv += `${sanitizeCsvCell(item.type)};${sanitizeCsvCell(item.id)};${sanitizeCsvCell(item.description)};${sanitizeCsvCell(formatDate(item.dueDate))};${sanitizeCsvCell(formatCompetence(item.competence))};${sanitizeCsvCell(item.amount.toFixed(2))};${sanitizeCsvCell(item.openAmount.toFixed(2))};${sanitizeCsvCell(statusLabels[item.status] ?? item.status)}\n`
     })
-    downloadCsv(`posicao-financeira-${organizationId.slice(0, 8)}.csv`, csv)
+
+    triggerCsvDownload(`posicao-financeira-pagina-${posicaoPage + 1}-${organizationId.slice(0, 8)}.csv`, csv)
   }
 
-  function exportRecebimentosCsv() {
-    if (!recebimentosData) return
-    let csv = 'ID;Origem;Descrição;Vencimento;Competência;Valor Total;Saldo Aberto;Situação\n'
+  // Export CSV for Recebimentos Paginated Sample
+  function exportRecebimentosPageCsv() {
+    if (!recebimentosData || recebimentosError) return
+    let csv = `Loja;${sanitizeCsvCell(organizationId)}\n`
+    csv += `Data de Exportacao;${sanitizeCsvCell(new Date().toISOString())}\n`
+    csv += `Filtro Inicio;${sanitizeCsvCell(reportStart || 'Sem limite')}\n`
+    csv += `Filtro Fim;${sanitizeCsvCell(reportEnd || 'Sem limite')}\n`
+    csv += `Abrangencia;${sanitizeCsvCell('Registros de pagamento da pagina ' + (recebimentosPage + 1))}\n\n`
+
+    csv += 'ID Pagamento;ID Integrante;Data Pagamento;Valor Recebido;Valor Alocado;Credito Disponivel\n'
     recebimentosData.items.forEach(item => {
-      csv += `"${item.id}";"${item.origin}";"${item.description.replace(/"/g, '""')}";"${formatDate(item.dueDate)}";"${formatCompetence(item.competence)}";"${item.amount.toFixed(2)}";"${item.openAmount.toFixed(2)}";"${statusLabels[item.status] ?? item.status}"\n`
+      csv += `${sanitizeCsvCell(item.paymentId)};${sanitizeCsvCell(item.memberId)};${sanitizeCsvCell(formatDate(item.paymentDate))};${sanitizeCsvCell(item.amount.toFixed(2))};${sanitizeCsvCell(item.allocatedAmount.toFixed(2))};${sanitizeCsvCell(item.availableAmount.toFixed(2))}\n`
     })
-    downloadCsv(`recebimentos-${organizationId.slice(0, 8)}.csv`, csv)
+
+    triggerCsvDownload(`recebimentos-pagina-${recebimentosPage + 1}-${organizationId.slice(0, 8)}.csv`, csv)
   }
 
-  function exportContabilCsv() {
-    if (!chartAccounts.length) return
-    let csv = 'Código da Conta;Nome da Conta;Tipo;Ativa\n'
-    chartAccounts.forEach(acc => {
-      csv += `"${acc.account_code}";"${acc.account_name.replace(/"/g, '""')}";"${acc.account_type}";"${acc.is_active ? 'Sim' : 'Não'}"\n`
+  // Export CSV for Chart of Accounts Structure (Plano de Contas)
+  function exportChartOfAccountsCsv() {
+    if (!planDetail || contabilError) return
+    const plan = catalog?.plans.find(p => p.id === selectedPlanId)
+    let csv = `Loja;${sanitizeCsvCell(organizationId)}\n`
+    csv += `Data de Exportacao;${sanitizeCsvCell(new Date().toISOString())}\n`
+    csv += `Plano Contabil;${sanitizeCsvCell(plan?.name ?? selectedPlanId)}\n`
+    csv += `Vigencia;${sanitizeCsvCell((plan?.valid_from ?? '') + ' a ' + (plan?.valid_to ?? ''))}\n`
+    csv += `Status Plano;${sanitizeCsvCell(plan?.status ?? '')}\n`
+    csv += `Tipo de Exportacao;${sanitizeCsvCell('Cadastro da Estrutura do Plano de Contas (Nao inclui lancamentos contabeis)')}\n\n`
+
+    csv += 'Codigo;Descricao;Natureza;Tipo Registro;Ativa\n'
+    planDetail.accounts.forEach(acc => {
+      csv += `${sanitizeCsvCell(acc.code)};${sanitizeCsvCell(acc.description)};${sanitizeCsvCell(acc.nature)};${sanitizeCsvCell(acc.row_type)};${sanitizeCsvCell(acc.active ? 'Sim' : 'Nao')}\n`
     })
-    downloadCsv(`plano-contas-${organizationId.slice(0, 8)}.csv`, csv)
+
+    triggerCsvDownload(`plano-contas-${selectedPlanId.slice(0, 8)}.csv`, csv)
   }
 
   function handleExtendedExportRequest(format: 'PDF' | 'XLSX', reportName: string) {
@@ -365,18 +470,22 @@ export function Relatorios({ client, organizationId }: { client: SupabaseClient;
         </div>
 
         <p className="subtle">
-          Relatórios financeiros consolidados e auditáveis da Loja. Todas as posições são sustentadas por dados reais do servidor.
+          Relatórios financeiros e contábeis consolidados da Loja. Todas as posições são sustentadas estritamente pelos contratos e dados reais do servidor.
         </p>
 
         {/* Global Filter Bar */}
         <div className="finance-filters" role="search" aria-label="Filtros de relatórios" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'flex-end', margin: '1rem 0' }}>
           <div className="filter-group">
-            <label htmlFor="reportStart" style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Período de</label>
+            <label htmlFor="reportStart" style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Período de (Vencimento/Pagamento)</label>
             <input
               id="reportStart"
               type="date"
               value={reportStart}
-              onChange={e => setReportStart(e.target.value)}
+              onChange={e => {
+                setReportStart(e.target.value)
+                setPosicaoPage(0)
+                setRecebimentosPage(0)
+              }}
             />
           </div>
 
@@ -386,12 +495,16 @@ export function Relatorios({ client, organizationId }: { client: SupabaseClient;
               id="reportEnd"
               type="date"
               value={reportEnd}
-              onChange={e => setReportEnd(e.target.value)}
+              onChange={e => {
+                setReportEnd(e.target.value)
+                setPosicaoPage(0)
+                setRecebimentosPage(0)
+              }}
             />
           </div>
 
           <div className="filter-group">
-            <label htmlFor="reportCompetence" style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Competência (AAAA-MM)</label>
+            <label htmlFor="reportCompetence" style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Competência Contábil (AAAA-MM)</label>
             <input
               id="reportCompetence"
               type="month"
@@ -403,7 +516,13 @@ export function Relatorios({ client, organizationId }: { client: SupabaseClient;
           <button
             type="button"
             className="secondary"
-            onClick={() => { setReportStart(''); setReportEnd(''); setReportCompetence(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }) }}
+            onClick={() => {
+              setReportStart('')
+              setReportEnd('')
+              setReportCompetence(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` })
+              setPosicaoPage(0)
+              setRecebimentosPage(0)
+            }}
           >
             Limpar filtros
           </button>
@@ -415,7 +534,7 @@ export function Relatorios({ client, organizationId }: { client: SupabaseClient;
             type="button"
             className={activeTab === 'posicao' ? 'primary' : 'secondary'}
             aria-pressed={activeTab === 'posicao'}
-            onClick={() => setActiveTab('posicao')}
+            onClick={() => { setActiveTab('posicao'); setPosicaoPage(0) }}
           >
             Posição Geral
           </button>
@@ -423,17 +542,9 @@ export function Relatorios({ client, organizationId }: { client: SupabaseClient;
             type="button"
             className={activeTab === 'recebimentos' ? 'primary' : 'secondary'}
             aria-pressed={activeTab === 'recebimentos'}
-            onClick={() => setActiveTab('recebimentos')}
+            onClick={() => { setActiveTab('recebimentos'); setRecebimentosPage(0) }}
           >
             Recebimentos
-          </button>
-          <button
-            type="button"
-            className={activeTab === 'inadimplencia' ? 'primary' : 'secondary'}
-            aria-pressed={activeTab === 'inadimplencia'}
-            onClick={() => setActiveTab('inadimplencia')}
-          >
-            Inadimplência
           </button>
           <button
             type="button"
@@ -459,8 +570,8 @@ export function Relatorios({ client, organizationId }: { client: SupabaseClient;
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>A. Posição Financeira Geral</h3>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button type="button" className="secondary" disabled={!posicaoData} onClick={exportPosicaoCsv}>
-                  <Download size={16} aria-hidden="true" style={{ marginRight: '0.25rem' }} /> Exportar CSV
+                <button type="button" className="secondary" disabled={!posicaoItems || posicaoLoading || !!posicaoError} onClick={exportPosicaoPageCsv}>
+                  <Download size={16} aria-hidden="true" style={{ marginRight: '0.25rem' }} /> Exportar Página (CSV)
                 </button>
                 <button type="button" className="quiet" onClick={() => handleExtendedExportRequest('PDF', 'Posição Financeira Geral')}>
                   PDF
@@ -471,68 +582,106 @@ export function Relatorios({ client, organizationId }: { client: SupabaseClient;
               </div>
             </div>
 
+            {/* Server-Calculated Consolidated Global KPIs (read_tenant_financial_dashboard) */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <p className="eyebrow" style={{ marginBottom: '0.25rem' }}>Posições Globais Consolidadas no Banco</p>
+              {kpisLoading ? (
+                <p role="status">Consultando indicadores globais…</p>
+              ) : kpisError ? (
+                <p role="alert" className="message error">{kpisError}</p>
+              ) : kpis ? (
+                <>
+                  <p className="subtle" style={{ marginBottom: '0.75rem' }}>
+                    Calculado pelo servidor em <strong>{formatDate(kpis.as_of)}</strong>. Não recalculado somando amostras paginadas.
+                  </p>
+                  <div className="metric-grid">
+                    <article className="panel metric">
+                      <p className="eyebrow">A Receber Global</p>
+                      <strong>{formatMoney(Number(kpis.receivables_open))}</strong>
+                      <span className="subtle">Vencidos: {formatMoney(Number(kpis.receivables_overdue))}</span>
+                    </article>
+                    <article className="panel metric">
+                      <p className="eyebrow">A Pagar Global</p>
+                      <strong>{formatMoney(Number(kpis.payables_open))}</strong>
+                      <span className="subtle">Vencidos: {formatMoney(Number(kpis.payables_overdue))}</span>
+                    </article>
+                    <article className="panel metric">
+                      <p className="eyebrow">Recebido no Mês</p>
+                      <strong>{formatMoney(Number(kpis.received_this_month))}</strong>
+                      <span className="subtle">Saldo caixas/bancos: {formatMoney(Number(kpis.cash_bank_balance))}</span>
+                    </article>
+                  </div>
+                </>
+              ) : null}
+            </div>
+
+            {/* Paginated Listing */}
+            <h4 style={{ fontSize: '1rem', fontWeight: 600, marginTop: '1.5rem', marginBottom: '0.5rem' }}>
+              Listagem de Lançamentos — Amostra Paginada (Página {posicaoPage + 1})
+            </h4>
+
             {posicaoLoading ? (
-              <p role="status">Carregando posição financeira…</p>
+              <p role="status">Carregando listagem paginada…</p>
             ) : posicaoError ? (
               <p role="alert" className="message error">{posicaoError}</p>
-            ) : posicaoData ? (
+            ) : !posicaoItems || !posicaoItems.length ? (
+              <p className="empty">Nenhum lançamento encontrado para a página consultada.</p>
+            ) : (
               <>
-                <div className="metric-grid" style={{ marginBottom: '1.5rem' }}>
-                  <article className="panel metric">
-                    <p className="eyebrow">Obrigações a Pagar</p>
-                    <strong>{formatMoney(posicaoData.totalPayables)}</strong>
-                    <span className="subtle">Aberto: {formatMoney(posicaoData.totalPayablesOpen)}</span>
-                  </article>
-                  <article className="panel metric">
-                    <p className="eyebrow">Recebíveis & Cobranças</p>
-                    <strong>{formatMoney(posicaoData.totalReceivables)}</strong>
-                    <span className="subtle">Aberto: {formatMoney(posicaoData.totalReceivablesOpen)}</span>
-                  </article>
-                  <article className="panel metric">
-                    <p className="eyebrow">Posição Líquida Prevista</p>
-                    <strong>{formatMoney(posicaoData.totalReceivables - posicaoData.totalPayables)}</strong>
-                    <span className="subtle">Diferença entre créditos e débitos previstos</span>
-                  </article>
+                <div className="finance-table" role="region" aria-label="Lançamentos da Posição Geral" tabIndex={0}>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Tipo</th>
+                        <th>Descrição</th>
+                        <th>Vencimento</th>
+                        <th>Competência</th>
+                        <th>Valor Previsto</th>
+                        <th>Saldo Aberto</th>
+                        <th>Situação</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {posicaoItems.map(item => (
+                        <tr key={`${item.type}-${item.id}`}>
+                          <td>
+                            <span className={`pill ${item.type === 'Pagar' ? 'warning' : 'success'}`}>
+                              {item.type}
+                            </span>
+                          </td>
+                          <td>{item.description}</td>
+                          <td>{formatDate(item.dueDate)}</td>
+                          <td>{formatCompetence(item.competence)}</td>
+                          <td>{formatMoney(item.amount)}</td>
+                          <td>{formatMoney(item.openAmount)}</td>
+                          <td>{statusLabels[item.status] ?? item.status}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
 
-                {!posicaoData.items.length ? (
-                  <p className="empty">Nenhum lançamento encontrado para o período selecionado.</p>
-                ) : (
-                  <div className="finance-table" role="region" aria-label="Lançamentos da Posição Geral" tabIndex={0}>
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Tipo</th>
-                          <th>Descrição</th>
-                          <th>Vencimento</th>
-                          <th>Competência</th>
-                          <th>Valor Previsto</th>
-                          <th>Saldo Aberto</th>
-                          <th>Situação</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {posicaoData.items.map(item => (
-                          <tr key={`${item.type}-${item.id}`}>
-                            <td>
-                              <span className={`pill ${item.type === 'Pagar' ? 'warning' : 'success'}`}>
-                                {item.type}
-                              </span>
-                            </td>
-                            <td>{item.description}</td>
-                            <td>{formatDate(item.dueDate)}</td>
-                            <td>{formatCompetence(item.competence)}</td>
-                            <td>{formatMoney(item.amount)}</td>
-                            <td>{formatMoney(item.openAmount)}</td>
-                            <td>{statusLabels[item.status] ?? item.status}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                <div className="pagination" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '1rem' }}>
+                  <button
+                    type="button"
+                    className="secondary"
+                    disabled={posicaoPage === 0 || posicaoLoading}
+                    onClick={() => setPosicaoPage(p => Math.max(0, p - 1))}
+                  >
+                    Página anterior
+                  </button>
+                  <span className="subtle">Página {posicaoPage + 1} (até 25 registros por origem)</span>
+                  <button
+                    type="button"
+                    className="secondary"
+                    disabled={posicaoItems.length < 25 || posicaoLoading}
+                    onClick={() => setPosicaoPage(p => p + 1)}
+                  >
+                    Próxima página
+                  </button>
+                </div>
               </>
-            ) : null}
+            )}
           </div>
         )}
 
@@ -540,10 +689,10 @@ export function Relatorios({ client, organizationId }: { client: SupabaseClient;
         {activeTab === 'recebimentos' && (
           <div className="report-subview">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>B. Relatório de Recebimentos</h3>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>B. Relatório de Recebimentos Efetivados</h3>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button type="button" className="secondary" disabled={!recebimentosData} onClick={exportRecebimentosCsv}>
-                  <Download size={16} aria-hidden="true" style={{ marginRight: '0.25rem' }} /> Exportar CSV
+                <button type="button" className="secondary" disabled={!recebimentosData || recebimentosLoading || !!recebimentosError} onClick={exportRecebimentosPageCsv}>
+                  <Download size={16} aria-hidden="true" style={{ marginRight: '0.25rem' }} /> Exportar Página (CSV)
                 </button>
                 <button type="button" className="quiet" onClick={() => handleExtendedExportRequest('PDF', 'Relatório de Recebimentos')}>
                   PDF
@@ -554,75 +703,74 @@ export function Relatorios({ client, organizationId }: { client: SupabaseClient;
               </div>
             </div>
 
+            <p className="subtle" style={{ marginBottom: '1rem' }}>
+              Histórico de fatos reais de recebimento registrados em caixa/banco (visão <code>v_payment_balances</code>), ordenado por data de pagamento. Exclui estornos e não deduz valores a partir do vencimento ou saldo aberto de cobranças.
+            </p>
+
             {recebimentosLoading ? (
-              <p role="status">Carregando recebimentos…</p>
+              <p role="status">Carregando recebimentos efetivados…</p>
             ) : recebimentosError ? (
               <p role="alert" className="message error">{recebimentosError}</p>
-            ) : recebimentosData ? (
+            ) : !recebimentosData || !recebimentosData.items.length ? (
+              <p className="empty">Nenhum registro de pagamento recebido para os filtros selecionados.</p>
+            ) : (
               <>
-                <div className="metric-grid" style={{ marginBottom: '1.5rem' }}>
-                  <article className="panel metric">
-                    <p className="eyebrow">Total Recebido</p>
-                    <strong>{formatMoney(recebimentosData.totalReceived)}</strong>
-                    <span className="subtle">Recebimentos liquidados e apurados no período</span>
-                  </article>
-                  <article className="panel metric">
-                    <p className="eyebrow">Lançamentos Processados</p>
-                    <strong>{recebimentosData.items.length}</strong>
-                    <span className="subtle">Registros de integrantes e receitas institucionais</span>
-                  </article>
+                <div className="finance-table" role="region" aria-label="Fatos reais de recebimentos" tabIndex={0}>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>ID Pagamento</th>
+                        <th>Data do Pagamento</th>
+                        <th>Valor Recebido</th>
+                        <th>Valor Alocado</th>
+                        <th>Crédito Disponível</th>
+                        <th>Situação</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recebimentosData.items.map(item => (
+                        <tr key={item.paymentId}>
+                          <td><code>{item.paymentId.slice(0, 8)}</code></td>
+                          <td>{formatDate(item.paymentDate)}</td>
+                          <td><strong>{formatMoney(item.amount)}</strong></td>
+                          <td>{formatMoney(item.allocatedAmount)}</td>
+                          <td>{formatMoney(item.availableAmount)}</td>
+                          <td><span className="pill success">Registrado</span></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
 
-                {!recebimentosData.items.length ? (
-                  <p className="empty">Nenhum recebimento encontrado para os critérios selecionados.</p>
-                ) : (
-                  <div className="finance-table" role="region" aria-label="Lançamentos de Recebimentos" tabIndex={0}>
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Origem</th>
-                          <th>Descrição</th>
-                          <th>Vencimento</th>
-                          <th>Competência</th>
-                          <th>Valor Efetivo</th>
-                          <th>Saldo Aberto</th>
-                          <th>Situação</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {recebimentosData.items.map(item => (
-                          <tr key={`${item.origin}-${item.id}`}>
-                            <td><span className="pill">{item.origin}</span></td>
-                            <td>{item.description}</td>
-                            <td>{formatDate(item.dueDate)}</td>
-                            <td>{formatCompetence(item.competence)}</td>
-                            <td>{formatMoney(item.amount)}</td>
-                            <td>{formatMoney(item.openAmount)}</td>
-                            <td>{statusLabels[item.status] ?? item.status}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                <div className="pagination" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '1rem' }}>
+                  <button
+                    type="button"
+                    className="secondary"
+                    disabled={recebimentosPage === 0 || recebimentosLoading}
+                    onClick={() => setRecebimentosPage(p => Math.max(0, p - 1))}
+                  >
+                    Página anterior
+                  </button>
+                  <span className="subtle">Página {recebimentosPage + 1}</span>
+                  <button
+                    type="button"
+                    className="secondary"
+                    disabled={!recebimentosData.hasNext || recebimentosLoading}
+                    onClick={() => setRecebimentosPage(p => p + 1)}
+                  >
+                    Próxima página
+                  </button>
+                </div>
               </>
-            ) : null}
+            )}
           </div>
         )}
 
-        {/* TAB 3: Inadimplência */}
-        {activeTab === 'inadimplencia' && (
-          <div className="report-subview">
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem' }}>C. Relatório de Inadimplência</h3>
-            <DelinquencyReport client={client} organizationId={organizationId} />
-          </div>
-        )}
-
-        {/* TAB 4: Fechamento & DRE */}
+        {/* TAB 3: Fechamento & DRE */}
         {activeTab === 'fechamento' && (
           <div className="report-subview">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>D. Fechamento Mensal e DRE Contábil</h3>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>C. Fechamento Mensal e DRE por Competência</h3>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button type="button" className="quiet" onClick={() => handleExtendedExportRequest('PDF', 'DRE Contábil')}>
                   PDF
@@ -632,57 +780,177 @@ export function Relatorios({ client, organizationId }: { client: SupabaseClient;
                 </button>
               </div>
             </div>
+
             <p className="subtle" style={{ marginBottom: '1rem' }}>
-              Competência selecionada: <strong>{formatCompetence(reportCompetence + '-01')}</strong>. O resultado contábil é apurado com base no Plano de Contas e regras DRE da Loja.
+              Competência consultada: <strong>{formatCompetence(reportCompetence + '-01')}</strong>.
             </p>
-            <DreView client={client} organizationId={organizationId} />
+
+            {fechamentoLoading ? (
+              <p role="status">Verificando fechamento e DRE da competência…</p>
+            ) : fechamentoError ? (
+              <p role="alert" className="message error">{fechamentoError}</p>
+            ) : (
+              <>
+                {/* Period Closing State */}
+                {periodState && (
+                  <div className="panel metric" style={{ marginBottom: '1.5rem', borderLeft: periodState.closed ? '4px solid var(--success-color, #16a34a)' : '4px solid var(--warning-color, #d97706)' }}>
+                    <p className="eyebrow">Estado do Período Contábil ({reportCompetence})</p>
+                    <strong style={{ fontSize: '1.1rem', display: 'block', marginTop: '0.25rem' }}>
+                      {periodState.closed ? 'Fechado' : 'Aberto / Em Andamento'}
+                    </strong>
+                    <span className="subtle">
+                      {periodState.exists ? `Último evento registrado: ${periodState.lastEvent ?? 'Abertura'}` : 'Período contábil sem encerramento formal registrado.'}
+                    </span>
+                  </div>
+                )}
+
+                {/* DRE Summary */}
+                {!dreEntries || !dreEntries.length ? (
+                  <p className="empty">Nenhum lançamento contabilizado na DRE para a competência {reportCompetence}.</p>
+                ) : (
+                  <>
+                    <h4 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+                      Resumo da DRE — Competência {reportCompetence}
+                    </h4>
+                    <div className="finance-table" role="region" aria-label="Resultado DRE" tabIndex={0}>
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Competência</th>
+                            <th>Receitas</th>
+                            <th>Custos / Despesas</th>
+                            <th>Resultado Contábil</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {summarizeDre(dreEntries).map(m => (
+                            <tr key={m.month}>
+                              <td>{formatCompetence(m.month)}</td>
+                              <td>{formatMoney(m.revenue)}</td>
+                              <td>{formatMoney(m.expenses)}</td>
+                              <td><strong>{formatMoney(m.result)}</strong></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <h4 style={{ fontSize: '1rem', fontWeight: 600, marginTop: '1.5rem', marginBottom: '0.5rem' }}>
+                      Detalhamento por Conta Contábil
+                    </h4>
+                    <div className="finance-table" role="region" aria-label="Contas na DRE" tabIndex={0}>
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Código</th>
+                            <th>Conta Contábil</th>
+                            <th>Natureza</th>
+                            <th>Valor Assinado</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {dreEntries.map((r, i) => (
+                            <tr key={`${r.accounting_period}:${r.accounting_account_id}:${i}`}>
+                              <td><code>{r.account_code}</code></td>
+                              <td>{r.account_description}</td>
+                              <td><span className="pill">{r.nature}</span></td>
+                              <td>{formatMoney(safeDreValue(r.signed_amount))}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
           </div>
         )}
 
-        {/* TAB 5: Exportação Contábil */}
+        {/* TAB 4: Exportação Contábil */}
         {activeTab === 'contabil' && (
           <div className="report-subview">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>E. Plano de Contas & Exportação Contábil</h3>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>D. Plano de Contas & Exportação Contábil</h3>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button type="button" className="secondary" disabled={!chartAccounts.length} onClick={exportContabilCsv}>
-                  <Download size={16} aria-hidden="true" style={{ marginRight: '0.25rem' }} /> Exportar CSV Contábil
+                <button type="button" className="secondary" disabled={!planDetail || contabilLoading || !!contabilError} onClick={exportChartOfAccountsCsv}>
+                  <Download size={16} aria-hidden="true" style={{ marginRight: '0.25rem' }} /> Exportar Plano de Contas (CSV)
                 </button>
-                <button type="button" className="quiet" onClick={() => handleExtendedExportRequest('XLSX', 'Plano de Contas')}>
-                  Exportar XLSX Contábil
+                <button type="button" className="quiet" onClick={() => handleExtendedExportRequest('XLSX', 'Lançamentos Contábeis Classificados')}>
+                  Exportar Lançamentos (XLSX)
                 </button>
               </div>
             </div>
 
-            {chartLoading ? (
-              <p role="status">Carregando plano de contas…</p>
-            ) : chartError ? (
-              <p role="alert" className="message error">{chartError}</p>
-            ) : !chartAccounts.length ? (
-              <p className="empty">Nenhuma conta contábil cadastrada na Loja.</p>
+            <p className="subtle" style={{ marginBottom: '1rem' }}>
+              Exportação do cadastro da estrutura contábil (tabelas <code>accounting_plans</code> e <code>accounting_accounts</code>).
+            </p>
+
+            {contabilLoading ? (
+              <p role="status">Carregando catálogo e estrutura contábil…</p>
+            ) : contabilError ? (
+              <p role="alert" className="message error">{contabilError}</p>
+            ) : !catalog || !catalog.plans.length ? (
+              <p className="empty">Nenhum plano de contas cadastrado para esta Loja.</p>
             ) : (
-              <div className="finance-table" role="region" aria-label="Plano de contas contábil" tabIndex={0}>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Código da Conta</th>
-                      <th>Nome da Conta</th>
-                      <th>Tipo</th>
-                      <th>Situação</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {chartAccounts.map(acc => (
-                      <tr key={acc.account_code}>
-                        <td><code>{acc.account_code}</code></td>
-                        <td>{acc.account_name}</td>
-                        <td><span className="pill">{acc.account_type}</span></td>
-                        <td>{acc.is_active ? 'Ativa' : 'Inativa'}</td>
-                      </tr>
+              <>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label htmlFor="plan-selector" style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.25rem' }}>
+                    Selecione o Plano Contábil
+                  </label>
+                  <select
+                    id="plan-selector"
+                    value={selectedPlanId}
+                    onChange={e => void handlePlanSelect(e.target.value)}
+                  >
+                    {catalog.plans.map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} — {p.status === 'published' ? 'Publicado' : 'Rascunho'} ({p.valid_from.slice(0, 7)} a {p.valid_to.slice(0, 7)})
+                      </option>
                     ))}
-                  </tbody>
-                </table>
-              </div>
+                  </select>
+                </div>
+
+                {!planDetail || !planDetail.accounts.length ? (
+                  <p className="empty">Nenhuma conta contábil cadastrada neste plano.</p>
+                ) : (
+                  <div className="finance-table" role="region" aria-label="Plano de contas contábil" tabIndex={0}>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Código da Conta</th>
+                          <th>Descrição da Conta</th>
+                          <th>Natureza</th>
+                          <th>Tipo de Registro</th>
+                          <th>Situação</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {planDetail.accounts.map(acc => (
+                          <tr key={acc.id}>
+                            <td><code>{acc.code}</code></td>
+                            <td>{acc.description}</td>
+                            <td><span className="pill">{acc.nature}</span></td>
+                            <td>{acc.row_type}</td>
+                            <td>{acc.active ? 'Ativa' : 'Inativa'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Important Distinction Notice */}
+                <div className="panel info-card" style={{ marginTop: '1.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    <Info size={18} aria-hidden="true" />
+                    <strong>Diferenciação Modalidades de Exportação Contábil</strong>
+                  </div>
+                  <p className="subtle" style={{ fontSize: '0.85rem', lineHeight: '1.4' }}>
+                    O arquivo CSV acima exporta o <strong>Plano de Contas (Estrutura do Cadastro)</strong>. A exportação do <strong>Diário e Razão com Lançamentos Contábeis Classificados</strong> necessita do microserviço estendido de integração contábil no servidor.
+                  </p>
+                </div>
+              </>
             )}
           </div>
         )}
@@ -721,7 +989,7 @@ export function Relatorios({ client, organizationId }: { client: SupabaseClient;
                 A geração do relatório <strong>{exportNotice.reportName}</strong> no formato <strong>{exportNotice.format}</strong> necessita do serviço estendido de relatórios no servidor.
               </p>
               <p className="subtle" style={{ fontSize: '0.85rem', marginBottom: '1.5rem' }}>
-                Para evitar arquivos corrompidos ou incompletos, você pode baixar o arquivo <strong>CSV completo e auditável</strong> imediatamente.
+                Para garantir a integridade dos dados, você pode exportar a página consultada em formato CSV.
               </p>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
                 <button type="button" className="secondary" onClick={() => setExportNotice(null)}>
@@ -732,12 +1000,12 @@ export function Relatorios({ client, organizationId }: { client: SupabaseClient;
                   className="primary"
                   onClick={() => {
                     setExportNotice(null)
-                    if (activeTab === 'posicao') exportPosicaoCsv()
-                    else if (activeTab === 'recebimentos') exportRecebimentosCsv()
-                    else if (activeTab === 'contabil') exportContabilCsv()
+                    if (activeTab === 'posicao') exportPosicaoPageCsv()
+                    else if (activeTab === 'recebimentos') exportRecebimentosPageCsv()
+                    else if (activeTab === 'contabil') exportChartOfAccountsCsv()
                   }}
                 >
-                  Baixar CSV agora
+                  Baixar CSV da página
                 </button>
               </div>
             </div>

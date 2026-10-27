@@ -1,5 +1,41 @@
 # V35 — escopo mínimo do piloto e matriz de paridade
 
+## Estado operacional vigente — Lote 4 / COMANDO 08-A (2026-10-25)
+
+### Matriz de Paridade — Dashboard e Relatórios Gerenciais (Lote 4)
+
+1. **`view-dashboard` (Dashboard Gerencial)**:
+   - **Status**: Implementado e testado.
+   - **Descrição**: Integrados os 6 indicadores consolidados reais via RPC `read_tenant_financial_dashboard` (`receivables_open`, `receivables_overdue`, `received_this_month`, `cash_bank_balance`, `payables_open`, `payables_overdue`). Inclui atalhos para os módulos financeiros e widget de Fluxo de Caixa Diário via RPC `read_tenant_daily_cash_flow`.
+   - **Limitações documentadas**: Gráficos de série temporal dinâmicos V35 pendentes sem dados fictícios.
+
+2. **`view-relatorios` — A. Posição Financeira Geral**:
+   - **Status**: Implementado e testado.
+   - **Descrição**: Exibe os 6 KPIs globais consolidados do banco (sem somar linhas da página) e listagem paginada (amostra de até 25 registros por origem: obrigações institucionais, recebíveis institucionais e cobranças de integrantes) com validação de `integrity_ok`.
+   - **Limitações documentadas**: Exportação CSV identifica a amostra da página. Totais históricos consolidados para períodos arbitrários customizados dependem de RPC agregadora por período.
+
+3. **`view-relatorios` — B. Relatório de Recebimentos**:
+   - **Status**: Implementado e testado.
+   - **Descrição**: Exibe os fatos reais de recebimento cadastrados por data de pagamento (`v_payment_balances`), com data de pagamento real, valor recebido, valor alocado e crédito disponível. Exclui estornos (`is_reversed`).
+   - **Limitações documentadas**: Exibição paginada. Resumos agregados históricos por modalidade dependem de RPC estendida.
+
+4. **`view-relatorios` — C. Relatório de Inadimplência**:
+   - **Status**: Implementado e testado.
+   - **Descrição**: Integra a consulta `read_tenant_delinquency` com classificação estrita em 4 faixas de atraso (0–30, 31–60, 61–90, >90 dias) e download CSV completo.
+
+5. **`view-relatorios` — D. Fechamento Mensal e DRE**:
+   - **Status**: Implementado e testado.
+   - **Descrição**: Filtro de competência contábil (`reportCompetence`) conectado à RPC `read_tenant_dre` e estado do período contábil (`loadPeriodState` / `financial_periods`). Tela estritamente consultiva.
+
+6. **`view-relatorios` — E. Exportação Contábil**:
+   - **Status**: Implementado e testado (Cadastro do Plano de Contas).
+   - **Descrição**: Consulta ao cadastro do Plano de Contas (`accounting_plans` e `accounting_accounts`). Exportação CSV do catálogo de contas contábeis disponível.
+   - **Dependente de backend**: Exportação do Diário e Razão com Lançamentos Contábeis Classificados mantida indisponível e documentada como dependência de microserviço contábil estendido no servidor.
+
+7. **Exportações em PDF e XLSX**:
+   - **Status**: Dependente de backend.
+   - **Descrição**: Modal de notificação ativado informando a necessidade do microserviço estendido de relatórios no servidor e oferecendo o download em CSV para garantir a integridade.
+
 ## Estado operacional vigente — 2026-10-15
 
 Consultar [plano consolidado](V35_VERTICAL_DELIVERIES.md#estado-consolidado-vigente--2026-10-15)
