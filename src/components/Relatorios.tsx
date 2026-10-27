@@ -704,7 +704,7 @@ export function Relatorios({ client, organizationId }: { client: SupabaseClient;
             </div>
 
             <p className="subtle" style={{ marginBottom: '1rem' }}>
-              Histórico de fatos reais de recebimento registrados em caixa/banco (visão <code>v_payment_balances</code>), ordenado por data de pagamento. Exclui estornos e não deduz valores a partir do vencimento ou saldo aberto de cobranças.
+              Histórico de fatos reais de recebimento registrados em caixa/banco (visão <code>v_payment_balances</code>), cobrindo pagamentos de integrantes (e não faturamento institucional completo), ordenado por data de pagamento. Exclui estornos e não deduz valores a partir do vencimento ou saldo aberto de cobranças. Para receitas institucionais diretas, consulte a conciliação bancária ou DRE da competência.
             </p>
 
             {recebimentosLoading ? (

@@ -19,6 +19,7 @@ import { FluxoCaixa } from './FluxoCaixa'
 import { DreView } from './DreView'
 import { Relatorios } from './Relatorios'
 import { DailyCashFlow } from './DailyCashFlow'
+import { Chamados } from './Chamados'
 import { loadOrganizations, loadTenantData, openTicket, type Organization, type TenantData } from '../lib/tenant-data'
 
 const statuses: Record<string, string> = { active: 'Ativo', inactive: 'Inativo', new: 'Novo', triage: 'Em triagem', working: 'Em atendimento', waiting_client: 'Aguardando retorno', resolved: 'Resolvido', closed: 'Fechado' }
@@ -147,7 +148,7 @@ function TenantPanel({ client, organization, page, onNavigate }: { client: Supab
       <section className="panel"><div className="section-title"><h2>Integrantes da Loja</h2><button className="text-button" onClick={() => onNavigate('members')}>Ver lista</button></div><MemberList members={data.members.slice(0, 5)} /></section>
     </>}
     {page === 'members' && <>{memberSaved && <p role="status" className="message">Cadastro salvo. A lista foi atualizada.</p>}<Members members={data.members} client={client} organizationId={organization.id} onSaved={() => { setMemberSaved(true); setRevision(value => value + 1) }} onReload={() => { setMemberSaved(false); setRevision(value => value + 1) }} /></>}
-    {page === 'support' && <div className="support-grid"><section className="panel"><div className="section-title"><h2>Meus chamados</h2><button className="quiet" onClick={() => setRevision(value => value + 1)} aria-label="Atualizar chamados"><RefreshCw size={18} aria-hidden="true" /></button></div>{!data.tickets.length ? <div className="empty"><MessagesSquare size={30} aria-hidden="true" /><h3>Nenhum chamado por aqui</h3><p>Suas solicitações aparecerão nesta lista.</p></div> : <ul className="ticket-list">{data.tickets.map(ticket => <li key={ticket.id}><div><span className="subtle">#{ticket.ticket_seq} · {new Date(ticket.opened_at).toLocaleDateString('pt-BR')}</span><h3>{ticket.subject}</h3></div><span className="pill">{statuses[ticket.status] ?? ticket.status}</span></li>)}</ul>}<p className="subtle list-note">Até 100 chamados mais recentes desta Loja.</p></section><section className="panel"><h2>Novo chamado</h2><p className="subtle">Conte como podemos ajudar.</p><TicketForm client={client} organizationId={organization.id} onCreated={() => { setSent(true); setRevision(value => value + 1) }} /></section></div>}
+    {page === 'support' && <Chamados key={organization.id} client={client} organizationId={organization.id} />}
   </>
 }
 

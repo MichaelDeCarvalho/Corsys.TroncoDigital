@@ -1,5 +1,37 @@
 # V35 — escopo mínimo do piloto e matriz de paridade
 
+## Estado operacional vigente — Lotes 5 e 6 / COMANDO 09 (2026-10-27)
+
+### Matriz de Paridade — Atendimento da Loja (Lote 5) e Master SaaS (Lote 6)
+
+1. **`view-chamados` (Atendimento da Loja — Lote 5)**:
+   - **Status**: Implementado e testado.
+   - **Descrição**: Tela consolidada com KPIs reais/amostrais (Abertos, Aguardando cliente, Resolvidos), busca por número e assunto (`v34TenantTicketSearch`), filtro por status (`v34TenantTicketStatus`), formulário de abertura de chamado (`data-v34-tenant-new-ticket`) via RPC `create_saas_support_ticket`, listagem paginada (`v34TenantTicketsTable`) e visualização detalhada de histórico cronológico com envio de resposta do cliente via RPC `reply_saas_support_ticket`. Isolamento estrito de tenant garantido no servidor e cliente.
+
+2. **`view-master` (Painel Master SaaS — Lote 6)**:
+   - **Status**: Implementado e testado.
+   - **Descrição**: Indicadores globais da plataforma sob governança Master com MFA (AAL2), sem misturar com a área administrativa da Loja. Diretório rápido de clientes com atalhos para Novo Cliente, Cliente 360º e Suporte. Boundary de segurança explícito.
+
+3. **`view-master-clientes` (Clientes SaaS — Lote 6)**:
+   - **Status**: Implementado e testado.
+   - **Descrição**: Diretório com busca server-side (nome, número, cidade, contato), filtro de status comercial e plano. Acesso ao Cliente 360º (`MasterClient360`) e Onboarding controlado (`MasterOnboarding`), com distinção rigorosa entre rascunho de loja, loja provisionada e convite pendente.
+
+4. **`view-master-cobranca` (Assinaturas e Cobrança SaaS — Lote 6)**:
+   - **Status**: Implementado e testado.
+   - **Descrição**: Módulo `MasterBilling` integrado exibindo faturas emitidas, status de liquidação e histórico de pagamentos. Status do provedor de pagamento mantido como pendente de homologação técnica (sem mock fictício de webhook bancário).
+
+5. **`view-master-planos` (Planos e Promoções SaaS — Lote 6)**:
+   - **Status**: Implementado e testado.
+   - **Descrição**: Módulo `MasterCommercialCatalog` integrando ciclo de vida de planos (`MasterPlanLifecycle`) e promoções (`MasterPromotions`), com vigência determinística, criação de sucessores e proteção de contratos ativos.
+
+6. **`view-master-operacao` (Operação e Suporte — Lote 6)**:
+   - **Status**: Implementado e testado.
+   - **Descrição**: Módulo `MasterOperations` integrando 5 abas operacionais: Chamados (`MasterSupportQueue` com tempo de primeira resposta e resolução), Saúde / Jobs (consulta real a `saas_jobs`), Sessões de Suporte (read_only auditável), Equipe e Segurança (MFA e Least Privilege) e Auditoria Master.
+
+7. **`view-master-config` (Configurações da Plataforma — Lote 6)**:
+   - **Status**: Implementado e testado.
+   - **Descrição**: Módulo `MasterPlatformConfig` consultando `saas_platform_configuration` e `saas_terms_versions`. Organizado nas 6 seções declaradas: Identidade / Fiscal, Regras Comerciais, Cobrança / Encargos, Comunicação, Termos e Privacidade, e Status de Integrações (sem credenciais expostas na interface).
+
 ## Estado operacional vigente — Lote 4 / COMANDO 08-A (2026-10-25)
 
 ### Matriz de Paridade — Dashboard e Relatórios Gerenciais (Lote 4)
@@ -81,12 +113,12 @@ As duas lojas reutilizam as mesmas views no HTML; o seletor muda modo, identidad
 
 | ID / tela | Mínimo preservado | Base V35 | Estado frontend / aceite restante |
 |---|---|---|---|
-| view-master / Painel | Indicadores globais, alertas, clientes, Cliente 360º, acesso de suporte, novo cliente e limites de acesso | ADR-0012/13/14/25 | Pendente; indicadores por consultas autorizadas, auditoria e AAL2 |
-| view-master-clientes | Busca, status, plano; contatos; assinatura; 360º; onboarding em cinco etapas | ADR-0021/26 controlled | Pendente; criação transacional/idempotente, retomada, convites e confirmação final |
-| view-master-cobranca | Cliente/fatura, status, competência; base/encargos/atualizado/pago/saldo; gerar/enviar/receber/reverter/anular; acordos; régua; provider | ADR-0013/23/28 | Pendente; eventos reais, política por vigência, duplicidade/replay e saldo derivado |
-| view-master-planos | Catálogo, rascunho/edição/publicação/sucessora, preço/recursos, histórico/vigência; promoções e ofertas | ADR-0022/26 safe lifecycle | Pendente; incluir também filtros/status/ativação/desativação/exclusão segura previstos na V35 |
-| view-master-operacao | 5 abas: Chamados, Saúde/Jobs, Sessões de suporte, Equipe/Segurança, Auditoria; Kanban, chamados internos, conversas e metadados | ADR-0014/24/25/27 | Pendente; métricas de primeira resposta/SLA, mudança/reabertura, expiração/revogação e isolamento |
-| view-master-config | Identidade/fiscal, comercial, cobrança, comunicação, termos/privacidade e integrações; revisão de documentos | ADR-0025/21/23 | Pendente; settings tipadas/versionadas, estados reais e segredos ausentes da interface |
+| view-master / Painel | Indicadores globais, alertas, clientes, Cliente 360º, acesso de suporte, novo cliente e limites de acesso | ADR-0012/13/14/25 | Integrada com indicadores reais da plataforma sob governança Master e AAL2, ações rápidas e diretório paginado com boundary explícito |
+| view-master-clientes | Busca, status, plano; contatos; assinatura; 360º; onboarding em cinco etapas | ADR-0021/26 controlled | Integrada com filtros server-side, acesso ao Cliente 360º e Onboarding controlado com distinção de rascunhos, lojas provisionadas e convites |
+| view-master-cobranca | Cliente/fatura, status, competência; base/encargos/atualizado/pago/saldo; gerar/enviar/receber/reverter/anular; acordos; régua; provider | ADR-0013/23/28 | Integrada via MasterBilling com documentos e pagamentos derivados de fatos do banco; provider declarado como pendente de homologação técnica |
+| view-master-planos | Catálogo, rascunho/edição/publicação/sucessora, preço/recursos, histórico/vigência; promoções e ofertas | ADR-0022/26 safe lifecycle | Integrada via MasterCommercialCatalog, MasterPlanLifecycle e MasterPromotions com vigência determinística e proteção de contratos ativos |
+| view-master-operacao | 5 abas: Chamados, Saúde/Jobs, Sessões de suporte, Equipe/Segurança, Auditoria; Kanban, chamados internos, conversas e metadados | ADR-0014/24/25/27 | Integrada via MasterOperations com fila de suporte, monitoramento real de jobs (saas_jobs), sessões read_only auditadas e política de MFA |
+| view-master-config | Identidade/fiscal, comercial, cobrança, comunicação, termos/privacidade e integrações; revisão de documentos | ADR-0025/21/23 | Integrada via MasterPlatformConfig com dados de saas_platform_configuration e saas_terms_versions nas 6 áreas da V35; secrets fora da UI |
 
 Cliente 360º tem **8 abas**: visão geral, assinatura, cobranças, uso/limites, termos/LGPD, suporte, auditoria e encerramento. Preservar plano/versão/preço histórico, mudanças imediatas/agendadas e pró-rata explícito; lifecycle com motivo/data; exportação, cancelamento e retenção sem remoção silenciosa. Drawer de suporte exige motivo, duração e escopo read_only. O backend deve validar sessão temporária, organização, AAL2 e expiração em cada acesso.
 
@@ -112,7 +144,7 @@ Todas as linhas se aplicam a **ambas** as lojas, com dados independentes e difer
 | view-relatorios | 5 tipos: posição geral, recebimentos, inadimplência, fechamento mensal, exportação contábil; competência/datas; PDF/Excel | ADR-0001/09/11/20 | Pendente; geração real privada, filtros aplicados, fechamento/reabertura e legado non-posting |
 | view-cadastros | Integrantes, tipos de cargo, perfis/permissões | ADR-0012/14; roles/offices | Pendente; CRUD e permissões reais no servidor |
 | view-configuracoes | Logo/identidade/contatos/PIX, assinatura, suporte, temas, governança, portal, notificações, LGPD, importação, backup/auditoria/cargos | ADR-0013/15/19/20/25 | Pendente; importação controlada, privacidade, decisões auditadas e evidência de restauração |
-| view-chamados | KPIs próprios, busca/status, abrir/responder, categoria/prioridade/descrição, abertura/autor/tempo/atualização/status | ADR-0024/27 | Abertura/listagem próprias parciais; conversas, métricas, filtros completos e reabertura pendentes |
+| view-chamados | KPIs próprios, busca/status, abrir/responder, categoria/prioridade/descrição, abertura/autor/tempo/atualização/status | ADR-0024/27 | Integrada com KPIs amostrais/reais, busca por número (#seq) e assunto, filtro por status, abertura idempotente com categorias/prioridades, listagem paginada no servidor, visualização do histórico e resposta do cliente via reply_saas_support_ticket |
 
 ## Regras mínimas e reconciliação
 
