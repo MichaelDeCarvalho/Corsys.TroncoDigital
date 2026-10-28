@@ -1,3 +1,11 @@
+## MFA Master — correção preparada — 28/10/2026
+
+Reprodução online no DEV: Master ativo autenticado sem fator verificado recebia “Nenhuma Loja vinculada”, sem caminho para cadastrar MFA. Branch de correção baseada em `2d1345805b7aa3e1bafca6a461817c2a6b740955`.
+
+MasterMfaGate lê somente o próprio vínculo platform_staff sob RLS existente, antes de abrir Workspace. Master AAL1 recebe configuração TOTP explícita ou desafio de fator verificado; QR apenas em imagem/memória e código limpo após tentativa. AAL2 e RPC read_platform_master_overview continuam obrigatórios. Falhas e identidade divergente bloqueiam; resposta tardia não abre acesso. Apenas configuração incompleta CorSys é substituída por clique explícito, preservando fatores verificados. Demais usuários mantêm o fluxo tenant.
+
+Sem migration, grants, alteração de RLS, criação de fatores reais pelo agente ou publicação. Testes de componente e CI remotos registrados na PR; homologação real com QR/OTP pelo proprietário depende de publicação isolada autorizada. ADR-0037. A prévia anterior b3534270 não contém esta correção. Recuperação de senha, overflow mobile e formulários de despesas em Contas a Receber permanecem fora deste lote.
+
 ## Continuação operacional — 21/10/2026
 
 CI323/c6b2fd2 SUCCESS. Revalidação real B em duas abas preservou Loja/formulário; ágape UI B desktop/mobile375 sem overflow PASS, cobrança a4c4db6d cancelada/open0/integrity true. Mútuas agora têm UI com distribuição explícita, prévia da classificação/total, histórico e recuperação idempotente; seis testes focados PASS e build DEV PASS. HTTP/UI mútuas ainda a homologar. Repasse neutro continua lacuna: guard atual de member_receivable exige receita; não declarar esse tratamento pronto.
