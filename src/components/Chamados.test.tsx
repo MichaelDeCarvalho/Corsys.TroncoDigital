@@ -72,6 +72,7 @@ describe('Chamados (view-chamados)', () => {
   ]
 
   beforeEach(() => {
+    sessionStorage.clear()
     mockClient = {
       from: vi.fn((table: string) => {
         if (table === 'saas_support_tickets') {
@@ -144,20 +145,84 @@ describe('Chamados (view-chamados)', () => {
     expect(screen.getAllByText('Resolvidos').length).toBeGreaterThan(0)
   })
 
-  it('filters tickets by search term', async () => {
+  it('filters tickets instantly in memory by title, ID (#seq), or category without page reload', async () => {
+    render(<Chamados client={mockClient} organizationId={validOrgId} />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Dúvida sobre fechamento contábil')).toBeInTheDocument()
+      expect(screen.getByText('Ajuste de permissão de tesoureiro')).toBeInTheDocument()
+      expect(screen.getByText('Solicitação de novo plano contábil')).toBeInTheDocument()
+    })
+
+    const searchInput = screen.getByPlaceholderText(/Buscar por cliente, título ou ID/i)
+
+    // 1. Instant live filter by ID (#102)
+    fireEvent.change(searchInput, { target: { value: '102' } })
+    expect(screen.getByText('Ajuste de permissão de tesoureiro')).toBeInTheDocument()
+    expect(screen.queryByText('Dúvida sobre fechamento contábil')).not.toBeInTheDocument()
+    expect(screen.queryByText('Solicitação de novo plano contábil')).not.toBeInTheDocument()
+
+    // 2. Instant live filter by Title ("fechamento") with highlight animation
+    fireEvent.change(searchInput, { target: { value: 'fechamento' } })
+    expect(screen.getByText('Dúvida sobre fechamento contábil')).toBeInTheDocument()
+    expect(screen.getByText(/Realce ativo/i)).toBeInTheDocument()
+    expect(screen.getByText('Dúvida sobre fechamento contábil').closest('tr')).toHaveAttribute('data-search-highlight', 'true')
+    expect(screen.queryByText('Ajuste de permissão de tesoureiro')).not.toBeInTheDocument()
+
+    // 3. Clear search restores full loaded list
+    fireEvent.change(searchInput, { target: { value: '' } })
+    expect(screen.getByText('Dúvida sobre fechamento contábil')).toBeInTheDocument()
+    expect(screen.getByText('Ajuste de permissão de tesoureiro')).toBeInTheDocument()
+    expect(screen.getByText('Solicitação de novo plano contábil')).toBeInTheDocument()
+  })
+
+  it('persists search filter in sessionStorage across screen switches', async () => {
+    const { unmount } = render(<Chamados client={mockClient} organizationId={validOrgId} />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Dúvida sobre fechamento contábil')).toBeInTheDocument()
+    })
+
+    const searchInput = screen.getByPlaceholderText(/Buscar por cliente, título ou ID/i)
+    fireEvent.change(searchInput, { target: { value: 'fechamento' } })
+
+    // Verify saved in sessionStorage
+    expect(sessionStorage.getItem(`v35_tenant_ticket_search_${validOrgId}`)).toBe('fechamento')
+
+    // Simulate switching screen (unmount and remount)
+    unmount()
+    render(<Chamados client={mockClient} organizationId={validOrgId} />)
+
+    await waitFor(() => {
+      const remountedInput = screen.getByPlaceholderText(/Buscar por cliente, título ou ID/i)
+      expect(remountedInput).toHaveValue('fechamento')
+      expect(screen.getByText('Dúvida sobre fechamento contábil')).toBeInTheDocument()
+      expect(screen.queryByText('Ajuste de permissão de tesoureiro')).not.toBeInTheDocument()
+    })
+  })
+
+  it('expands and collapses inline row drawer displaying update history and attachments info', async () => {
     render(<Chamados client={mockClient} organizationId={validOrgId} />)
 
     await waitFor(() => {
       expect(screen.getByText('Dúvida sobre fechamento contábil')).toBeInTheDocument()
     })
 
-    const searchInput = screen.getByPlaceholderText('Número (#seq) ou assunto')
-    fireEvent.change(searchInput, { target: { value: 'fechamento' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Filtrar' }))
+    const detailButtons = screen.getAllByRole('button', { name: /Detalhes do chamado #101/i })
+    expect(detailButtons.length).toBeGreaterThan(0)
 
-    await waitFor(() => {
-      expect(mockClient.from).toHaveBeenCalledWith('saas_support_tickets')
-    })
+    // Expand
+    fireEvent.click(detailButtons[0])
+
+    expect(screen.getByText(/Detalhes e Histórico de Atualizações · Chamado #101/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/Histórico de Atualizações/i).length).toBeGreaterThan(0)
+    expect(screen.getByText(/Anexos e Documentos de Suporte/i)).toBeInTheDocument()
+
+    // Collapse
+    const collapseBtn = screen.getByRole('button', { name: 'Recolher painel' })
+    fireEvent.click(collapseBtn)
+
+    expect(screen.queryByText(/Detalhes e Histórico de Atualizações · Chamado #101/i)).not.toBeInTheDocument()
   })
 
   it('submits new ticket via integrated form', async () => {

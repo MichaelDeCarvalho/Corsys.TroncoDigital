@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, useMemo, Fragment, type FormEvent } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import {
   MessagesSquare,
@@ -14,6 +14,10 @@ import {
   Send,
   PlusCircle,
   AlertTriangle,
+  ChevronDown,
+  ChevronUp,
+  Paperclip,
+  History,
 } from 'lucide-react'
 import {
   loadTenantTickets,
@@ -59,12 +63,39 @@ export function Chamados({
   client: SupabaseClient
   organizationId: string
 }) {
-  // Filters & Pagination
-  const [search, setSearch] = useState('')
-  const [appliedSearch, setAppliedSearch] = useState('')
+  const storageKey = `v35_tenant_ticket_search_${organizationId}`
+
+  // Filters & Pagination with sessionStorage persistence across screens
+  const [search, setSearch] = useState(() => {
+    try {
+      return sessionStorage.getItem(`v35_tenant_ticket_search_${organizationId}`) || ''
+    } catch {
+      return ''
+    }
+  })
+  const [appliedSearch, setAppliedSearch] = useState(() => {
+    try {
+      return sessionStorage.getItem(`v35_tenant_ticket_search_${organizationId}`) || ''
+    } catch {
+      return ''
+    }
+  })
   const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'waiting_client' | 'resolved'>('all')
   const [page, setPage] = useState(0)
   const [revision, setRevision] = useState(0)
+
+  // Persist search filter state to sessionStorage
+  useEffect(() => {
+    try {
+      if (search) {
+        sessionStorage.setItem(storageKey, search)
+      } else {
+        sessionStorage.removeItem(storageKey)
+      }
+    } catch {
+      // Ignore storage errors
+    }
+  }, [search, storageKey])
 
   // Data
   const [tickets, setTickets] = useState<{ rows: TenantSupportTicket[]; hasNext: boolean } | null>(null)
@@ -73,6 +104,9 @@ export function Chamados({
 
   // Selected ticket for thread detail view
   const [selectedTicket, setSelectedTicket] = useState<TenantSupportTicket | null>(null)
+
+  // Expanded ticket row ID for inline drawer details
+  const [expandedTicketId, setExpandedTicketId] = useState<string | null>(null)
 
   // Form State for New Ticket
   const [newSubject, setNewSubject] = useState('')
@@ -141,6 +175,11 @@ export function Chamados({
     setAppliedSearch('')
     setStatusFilter('all')
     setPage(0)
+    try {
+      sessionStorage.removeItem(storageKey)
+    } catch {
+      // Ignore storage errors
+    }
   }
 
   async function handleVerifyTicketCreated() {
@@ -248,6 +287,33 @@ export function Chamados({
   const countWaiting = currentRows.filter(t => t.status === 'waiting_client').length
   const countResolved = currentRows.filter(t => ['resolved', 'closed'].includes(t.status)).length
 
+  // Instant real-time filtering across loaded rows by client, title/subject, or ID
+  const displayedTickets = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    if (!term) return currentRows
+
+    const cleanNum = term.replace(/^#/, '')
+    const isNum = /^\d+$/.test(cleanNum)
+
+    return currentRows.filter(ticket => {
+      // 1. Match ID / ticket_seq / #seq / UUID
+      if (isNum && String(ticket.ticket_seq) === cleanNum) return true
+      if (ticket.id.toLowerCase().includes(term)) return true
+      if (`#${ticket.ticket_seq}`.toLowerCase().includes(term)) return true
+
+      // 2. Match Title / Subject
+      if (ticket.subject.toLowerCase().includes(term)) return true
+
+      // 3. Match Category / Client / Organization
+      const catLabel = categoryLabels[ticket.category] || ''
+      if (catLabel.toLowerCase().includes(term)) return true
+      if (ticket.category.toLowerCase().includes(term)) return true
+      if (ticket.organization_id && ticket.organization_id.toLowerCase().includes(term)) return true
+
+      return false
+    })
+  }, [currentRows, search])
+
   return (
     <div className="space-y-6" id="view-chamados">
       {/* Header */}
@@ -338,7 +404,8 @@ export function Chamados({
                 <input
                   id="v34TenantTicketSearch"
                   type="text"
-                  placeholder="Número (#seq) ou assunto"
+                  placeholder="Buscar por cliente, título ou ID (#seq / UUID)..."
+                  aria-label="Buscar por cliente, título ou ID"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   className="w-full pl-9 pr-3 py-2 text-sm border rounded-md"
@@ -367,7 +434,7 @@ export function Chamados({
                 <button type="submit" className="secondary px-4 py-2 text-sm">
                   Filtrar
                 </button>
-                {(appliedSearch || statusFilter !== 'all') && (
+                {(appliedSearch || search || statusFilter !== 'all') && (
                   <button
                     type="button"
                     className="secondary px-3 py-2 text-sm text-slate-600"
@@ -385,6 +452,18 @@ export function Chamados({
               </p>
             )}
 
+            {search.trim() && displayedTickets.length > 0 && (
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-amber-800 bg-amber-50 px-3 py-1 rounded-md border border-amber-200 inline-flex items-center gap-2 font-medium transition-all duration-300">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                  </span>
+                  Realce ativo: {displayedTickets.length} chamado(s) localizado(s) para "{search.trim()}".
+                </p>
+              </div>
+            )}
+
             {loading ? (
               <p role="status" className="py-8 text-center text-slate-500 text-sm">
                 Consultando chamados da Loja…
@@ -398,6 +477,21 @@ export function Chamados({
                     ? 'Tente ajustar os filtros de busca.'
                     : 'Suas solicitações aparecerão nesta lista.'}
                 </p>
+              </div>
+            ) : displayedTickets.length === 0 ? (
+              <div className="py-12 text-center text-slate-500 space-y-2">
+                <MessagesSquare size={36} className="mx-auto text-slate-300" aria-hidden="true" />
+                <p className="font-medium text-slate-700">Nenhum chamado encontrado na busca</p>
+                <p className="text-xs text-slate-400">
+                  Nenhum chamado atende ao termo "{search}".
+                </p>
+                <button
+                  type="button"
+                  className="secondary text-xs px-3 py-1.5 mt-2"
+                  onClick={() => setSearch('')}
+                >
+                  Limpar busca
+                </button>
               </div>
             ) : (
               <div className="overflow-x-auto border rounded-md" id="v34TenantTicketsTable">
@@ -414,57 +508,201 @@ export function Chamados({
                     </tr>
                   </thead>
                   <tbody className="divide-y text-slate-700">
-                    {tickets.rows.map(ticket => (
-                      <tr key={ticket.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="py-3 px-3 font-mono font-medium text-slate-900">
-                          #{ticket.ticket_seq}
-                        </td>
-                        <td className="py-3 px-3 font-medium text-slate-900 max-w-xs truncate">
-                          {ticket.subject}
-                        </td>
-                        <td className="py-3 px-3 text-slate-600">
-                          {categoryLabels[ticket.category] ?? ticket.category}
-                        </td>
-                        <td className="py-3 px-3">
-                          <span
-                            className={`inline-block px-2 py-0.5 text-xs rounded-full font-medium ${
-                              ticket.priority === 'urgent'
-                                ? 'bg-red-100 text-red-800'
-                                : ticket.priority === 'high'
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'bg-slate-100 text-slate-700'
-                            }`}
+                    {displayedTickets.map(ticket => {
+                      const isHighlighted = Boolean(search.trim())
+                      const isExpanded = expandedTicketId === ticket.id
+                      return (
+                        <Fragment key={ticket.id}>
+                          <tr
+                            className={
+                              isHighlighted
+                                ? 'bg-amber-50/80 hover:bg-amber-100/80 border-l-4 border-l-amber-500 transition-all duration-300 shadow-2xs'
+                                : 'hover:bg-slate-50 transition-colors'
+                            }
+                            data-search-highlight={isHighlighted ? 'true' : 'false'}
                           >
-                            {priorityLabels[ticket.priority] ?? ticket.priority}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3 text-slate-500 whitespace-nowrap">
-                          {new Date(ticket.opened_at).toLocaleDateString('pt-BR')}
-                        </td>
-                        <td className="py-3 px-3">
-                          <span
-                            className={`inline-block px-2 py-0.5 text-xs rounded-full font-medium ${
-                              ticket.status === 'waiting_client'
-                                ? 'bg-amber-100 text-amber-800'
-                                : ticket.status === 'resolved' || ticket.status === 'closed'
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : 'bg-blue-100 text-blue-800'
-                            }`}
-                          >
-                            {statusLabels[ticket.status] ?? ticket.status}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3 text-right">
-                          <button
-                            type="button"
-                            className="secondary text-xs px-2.5 py-1.5"
-                            onClick={() => setSelectedTicket(ticket)}
-                          >
-                            Ver conversa
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                            <td className="py-3 px-3 font-mono font-medium text-slate-900">
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded transition-colors"
+                                  aria-label={
+                                    isExpanded
+                                      ? `Recolher detalhes do chamado #${ticket.ticket_seq}`
+                                      : `Expandir detalhes do chamado #${ticket.ticket_seq}`
+                                  }
+                                  onClick={() =>
+                                    setExpandedTicketId(prev => (prev === ticket.id ? null : ticket.id))
+                                  }
+                                >
+                                  {isExpanded ? (
+                                    <ChevronUp size={15} aria-hidden="true" />
+                                  ) : (
+                                    <ChevronDown size={15} aria-hidden="true" />
+                                  )}
+                                </button>
+                                <span>#{ticket.ticket_seq}</span>
+                              </div>
+                            </td>
+                            <td className="py-3 px-3 font-medium text-slate-900 max-w-xs truncate">
+                              {ticket.subject}
+                            </td>
+                            <td className="py-3 px-3 text-slate-600">
+                              {categoryLabels[ticket.category] ?? ticket.category}
+                            </td>
+                            <td className="py-3 px-3">
+                              <span
+                                className={`inline-block px-2.5 py-0.5 text-xs rounded-full border ${
+                                  ticket.priority === 'urgent'
+                                    ? 'bg-red-100 text-red-800 border-red-200/80 font-semibold'
+                                    : ticket.priority === 'high'
+                                    ? 'bg-amber-100 text-amber-900 border-amber-200/80 font-semibold'
+                                    : ticket.priority === 'medium'
+                                    ? 'bg-blue-100 text-blue-800 border-blue-200/80 font-medium'
+                                    : 'bg-emerald-50 text-emerald-800 border-emerald-200/80 font-medium'
+                                }`}
+                              >
+                                {priorityLabels[ticket.priority] ?? ticket.priority}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3 text-slate-500 whitespace-nowrap">
+                              {new Date(ticket.opened_at).toLocaleDateString('pt-BR')}
+                            </td>
+                            <td className="py-3 px-3">
+                              <span
+                                className={`inline-block px-2 py-0.5 text-xs rounded-full font-medium ${
+                                  ticket.status === 'waiting_client'
+                                    ? 'bg-amber-100 text-amber-800'
+                                    : ticket.status === 'resolved' || ticket.status === 'closed'
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : 'bg-blue-100 text-blue-800'
+                                }`}
+                              >
+                                {statusLabels[ticket.status] ?? ticket.status}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  className="secondary text-xs px-2.5 py-1.5"
+                                  aria-label={`Detalhes do chamado #${ticket.ticket_seq}`}
+                                  onClick={() =>
+                                    setExpandedTicketId(prev => (prev === ticket.id ? null : ticket.id))
+                                  }
+                                >
+                                  {isExpanded ? 'Ocultar' : 'Detalhes'}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="secondary text-xs px-2.5 py-1.5"
+                                  onClick={() => setSelectedTicket(ticket)}
+                                >
+                                  Ver conversa
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                          {isExpanded && (
+                            <tr key={`${ticket.id}-expansion`} className="bg-slate-50/90 border-b">
+                              <td colSpan={7} className="p-4">
+                                <div className="bg-white p-4 rounded-md border border-slate-200 shadow-2xs space-y-4 text-xs text-slate-700">
+                                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-3">
+                                    <div className="flex items-center gap-2 text-slate-900 font-semibold text-sm">
+                                      <History size={16} className="text-blue-600" aria-hidden="true" />
+                                      <span>
+                                        Detalhes e Histórico de Atualizações · Chamado #{ticket.ticket_seq}
+                                      </span>
+                                    </div>
+                                    <span className="text-slate-500 font-mono text-[11px]">
+                                      ID da Loja: {ticket.organization_id}
+                                    </span>
+                                  </div>
+
+                                  {/* Grid with Timeline and Attachments */}
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Timeline / Update History */}
+                                    <div className="space-y-2 border-r-0 md:border-r md:pr-4 border-slate-200">
+                                      <p className="font-semibold text-slate-800 uppercase tracking-wider text-[11px]">
+                                        Histórico de Atualizações
+                                      </p>
+                                      <ul className="space-y-2 text-slate-600">
+                                        <li className="flex items-start gap-2">
+                                          <span className="w-2 h-2 rounded-full bg-blue-500 mt-1 shrink-0" />
+                                          <div>
+                                            <strong>Abertura do Chamado:</strong>{' '}
+                                            {new Date(ticket.opened_at).toLocaleString('pt-BR')}
+                                          </div>
+                                        </li>
+                                        <li className="flex items-start gap-2">
+                                          <span className="w-2 h-2 rounded-full bg-amber-500 mt-1 shrink-0" />
+                                          <div>
+                                            <strong>Última Alteração Registrada:</strong>{' '}
+                                            {new Date(ticket.updated_at).toLocaleString('pt-BR')}
+                                          </div>
+                                        </li>
+                                        {ticket.resolved_at && (
+                                          <li className="flex items-start gap-2">
+                                            <span className="w-2 h-2 rounded-full bg-emerald-500 mt-1 shrink-0" />
+                                            <div>
+                                              <strong>Resolução Concluída:</strong>{' '}
+                                              {new Date(ticket.resolved_at).toLocaleString('pt-BR')}
+                                            </div>
+                                          </li>
+                                        )}
+                                        {ticket.closed_at && (
+                                          <li className="flex items-start gap-2">
+                                            <span className="w-2 h-2 rounded-full bg-slate-400 mt-1 shrink-0" />
+                                            <div>
+                                              <strong>Encerramento do Chamado:</strong>{' '}
+                                              {new Date(ticket.closed_at).toLocaleString('pt-BR')}
+                                            </div>
+                                          </li>
+                                        )}
+                                      </ul>
+                                    </div>
+
+                                    {/* Attachments Section */}
+                                    <div className="space-y-2">
+                                      <div className="flex items-center gap-1.5 font-semibold text-slate-800 uppercase tracking-wider text-[11px]">
+                                        <Paperclip size={14} className="text-slate-500" aria-hidden="true" />
+                                        <span>Anexos e Documentos de Suporte</span>
+                                      </div>
+                                      <div className="p-3 bg-slate-50 rounded border border-slate-200/80 text-slate-500 text-xs">
+                                        <p className="font-medium text-slate-700 mb-1">
+                                          Documentos vinculados à solicitação:
+                                        </p>
+                                        <p className="text-[11px] text-slate-500">
+                                          Nenhum arquivo anexado nesta abertura. Comprovantes e capturas de tela podem ser anexados ou consultados no histórico da conversa.
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Footer Actions */}
+                                  <div className="flex items-center justify-end gap-2 pt-2 border-t">
+                                    <button
+                                      type="button"
+                                      className="secondary text-xs px-3 py-1.5"
+                                      onClick={() => setExpandedTicketId(null)}
+                                    >
+                                      Recolher painel
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="primary text-xs px-3 py-1.5"
+                                      onClick={() => setSelectedTicket(ticket)}
+                                    >
+                                      Ver conversa completa
+                                    </button>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -474,7 +712,11 @@ export function Chamados({
             <div className="flex items-center justify-between pt-2 border-t text-sm text-slate-600">
               <span role="status">
                 Página {page + 1}
-                {tickets?.rows ? ` · ${tickets.rows.length} chamados nesta página` : ''}
+                {tickets?.rows
+                  ? search.trim()
+                    ? ` · ${displayedTickets.length} de ${tickets.rows.length} chamados filtrados`
+                    : ` · ${tickets.rows.length} chamados nesta página`
+                  : ''}
               </span>
               <div className="flex items-center gap-2">
                 <button
