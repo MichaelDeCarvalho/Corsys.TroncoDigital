@@ -27,7 +27,7 @@ function mockClient(options: { user?: User | null; orgs?: typeof orgA[]; respond
       limit: (_: number) => chain,
       range: (_: number, __: number) => chain,
       eq: (_: string, value: string) => { id = value; return chain },
-      abortSignal: (_: AbortSignal) => options.respond?.(table, id) ?? Promise.resolve({ data: table === 'organizations' ? (options.orgs ?? [orgA]) : table === 'members' ? [member(id, id === orgB.id ? 'Integrante B' : 'Integrante A')] : [], error: null }),
+      abortSignal: (_: AbortSignal) => table === 'platform_staff' ? Promise.resolve({ data: [], error: null }) : options.respond?.(table, id) ?? Promise.resolve({ data: table === 'organizations' ? (options.orgs ?? [orgA]) : table === 'members' ? [member(id, id === orgB.id ? 'Integrante B' : 'Integrante A')] : [], error: null }),
     }
     return chain
   })

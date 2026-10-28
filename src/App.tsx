@@ -4,6 +4,7 @@ import { getSupabaseClient } from './lib/supabase'
 import { useAuth } from './auth/useAuth'
 import { Login } from './auth/Login'
 import { NewPassword } from './auth/PasswordRecovery'
+import { MasterMfaGate } from './auth/MasterMfaGate'
 import { Workspace } from './components/Workspace'
 
 export function ConnectedApp({ client }: { client: SupabaseClient }) {
@@ -17,7 +18,9 @@ export function ConnectedApp({ client }: { client: SupabaseClient }) {
   if (auth.status === 'authenticated' && auth.user) return <>
     {auth.validating && <p role="status" className="message">Atualizando acesso…</p>}
     <div inert={auth.validating || undefined} aria-busy={auth.validating || undefined}>
-      <Workspace key={auth.user.id} client={client} user={auth.user} onSignOut={() => { void auth.signOut() }} />
+      <MasterMfaGate key={auth.user.id} client={client} userId={auth.user.id} onSignOut={() => { void auth.signOut() }}>
+        <Workspace client={client} user={auth.user} onSignOut={() => { void auth.signOut() }} />
+      </MasterMfaGate>
     </div>
   </>
   return <Login client={client} />
