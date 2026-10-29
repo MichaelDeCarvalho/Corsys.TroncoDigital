@@ -44,8 +44,8 @@ begin
   values (v_master_user, 'authenticated', 'authenticated', 'master-test@corsys.internal')
   on conflict (id) do nothing;
 
-  insert into public.organizations(id, name, slug)
-  values (v_test_org, 'Loja Teste Fatura Manual', 'loja-teste-fatura-manual');
+  insert into public.organizations(id, name)
+  values (v_test_org, 'Loja Teste Fatura Manual');
 
   insert into public.platform_staff(user_id, role, active)
   values (v_master_user, 'MASTER', true);
