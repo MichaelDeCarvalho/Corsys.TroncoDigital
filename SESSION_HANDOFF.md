@@ -1,3 +1,27 @@
+## Cobrança SaaS Master — Emissão manual de faturas — 29/10/2026
+
+- Incremento funcional concluído sem alteração de produção ou migração remota prematura:
+  - Migration incremental `supabase/migrations/20261029000001_v35_master_manual_invoice.sql`:
+    - Sequence `public.saas_invoice_seq` para numeração sequencial determinística e unívoca de faturas.
+    - RPC `preview_saas_manual_invoice(uuid, date, date)`: exige `MASTER` + `AAL2` (`private.require_platform_staff`), validação de Loja existente, competência no dia 1 (`extract(day from competence) = 1`), busca da assinatura ativa em `saas_subscriptions` e derivação contratual de preço estritamente a partir de `saas_subscription_price_terms` (com fallback determinístico para `saas_plan_versions` / `saas_plans`). Fail-closed: múltiplos termos sobrepostos geram exceção `55000`. Detecta fatura já emitida para o mês (`already_billed`). Retorna estrutura completa de itens e datas de prestação de serviço.
+    - RPC `issue_saas_manual_invoice(uuid, date, date, text, text)`: exige `MASTER` + `AAL2`. Bloqueia competência já faturada (`55000`). Idempotência garantida via `private.idempotency_begin`/`complete` com hash de payload (rejeita reuso divergente com `22023`). Lock transacional na Loja (`for update`) para prevenir concorrência. Geração de número `CORSYS-YYYYMM-XXXXX`. Inserção atômica de `saas_invoices`, `saas_invoice_items` e auditoria em `saas_master_audit_logs`.
+    - Revogação de acesso de `public` e concessão restrita a `authenticated`.
+  - Biblioteca cliente `src/lib/master-billing.ts`:
+    - Funções `previewMasterManualInvoice`, `issueMasterManualInvoice`, `buildManualInvoiceIdempotencyKey` e tipagens `MasterManualInvoicePreview`, `MasterManualInvoiceInput`, `MasterManualInvoiceLineItem`. Validações fail-closed de parâmetros e UUIDs.
+  - Interface do usuário `src/components/MasterBilling.tsx`:
+    - Botão "Emitir fatura manual" abre painel dedicado.
+    - Seleção de competência (`AAAA-MM`), vencimento e observação opcional.
+    - Consulta de contrato e prévia obrigatória: exibe dados contratuais do servidor de forma somente leitura, bloqueando digitação de preços arbitrários no navegador.
+    - Bloqueio fail-closed do botão de confirmação quando a competência já possuir fatura ativa.
+    - Emissão idempotente com preservação de chave em falhas transitórias e atualização reativa do histórico de faturas.
+  - Testes automatizados:
+    - Script dry-run `supabase/tests/test_master_manual_invoice_rollback.sql` com rollback transacional completo (autorização, validação, preview, emissão atômica, auditoria, replay idempotente, conflito de payload e prevenção de duplicidade).
+    - `src/components/MasterBilling.test.tsx` (10 testes passando: modelo de leitura, visualização de prévia contratual, emissão idempotente com atualização de lista, bloqueio de duplicidade, tratamento de erro de RPC e testes unitários das funções cliente).
+  - Governança e documentação:
+    - ADR-0039 (`docs/adr/0039-master-manual-saas-invoice.md`) registrado.
+    - `CURRENT_ARCHITECTURE.md` atualizado.
+- Estado: Implementado no código e testes locais. Migração SQL remota NÃO aplicada ao Supabase DEV `szqkdekwhzxsoxorgvaz`; ambiente de produção e Cloudflare DEV preservados.
+
 ## Mecanismo de logging de erros e monitoramento de exceções no App.tsx — 29/10/2026
 
 - Criado serviço de monitoramento simples e seguro em `src/lib/error-monitor.ts`:

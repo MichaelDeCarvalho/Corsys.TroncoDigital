@@ -90,3 +90,111 @@ export async function loadMasterPaymentPage(
  }
  return {rows:data.slice(0,MASTER_BILLING_PAGE) as MasterPayment[],hasNext:data.length>MASTER_BILLING_PAGE}
 }
+
+export type MasterManualInvoiceLineItem = {
+ item_type: string;
+ description: string;
+ quantity: number;
+ unit_amount: number;
+ line_amount: number;
+}
+
+export type MasterManualInvoicePreview = {
+ organization_id: string;
+ organization_name: string;
+ subscription_id: string;
+ plan_id: string;
+ plan_name: string;
+ competence: string;
+ service_period_start: string;
+ service_period_end: string;
+ due_date: string;
+ unit_price: number;
+ currency: string;
+ line_items: MasterManualInvoiceLineItem[];
+ total_amount: number;
+ already_billed: boolean;
+ existing_invoice_id?: string | null;
+ existing_invoice_number?: string | null;
+ existing_amount?: number | null;
+}
+
+export type MasterManualInvoiceInput = {
+ organization_id: string;
+ competence: string;
+ due_date: string;
+ description?: string;
+ idempotency_key: string;
+}
+
+export function buildManualInvoiceIdempotencyKey(org: string, competence: string): string {
+ if (!id.test(org) || !/^\d{4}-\d{2}-\d{2}$/.test(competence)) {
+  throw Error('Invalid scope for idempotency key')
+ }
+ const suffix = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+  ? crypto.randomUUID().slice(0, 8)
+  : Math.random().toString(36).slice(2, 10)
+ return `master-inv-${org.slice(0, 8)}-${competence.slice(0, 7)}-${suffix}`
+}
+
+export async function previewMasterManualInvoice(
+ client: SupabaseClient,
+ org: string,
+ competence: string,
+ dueDate?: string,
+ signal?: AbortSignal
+): Promise<MasterManualInvoicePreview> {
+ if (!id.test(org)) throw Error('Invalid Master invoice scope')
+ if (!/^\d{4}-\d{2}-01$/.test(competence)) throw Error('Competence must be first day of month (YYYY-MM-01)')
+ if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) throw Error('Invalid due date format')
+
+ let query = client.rpc('preview_saas_manual_invoice', {
+  p_organization_id: org,
+  p_competence: competence,
+  p_due_date: dueDate || null
+ })
+ if (signal) {
+  query = query.abortSignal(signal)
+ }
+ const { data, error } = await query
+ if (error) throw error
+ if (!data || typeof data !== 'object') throw Error('Invalid preview response')
+
+ const preview = data as MasterManualInvoicePreview
+ if (preview.organization_id !== org || !id.test(preview.subscription_id)) {
+  throw Error('Preview response scope mismatch')
+ }
+ if (typeof preview.unit_price !== 'number' || preview.unit_price <= 0) {
+  throw Error('Preview contractual price invalid')
+ }
+ if (!Array.isArray(preview.line_items) || preview.line_items.length === 0) {
+  throw Error('Preview line items missing')
+ }
+ return preview
+}
+
+export async function issueMasterManualInvoice(
+ client: SupabaseClient,
+ input: MasterManualInvoiceInput
+): Promise<string> {
+ if (!id.test(input.organization_id)) throw Error('Invalid Master invoice scope')
+ if (!/^\d{4}-\d{2}-01$/.test(input.competence)) throw Error('Competence must be first day of month (YYYY-MM-01)')
+ if (!/^\d{4}-\d{2}-\d{2}$/.test(input.due_date)) throw Error('Invalid due date format')
+ if (!input.idempotency_key || input.idempotency_key.length < 1 || input.idempotency_key.length > 200) {
+  throw Error('Idempotency key required (1..200 chars)')
+ }
+
+ const { data, error } = await client.rpc('issue_saas_manual_invoice', {
+  p_organization_id: input.organization_id,
+  p_competence: input.competence,
+  p_due_date: input.due_date,
+  p_description: input.description?.trim() || null,
+  p_idempotency_key: input.idempotency_key.trim()
+ })
+ if (error) throw error
+ if (typeof data !== 'string' || !id.test(data)) {
+  throw Error('Expected invoice UUID from manual issuance')
+ }
+ return data
+}
+

@@ -1,8 +1,12 @@
 import {useEffect,useState} from 'react'
 import type {SupabaseClient} from '@supabase/supabase-js'
 import {formatDate,formatMoney} from '../lib/finance-data'
-import {loadMasterInvoicePage,loadMasterInvoiceBreakdown,loadMasterPaymentPage,
- type MasterInvoice,type MasterInvoiceBreakdown,type MasterPayment} from '../lib/master-billing'
+import {
+ loadMasterInvoicePage,loadMasterInvoiceBreakdown,loadMasterPaymentPage,
+ previewMasterManualInvoice,issueMasterManualInvoice,buildManualInvoiceIdempotencyKey,
+ type MasterInvoice,type MasterInvoiceBreakdown,type MasterPayment,
+ type MasterManualInvoicePreview
+} from '../lib/master-billing'
 import {checkedSigned} from '../lib/treasury-balances'
 
 export function MasterBilling({client,tenants}:{client:SupabaseClient;tenants:Array<{organization_id:string;organization_name:string}>}){
@@ -12,11 +16,29 @@ export function MasterBilling({client,tenants}:{client:SupabaseClient;tenants:Ar
  const [selected,setSelected]=useState<MasterInvoice|null>(null)
  const [breakdown,setBreakdown]=useState<MasterInvoiceBreakdown|null>(null)
  const [error,setError]=useState(''),[breakdownError,setBreakdownError]=useState('')
+
+ // Manual invoice emission states
+ const [showManual,setShowManual]=useState(false)
+ const [manualMonth,setManualMonth]=useState(()=>{
+  const d=new Date()
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`
+ })
+ const [manualDueDate,setManualDueDate]=useState('')
+ const [manualDesc,setManualDesc]=useState('')
+ const [preview,setPreview]=useState<MasterManualInvoicePreview|null>(null)
+ const [previewLoading,setPreviewLoading]=useState(false)
+ const [previewError,setPreviewError]=useState('')
+ const [issueLoading,setIssueLoading]=useState(false)
+ const [issueError,setIssueError]=useState('')
+ const [issueSuccess,setIssueSuccess]=useState<{id:string}|null>(null)
+ const [idempKey,setIdempKey]=useState('')
+
  useEffect(()=>{
   if(!tenants.some(t=>t.organization_id===org)){
-   setOrg('');setRows(null);setSelected(null)
+   setOrg('');setRows(null);setSelected(null);setPreview(null);setIssueSuccess(null)
   }
  },[org,tenants])
+
  useEffect(()=>{
   let live=true;const controller=new AbortController()
   setRows(null);setError('');setSelected(null);setBreakdown(null)
@@ -30,6 +52,7 @@ export function MasterBilling({client,tenants}:{client:SupabaseClient;tenants:Ar
   }
   return()=>{live=false;controller.abort()}
  },[client,org,mode,page,revision,tenants])
+
  useEffect(()=>{
   let live=true;const controller=new AbortController()
   setBreakdown(null);setBreakdownError('')
@@ -40,21 +63,188 @@ export function MasterBilling({client,tenants}:{client:SupabaseClient;tenants:Ar
   }
   return()=>{live=false;controller.abort()}
  },[client,selected,org,tenants])
+
  function switchMode(next:'invoices'|'payments'){setMode(next);setPage(0)}
+
+ async function handlePreview(){
+  if(!org)return
+  if(!/^\d{4}-\d{2}$/.test(manualMonth)){
+   setPreviewError('Selecione uma competência válida (AAAA-MM).')
+   return
+  }
+  const competence=`${manualMonth}-01`
+  setPreviewLoading(true)
+  setPreviewError('')
+  setIssueError('')
+  setIssueSuccess(null)
+  try{
+   const res=await previewMasterManualInvoice(client,org,competence,manualDueDate||undefined)
+   setPreview(res)
+   if(!manualDueDate){
+    setManualDueDate(res.due_date)
+   }
+   setIdempKey(buildManualInvoiceIdempotencyKey(org,competence))
+  }catch(err:unknown){
+   const msg=err instanceof Error?err.message:'Não foi possível obter a prévia da fatura.'
+   setPreviewError(msg)
+   setPreview(null)
+  }finally{
+   setPreviewLoading(false)
+  }
+ }
+
+ async function handleIssue(){
+  if(!preview||!org||issueLoading)return
+  setIssueLoading(true)
+  setIssueError('')
+  try{
+   const invId=await issueMasterManualInvoice(client,{
+    organization_id:org,
+    competence:preview.competence,
+    due_date:manualDueDate||preview.due_date,
+    description:manualDesc,
+    idempotency_key:idempKey
+   })
+   setIssueSuccess({id:invId})
+   setPreview(null)
+   setRevision(v=>v+1)
+   setPage(0)
+  }catch(err:unknown){
+   const msg=err instanceof Error?err.message:'Falha ao emitir a fatura contratual.'
+   setIssueError(msg)
+  }finally{
+   setIssueLoading(false)
+  }
+ }
+
  return <section className="panel" aria-label="Cobrança SaaS Master">
-  <div className="section-title"><h2>Cobrança SaaS — consulta</h2>
-   <button type="button" className="secondary" onClick={()=>{setPage(0);setRevision(v=>v+1)}}>Atualizar cobrança</button>
+  <div className="section-title">
+   <h2>Cobrança SaaS — consulta</h2>
+   <div className="finance-sections" style={{display:'inline-flex',gap:'0.5rem',margin:0}}>
+    <button type="button" className="secondary" onClick={()=>{setPage(0);setRevision(v=>v+1)}}>Atualizar cobrança</button>
+    <button
+     type="button"
+     className="secondary"
+     aria-expanded={showManual}
+     onClick={()=>{
+      setShowManual(v=>!v)
+      setPreview(null)
+      setPreviewError('')
+      setIssueError('')
+      setIssueSuccess(null)
+     }}
+    >
+     {showManual?'Fechar emissão manual':'Emitir fatura manual'}
+    </button>
+   </div>
   </div>
   <p className="subtle">Faturas e pagamentos do serviço SaaS, separados da tesouraria das Lojas. Valores derivam de documentos, ajustes e alocações efetivas do banco, sem registrar pagamentos nesta tela.</p>
+
   <label htmlFor="master-billing-org">Loja cliente</label>
-  <select id="master-billing-org" value={org} onChange={e=>{setOrg(e.target.value);setPage(0)}}>
+  <select id="master-billing-org" value={org} onChange={e=>{setOrg(e.target.value);setPage(0);setPreview(null);setIssueSuccess(null)}}>
    <option value="">Selecione a Loja</option>
    {tenants.map(t=><option key={t.organization_id} value={t.organization_id}>{t.organization_name}</option>)}
   </select>
+
+  {showManual&&<section className="panel" aria-label="Emissão manual de fatura SaaS" style={{marginTop:'1rem',borderLeft:'3px solid var(--color-primary, #0284c7)'}}>
+   <h3>Emissão manual de fatura SaaS</h3>
+   <p className="subtle">Gera faturas internas de assinatura calculadas estritamente a partir das cláusulas e termos de preço ativos no banco. Não aceita sobreposição arbitrária de valores digitados no navegador.</p>
+
+   {!org?<p role="alert" className="message error">Selecione uma Loja cliente acima para prosseguir com a emissão.</p>:
+   <div style={{display:'flex',flexDirection:'column',gap:'0.75rem'}}>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))',gap:'1rem'}}>
+     <div>
+      <label htmlFor="manual-invoice-month">Competência (mês/ano)</label>
+      <input
+       id="manual-invoice-month"
+       type="month"
+       value={manualMonth}
+       onChange={e=>{setManualMonth(e.target.value);setPreview(null);setIssueSuccess(null)}}
+      />
+     </div>
+     <div>
+      <label htmlFor="manual-invoice-due">Vencimento (opcional/automático)</label>
+      <input
+       id="manual-invoice-due"
+       type="date"
+       value={manualDueDate}
+       onChange={e=>{setManualDueDate(e.target.value)}}
+      />
+     </div>
+    </div>
+    <div>
+     <label htmlFor="manual-invoice-desc">Observação da fatura (opcional)</label>
+     <input
+      id="manual-invoice-desc"
+      type="text"
+      placeholder="Ex.: Mensalidade regular SaaS"
+      value={manualDesc}
+      onChange={e=>setManualDesc(e.target.value)}
+     />
+    </div>
+
+    <div>
+     <button
+      type="button"
+      className="secondary"
+      disabled={previewLoading||!manualMonth}
+      onClick={handlePreview}
+     >
+      {previewLoading?'Consultando contrato…':'Consultar contrato e prévia'}
+     </button>
+    </div>
+
+    {previewError&&<p role="alert" className="message error">{previewError}</p>}
+    {issueError&&<p role="alert" className="message error">{issueError}</p>}
+    {issueSuccess&&<p role="status" className="message success">Fatura emitida com sucesso! Identificador: {issueSuccess.id}. A lista abaixo foi atualizada.</p>}
+
+    {preview&&<div className="panel" aria-label="Prévia da fatura contratual" style={{marginTop:'0.5rem',backgroundColor:'var(--bg-subtle, rgba(0,0,0,0.02))'}}>
+     <h4>Pré-visualização contratual — {preview.organization_name}</h4>
+     <table>
+      <tbody>
+       <tr><th>Plano contratado</th><td>{preview.plan_name}</td></tr>
+       <tr><th>Competência</th><td>{preview.competence.slice(0,7)}</td></tr>
+       <tr><th>Período do serviço</th><td>{formatDate(preview.service_period_start)} a {formatDate(preview.service_period_end)}</td></tr>
+       <tr><th>Vencimento determinado</th><td>{formatDate(preview.due_date)}</td></tr>
+       <tr><th>Preço contratual (banco)</th><td><strong>{formatMoney(preview.unit_price)}</strong></td></tr>
+       <tr><th>Valor total da fatura</th><td><strong>{formatMoney(preview.total_amount)}</strong></td></tr>
+      </tbody>
+     </table>
+
+     <div style={{marginTop:'0.5rem'}}>
+      <h5>Discriminação de itens</h5>
+      <ul>
+       {preview.line_items.map((it,idx)=>(
+        <li key={idx}>
+         {it.description} — {it.quantity} un. x {formatMoney(it.unit_amount)} = <strong>{formatMoney(it.line_amount)}</strong>
+        </li>
+       ))}
+      </ul>
+     </div>
+
+     {preview.already_billed?<div style={{marginTop:'0.5rem'}}>
+      <p role="alert" className="message error">
+       Esta competência já possui uma fatura ativa emitida ({preview.existing_invoice_number||preview.existing_invoice_id?.slice(0,8)} no valor de {formatMoney(preview.existing_amount||preview.unit_price)}). A emissão de nova fatura para o mesmo mês está bloqueada para impedir duplicidades.
+      </p>
+     </div>:
+     <div style={{marginTop:'1rem'}}>
+      <button
+       type="button"
+       disabled={issueLoading}
+       onClick={handleIssue}
+      >
+       {issueLoading?'Emitindo fatura de forma idempotente…':'Confirmar e emitir fatura'}
+      </button>
+     </div>}
+    </div>}
+   </div>}
+  </section>}
+
   {!!org&&<div className="finance-sections" role="group" aria-label="Cobrança Master">
    <button className="secondary" aria-pressed={mode==='invoices'} onClick={()=>switchMode('invoices')}>Faturas</button>
    <button className="secondary" aria-pressed={mode==='payments'} onClick={()=>switchMode('payments')}>Pagamentos SaaS</button>
   </div>}
+
   {error&&<p role="alert" className="message error">{error}</p>}
   {!!org&&!rows&&!error&&<p role="status">Consultando documentos SaaS…</p>}
   {rows&&<>
