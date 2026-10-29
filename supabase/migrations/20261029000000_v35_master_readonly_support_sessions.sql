@@ -72,7 +72,17 @@ begin
     return v_existing;
   end if;
 
-  -- 4. Check if an active, unexpired session already exists for this operator and organization
+  -- 4. Serialize session starts for this organization across distinct idempotency keys.
+  --    Locking the existing organization row closes the check-then-insert race
+  --    without modifying tenant privileges or adding a new table/index.
+  perform 1 from public.organizations
+  where id = p_organization_id
+  for update;
+  if not found then
+    raise exception 'organization not found' using errcode = '23503';
+  end if;
+
+  -- Check again after acquiring the transaction-scoped lock.
   select id into v_current_active
   from public.saas_support_sessions
   where staff_user_id = v_user
