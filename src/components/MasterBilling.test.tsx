@@ -249,4 +249,91 @@ describe('Master manual SaaS invoice issuance',()=>{
    idempotency_key:key
   })).rejects.toThrow()
  })
+
+ it('invalidates preview when changing competence, due date, description or Loja',async()=>{
+  const {client}=fixture()
+  render(<MasterBilling client={client} tenants={tenants}/>)
+  await choose()
+
+  fireEvent.click(screen.getByRole('button',{name:'Emitir fatura manual'}))
+  fireEvent.change(screen.getByLabelText(/Competência/),{target:{value:'2026-11'}})
+  fireEvent.click(screen.getByRole('button',{name:'Consultar contrato e prévia'}))
+
+  await screen.findByText('Pré-visualização contratual — Loja DEV')
+  expect(screen.getByRole('button',{name:'Confirmar e emitir fatura'})).toBeInTheDocument()
+
+  // Changing competence must immediately invalidate preview and hide confirm button
+  fireEvent.change(screen.getByLabelText(/Competência/),{target:{value:'2026-12'}})
+  expect(screen.queryByText('Pré-visualização contratual — Loja DEV')).not.toBeInTheDocument()
+  expect(screen.queryByRole('button',{name:'Confirmar e emitir fatura'})).not.toBeInTheDocument()
+
+  // Preview again
+  fireEvent.click(screen.getByRole('button',{name:'Consultar contrato e prévia'}))
+  await screen.findByText('Pré-visualização contratual — Loja DEV')
+
+  // Changing due date must also invalidate
+  fireEvent.change(screen.getByLabelText(/Vencimento/),{target:{value:'2026-12-20'}})
+  expect(screen.queryByText('Pré-visualização contratual — Loja DEV')).not.toBeInTheDocument()
+
+  // Preview again
+  fireEvent.click(screen.getByRole('button',{name:'Consultar contrato e prévia'}))
+  await screen.findByText('Pré-visualização contratual — Loja DEV')
+
+  // Changing description must also invalidate
+  fireEvent.change(screen.getByLabelText(/Observação da fatura/),{target:{value:'Nova obs'}})
+  expect(screen.queryByText('Pré-visualização contratual — Loja DEV')).not.toBeInTheDocument()
+ })
+
+ it('preserves idempotency key on network failure so retries use the identical key',async()=>{
+  let attemptCount=0
+  let capturedKey1=''
+  let capturedKey2=''
+
+  const rpc=vi.fn((fnName:string,args?:Record<string,unknown>)=>{
+   if(fnName==='preview_saas_manual_invoice'){
+    const p=Promise.resolve({data:mockPreviewData,error:null})
+    return Object.assign(p,{abortSignal:()=>p})
+   }
+   if(fnName==='issue_saas_manual_invoice'){
+    attemptCount++
+    if(attemptCount===1){
+     capturedKey1=String(args?.p_idempotency_key||'')
+     const p=Promise.resolve({data:null,error:new Error('Falha de rede temporária')})
+     return Object.assign(p,{abortSignal:()=>p})
+    }else{
+     capturedKey2=String(args?.p_idempotency_key||'')
+     const p=Promise.resolve({data:'c37bf872-97ec-4475-ba10-6395b285dd0a',error:null})
+     return Object.assign(p,{abortSignal:()=>p})
+    }
+   }
+   const p=Promise.resolve({data:null,error:null})
+   return Object.assign(p,{abortSignal:()=>p})
+  })
+
+  const from=vi.fn(()=>{
+   const chain={select:()=>chain,eq:()=>chain,order:()=>chain,range:()=>chain,limit:()=>chain,
+    abortSignal:()=>Promise.resolve({data:[],error:null})}
+   return chain
+  })
+
+  render(<MasterBilling client={{from,rpc} as unknown as SupabaseClient} tenants={tenants}/>)
+  await choose()
+
+  fireEvent.click(screen.getByRole('button',{name:'Emitir fatura manual'}))
+  fireEvent.change(screen.getByLabelText(/Competência/),{target:{value:'2026-11'}})
+  fireEvent.click(screen.getByRole('button',{name:'Consultar contrato e prévia'}))
+  await screen.findByText('Pré-visualização contratual — Loja DEV')
+
+  // First attempt: fails
+  fireEvent.click(screen.getByRole('button',{name:'Confirmar e emitir fatura'}))
+  await screen.findByText('Falha de rede temporária')
+
+  // Retry attempt: preview remains, button still available, click again
+  fireEvent.click(screen.getByRole('button',{name:'Confirmar e emitir fatura'}))
+  await screen.findByText(/Fatura emitida com sucesso!/)
+
+  // Both calls must have used the EXACT same idempotency key
+  expect(capturedKey1).toBeTruthy()
+  expect(capturedKey2).toBe(capturedKey1)
+ })
 })

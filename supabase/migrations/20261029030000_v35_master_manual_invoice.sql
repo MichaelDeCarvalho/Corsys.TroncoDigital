@@ -1,20 +1,23 @@
 -- Corsys Tronco Digital V35
--- Migration: 20261029000001_v35_master_manual_invoice.sql
--- Goal: Deterministic, contract-derived manual issuance of internal SaaS subscription invoices by Master staff.
+-- Migration: 20261029030000_v35_master_manual_invoice.sql
+-- Goal: Deterministic, strictly contract-derived manual issuance of internal SaaS subscription invoices by Master staff.
+-- Versioned sequentially after migration 20261029021140_v35_master_readonly_support_sessions.
 -- Prepared for Supabase / PostgreSQL. NOT executed in this environment.
 --
 -- Invariants:
 --   1. Operator must be authenticated, platform staff with role MASTER, and verified with MFA (AAL2).
---   2. Target organization_id and active subscription must exist.
---   3. Pricing is strictly derived from contractual price terms (saas_subscription_price_terms) or pinned plan version (saas_plan_versions).
---      No arbitrary prices from the client browser are accepted.
---   4. Proration or price conflicts are handled fail-closed (multiple overlapping price terms for the period raise 55000).
+--   2. Target organization_id and active subscription must exist. Subscriptions in 'trialing' status are explicitly rejected.
+--   3. Pricing is strictly derived from contractual price terms (public.saas_subscription_price_terms) covering the entire competence.
+--      NO arbitrary prices from the client browser are accepted.
+--      NO fallback to saas_plan_versions or saas_plans without a valid contractual price term.
+--   4. Term validation is fail-closed: partial terms, gaps, intra-month changes, or overlapping/conflicting price terms raise 55000.
 --   5. Competence must be normalized to the first day of the month (extract(day from competence) = 1).
 --   6. Duplicate billing for the same competence & subscription is blocked unless previous invoice was voided.
 --   7. Sequential invoice numbering using saas_invoice_seq and platform configuration prefix.
---   8. Idempotent execution using private.idempotency_begin / idempotency_complete with payload hash verification.
+--   8. Idempotent execution using private.idempotency_begin / idempotency_complete with payload hash verification,
+--      including organization, subscription, competence, due_date, amount, and normalized description.
 --   9. Complete audit trail in public.saas_master_audit_logs.
---   10. Atomic insert of invoice, invoice items, and audit log.
+--   10. Atomic insert of invoice, invoice items, and audit log under organization transaction lock (FOR UPDATE).
 
 -- ============================================================================
 -- 1. Sequence for sequential invoice numbering
@@ -37,11 +40,15 @@ as $$
 declare
   v_org_name text;
   v_sub_id uuid;
+  v_sub_status text;
   v_plan_id uuid;
-  v_plan_version_id uuid;
   v_plan_name text;
   v_anchor_day smallint;
+  v_sub_started_at timestamptz;
+  v_sub_canceled_at timestamptz;
   v_price_term_count integer;
+  v_term_from date;
+  v_term_to date;
   v_unit_price numeric(14,2);
   v_currency text := 'BRL';
   v_due_date date;
@@ -64,6 +71,10 @@ begin
     raise exception 'competence must be the first day of the month' using errcode = '22023';
   end if;
 
+  if p_due_date is not null and p_due_date < p_competence then
+    raise exception 'due date cannot precede competence' using errcode = '22023';
+  end if;
+
   -- Verify target organization exists
   select name into v_org_name
   from public.organizations
@@ -73,9 +84,13 @@ begin
     raise exception 'organization not found' using errcode = '23503';
   end if;
 
-  -- 3. Lookup current active / billable subscription
-  select s.id, s.plan_id, s.plan_version_id, s.billing_anchor_day, p.name
-    into v_sub_id, v_plan_id, v_plan_version_id, v_anchor_day, v_plan_name
+  -- 3. Calculate service period for the competence
+  v_service_period_start := p_competence;
+  v_service_period_end := (p_competence + interval '1 month - 1 day')::date;
+
+  -- 4. Lookup billable subscription
+  select s.id, s.status, s.plan_id, s.billing_anchor_day, s.started_at, s.canceled_at, p.name
+    into v_sub_id, v_sub_status, v_plan_id, v_anchor_day, v_sub_started_at, v_sub_canceled_at, v_plan_name
   from public.saas_subscriptions s
   join public.saas_plans p on p.id = s.plan_id
   where s.organization_id = p_organization_id
@@ -84,51 +99,54 @@ begin
   limit 1;
 
   if v_sub_id is null then
-    raise exception 'active subscription required for manual invoice' using errcode = '55000';
+    raise exception 'no active subscription found for organization' using errcode = '55000';
   end if;
 
-  -- 4. Contractual price determination: fail-closed
+  if v_sub_status = 'trialing' then
+    raise exception 'cannot issue invoice for trialing subscription' using errcode = '55000';
+  end if;
+
+  if v_sub_started_at::date > v_service_period_end then
+    raise exception 'competence precedes subscription start date' using errcode = '55000';
+  end if;
+
+  if v_sub_canceled_at is not null and v_sub_canceled_at::date < v_service_period_start then
+    raise exception 'competence is after subscription cancellation date' using errcode = '55000';
+  end if;
+
+  -- 5. Contractual price determination: strictly from saas_subscription_price_terms (NO FALLBACK)
   select count(*) into v_price_term_count
   from public.saas_subscription_price_terms pt
   where pt.organization_id = p_organization_id
     and pt.subscription_id = v_sub_id
-    and pt.effective_from <= p_competence
-    and (pt.effective_to is null or pt.effective_to >= p_competence);
+    and pt.effective_from <= v_service_period_end
+    and (pt.effective_to is null or pt.effective_to >= v_service_period_start);
 
-  if v_price_term_count > 1 then
-    raise exception 'conflicting price terms detected for competence' using errcode = '55000';
-  elsif v_price_term_count = 1 then
-    select pt.unit_price, pt.currency into v_unit_price, v_currency
-    from public.saas_subscription_price_terms pt
-    where pt.organization_id = p_organization_id
-      and pt.subscription_id = v_sub_id
-      and pt.effective_from <= p_competence
-      and (pt.effective_to is null or pt.effective_to >= p_competence);
-  else
-    -- Fallback: check pinned plan version
-    if v_plan_version_id is not null then
-      select pv.price, pv.currency into v_unit_price, v_currency
-      from public.saas_plan_versions pv
-      where pv.id = v_plan_version_id;
-    end if;
+  if v_price_term_count = 0 then
+    raise exception 'no contractual price term found for subscription and competence' using errcode = '55000';
+  elsif v_price_term_count > 1 then
+    raise exception 'conflicting or multiple price terms detected for competence' using errcode = '55000';
+  end if;
 
-    -- Secondary fallback: base plan
-    if v_unit_price is null then
-      select p.price, p.currency into v_unit_price, v_currency
-      from public.saas_plans p
-      where p.id = v_plan_id;
-    end if;
+  -- Single term exists: verify full month coverage without gaps or partial period
+  select pt.effective_from, pt.effective_to, pt.unit_price, pt.currency
+    into v_term_from, v_term_to, v_unit_price, v_currency
+  from public.saas_subscription_price_terms pt
+  where pt.organization_id = p_organization_id
+    and pt.subscription_id = v_sub_id
+    and pt.effective_from <= v_service_period_end
+    and (pt.effective_to is null or pt.effective_to >= v_service_period_start);
+
+  if v_term_from > v_service_period_start or (v_term_to is not null and v_term_to < v_service_period_end) then
+    raise exception 'partial price term does not cover entire billing competence' using errcode = '55000';
   end if;
 
   if v_unit_price is null or v_unit_price <= 0 then
     raise exception 'contractual price must be greater than zero' using errcode = '55000';
   end if;
 
-  -- 5. Due date resolution
+  -- 6. Due date resolution
   if p_due_date is not null then
-    if p_due_date < p_competence then
-      raise exception 'due date cannot precede competence' using errcode = '22023';
-    end if;
     v_due_date := p_due_date;
   else
     v_due_day := coalesce(
@@ -138,10 +156,6 @@ begin
     );
     v_due_date := (p_competence + make_interval(days := v_due_day - 1))::date;
   end if;
-
-  -- 6. Service period
-  v_service_period_start := p_competence;
-  v_service_period_end := (p_competence + interval '1 month - 1 day')::date;
 
   -- 7. Check if active (unvoided) invoice already exists for this competence
   select i.id, i.invoice_number, i.amount_due
@@ -205,11 +219,14 @@ as $$
 declare
   v_user uuid := (select auth.uid());
   v_sub_id uuid;
+  v_sub_status text;
   v_plan_id uuid;
-  v_plan_version_id uuid;
   v_plan_name text;
-  v_anchor_day smallint;
+  v_sub_started_at timestamptz;
+  v_sub_canceled_at timestamptz;
   v_price_term_count integer;
+  v_term_from date;
+  v_term_to date;
   v_unit_price numeric(14,2);
   v_currency text := 'BRL';
   v_service_period_start date;
@@ -241,14 +258,21 @@ begin
     raise exception 'idempotency key required' using errcode = '22023';
   end if;
 
-  -- Verify target organization exists
-  if not exists (select 1 from public.organizations where id = p_organization_id) then
+  -- 3. Lock organization row to serialize billing operations
+  perform 1 from public.organizations
+  where id = p_organization_id
+  for update;
+  if not found then
     raise exception 'organization not found' using errcode = '23503';
   end if;
 
-  -- 3. Subscription lookup
-  select s.id, s.plan_id, s.plan_version_id, s.billing_anchor_day, p.name
-    into v_sub_id, v_plan_id, v_plan_version_id, v_anchor_day, v_plan_name
+  -- 4. Calculate service period for the competence
+  v_service_period_start := p_competence;
+  v_service_period_end := (p_competence + interval '1 month - 1 day')::date;
+
+  -- 5. Subscription lookup under lock
+  select s.id, s.status, s.plan_id, s.started_at, s.canceled_at, p.name
+    into v_sub_id, v_sub_status, v_plan_id, v_sub_started_at, v_sub_canceled_at, v_plan_name
   from public.saas_subscriptions s
   join public.saas_plans p on p.id = s.plan_id
   where s.organization_id = p_organization_id
@@ -257,51 +281,65 @@ begin
   limit 1;
 
   if v_sub_id is null then
-    raise exception 'active subscription required for manual invoice' using errcode = '55000';
+    raise exception 'no active subscription found for organization' using errcode = '55000';
   end if;
 
-  -- 4. Contractual price determination: fail-closed
+  if v_sub_status = 'trialing' then
+    raise exception 'cannot issue invoice for trialing subscription' using errcode = '55000';
+  end if;
+
+  if v_sub_started_at::date > v_service_period_end then
+    raise exception 'competence precedes subscription start date' using errcode = '55000';
+  end if;
+
+  if v_sub_canceled_at is not null and v_sub_canceled_at::date < v_service_period_start then
+    raise exception 'competence is after subscription cancellation date' using errcode = '55000';
+  end if;
+
+  -- 6. Contractual price determination: strictly from saas_subscription_price_terms (NO FALLBACK)
   select count(*) into v_price_term_count
   from public.saas_subscription_price_terms pt
   where pt.organization_id = p_organization_id
     and pt.subscription_id = v_sub_id
-    and pt.effective_from <= p_competence
-    and (pt.effective_to is null or pt.effective_to >= p_competence);
+    and pt.effective_from <= v_service_period_end
+    and (pt.effective_to is null or pt.effective_to >= v_service_period_start);
 
-  if v_price_term_count > 1 then
-    raise exception 'conflicting price terms detected for competence' using errcode = '55000';
-  elsif v_price_term_count = 1 then
-    select pt.unit_price, pt.currency into v_unit_price, v_currency
-    from public.saas_subscription_price_terms pt
-    where pt.organization_id = p_organization_id
-      and pt.subscription_id = v_sub_id
-      and pt.effective_from <= p_competence
-      and (pt.effective_to is null or pt.effective_to >= p_competence);
-  else
-    if v_plan_version_id is not null then
-      select pv.price, pv.currency into v_unit_price, v_currency
-      from public.saas_plan_versions pv
-      where pv.id = v_plan_version_id;
-    end if;
+  if v_price_term_count = 0 then
+    raise exception 'no contractual price term found for subscription and competence' using errcode = '55000';
+  elsif v_price_term_count > 1 then
+    raise exception 'conflicting or multiple price terms detected for competence' using errcode = '55000';
+  end if;
 
-    if v_unit_price is null then
-      select p.price, p.currency into v_unit_price, v_currency
-      from public.saas_plans p
-      where p.id = v_plan_id;
-    end if;
+  select pt.effective_from, pt.effective_to, pt.unit_price, pt.currency
+    into v_term_from, v_term_to, v_unit_price, v_currency
+  from public.saas_subscription_price_terms pt
+  where pt.organization_id = p_organization_id
+    and pt.subscription_id = v_sub_id
+    and pt.effective_from <= v_service_period_end
+    and (pt.effective_to is null or pt.effective_to >= v_service_period_start);
+
+  if v_term_from > v_service_period_start or (v_term_to is not null and v_term_to < v_service_period_end) then
+    raise exception 'partial price term does not cover entire billing competence' using errcode = '55000';
   end if;
 
   if v_unit_price is null or v_unit_price <= 0 then
     raise exception 'contractual price must be greater than zero' using errcode = '55000';
   end if;
 
-  -- 5. Idempotency begin: register hash of intent
+  -- 7. Normalize description for payload and line item
+  v_item_desc := coalesce(
+    nullif(btrim(p_description), ''),
+    'Assinatura SaaS — Plano ' || v_plan_name || ' (' || to_char(p_competence, 'MM/YYYY') || ')'
+  );
+
+  -- 8. Idempotency begin: register hash of intent including normalized description
   v_payload := jsonb_build_object(
     'organization_id', p_organization_id,
     'subscription_id', v_sub_id,
     'competence', p_competence,
     'due_date', p_due_date,
-    'amount', v_unit_price
+    'amount', v_unit_price,
+    'description', v_item_desc
   );
 
   v_existing := private.idempotency_begin(
@@ -314,12 +352,7 @@ begin
     return v_existing;
   end if;
 
-  -- 6. Lock organization row to serialize billing operations
-  perform 1 from public.organizations
-  where id = p_organization_id
-  for update;
-
-  -- 7. Block duplicate active invoice for this competence & subscription
+  -- 9. Block duplicate active invoice for this competence & subscription
   if exists (
     select 1 from public.saas_invoices i
     where i.organization_id = p_organization_id
@@ -333,22 +366,14 @@ begin
     raise exception 'invoice already issued for competence' using errcode = '55000';
   end if;
 
-  -- 8. Compute service period and generate sequential invoice number
-  v_service_period_start := p_competence;
-  v_service_period_end := (p_competence + interval '1 month - 1 day')::date;
-
+  -- 10. Generate sequential invoice number
   v_prefix := coalesce(
     (select invoice_prefix from public.saas_platform_configuration where singleton limit 1),
     'CORSYS'
   );
   v_invoice_number := v_prefix || '-' || to_char(p_competence, 'YYYYMM') || '-' || lpad(nextval('public.saas_invoice_seq')::text, 5, '0');
 
-  v_item_desc := coalesce(
-    nullif(btrim(p_description), ''),
-    'Assinatura SaaS — Plano ' || v_plan_name || ' (' || to_char(p_competence, 'MM/YYYY') || ')'
-  );
-
-  -- 9. Insert invoice
+  -- 11. Insert invoice
   insert into public.saas_invoices(
     organization_id,
     subscription_id,
@@ -380,7 +405,7 @@ begin
   )
   returning id into v_invoice_id;
 
-  -- 10. Insert invoice item
+  -- 12. Insert invoice item
   insert into public.saas_invoice_items(
     organization_id,
     invoice_id,
@@ -399,7 +424,7 @@ begin
     v_unit_price
   );
 
-  -- 11. Audit log
+  -- 13. Audit log
   insert into public.saas_master_audit_logs(
     staff_user_id,
     organization_id,
@@ -424,11 +449,12 @@ begin
       'due_date', p_due_date,
       'amount_due', v_unit_price,
       'currency', v_currency,
+      'description', v_item_desc,
       'idempotency_key', btrim(p_idempotency_key)
     )
   );
 
-  -- 12. Complete idempotency
+  -- 14. Complete idempotency
   perform private.idempotency_complete(
     p_organization_id,
     btrim(p_idempotency_key),

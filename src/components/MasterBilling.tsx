@@ -1,4 +1,4 @@
-import {useEffect,useState} from 'react'
+import {useEffect,useRef,useState} from 'react'
 import type {SupabaseClient} from '@supabase/supabase-js'
 import {formatDate,formatMoney} from '../lib/finance-data'
 import {
@@ -33,9 +33,24 @@ export function MasterBilling({client,tenants}:{client:SupabaseClient;tenants:Ar
  const [issueSuccess,setIssueSuccess]=useState<{id:string}|null>(null)
  const [idempKey,setIdempKey]=useState('')
 
+ const previewReqRef=useRef(0)
+ const previewAbortRef=useRef<AbortController|null>(null)
+
+ function invalidatePreview(){
+  previewReqRef.current++
+  previewAbortRef.current?.abort()
+  setPreview(null)
+  setPreviewError('')
+  setIssueError('')
+  setIssueSuccess(null)
+ }
+
  useEffect(()=>{
   if(!tenants.some(t=>t.organization_id===org)){
-   setOrg('');setRows(null);setSelected(null);setPreview(null);setIssueSuccess(null)
+   setOrg('')
+   setRows(null)
+   setSelected(null)
+   invalidatePreview()
   }
  },[org,tenants])
 
@@ -72,24 +87,41 @@ export function MasterBilling({client,tenants}:{client:SupabaseClient;tenants:Ar
    setPreviewError('Selecione uma competência válida (AAAA-MM).')
    return
   }
+
+  const reqId=++previewReqRef.current
+  previewAbortRef.current?.abort()
+  const controller=new AbortController()
+  previewAbortRef.current=controller
+
   const competence=`${manualMonth}-01`
+  const targetOrg=org
+  const targetMonth=manualMonth
+  const targetDue=manualDueDate
+
   setPreviewLoading(true)
   setPreviewError('')
   setIssueError('')
   setIssueSuccess(null)
+
   try{
-   const res=await previewMasterManualInvoice(client,org,competence,manualDueDate||undefined)
-   setPreview(res)
-   if(!manualDueDate){
-    setManualDueDate(res.due_date)
+   const res=await previewMasterManualInvoice(client,targetOrg,competence,targetDue||undefined,controller.signal)
+   if(previewReqRef.current===reqId&&org===targetOrg&&manualMonth===targetMonth){
+    setPreview(res)
+    if(!targetDue){
+     setManualDueDate(res.due_date)
+    }
+    setIdempKey(buildManualInvoiceIdempotencyKey(targetOrg,competence))
    }
-   setIdempKey(buildManualInvoiceIdempotencyKey(org,competence))
   }catch(err:unknown){
-   const msg=err instanceof Error?err.message:'Não foi possível obter a prévia da fatura.'
-   setPreviewError(msg)
-   setPreview(null)
+   if(previewReqRef.current===reqId){
+    const msg=err instanceof Error?err.message:'Não foi possível obter a prévia da fatura.'
+    setPreviewError(msg)
+    setPreview(null)
+   }
   }finally{
-   setPreviewLoading(false)
+   if(previewReqRef.current===reqId){
+    setPreviewLoading(false)
+   }
   }
  }
 
@@ -110,6 +142,7 @@ export function MasterBilling({client,tenants}:{client:SupabaseClient;tenants:Ar
    setRevision(v=>v+1)
    setPage(0)
   }catch(err:unknown){
+   // Preserve idempKey across uncertain or network failures for safe retry
    const msg=err instanceof Error?err.message:'Falha ao emitir a fatura contratual.'
    setIssueError(msg)
   }finally{
@@ -128,10 +161,7 @@ export function MasterBilling({client,tenants}:{client:SupabaseClient;tenants:Ar
      aria-expanded={showManual}
      onClick={()=>{
       setShowManual(v=>!v)
-      setPreview(null)
-      setPreviewError('')
-      setIssueError('')
-      setIssueSuccess(null)
+      invalidatePreview()
      }}
     >
      {showManual?'Fechar emissão manual':'Emitir fatura manual'}
@@ -141,7 +171,15 @@ export function MasterBilling({client,tenants}:{client:SupabaseClient;tenants:Ar
   <p className="subtle">Faturas e pagamentos do serviço SaaS, separados da tesouraria das Lojas. Valores derivam de documentos, ajustes e alocações efetivas do banco, sem registrar pagamentos nesta tela.</p>
 
   <label htmlFor="master-billing-org">Loja cliente</label>
-  <select id="master-billing-org" value={org} onChange={e=>{setOrg(e.target.value);setPage(0);setPreview(null);setIssueSuccess(null)}}>
+  <select
+   id="master-billing-org"
+   value={org}
+   onChange={e=>{
+    setOrg(e.target.value)
+    setPage(0)
+    invalidatePreview()
+   }}
+  >
    <option value="">Selecione a Loja</option>
    {tenants.map(t=><option key={t.organization_id} value={t.organization_id}>{t.organization_name}</option>)}
   </select>
@@ -159,7 +197,10 @@ export function MasterBilling({client,tenants}:{client:SupabaseClient;tenants:Ar
        id="manual-invoice-month"
        type="month"
        value={manualMonth}
-       onChange={e=>{setManualMonth(e.target.value);setPreview(null);setIssueSuccess(null)}}
+       onChange={e=>{
+        setManualMonth(e.target.value)
+        invalidatePreview()
+       }}
       />
      </div>
      <div>
@@ -168,7 +209,10 @@ export function MasterBilling({client,tenants}:{client:SupabaseClient;tenants:Ar
        id="manual-invoice-due"
        type="date"
        value={manualDueDate}
-       onChange={e=>{setManualDueDate(e.target.value)}}
+       onChange={e=>{
+        setManualDueDate(e.target.value)
+        invalidatePreview()
+       }}
       />
      </div>
     </div>
@@ -179,7 +223,10 @@ export function MasterBilling({client,tenants}:{client:SupabaseClient;tenants:Ar
       type="text"
       placeholder="Ex.: Mensalidade regular SaaS"
       value={manualDesc}
-      onChange={e=>setManualDesc(e.target.value)}
+      onChange={e=>{
+       setManualDesc(e.target.value)
+       invalidatePreview()
+      }}
      />
     </div>
 
