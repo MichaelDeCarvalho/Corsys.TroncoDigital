@@ -117,6 +117,7 @@ export function Chamados({
   const [formError, setFormError] = useState('')
   const [formSuccess, setFormSuccess] = useState(false)
   const [formUncertain, setFormUncertain] = useState(false)
+  const createIdempotencyKeyRef = useRef<string>(crypto.randomUUID())
   const submitGuard = useRef(false)
   const mounted = useRef(false)
 
@@ -206,6 +207,7 @@ export function Chamados({
           setFormSuccess(true)
           setFormUncertain(false)
           setFormError('')
+          createIdempotencyKeyRef.current = crypto.randomUUID()
           setRevision(v => v + 1)
         } else {
           setFormError(
@@ -251,6 +253,7 @@ export function Chamados({
         category: newCategory,
         priority: newPriority,
         message: messageTrimmed,
+        idempotencyKey: createIdempotencyKeyRef.current,
       })
 
       if (mounted.current) {
@@ -261,6 +264,7 @@ export function Chamados({
         setNewPriority('medium')
         setFormSuccess(true)
         setFormUncertain(false)
+        createIdempotencyKeyRef.current = crypto.randomUUID()
         setRevision(v => v + 1)
       }
     } catch (err: any) {
@@ -926,6 +930,7 @@ function TicketDetails({
   const [sendSuccess, setSendSuccess] = useState(false)
   const [replyUncertain, setReplyUncertain] = useState(false)
 
+  const replyIdempotencyKeyRef = useRef<string>(crypto.randomUUID())
   const replyGuard = useRef(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -977,6 +982,7 @@ function TicketDetails({
         setSendSuccess(true)
         setReplyUncertain(false)
         setSendError('')
+        replyIdempotencyKeyRef.current = crypto.randomUUID()
       } else {
         setSendError('Consulta realizada: a mensagem não foi localizada no histórico. O formulário foi liberado para nova tentativa.')
         setReplyUncertain(false)
@@ -1003,12 +1009,14 @@ function TicketDetails({
         organizationId,
         ticketId: ticket.id,
         message: replyText.trim(),
+        idempotencyKey: replyIdempotencyKeyRef.current,
       })
 
       rpcSucceeded = true
       setReplyText('')
       setSendSuccess(true)
       setReplyUncertain(false)
+      replyIdempotencyKeyRef.current = crypto.randomUUID()
       onUpdated()
     } catch (err: any) {
       // Safe failure treatment: preserve replyText, mark as uncertain and block submit

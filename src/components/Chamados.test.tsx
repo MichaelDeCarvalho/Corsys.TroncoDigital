@@ -248,6 +248,7 @@ describe('Chamados (view-chamados)', () => {
         p_category: 'other',
         p_priority: 'medium',
         p_message: 'Divergência de 10 reais no extrato',
+        p_idempotency_key: expect.any(String),
       })
     })
   })
@@ -285,6 +286,7 @@ describe('Chamados (view-chamados)', () => {
         p_organization_id: validOrgId,
         p_ticket_id: validTicketId,
         p_message: 'Entendido, verifiquei e deu certo agora.',
+        p_idempotency_key: expect.any(String),
       })
     })
   })

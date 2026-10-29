@@ -160,11 +160,7 @@ export async function loadTenantTicketMessages(
 }
 
 /**
- * NOTA DE SEGURANÇA E LIMITAÇÃO DE PROTOCOLO (COMANDO 10):
- * A RPC `create_saas_support_ticket` no backend não aceita chave de idempotência.
- * O cliente não deve assumir entrega única distribuída. Em caso de erro de rede ou resposta
- * inconclusiva, o erro é propagado e o chamador deve solicitar ao usuário a atualização
- * da listagem antes de qualquer reenvio para prevenir duplicação de chamados.
+ * Criação de chamado de suporte da Loja com suporte a idempotência server-side.
  */
 export async function createTenantSupportTicket(
   client: SupabaseClient,
@@ -174,9 +170,10 @@ export async function createTenantSupportTicket(
     category: SupportTicketCategory
     priority: SupportTicketPriority
     message: string
+    idempotencyKey?: string
   }
 ): Promise<string> {
-  const { organizationId, subject, category, priority, message } = params
+  const { organizationId, subject, category, priority, message, idempotencyKey } = params
 
   if (!organizationId || typeof organizationId !== 'string') {
     throw new Error('Identificador da Loja inválido.')
@@ -191,6 +188,7 @@ export async function createTenantSupportTicket(
     p_category: category,
     p_priority: priority,
     p_message: message.trim(),
+    p_idempotency_key: idempotencyKey ?? crypto.randomUUID(),
   })
 
   if (error) throw error
@@ -202,9 +200,7 @@ export async function createTenantSupportTicket(
 }
 
 /**
- * NOTA DE SEGURANÇA E LIMITAÇÃO DE PROTOCOLO (COMANDO 10):
- * A RPC `reply_saas_support_ticket` no backend não aceita chave de idempotência do cliente.
- * Em falhas de transporte, o frontend não limpa a mensagem e oferece verificação do histórico.
+ * Resposta a chamado de suporte da Loja com suporte a idempotência server-side.
  */
 export async function replyTenantSupportTicket(
   client: SupabaseClient,
@@ -212,9 +208,10 @@ export async function replyTenantSupportTicket(
     organizationId: string
     ticketId: string
     message: string
+    idempotencyKey?: string
   }
 ): Promise<string> {
-  const { organizationId, ticketId, message } = params
+  const { organizationId, ticketId, message, idempotencyKey } = params
 
   if (!organizationId || !ticketId || typeof organizationId !== 'string' || typeof ticketId !== 'string') {
     throw new Error('Parâmetros de resposta inválidos.')
@@ -227,6 +224,7 @@ export async function replyTenantSupportTicket(
     p_organization_id: organizationId,
     p_ticket_id: ticketId,
     p_message: message.trim(),
+    p_idempotency_key: idempotencyKey ?? crypto.randomUUID(),
   })
 
   if (error) throw error
