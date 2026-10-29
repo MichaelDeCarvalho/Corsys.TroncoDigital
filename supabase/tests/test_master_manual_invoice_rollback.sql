@@ -58,11 +58,13 @@ begin
   insert into public.saas_plan_versions(
     id, plan_id, version_number, status, price, currency,
     billing_interval, trial_days, grace_days, valid_from,
-    created_by, published_by, published_at
+    created_by, published_by, published_at,
+    display_name_snapshot, internal_code_snapshot
   ) values (
     v_plan_version_id, v_plan_id, 1, 'published', 150.00, 'BRL',
     'monthly', 0, 7, '2026-01-01',
-    v_master_user, v_master_user, now()
+    v_master_user, v_master_user, now(),
+    'Plano Teste Master', 'TEST_PLAN_MIGRATION'
   );
 
   -- Initially insert subscription without any price term to verify NO FALLBACK
@@ -147,6 +149,41 @@ begin
     null; -- Expected: cannot issue invoice for trialing subscription
   end;
   update public.saas_subscriptions set status = 'active' where id = v_sub_id;
+
+  -- A full-month invoice must not charge for a subscription active only part
+  -- of that month, absent an explicitly approved proration contract.
+  update public.saas_subscriptions
+     set started_at = '2026-11-05 00:00:00+00'
+   where id = v_sub_id;
+
+  begin
+    perform public.preview_saas_manual_invoice(v_test_org, v_comp, v_due_date);
+    raise exception 'Expected preview refusal for partial-month subscription start';
+  exception when sqlstate '55000' then null;
+  end;
+
+  begin
+    perform public.issue_saas_manual_invoice(
+      v_test_org, v_comp, v_due_date, 'Parcial sem prorata', 'idemp-partial-start'
+    );
+    raise exception 'Expected issuance refusal for partial-month subscription start';
+  exception when sqlstate '55000' then null;
+  end;
+
+  update public.saas_subscriptions
+     set started_at = '2026-01-01 00:00:00+00',
+         canceled_at = '2026-11-15 00:00:00+00'
+   where id = v_sub_id;
+
+  begin
+    perform public.preview_saas_manual_invoice(v_test_org, v_comp, v_due_date);
+    raise exception 'Expected preview refusal for mid-month cancellation';
+  exception when sqlstate '55000' then null;
+  end;
+
+  update public.saas_subscriptions
+     set canceled_at = null
+   where id = v_sub_id;
 
   -- ==========================================================================
   -- 4. Contractual price term requirement (FAIL-CLOSED, NO FALLBACK)
