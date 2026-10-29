@@ -44,10 +44,14 @@ export async function saveMemberProfile(client: SupabaseClient, organizationId: 
   return data
 }
 
-export async function openTicket(client: SupabaseClient, organizationId: string, subject: string, message: string) {
+export async function openTicket(client: SupabaseClient, organizationId: string, subject: string, message: string, key?: string) {
   const { data, error } = await client.rpc('create_saas_support_ticket', {
-    p_organization_id: organizationId, p_subject: subject.trim(), p_category: 'other',
-    p_priority: 'medium', p_message: message.trim(),
+    p_organization_id: organizationId,
+    p_subject: subject.trim(),
+    p_category: 'other',
+    p_priority: 'medium',
+    p_message: message.trim(),
+    p_idempotency_key: key ?? crypto.randomUUID(),
   })
   if (error || typeof data !== 'string') throw error ?? new Error('Ticket not created')
   return data

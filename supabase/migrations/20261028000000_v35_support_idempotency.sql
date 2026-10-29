@@ -1,6 +1,8 @@
 -- Migration: 20261028000000_v35_support_idempotency.sql
 -- Goal: Provide transactional server-side idempotency for tenant support ticket RPCs
 --       (create_saas_support_ticket and reply_saas_support_ticket) using private.idempotency_begin / complete.
+-- Compatibility: Supports both direct frontend calls with p_idempotency_key and internal RPC callers
+--                like reply_master_tenant_support_idempotent.
 
 drop function if exists public.create_saas_support_ticket(uuid, text, text, text, text);
 drop function if exists public.create_saas_support_ticket(uuid, text, text, text, text, text);
@@ -36,6 +38,14 @@ begin
     raise exception 'subject and message are required' using errcode = '22023';
   end if;
 
+  if p_category is null or p_category not in ('finance','reports','access','configuration','billing','other') then
+    raise exception 'invalid category' using errcode = '22023';
+  end if;
+
+  if p_priority is null or p_priority not in ('low','medium','high','urgent') then
+    raise exception 'invalid priority' using errcode = '22023';
+  end if;
+
   if p_idempotency_key is not null and length(btrim(p_idempotency_key)) > 0 then
     v_payload := jsonb_build_object(
       'subject', btrim(p_subject),
@@ -57,14 +67,14 @@ begin
   insert into public.saas_support_tickets(
     organization_id, subject, category, priority, opened_by_user_id
   ) values (
-    p_organization_id, p_subject, p_category, p_priority, v_user
+    p_organization_id, btrim(p_subject), p_category, p_priority, v_user
   )
   returning id into v_ticket;
 
   insert into public.saas_support_ticket_messages(
     organization_id, ticket_id, sender_user_id, sender_kind, visibility, body
   ) values (
-    p_organization_id, v_ticket, v_user, 'tenant_user', 'customer', p_message
+    p_organization_id, v_ticket, v_user, 'tenant_user', 'customer', btrim(p_message)
   );
 
   insert into public.saas_support_ticket_events(
@@ -159,7 +169,7 @@ begin
   ) values (
     p_organization_id, p_ticket_id, v_user,
     case when v_staff then 'platform_staff' else 'tenant_user' end,
-    'customer', p_message
+    'customer', btrim(p_message)
   )
   returning id into v_message_id;
 
