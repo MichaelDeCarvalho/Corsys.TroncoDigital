@@ -1,3 +1,7 @@
+## P0 Master aprovado — 28/10/2026
+
+MFA real, resposta Master UI e HTTP concorrência/replay/22023 aprovados. Chamado fictício #11 fechado, histórico preservado; dados anteriores intactos. Loja A/B pendentes; não repetir gate Master. Evidência docs/V35_P0_SUPPORT_20261028.md.
+
 ## P0 suporte e entrada MFA — 28/10/2026
 
 Frontend 99dfd64d publicado somente DEV (61da7570); compatibilidade de suporte corrigida. Login de michael@lojamais1.com confirmado: MASTER ativo, TOTP verificado e sessão aal1. MfaGate adiciona challenge do fator existente; não altera cadastro/permissões. 30 testes focados, tipos/build PASS; código real e P0 HTTP ainda pendentes. ADR-0037.

@@ -1,3 +1,7 @@
+## Ferramenta de homologação suporte DEV — 28/10/2026
+
+Build opcional VITE_SUPPORT_QA_ENABLED=true inclui support-qa.html com alvos DEV/atores/fixtures fixos; SDK conserva credenciais no navegador e exibe somente status HTTP/SQLSTATE/IDs de teste. Nenhuma autorização adicional; RPCs/RLS seguem fronteira confiável. Sessão real Master AAL2 validada. Relatório docs/V35_P0_SUPPORT_20261028.md.
+
 ## Entrada com MFA existente — 28/10/2026
 
 ConnectedApp valida identidade e MfaGate verifica assurance antes do Workspace. TOTP existente usa challengeAndVerify e requer confirmação aal2. Sem enrollment, novo backend ou migration; RPCs mantêm autorização Master/AAL2. Recuperação de senha preservada. ADR-0037.

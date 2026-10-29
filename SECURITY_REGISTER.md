@@ -1,3 +1,7 @@
+## Homologação Master real — 28/10/2026
+
+MFA AAL2, UI e replay/concorrência HTTP/22023 PASS somente DEV. A/B e timeout forçado NÃO TESTADOS. Exclusão da fixture bloqueada por histórico imutável: sem bypass, encerramento normal confirmado. QA page opt-in restrita ao DEV e atores fixos, sem exportação de tokens. Evidência docs/V35_P0_SUPPORT_20261028.md.
+
 ## MFA na entrada — 28/10/2026
 
 Lacuna de apresentação identificada: senha criava aal1 sem challenge disponível, mantendo Master negado corretamente. MfaGate solicita fator TOTP existente e falha fechado em erro; não altera grants/MFA/RLS. Código não é logado nem persistido pela UI. 30 testes focados PASS; validação real e homologação de suporte NÃO TESTADAS. ADR-0037.

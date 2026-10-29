@@ -1,3 +1,7 @@
+## P0 Master homologado — 28/10/2026
+
+MFA real aal2, acesso Master, resposta UI e HTTP concorrência/replay/22023 PASS. Fixture Master #11 encerrada pelo fluxo normal, histórico preservado (DELETE bloqueado por imutabilidade); baseline três abertos restaurado. Deploy DEV 3d269771. A/B ainda pendentes por sessão; página /support-qa.html preparada e guardada ao DEV. Não repetir Master. Relatório docs/V35_P0_SUPPORT_20261028.md. Sessão Master Edge preservada; nova sessão separada aguardando login A.
+
 ## P0 suporte / MFA — 28/10/2026
 
 Branch fix/v35-mfa-challenge-dev-20261028 sobre 99dfd64d. MfaGate, integração App e testes adicionados; 30 testes/tipos/build PASS. Deploy somente DEV autorizado pelo usuário. Sem banco/PROD. Próximo: usuário confirma código TOTP no navegador, depois homologar chamados A/B e Master/idempotência HTTP. Não repetir migration/suítes já aprovadas. Evidências externas outputs/V35_P0_HOMOLOGACAO_20261028.md; ADR-0037.
