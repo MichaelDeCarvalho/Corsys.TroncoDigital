@@ -10,6 +10,8 @@ export default defineConfig(({ command, mode }) => {
     parsePublicEnv(buildEnv)
   }
   const devQA = buildEnv.VITE_DEV_QA_ENABLED === 'true'
+  const supportQA = buildEnv.VITE_SUPPORT_QA_ENABLED === 'true'
+  if (supportQA && buildEnv.VITE_SUPABASE_URL !== 'https://szqkdekwhzxsoxorgvaz.supabase.co') throw new Error('Support QA restricted to DEV')
   if (devQA && buildEnv.VITE_SUPABASE_URL !== 'https://szqkdekwhzxsoxorgvaz.supabase.co') throw new Error('DEV QA is restricted to the approved DEV project')
   return {
   server: {
@@ -18,7 +20,7 @@ export default defineConfig(({ command, mode }) => {
     allowedHosts: ['.run.app', 'localhost', '127.0.0.1'],
   },
   plugins: [react(), tailwindcss()],
-  build: devQA ? { rollupOptions: { input: { app: 'index.html', qa: 'dev-qa.html' } } } : undefined,
+  build: supportQA ? { rollupOptions: { input: { app: 'index.html', support: 'support-qa.html' } } } : devQA ? { rollupOptions: { input: { app: 'index.html', qa: 'dev-qa.html' } } } : undefined,
   test: {
     include: ['src/**/*.test.{ts,tsx}'],
     globals: true,

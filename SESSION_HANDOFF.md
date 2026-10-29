@@ -1,3 +1,17 @@
+## P0 suporte funcional concluído no DEV — 28/10/2026
+
+PASS frontend, MFA Master real/UI/HTTP, Loja A UI/HTTP, replay/concorrência/22023 e segregação B UI/HTTP. B HTTP403/42501,409/23503,403/42501; leituras A ocultas e nenhuma escrita indevida. #11/#12/#13 closed, baseline três abertos restaurado; histórico imutável preservado. Timeout forçado NÃO TESTADO; concorrência sem timeout. Sem migration/PROD/merge. Não repetir suíte aprovada. Evidência consolidada docs/V35_P0_SUPPORT_20261028.md. Próximo: revisão da branch para integração; V35 geral permanece aberta.
+
+## P0 Master homologado — 28/10/2026
+
+Atualização: Loja A UI abertura/resposta e HTTP criação/resposta concorrência/replay/22023 PASS sem duplicação. Sessão A preexistente no navegador interno aproveitada. Chamados fictícios #11/#12/#13 fechados por Master, baseline três abertos restaurado. B ainda NÃO TESTADA; próxima entrada jobmcc@hotmail.com na mesma aba interna, mantendo sessionStorage com ID A 81caf24e-2891-4cd4-a112-7201b50cbce4. Master Edge preservado. Branch remota autorizada pelo usuário; não repetir A/Master.
+
+MFA real aal2, acesso Master, resposta UI e HTTP concorrência/replay/22023 PASS. Fixture Master #11 encerrada pelo fluxo normal, histórico preservado (DELETE bloqueado por imutabilidade); baseline três abertos restaurado. Deploy DEV 3d269771. A/B ainda pendentes por sessão; página /support-qa.html preparada e guardada ao DEV. Não repetir Master. Relatório docs/V35_P0_SUPPORT_20261028.md. Sessão Master Edge preservada; nova sessão separada aguardando login A.
+
+## P0 suporte / MFA — 28/10/2026
+
+Branch fix/v35-mfa-challenge-dev-20261028 sobre 99dfd64d. MfaGate, integração App e testes adicionados; 30 testes/tipos/build PASS. Deploy somente DEV autorizado pelo usuário. Sem banco/PROD. Próximo: usuário confirma código TOTP no navegador, depois homologar chamados A/B e Master/idempotência HTTP. Não repetir migration/suítes já aprovadas. Evidências externas outputs/V35_P0_HOMOLOGACAO_20261028.md; ADR-0037.
+
 ## Continuidade de sessão e mútuas — 21/10/2026
 
 Atualização: CI323/c6b2fd2 SUCCESS. Refresh real B PASS preservando campos/Loja; ágape UI B criado, histórico integrante/R$1,25 conferido e mobile375/scroll375 PASS, screenshot agape-B-mobile-20261021.jpg. Cobrança a4c4db6d cancelada via RPC normal DEV/open0/integrity true. Aba duplicada fechada pelo usuário; viewport restaurado. UI mútuas+helper HTTP implementados,6 testes focados e tipos/build PASS; publicar versão DEV e executar somente gate novo B. A ágapes/mútuas agrupados depois. Repasse neutro ainda lacuna real do guard de categoria, não declarar resolvido.

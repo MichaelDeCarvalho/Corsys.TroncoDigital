@@ -1,3 +1,11 @@
+## Ferramenta de homologação suporte DEV — 28/10/2026
+
+Build opcional VITE_SUPPORT_QA_ENABLED=true inclui support-qa.html com alvos DEV/atores/fixtures fixos; SDK conserva credenciais no navegador e exibe somente status HTTP/SQLSTATE/IDs de teste. Nenhuma autorização adicional; RPCs/RLS seguem fronteira confiável. Sessão real Master AAL2 validada. Relatório docs/V35_P0_SUPPORT_20261028.md.
+
+## Entrada com MFA existente — 28/10/2026
+
+ConnectedApp valida identidade e MfaGate verifica assurance antes do Workspace. TOTP existente usa challengeAndVerify e requer confirmação aal2. Sem enrollment, novo backend ou migration; RPCs mantêm autorização Master/AAL2. Recuperação de senha preservada. ADR-0037.
+
 ## Continuidade e mútuas — 21/10/2026
 
 Finance→Mútuas por faixa usa RPCs66 e leitura RLS de mutual_batches/assignments/balances. Distribuição por número ou atribuição explícita de toda a faixa; alterar faixa invalida distribuição/prévia. Prévia verifica tenant, soma em centavos, vínculos e natureza/código reais, exige GERAR. Envio incerto conserva comando/chave; rejeição definitiva desbloqueia. Histórico paginado20, detalhes conferem cada cobrança. Sem pagamento ou alteração de classificação. Natureza neutra/repasse ainda depende de evolução contábil específica.

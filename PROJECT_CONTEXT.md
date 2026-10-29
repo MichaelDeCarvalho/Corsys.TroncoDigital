@@ -1,3 +1,15 @@
+## P0 suporte funcional aprovado no DEV — 28/10/2026
+
+Frontend/MFA Master/A UI e HTTP/replay/concorrência/22023 e isolamento B UI/HTTP PASS. Read-back sem duplicação ou escrita indevida, três fixtures fechadas com histórico preservado. Timeout forçado não testado. Relatório docs/V35_P0_SUPPORT_20261028.md. Revisão para integração pendente; sem merge/PROD, V35 geral não concluída.
+
+## P0 Master aprovado — 28/10/2026
+
+MFA real, resposta Master UI e HTTP concorrência/replay/22023 aprovados. Chamado fictício #11 fechado, histórico preservado; dados anteriores intactos. Loja A/B pendentes; não repetir gate Master. Evidência docs/V35_P0_SUPPORT_20261028.md.
+
+## P0 suporte e entrada MFA — 28/10/2026
+
+Frontend 99dfd64d publicado somente DEV (61da7570); compatibilidade de suporte corrigida. Login de michael@lojamais1.com confirmado: MASTER ativo, TOTP verificado e sessão aal1. MfaGate adiciona challenge do fator existente; não altera cadastro/permissões. 30 testes focados, tipos/build PASS; código real e P0 HTTP ainda pendentes. ADR-0037.
+
 ## Continuação operacional — 21/10/2026
 
 CI323/c6b2fd2 SUCCESS. Revalidação real B em duas abas preservou Loja/formulário; ágape UI B desktop/mobile375 sem overflow PASS, cobrança a4c4db6d cancelada/open0/integrity true. Mútuas agora têm UI com distribuição explícita, prévia da classificação/total, histórico e recuperação idempotente; seis testes focados PASS e build DEV PASS. HTTP/UI mútuas ainda a homologar. Repasse neutro continua lacuna: guard atual de member_receivable exige receita; não declarar esse tratamento pronto.
