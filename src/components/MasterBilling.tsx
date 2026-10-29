@@ -39,6 +39,7 @@ export function MasterBilling({client,tenants}:{client:SupabaseClient;tenants:Ar
  function invalidatePreview(){
   previewReqRef.current++
   previewAbortRef.current?.abort()
+  setPreviewLoading(false)
   setPreview(null)
   setPreviewError('')
   setIssueError('')
@@ -99,6 +100,7 @@ export function MasterBilling({client,tenants}:{client:SupabaseClient;tenants:Ar
   const targetDue=manualDueDate
 
   setPreviewLoading(true)
+  setPreview(null)
   setPreviewError('')
   setIssueError('')
   setIssueSuccess(null)
