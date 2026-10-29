@@ -1,8 +1,9 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { SupabaseClient, User } from '@supabase/supabase-js'
 import { vi } from 'vitest'
-import { ConnectedApp } from './App'
+import App, { ConnectedApp, ErrorBoundary } from './App'
 import { Workspace } from './components/Workspace'
+import { errorMonitor } from './lib/error-monitor'
 
 const userA = { id: 'user-a', email: 'a@example.invalid' } as User
 const orgA = { id: 'org-a', name: 'Loja A', number: 'A', status: 'active' }
@@ -220,4 +221,98 @@ describe('Recovery session boundary', () => {
     expect(screen.queryByRole('form', { name: 'Nova senha' })).not.toBeInTheDocument()
   })
 })
+
+describe('Error boundary and authentication exception logging', () => {
+  beforeEach(() => {
+    errorMonitor.clear()
+  })
+
+  it('catches render errors in ErrorBoundary, logs to errorMonitor, and renders safe fallback', () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const CrashingComponent = () => {
+      throw new Error('Falha catastrófica de renderização')
+    }
+
+    render(
+      <ErrorBoundary>
+        <CrashingComponent />
+      </ErrorBoundary>
+    )
+
+    expect(screen.getByRole('heading', { name: 'Erro inesperado' })).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent('Ocorreu uma falha ao renderizar a interface.')
+    expect(screen.getByRole('button', { name: 'Tentar novamente' })).toBeInTheDocument()
+
+    const reports = errorMonitor.getReports()
+    expect(reports.some(r => r.category === 'render_error' && r.message === 'Falha catastrófica de renderização')).toBe(true)
+
+    consoleErrorSpy.mockRestore()
+  })
+
+  it('allows resetting ErrorBoundary via Tentar novamente', () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    let shouldCrash = true
+    const DynamicComponent = () => {
+      if (shouldCrash) {
+        throw new Error('Erro temporário')
+      }
+      return <div>Recuperado com sucesso</div>
+    }
+
+    render(
+      <ErrorBoundary>
+        <DynamicComponent />
+      </ErrorBoundary>
+    )
+
+    expect(screen.getByRole('heading', { name: 'Erro inesperado' })).toBeInTheDocument()
+
+    shouldCrash = false
+    fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }))
+
+    expect(screen.getByText('Recuperado com sucesso')).toBeInTheDocument()
+    consoleErrorSpy.mockRestore()
+  })
+
+  it('captures authentication error in ConnectedApp when auth status is error', async () => {
+    const mock = mockClient()
+    mock.auth.getUser.mockRejectedValueOnce(new Error('Auth backend indisponível'))
+
+    render(<ConnectedApp client={mock.client} />)
+    await screen.findByRole('alert')
+
+    const reports = errorMonitor.getReports()
+    const authErrorReport = reports.find(r => r.category === 'auth_error')
+    expect(authErrorReport).toBeDefined()
+    expect(authErrorReport?.message).toContain('Não foi possível validar sua sessão')
+  })
+
+  it('captures authentication event when identity is validated', async () => {
+    const mock = mockClient()
+    render(<ConnectedApp client={mock.client} />)
+    await screen.findByText('Integrante A')
+
+    const reports = errorMonitor.getReports()
+    const authEventReport = reports.find(r => r.category === 'auth_event' && r.message.includes('session_authenticated'))
+    expect(authEventReport).toBeDefined()
+    expect(authEventReport?.context?.userId).toBe(userA.id)
+  })
+
+  it('captures auth retry event when user clicks Tentar novamente', async () => {
+    const mock = mockClient()
+    mock.auth.getUser.mockRejectedValueOnce(new Error('Erro de conexão'))
+
+    render(<ConnectedApp client={mock.client} />)
+    const retryButton = await screen.findByRole('button', { name: 'Tentar novamente' })
+
+    await act(async () => {
+      fireEvent.click(retryButton)
+    })
+
+    const reports = errorMonitor.getReports()
+    expect(reports.some(r => r.category === 'auth_event' && r.message.includes('auth_retry_requested'))).toBe(true)
+  })
+
+})
+
 

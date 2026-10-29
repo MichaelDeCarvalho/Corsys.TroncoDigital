@@ -1,4 +1,24 @@
+## Mecanismo de logging de erros e monitoramento de exceções no App.tsx — 29/10/2026
+
+- Criado serviço de monitoramento simples e seguro em `src/lib/error-monitor.ts`:
+  - Captura estruturada de falhas de renderização (`render_error`), eventos de autenticação (`auth_event`), erros de acesso/sessão (`auth_error`) e erros de configuração (`config_error`).
+  - Higienização estrita de dados (`sanitizeContext`): mascaramento fail-closed de chaves sensíveis (`password`, `token`, `secret`, `jwt`, `credential`, `otp`, `cookie`) e redação de strings no formato JWT, impedindo vazamento de credenciais em logs ou console.
+  - Comportamento fail-safe com pub/sub para integração sem lançar exceções secundárias.
+- Implementado `ErrorBoundary` em `src/App.tsx`:
+  - Captura falhas de renderização em qualquer ponto da árvore React (`ConnectedApp`, `Workspace`, `Login`, etc.).
+  - Registra a exceção no `errorMonitor` com component stack e categoria `render_error`.
+  - Exibe interface de contingência amigável ao usuário (`session-screen`), sem expor stack traces ou dados sensíveis (Clean UI), com opção de reinício ("Tentar novamente").
+- Instrumentado ciclo de autenticação em `src/App.tsx`:
+  - Captura transições de estado da autenticação (`session_authenticated`, `session_anonymous`, `auth_error`).
+  - Registra tentativas de reautenticação (`auth_retry_requested`) e finalização de recuperação de senha (`recovery_finished`).
+  - Monitoramento de falhas de inicialização do cliente Supabase (`config_error`).
+- Testes automatizados:
+  - `src/lib/error-monitor.test.ts` (8 testes unitários de sanitização, captura e tolerância a falhas).
+  - `src/App.test.tsx` (5 novos testes para `ErrorBoundary`, reset da UI, e captura de eventos/erros de autenticação; total de 23 testes no arquivo).
+  - Execução validada: 412 testes passando sem regressão, typecheck e build aprovados.
+
 ## Sessões temporárias Master somente leitura (P1 preparado) — 28/10/2026
+
 
 P0 de suporte homologado e concluído no DEV (`docs/V35_P0_SUPPORT_20261028.md`).
 Incremento P1 preparado sem execução remota:

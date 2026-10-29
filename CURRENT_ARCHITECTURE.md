@@ -1,4 +1,9 @@
+## Monitoramento de exceções e ErrorBoundary (App.tsx) — 29/10/2026
+
+Serviço `src/lib/error-monitor.ts` e componente `ErrorBoundary` em `src/App.tsx`. Captura falhas de renderização da árvore de componentes React com component stack e categoria `render_error`, renderizando tela de contingência resiliente sem expor stack traces ou dados sensíveis (Clean UI). Captura eventos e erros do ciclo de vida de autenticação (`session_authenticated`, `session_anonymous`, `auth_error`, `auth_retry_requested`) e falhas de inicialização de configuração (`config_error`). Higienização fail-closed via `sanitizeContext` com mascaramento automático de credenciais, senhas, tokens, JWTs e chaves. Sem dependências externas ou telemetria intrusiva.
+
 ## Sessões temporárias Master somente leitura (P1) — 28/10/2026
+
 
 Migração incremental 20261029000000_v35_master_readonly_support_sessions.sql preparada: RPCs `start_master_support_session`, `get_active_master_support_session` e `end_master_support_session`. Exigem operador MASTER com garantia MFA AAL2 (`private.require_platform_staff('MASTER')`), vinculação rígida a `auth.uid()` e à Loja (`organization_id`), motivo obrigatório (5..500 caracteres) e escopo estritamente `read_only`. Validade determinística no servidor de 15 minutos (`clock_timestamp() + interval '15 minutes'`), replay sem duplicação ou renovação de sessão expirada, bloqueio de sessão ativa concorrente para o mesmo operador/Loja e encerramento idempotente auditado em `saas_master_audit_logs`. Integração em `MasterOperations.tsx` (aba Suporte) com seleção de Loja, contador regressivo, encerramento sob demanda e bloqueio fail-closed em caso de erro da RPC. Script dry-run `supabase/tests/test_master_support_sessions_rollback.sql` com rollback transacional completo. P0 de suporte homologado em DEV; P1 preparado no código/testes locais, SQL remoto NÃO aplicado. ADR-0038.
 
