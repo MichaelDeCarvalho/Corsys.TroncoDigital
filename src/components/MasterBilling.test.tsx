@@ -1,4 +1,4 @@
-import {fireEvent,render,screen,waitFor} from '@testing-library/react'
+import {act,fireEvent,render,screen,waitFor} from '@testing-library/react'
 import type {SupabaseClient} from '@supabase/supabase-js'
 import {vi} from 'vitest'
 import {MasterBilling} from './MasterBilling'
@@ -335,5 +335,29 @@ describe('Master manual SaaS invoice issuance',()=>{
   // Both calls must have used the EXACT same idempotency key
   expect(capturedKey1).toBeTruthy()
   expect(capturedKey2).toBe(capturedKey1)
+ })
+
+ it('unlocks preview when inputs change during an in-flight request and ignores stale response',async()=>{
+  const {client}=fixture()
+  let settle!: (result:{data:typeof mockPreviewData;error:null})=>void
+  const pending=new Promise<{data:typeof mockPreviewData;error:null}>(resolve=>{settle=resolve})
+  const pendingRpc=vi.fn((fnName:string)=>{
+   const p=fnName==='preview_saas_manual_invoice'
+    ? pending : Promise.resolve({data:null,error:null})
+   return Object.assign(p,{abortSignal:()=>p})
+  })
+  const pendingClient={from:client.from,rpc:pendingRpc} as unknown as SupabaseClient
+  render(<MasterBilling client={pendingClient} tenants={tenants}/>)
+  await choose()
+  fireEvent.click(screen.getByRole('button',{name:'Emitir fatura manual'}))
+  fireEvent.change(screen.getByLabelText(/Competência/),{target:{value:'2026-11'}})
+  fireEvent.click(screen.getByRole('button',{name:'Consultar contrato e prévia'}))
+  expect(screen.getByRole('button',{name:'Consultando contrato…'})).toBeDisabled()
+
+  fireEvent.change(screen.getByLabelText(/Vencimento/),{target:{value:'2026-11-12'}})
+  expect(screen.getByRole('button',{name:'Consultar contrato e prévia'})).toBeEnabled()
+  await act(async()=>{settle({data:mockPreviewData,error:null});await pending})
+  expect(screen.queryByText('Pré-visualização contratual — Loja DEV')).not.toBeInTheDocument()
+  expect(screen.queryByRole('button',{name:'Confirmar e emitir fatura'})).not.toBeInTheDocument()
  })
 })

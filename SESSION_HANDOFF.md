@@ -1,7 +1,15 @@
+## Cobrança SaaS Master — Migration e testes transacionais DEV confirmados — 29/10/2026
+
+- **Supabase DEV:** projeto `szqkdekwhzxsoxorgvaz`, migration `20261029204044_v35_master_manual_invoice` aplicada via Supabase API (arquivo do repositório renomeado para coincidir com a versão registrada). Não reaplicar. RPCs `public.preview_saas_manual_invoice` e `public.issue_saas_manual_invoice` presentes.
+- **Gate CI pré-aplicação:** GitHub Actions #361 PASS (jobs static/frontend) antes de corrigir a fixture SQL. Revisão documental/arquivo ainda depende de novo check. A primeira execução SQL transacional abortou em coluna inexistente `organizations.slug`; fixture corrigida na branch. Na segunda execução, `supabase/tests/test_master_manual_invoice_rollback.sql` completou sem erro, com `BEGIN; ... ROLLBACK;`, cobrindo preço contratual, ausência/parcialidade de termo, AAL2/MASTER, trial, emissão auditada, replay, descrição divergente e duplicidade sequencial. Não confundir com concorrência HTTP real.
+- **Verificação após ROLLBACK:** 0 faturas, 0 itens, 0 ajustes, 0 termos contratuais, 0 eventos `invoice.manual_issue`, 0 organizações/usuários/equipe de QA persistidos. RPCs=2; `anon` não tem EXECUTE; `authenticated` pode chamar somente sujeitando-se ao gate interno MASTER+AAL2.
+- **Escopo e riscos restantes:** Sem termos de preço cadastrados para as seis assinaturas DEV, nenhuma emissão real de fatura é possível (fail-closed). Requer conferência e cadastramento contratual explícito em etapa futura, não inferir preço do catálogo. Homologação HTTP real/MFA e concorrência independente ainda pendentes. Nenhuma publicação PROD; sem novas cobranças. PR #10 permanece draft, sem merge; `main` já tinha implementação do Gemini e não deve receber mais pushes para esta correção.
+- **Próxima ação:** obter verificação final do GitHub Actions da branch após ajustes e só então planejar homologação funcional segura, sem gerar faturas comerciais persistentes automaticamente.
+
 ## Cobrança SaaS Master — Emissão manual de faturas — 29/10/2026
 
 - Correção pontual de segurança e consolidação concluída:
-  - Migration incremental `supabase/migrations/20261029030000_v35_master_manual_invoice.sql`:
+  - Migration incremental `supabase/migrations/20261029204044_v35_master_manual_invoice.sql`:
     - Versionada sequencialmente após a migração P1 do DEV (`20261029021140_v35_master_readonly_support_sessions`), removida a versão antiga `20261029000001`.
     - Sequence `public.saas_invoice_seq` para numeração sequencial determinística e unívoca de faturas.
     - RPC `preview_saas_manual_invoice(uuid, date, date)`: exige `MASTER` + `AAL2` (`private.require_platform_staff`), validação de Loja existente, competência no dia 1 (`extract(day from competence) = 1`), busca da assinatura ativa em `saas_subscriptions` (rejeitando assinaturas em `trialing` sob `55000`) e derivação contratual de preço estritamente a partir de `saas_subscription_price_terms`. **Removido qualquer fallback para versões de plano ou plano base**: exige termo unívoco cobrindo todo o mês sem lacunas ou sobreposições (`55000`). Detecta fatura já emitida para o mês (`already_billed`). Retorna estrutura completa de itens e datas de prestação de serviço.
@@ -21,7 +29,7 @@
     - ADR-0039 (`docs/adr/0039-master-manual-saas-invoice.md`) atualizado.
     - `CURRENT_ARCHITECTURE.md` atualizado.
 - Branch de trabalho: `fix/v35-manual-invoice-safety-20261029`. Base: `51120a7845e6e992565a0c4621d4f989c093f298`.
-- Estado: Implementado no código e testes locais. Migração SQL remota NÃO aplicada ao Supabase DEV `szqkdekwhzxsoxorgvaz`; ambiente de produção e Cloudflare DEV preservados. Nenhuma alteração enviada diretamente para a `main`.
+- Estado: Implementado no código e testes locais. Migração SQL posteriormente aplicada ao Supabase DEV com identificador `20261029204044_v35_master_manual_invoice`; produção não alterada. Consulte a atualização de homologação no início deste documento. Nenhuma alteração enviada diretamente para a `main`.
 
 ## Mecanismo de logging de erros e monitoramento de exceções no App.tsx — 29/10/2026
 
