@@ -1,5 +1,7 @@
 ## P0 Master homologado — 28/10/2026
 
+Atualização: Loja A UI abertura/resposta e HTTP criação/resposta concorrência/replay/22023 PASS sem duplicação. Sessão A preexistente no navegador interno aproveitada. Chamados fictícios #11/#12/#13 fechados por Master, baseline três abertos restaurado. B ainda NÃO TESTADA; próxima entrada jobmcc@hotmail.com na mesma aba interna, mantendo sessionStorage com ID A 81caf24e-2891-4cd4-a112-7201b50cbce4. Master Edge preservado. Branch remota autorizada pelo usuário; não repetir A/Master.
+
 MFA real aal2, acesso Master, resposta UI e HTTP concorrência/replay/22023 PASS. Fixture Master #11 encerrada pelo fluxo normal, histórico preservado (DELETE bloqueado por imutabilidade); baseline três abertos restaurado. Deploy DEV 3d269771. A/B ainda pendentes por sessão; página /support-qa.html preparada e guardada ao DEV. Não repetir Master. Relatório docs/V35_P0_SUPPORT_20261028.md. Sessão Master Edge preservada; nova sessão separada aguardando login A.
 
 ## P0 suporte / MFA — 28/10/2026
