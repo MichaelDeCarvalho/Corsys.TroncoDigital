@@ -14,6 +14,13 @@ import {
 } from 'lucide-react'
 import { MasterSupportQueue } from './MasterSupportQueue'
 import { loadPlatformJobs, type PlatformJob } from '../lib/master-config'
+import { loadMasterTenants, type MasterTenant } from '../lib/master-console'
+import {
+  getActiveMasterSupportSession,
+  startMasterSupportSession,
+  endMasterSupportSession,
+  type ActiveMasterSupportSession,
+} from '../lib/master-support-sessions'
 
 export function MasterOperations({ client }: { client: SupabaseClient }) {
   const [activeTab, setActiveTab] = useState<'tickets' | 'health' | 'support' | 'team' | 'audit'>('tickets')
@@ -51,6 +58,141 @@ export function MasterOperations({ client }: { client: SupabaseClient }) {
       controller.abort()
     }
   }, [client, activeTab, jobsRevision])
+
+  // Support Sessions State (P1 Master Read-Only Support Sessions)
+  const [supportOrgId, setSupportOrgId] = useState('')
+  const [tenants, setTenants] = useState<MasterTenant[]>([])
+  const [activeSession, setActiveSession] = useState<ActiveMasterSupportSession | null>(null)
+  const [sessionLoading, setSessionLoading] = useState(false)
+  const [sessionError, setSessionError] = useState('')
+  const [sessionSuccess, setSessionSuccess] = useState('')
+  const [sessionReason, setSessionReason] = useState('')
+  const [sessionPending, setSessionPending] = useState(false)
+  const [remainingSeconds, setRemainingSeconds] = useState(0)
+
+  // Load tenants for selection in support tab
+  useEffect(() => {
+    if (activeTab !== 'support') return
+    let live = true
+    loadMasterTenants(client, 0)
+      .then(res => {
+        if (live && res.rows) {
+          setTenants(res.rows)
+          if (!supportOrgId && res.rows.length > 0) {
+            setSupportOrgId(res.rows[0].organization_id)
+          }
+        }
+      })
+      .catch(() => {
+        // Tenants list is optional convenience; manual input remains available
+      })
+    return () => {
+      live = false
+    }
+  }, [client, activeTab, supportOrgId])
+
+  // Query active session when organization changes
+  useEffect(() => {
+    if (activeTab !== 'support' || !supportOrgId.trim()) return
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!uuidRegex.test(supportOrgId.trim())) return
+
+    let live = true
+    setSessionLoading(true)
+    setSessionError('')
+
+    getActiveMasterSupportSession(client, supportOrgId.trim())
+      .then(session => {
+        if (!live) return
+        setActiveSession(session)
+        if (session && session.seconds_remaining > 0) {
+          setRemainingSeconds(session.seconds_remaining)
+        } else {
+          setRemainingSeconds(0)
+        }
+        setSessionLoading(false)
+      })
+      .catch((err: any) => {
+        if (!live) return
+        setSessionError(err?.message || 'Falha ao consultar sessão ativa de suporte.')
+        setSessionLoading(false)
+      })
+
+    return () => {
+      live = false
+    }
+  }, [client, activeTab, supportOrgId])
+
+  // Countdown timer for active session
+  useEffect(() => {
+    if (!activeSession || remainingSeconds <= 0) return
+    const timer = setInterval(() => {
+      setRemainingSeconds(prev => {
+        if (prev <= 1) {
+          clearInterval(timer)
+          setActiveSession(null)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [activeSession, remainingSeconds])
+
+  async function handleStartSession(e: React.FormEvent) {
+    e.preventDefault()
+    setSessionError('')
+    setSessionSuccess('')
+    if (!supportOrgId.trim()) {
+      setSessionError('Selecione ou informe o ID da Loja para abrir a sessão.')
+      return
+    }
+    if (sessionReason.trim().length < 5 || sessionReason.trim().length > 500) {
+      setSessionError('O motivo do acesso deve conter entre 5 e 500 caracteres.')
+      return
+    }
+
+    setSessionPending(true)
+    try {
+      await startMasterSupportSession(client, {
+        organizationId: supportOrgId.trim(),
+        reason: sessionReason.trim(),
+      })
+      setSessionSuccess('Sessão de suporte iniciada com sucesso. Prazo fixo de 15 minutos (somente leitura).')
+      setSessionReason('')
+      // Refresh active session
+      const freshSession = await getActiveMasterSupportSession(client, supportOrgId.trim())
+      setActiveSession(freshSession)
+      if (freshSession) {
+        setRemainingSeconds(freshSession.seconds_remaining)
+      }
+    } catch (err: any) {
+      setSessionError(err?.message || 'Falha ao iniciar sessão de suporte Master.')
+    } finally {
+      setSessionPending(false)
+    }
+  }
+
+  async function handleEndSession() {
+    if (!activeSession) return
+    setSessionError('')
+    setSessionSuccess('')
+    setSessionPending(true)
+    try {
+      await endMasterSupportSession(client, {
+        organizationId: activeSession.organization_id,
+        sessionId: activeSession.id,
+      })
+      setActiveSession(null)
+      setRemainingSeconds(0)
+      setSessionSuccess('Sessão de suporte encerrada com sucesso sob auditoria.')
+    } catch (err: any) {
+      setSessionError(err?.message || 'Falha ao encerrar sessão de suporte Master.')
+    } finally {
+      setSessionPending(false)
+    }
+  }
 
   return (
     <div className="space-y-6" id="view-master-operacao">
@@ -233,7 +375,7 @@ export function MasterOperations({ client }: { client: SupabaseClient }) {
         </section>
       )}
 
-      {/* Tab 3: Sessões de Suporte (Painel Informativo — Dependência de Backend) */}
+      {/* Tab 3: Sessões de Suporte (Gestão de Sessão Temporária Somente Leitura) */}
       {activeTab === 'support' && (
         <section className="panel space-y-4">
           <div className="section-title">
@@ -241,19 +383,7 @@ export function MasterOperations({ client }: { client: SupabaseClient }) {
               <LifeBuoy size={18} aria-hidden="true" />
               Sessões Temporárias de Suporte — Diretrizes de Segurança
             </h3>
-            <span className="pill text-xs">Painel Informativo / Dependência de Backend</span>
-          </div>
-
-          <div className="bg-amber-50 border border-amber-300 rounded p-4 text-xs text-amber-900 space-y-2">
-            <div className="flex items-center gap-2 font-semibold text-sm text-amber-950">
-              <Info size={16} className="text-amber-700" aria-hidden="true" />
-              Funcionalidade não implementada / Dependente de RPC de Backend (ADR 001)
-            </div>
-            <p>
-              A abertura de sessões temporárias de suporte com emissão de token efêmero com expiração determinística
-              e encerramento auditado <strong>não está disponível nesta interface</strong>. A funcionalidade depende
-              da especificação e aplicação de RPC server-side autorizada.
-            </p>
+            <span className="pill text-xs">Acesso Controlado / Somente Leitura (15 min)</span>
           </div>
 
           <div className="bg-slate-50 border rounded-md p-4 text-xs text-slate-700 space-y-2">
@@ -267,6 +397,157 @@ export function MasterOperations({ client }: { client: SupabaseClient }) {
             <p>
               A escrita financeira em contas de Lojas permanece tecnicamente proibida em todas as camadas de autorização.
             </p>
+          </div>
+
+          {sessionError && (
+            <p role="alert" className="p-3 bg-red-50 border border-red-300 text-red-800 rounded-md text-xs font-mono">
+              {sessionError}
+            </p>
+          )}
+
+          {sessionSuccess && (
+            <p role="status" className="p-3 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-md text-xs">
+              {sessionSuccess}
+            </p>
+          )}
+
+          <div className="space-y-4 border rounded-md p-4 bg-white">
+            <h4 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+              <Shield size={16} className="text-blue-600" aria-hidden="true" />
+              Gestão de Sessão Temporária por Loja
+            </h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="support-org-select" className="block text-xs font-medium text-slate-700 mb-1">
+                  Selecionar Loja (Diretório Master)
+                </label>
+                <select
+                  id="support-org-select"
+                  className="w-full text-xs border rounded p-2 bg-slate-50"
+                  value={supportOrgId}
+                  onChange={e => setSupportOrgId(e.target.value)}
+                  disabled={sessionPending || Boolean(activeSession)}
+                >
+                  <option value="">Selecione uma Loja...</option>
+                  {tenants.map(t => (
+                    <option key={t.organization_id} value={t.organization_id}>
+                      {t.organization_name} ({t.organization_number || t.organization_id.slice(0, 8)})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="support-org-id-input" className="block text-xs font-medium text-slate-700 mb-1">
+                  ID da Loja (UUID da Organização)
+                </label>
+                <input
+                  id="support-org-id-input"
+                  type="text"
+                  placeholder="00000000-0000-0000-0000-000000000000"
+                  className="w-full text-xs font-mono border rounded p-2"
+                  value={supportOrgId}
+                  onChange={e => setSupportOrgId(e.target.value)}
+                  disabled={sessionPending || Boolean(activeSession)}
+                />
+              </div>
+            </div>
+
+            {sessionLoading && (
+              <p className="text-xs text-slate-500 py-2">Consultando status da sessão no servidor…</p>
+            )}
+
+            {/* Active Session Card */}
+            {activeSession ? (
+              <div className="border border-emerald-300 bg-emerald-50/50 rounded-md p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                    <CheckCircle size={14} /> Sessão Ativa (Somente Leitura)
+                  </span>
+                  <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-slate-800 bg-white px-3 py-1 rounded border">
+                    <Clock size={14} className="text-blue-600" />
+                    Tempo restante: {Math.floor(remainingSeconds / 60)}m {String(remainingSeconds % 60).padStart(2, '0')}s
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-700">
+                  <div>
+                    <span className="font-semibold text-slate-900">ID da Sessão:</span>{' '}
+                    <span className="font-mono">{activeSession.id}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-slate-900">Loja (Org ID):</span>{' '}
+                    <span className="font-mono">{activeSession.organization_id}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-slate-900">Escopo:</span>{' '}
+                    <span className="font-mono bg-slate-200 px-1 rounded">{activeSession.scope}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-slate-900">Expiração:</span>{' '}
+                    <span>{new Date(activeSession.expires_at).toLocaleTimeString('pt-BR')}</span>
+                  </div>
+                  <div className="col-span-full">
+                    <span className="font-semibold text-slate-900">Motivo registrado:</span>{' '}
+                    <span>{activeSession.reason}</span>
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={handleEndSession}
+                    disabled={sessionPending}
+                    className="px-4 py-2 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors inline-flex items-center gap-1.5"
+                  >
+                    <AlertTriangle size={14} />
+                    {sessionPending ? 'Encerrando sessão…' : 'Encerrar Sessão de Suporte'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Start Session Form */
+              <form onSubmit={handleStartSession} className="space-y-3 pt-2">
+                <div>
+                  <label htmlFor="support-reason" className="block text-xs font-medium text-slate-700 mb-1">
+                    Motivo do Acesso de Suporte (obrigatório, auditado)
+                  </label>
+                  <textarea
+                    id="support-reason"
+                    rows={3}
+                    placeholder="Descreva a justificativa operacional/técnica para abertura de sessão nesta Loja..."
+                    value={sessionReason}
+                    onChange={e => setSessionReason(e.target.value)}
+                    disabled={sessionPending}
+                    className="w-full text-xs border rounded p-2 focus:ring-1 focus:ring-blue-500"
+                    maxLength={500}
+                  />
+                  <span className="text-[11px] text-slate-400">
+                    {sessionReason.length}/500 caracteres (mínimo de 5 caracteres)
+                  </span>
+                </div>
+
+                <div className="bg-slate-50 border rounded p-3 text-xs text-slate-600 space-y-1">
+                  <p className="font-medium text-slate-800">
+                    Condições do Acesso de Suporte Master:
+                  </p>
+                  <ul className="list-disc list-inside space-y-0.5 text-[11px]">
+                    <li>Prazo fixo no servidor: exatamente 15 minutos (sem renovação automática).</li>
+                    <li>Escopo imutável: estritamente <code>read_only</code>.</li>
+                    <li>Operação gravada em log de auditoria com vínculo imutável a <code>auth.uid()</code>.</li>
+                  </ul>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={sessionPending || sessionReason.trim().length < 5 || !supportOrgId.trim()}
+                  className="px-4 py-2 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed rounded-md transition-colors"
+                >
+                  {sessionPending ? 'Iniciando sessão…' : 'Iniciar Sessão Temporária (15 min)'}
+                </button>
+              </form>
+            )}
           </div>
         </section>
       )}

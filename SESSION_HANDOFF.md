@@ -1,3 +1,16 @@
+## Sessões temporárias Master somente leitura (P1 preparado) — 28/10/2026
+
+P0 de suporte homologado e concluído no DEV (`docs/V35_P0_SUPPORT_20261028.md`).
+Incremento P1 preparado sem execução remota:
+- Migration `20261029000000_v35_master_readonly_support_sessions.sql`: RPCs `start_master_support_session`, `get_active_master_support_session` e `end_master_support_session`.
+- Invariantes: `MASTER` + `AAL2` obrigatório, vínculo estrito a `auth.uid()` e Loja (`organization_id`), motivo obrigatório (5..500 chars), escopo `read_only`, prazo de 15 minutos fixo no servidor, replay sem duplicidade/renovação de expirada, negação de sessão ativa concorrente, término idempotente e auditoria em `saas_master_audit_logs`.
+- Biblioteca cliente `src/lib/master-support-sessions.ts` com tipagem e validação fail-closed.
+- Integração na UI em `src/components/MasterOperations.tsx` (aba Suporte) com seleção de Loja, justificativa auditada, visualização de sessão ativa com contador regressivo e botão de encerramento.
+- Script de teste com rollback transacional `supabase/tests/test_master_support_sessions_rollback.sql`.
+- Testes unitários focados em `src/components/MasterSupportSessions.test.tsx` e preservação dos testes de `MasterOperations.test.tsx`.
+- ADR-0038 registrado.
+- Estado: P1 preparado localmente; migration SQL remota NÃO aplicada; homologação HTTP/UI DEV pendente. Não executar merge, deploy PROD ou push sem autorização.
+
 ## P0 suporte funcional concluído no DEV — 28/10/2026
 
 PASS frontend, MFA Master real/UI/HTTP, Loja A UI/HTTP, replay/concorrência/22023 e segregação B UI/HTTP. B HTTP403/42501,409/23503,403/42501; leituras A ocultas e nenhuma escrita indevida. #11/#12/#13 closed, baseline três abertos restaurado; histórico imutável preservado. Timeout forçado NÃO TESTADO; concorrência sem timeout. Sem migration/PROD/merge. Não repetir suíte aprovada. Evidência consolidada docs/V35_P0_SUPPORT_20261028.md. Próximo: revisão da branch para integração; V35 geral permanece aberta.

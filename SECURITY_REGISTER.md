@@ -1,3 +1,13 @@
+## Sessões temporárias Master somente leitura (P1 preparado) — 28/10/2026
+
+Controles de segurança preparados no lote P1:
+- Autorização determinística: `private.require_platform_staff('MASTER')` exige sessão ativa de plataforma com role `MASTER` e garantia MFA compulsória `aal2` (`private.has_aal2()`). Tenants, operadores sem staff, e credenciais `aal1` são sumariamente rejeitados (42501/28000).
+- Boundary de isolamento: Sessão vinculada a `auth.uid()` e à Loja (`organization_id`). Escopo estritamente `read_only` (restrição de tabela `scope = 'read_only'`). Nenhuma impersonação ou token client-side emitido; nenhuma permissão de mutação financeira concedida.
+- Validade determinística: 15 minutos calculados pelo relógio do servidor (`clock_timestamp() + interval '15 minutes'`). Replay idempotente não prorroga expiração nem duplica registros. Nega abertura de sessão concorrente para a mesma Loja e operador (55000).
+- Encerramento e auditoria: Encerramento idempotente restrito ao operador proprietário (nega encerramento por outro operador, 42501). Eventos `support_session.start` e `support_session.end` gravados de forma imutável em `saas_master_audit_logs`.
+- Fail-closed no cliente: `MasterOperations.tsx` e `master-support-sessions.ts` validam entradas e exibem erros reais do servidor, bloqueando ações em caso de ausência ou falha na RPC.
+- Status: Verificado por testes unitários e script dry-run de rollback transacional (`supabase/tests/test_master_support_sessions_rollback.sql`). SQL remoto NÃO aplicado; homologação DEV pendente. ADR-0038.
+
 ## Segregação B real / P0 suporte — 28/10/2026
 
 Sessão B autenticada: leituras de chamado/mensagens A retornaram zero; RPCs de resposta/criação A negadas 42501 e ticket estrangeiro em org B negado23503. Read-back confirmou nenhuma escrita/chave B indevida. Somente escopo P0 de suporte; não representa auditoria geral nem garantia absoluta. Timeout forçado não testado. Histórico de fixtures fechado e preservado. Relatório docs/V35_P0_SUPPORT_20261028.md.

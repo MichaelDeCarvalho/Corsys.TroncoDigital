@@ -1,3 +1,7 @@
+## Sessões temporárias Master somente leitura (P1) — 28/10/2026
+
+Migração incremental 20261029000000_v35_master_readonly_support_sessions.sql preparada: RPCs `start_master_support_session`, `get_active_master_support_session` e `end_master_support_session`. Exigem operador MASTER com garantia MFA AAL2 (`private.require_platform_staff('MASTER')`), vinculação rígida a `auth.uid()` e à Loja (`organization_id`), motivo obrigatório (5..500 caracteres) e escopo estritamente `read_only`. Validade determinística no servidor de 15 minutos (`clock_timestamp() + interval '15 minutes'`), replay sem duplicação ou renovação de sessão expirada, bloqueio de sessão ativa concorrente para o mesmo operador/Loja e encerramento idempotente auditado em `saas_master_audit_logs`. Integração em `MasterOperations.tsx` (aba Suporte) com seleção de Loja, contador regressivo, encerramento sob demanda e bloqueio fail-closed em caso de erro da RPC. Script dry-run `supabase/tests/test_master_support_sessions_rollback.sql` com rollback transacional completo. P0 de suporte homologado em DEV; P1 preparado no código/testes locais, SQL remoto NÃO aplicado. ADR-0038.
+
 ## Ferramenta de homologação suporte DEV — 28/10/2026
 
 Build opcional VITE_SUPPORT_QA_ENABLED=true inclui support-qa.html com alvos DEV/atores/fixtures fixos; SDK conserva credenciais no navegador e exibe somente status HTTP/SQLSTATE/IDs de teste. Nenhuma autorização adicional; RPCs/RLS seguem fronteira confiável. Sessão real Master AAL2 validada. Relatório docs/V35_P0_SUPPORT_20261028.md.

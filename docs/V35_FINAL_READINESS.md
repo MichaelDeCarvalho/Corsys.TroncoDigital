@@ -28,7 +28,7 @@ A classificação distingue rigorosamente **APTO PARA TESTE DEV**, **PARCIAL**, 
 | **02** | `view-master-clientes` | Clientes SaaS | `MasterConsole.tsx` (`tab === 'clients'`), `MasterClient360.tsx`, `MasterOnboarding.tsx` | `saas_tenants`, `saas_subscriptions`, `rpc/change_tenant_status` | `MasterConsole.test.tsx`, `MasterClient360.test.tsx` | **APTO PARA TESTE DEV** |
 | **03** | `view-master-cobranca` | Cobrança SaaS | `MasterBilling.tsx` | `saas_invoices`, `saas_dunning_events`, `v_saas_overdue_invoices` | `MasterBilling.test.tsx`, `MasterConsole.test.tsx` | **PARCIAL** (Depende de gateway real para boletos/PIX - P1) |
 | **04** | `view-master-planos` | Planos e Ofertas | `MasterCommercialCatalog.tsx`, `MasterPlanLifecycle.tsx`, `MasterPromotions.tsx` | `saas_plans`, `saas_plan_offers`, `rpc/save_saas_plan` | `MasterCommercialCatalog.test.tsx`, `MasterPlanLifecycle.test.tsx` | **APTO PARA TESTE DEV** |
-| **05** | `view-master-operacao` | Operação e Suporte | `MasterOperations.tsx`, `MasterSupportQueue.tsx` | `saas_support_tickets`, `saas_jobs`, `rpc/reply_master_tenant_support_idempotent` | `MasterOperations.test.tsx`, `MasterSupportQueue.test.tsx` | **PARCIAL** (Sessões efêmeras informativas dependentes de RPC - ADR 001) |
+| **05** | `view-master-operacao` | Operação e Suporte | `MasterOperations.tsx`, `MasterSupportQueue.tsx` | `saas_support_tickets`, `saas_jobs`, `rpc/reply_master_tenant_support_idempotent`, `rpc/start_master_support_session` | `MasterOperations.test.tsx`, `MasterSupportSessions.test.tsx` | **PARCIAL** (P0 homologado; P1 sessões temporárias somente leitura preparado em código e migração incremental 20261029000000, aguardando aplicação no banco DEV e homologação) |
 | **06** | `view-master-config` | Configurações Globais | `MasterPlatformConfig.tsx` | `saas_platform_configuration`, `rpc/update_saas_platform_config` | `MasterPlatformConfig.test.tsx`, `MasterConsole.test.tsx` | **APTO PARA TESTE DEV** |
 | **07** | `view-dashboard` | Visão Geral da Tesouraria | `FinancialDashboard.tsx`, `DailyCashFlow.tsx` em `Workspace.tsx` | `rpc/read_tenant_financial_dashboard`, `v_treasury_balances` | `FinancialDashboard.test.tsx`, `App.test.tsx` | **APTO PARA TESTE DEV** |
 | **08** | `view-integrantes` | Integrantes | `Members.tsx` em `Workspace.tsx` | `members`, `member_associations`, `rpc/upsert_member` | `Members.test.tsx`, `App.test.tsx` | **APTO PARA TESTE DEV** |
@@ -44,11 +44,11 @@ A classificação distingue rigorosamente **APTO PARA TESTE DEV**, **PARCIAL**, 
 | **18** | `view-relatorios` | Relatórios Gerenciais | `Relatorios.tsx` em `Workspace.tsx` | `v_payment_balances`, `v_charge_distribution_effective` | `Relatorios.test.tsx`, `App.test.tsx` | **APTO PARA TESTE DEV** |
 | **19** | `view-cadastros` | Cadastros Gerais | `Cadastros.tsx` em `Workspace.tsx` | `cost_centers`, `suppliers`, `expense_categories` | `App.test.tsx` | **APTO PARA TESTE DEV** |
 | **20** | `view-configuracoes` | Configurações | `Configuracoes.tsx` (`ApprovalPolicies.tsx`, `TenantIdentity.tsx`) | `tenant_settings`, `approval_policies` | `ApprovalPolicies.test.tsx`, `App.test.tsx` | **APTO PARA TESTE DEV** |
-| **21** | `view-chamados` | Atendimento | `Chamados.tsx` em `Workspace.tsx` | `saas_support_tickets`, `saas_support_ticket_messages`, `rpc/create_saas_support_ticket` | `Chamados.test.tsx`, `App.test.tsx` | **PARCIAL** (Pendente migration com `p_idempotency_key` no SQL das RPCs - P0) |
+| **21** | `view-chamados` | Atendimento | `Chamados.tsx` em `Workspace.tsx` | `saas_support_tickets`, `saas_support_ticket_messages`, `rpc/create_saas_support_ticket` | `Chamados.test.tsx`, `App.test.tsx` | **APTO PARA TESTE DEV** (P0 homologado e concluído no DEV - docs/V35_P0_SUPPORT_20261028.md) |
 
 ### Resumo dos Status para Piloto Supervisionado:
-- **APTO PARA TESTE DEV:** 18 telas
-- **PARCIAL:** 3 telas (`view-master-cobranca`, `view-master-operacao`, `view-chamados`)
+- **APTO PARA TESTE DEV:** 19 telas
+- **PARCIAL:** 2 telas (`view-master-cobranca`, `view-master-operacao`)
 - **BLOQUEADO:** 0 telas
 - **NÃO AVALIADO:** 0 telas
 - **APTO PARA PRODUÇÃO:** 0 telas (depende de homologação real de produção)
