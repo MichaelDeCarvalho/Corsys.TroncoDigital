@@ -1,9 +1,16 @@
 -- Migration: 20261028000000_v35_support_idempotency.sql
--- Goal: Provide transactional server-side idempotency for tenant support ticket RPCs
---       (create_saas_support_ticket and reply_saas_support_ticket) using private.idempotency_begin / complete.
--- Compatibility: Supports both direct frontend calls with p_idempotency_key and internal RPC callers
---                like reply_master_tenant_support_idempotent.
+-- Goal: Provide strictly fail-closed transactional server-side idempotency for support ticket RPCs
+--       (create_saas_support_ticket, reply_saas_support_ticket, and reply_master_tenant_support_idempotent).
+-- Invariants:
+--   1. No ticket creation or reply can occur without a valid idempotency key (1..200 chars).
+--   2. Direct caller idempotency is tracked via private.idempotency_begin / idempotency_complete.
+--   3. Master operation delegating to internal reply uses a deterministic inner key ('m-reply:' || md5(key))
+--      satisfying the unique constraint on (organization_id, user_id, idempotency_key).
+--   4. Preserves RLS, search_path = '', SECURITY DEFINER, tenant isolation, and audit events.
 
+-- ============================================================================
+-- 1. create_saas_support_ticket
+-- ============================================================================
 drop function if exists public.create_saas_support_ticket(uuid, text, text, text, text);
 drop function if exists public.create_saas_support_ticket(uuid, text, text, text, text, text);
 
@@ -13,7 +20,7 @@ create or replace function public.create_saas_support_ticket(
   p_category text,
   p_priority text,
   p_message text,
-  p_idempotency_key text default null
+  p_idempotency_key text
 )
 returns uuid
 language plpgsql
@@ -34,6 +41,10 @@ begin
     raise exception 'tenant membership required' using errcode = '42501';
   end if;
 
+  if p_idempotency_key is null or length(btrim(p_idempotency_key)) not between 1 and 200 then
+    raise exception 'idempotency key required' using errcode = '22023';
+  end if;
+
   if length(btrim(p_subject)) = 0 or length(btrim(p_message)) = 0 then
     raise exception 'subject and message are required' using errcode = '22023';
   end if;
@@ -46,22 +57,21 @@ begin
     raise exception 'invalid priority' using errcode = '22023';
   end if;
 
-  if p_idempotency_key is not null and length(btrim(p_idempotency_key)) > 0 then
-    v_payload := jsonb_build_object(
-      'subject', btrim(p_subject),
-      'category', p_category,
-      'priority', p_priority,
-      'message', btrim(p_message)
-    );
-    v_existing := private.idempotency_begin(
-      p_organization_id,
-      'create_saas_support_ticket',
-      btrim(p_idempotency_key),
-      v_payload
-    );
-    if v_existing is not null then
-      return v_existing;
-    end if;
+  v_payload := jsonb_build_object(
+    'subject', btrim(p_subject),
+    'category', p_category,
+    'priority', p_priority,
+    'message', btrim(p_message)
+  );
+
+  v_existing := private.idempotency_begin(
+    p_organization_id,
+    'create_saas_support_ticket',
+    btrim(p_idempotency_key),
+    v_payload
+  );
+  if v_existing is not null then
+    return v_existing;
   end if;
 
   insert into public.saas_support_tickets(
@@ -83,13 +93,11 @@ begin
     p_organization_id, v_ticket, null, 'new', v_user
   );
 
-  if p_idempotency_key is not null and length(btrim(p_idempotency_key)) > 0 then
-    perform private.idempotency_complete(
-      p_organization_id,
-      btrim(p_idempotency_key),
-      v_ticket
-    );
-  end if;
+  perform private.idempotency_complete(
+    p_organization_id,
+    btrim(p_idempotency_key),
+    v_ticket
+  );
 
   return v_ticket;
 end;
@@ -98,17 +106,20 @@ $$;
 revoke all on function public.create_saas_support_ticket(uuid, text, text, text, text, text) from public, anon;
 grant execute on function public.create_saas_support_ticket(uuid, text, text, text, text, text) to authenticated;
 
-
+-- ============================================================================
+-- 2. reply_saas_support_ticket
+-- ============================================================================
 drop function if exists public.reply_saas_support_ticket(uuid, uuid, text);
 drop function if exists public.reply_saas_support_ticket(uuid, uuid, text, text);
 drop function if exists public.reply_saas_support_ticket(uuid, uuid, text, text, text);
+drop function if exists public.reply_saas_support_ticket(uuid, uuid, text, text, text, text);
 
 create or replace function public.reply_saas_support_ticket(
   p_organization_id uuid,
   p_ticket_id uuid,
   p_message text,
-  p_next_status text default null,
-  p_idempotency_key text default null
+  p_idempotency_key text,
+  p_next_status text default null
 )
 returns uuid
 language plpgsql
@@ -133,6 +144,10 @@ begin
     raise exception 'access denied' using errcode = '42501';
   end if;
 
+  if p_idempotency_key is null or length(btrim(p_idempotency_key)) not between 1 and 200 then
+    raise exception 'idempotency key required' using errcode = '22023';
+  end if;
+
   if length(btrim(p_message)) = 0 then
     raise exception 'message is required' using errcode = '22023';
   end if;
@@ -147,21 +162,20 @@ begin
     raise exception 'ticket not found' using errcode = '23503';
   end if;
 
-  if p_idempotency_key is not null and length(btrim(p_idempotency_key)) > 0 then
-    v_payload := jsonb_build_object(
-      'ticket_id', p_ticket_id,
-      'message', btrim(p_message),
-      'next_status', p_next_status
-    );
-    v_existing := private.idempotency_begin(
-      p_organization_id,
-      'reply_saas_support_ticket',
-      btrim(p_idempotency_key),
-      v_payload
-    );
-    if v_existing is not null then
-      return v_existing;
-    end if;
+  v_payload := jsonb_build_object(
+    'ticket_id', p_ticket_id,
+    'message', btrim(p_message),
+    'next_status', p_next_status
+  );
+
+  v_existing := private.idempotency_begin(
+    p_organization_id,
+    'reply_saas_support_ticket',
+    btrim(p_idempotency_key),
+    v_payload
+  );
+  if v_existing is not null then
+    return v_existing;
   end if;
 
   insert into public.saas_support_ticket_messages(
@@ -202,13 +216,11 @@ begin
     );
   end if;
 
-  if p_idempotency_key is not null and length(btrim(p_idempotency_key)) > 0 then
-    perform private.idempotency_complete(
-      p_organization_id,
-      btrim(p_idempotency_key),
-      v_message_id
-    );
-  end if;
+  perform private.idempotency_complete(
+    p_organization_id,
+    btrim(p_idempotency_key),
+    v_message_id
+  );
 
   return v_message_id;
 end;
@@ -216,3 +228,79 @@ $$;
 
 revoke all on function public.reply_saas_support_ticket(uuid, uuid, text, text, text) from public, anon;
 grant execute on function public.reply_saas_support_ticket(uuid, uuid, text, text, text) to authenticated;
+
+-- ============================================================================
+-- 3. reply_master_tenant_support_idempotent
+-- ============================================================================
+create or replace function public.reply_master_tenant_support_idempotent(
+  p_organization_id uuid,
+  p_ticket_id uuid,
+  p_message text,
+  p_next_status text,
+  p_idempotency_key text
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_result uuid;
+  v_inner_key text;
+begin
+  perform private.require_platform_staff('MASTER');
+
+  if p_organization_id is null or p_ticket_id is null
+    or p_message is null or length(btrim(p_message)) not between 1 and 5000
+    or (p_next_status is not null and p_next_status not in
+      ('new','triage','working','waiting_client','resolved','closed'))
+    or p_idempotency_key is null or length(btrim(p_idempotency_key)) not between 1 and 200
+  then
+    raise exception 'invalid master support response' using errcode = '22023';
+  end if;
+
+  v_result := private.idempotency_begin(
+    p_organization_id,
+    'reply_master_tenant_support_idempotent',
+    btrim(p_idempotency_key),
+    jsonb_build_object(
+      'ticket_id', p_ticket_id,
+      'message', btrim(p_message),
+      'next_status', p_next_status
+    )
+  );
+  if v_result is not null then
+    return v_result;
+  end if;
+
+  perform 1 from public.saas_support_tickets
+  where id = p_ticket_id and organization_id = p_organization_id and ticket_scope = 'tenant'
+  for update;
+
+  if not found then
+    raise exception 'tenant support ticket not found in organization'
+      using errcode = '23503';
+  end if;
+
+  -- Deterministic inner idempotency key delegating to internal reply RPC
+  v_inner_key := 'm-reply:' || md5(btrim(p_idempotency_key));
+
+  v_result := public.reply_saas_support_ticket(
+    p_organization_id,
+    p_ticket_id,
+    btrim(p_message),
+    v_inner_key,
+    p_next_status
+  );
+
+  perform private.idempotency_complete(
+    p_organization_id,
+    btrim(p_idempotency_key),
+    v_result
+  );
+
+  return v_result;
+end $$;
+
+revoke all on function public.reply_master_tenant_support_idempotent(uuid, uuid, text, text, text) from public, anon;
+grant execute on function public.reply_master_tenant_support_idempotent(uuid, uuid, text, text, text) to authenticated;

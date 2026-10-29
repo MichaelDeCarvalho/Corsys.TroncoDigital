@@ -287,6 +287,7 @@ describe('Chamados (view-chamados)', () => {
         p_ticket_id: validTicketId,
         p_message: 'Entendido, verifiquei e deu certo agora.',
         p_idempotency_key: expect.any(String),
+        p_next_status: null,
       })
     })
   })

@@ -225,6 +225,7 @@ export async function replyTenantSupportTicket(
     p_ticket_id: ticketId,
     p_message: message.trim(),
     p_idempotency_key: idempotencyKey ?? crypto.randomUUID(),
+    p_next_status: null,
   })
 
   if (error) throw error
