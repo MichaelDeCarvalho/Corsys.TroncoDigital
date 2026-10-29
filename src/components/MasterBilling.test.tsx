@@ -338,15 +338,16 @@ describe('Master manual SaaS invoice issuance',()=>{
  })
 
  it('unlocks preview when inputs change during an in-flight request and ignores stale response',async()=>{
-  const {client,rpc}=fixture()
+  const {client}=fixture()
   let settle!: (result:{data:typeof mockPreviewData;error:null})=>void
   const pending=new Promise<{data:typeof mockPreviewData;error:null}>(resolve=>{settle=resolve})
-  rpc.mockImplementation((fnName:string)=>{
+  const pendingRpc=vi.fn((fnName:string)=>{
    const p=fnName==='preview_saas_manual_invoice'
     ? pending : Promise.resolve({data:null,error:null})
    return Object.assign(p,{abortSignal:()=>p})
   })
-  render(<MasterBilling client={client} tenants={tenants}/>)
+  const pendingClient={from:client.from,rpc:pendingRpc} as unknown as SupabaseClient
+  render(<MasterBilling client={pendingClient} tenants={tenants}/>)
   await choose()
   fireEvent.click(screen.getByRole('button',{name:'Emitir fatura manual'}))
   fireEvent.change(screen.getByLabelText(/Competência/),{target:{value:'2026-11'}})
