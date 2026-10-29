@@ -17,6 +17,14 @@
   - `src/App.test.tsx` (5 novos testes para `ErrorBoundary`, reset da UI, e captura de eventos/erros de autenticação; total de 23 testes no arquivo).
   - Execução validada: 412 testes passando sem regressão, typecheck e build aprovados.
 
+## P1 Master — migration DEV aplicada; frontend DEV aguardando publicação — 29/10/2026
+
+- **Fonte do P1:** `main`, commit `ef93a664290aa96a23cba95213d0244a09c155c1` (PR #8 integrado; lock transacional por Loja para início de sessões). Commits posteriores devem ser preservados; não reverter evoluções independentes.
+- **Supabase DEV:** `szqkdekwhzxsoxorgvaz`; migration `20261029021140_v35_master_readonly_support_sessions` aplicada. RPCs `start_master_support_session`, `get_active_master_support_session`, `end_master_support_session` disponíveis; controles MASTER/AAL2, vínculo ao operador/Loja, duração de 15 minutos, `read_only`, replay e auditoria verificados.
+- **Gate SQL P1:** PASS em DEV com transação `ROLLBACK` para abertura, consulta, encerramento, idempotência, reenvio sem renovação de expiração, rejeição de sobreposição, payload divergente e encerramento por operador diferente; negativas para usuário de Loja. Nenhum registro de QA persistido. **NÃO TESTADOS neste P1:** chamadas HTTP reais entre conexões independentes e ciclo completo na UI Master com MFA real. P0 de chamados/MFA A/B já homologado anteriormente e NÃO deve ser repetido.
+- **Cloudflare DEV:** Worker `corsys-tronco-digital-dev`; último deploy visto pelo operador era `3d269771`, anterior ao P1. O operador corrigiu Workers Builds de `feat/v35-dev-gate-20261002` para `main` e exibiu configuração de build `npm ci --ignore-scripts && npm run check`, deploy `npx wrangler deploy --config wrangler.dev.jsonc`, com token de build já configurado e Supabase DEV como destino. **Deploy novo ainda não observado/confirmado**; o push deste registro é autorizado para permitir o build automático no Cloudflare DEV, se a integração estiver ativa.
+- **Próxima ação única:** conferir o build/deploy da `main` no Cloudflare DEV; se atualizado, homologar somente o módulo de sessões P1 com JWT/AAL2 real. Não executar SQL novamente, não refazer P0, não usar máquina local, não alterar PROD.
+
 ## Sessões temporárias Master somente leitura (P1 preparado) — 28/10/2026
 
 
