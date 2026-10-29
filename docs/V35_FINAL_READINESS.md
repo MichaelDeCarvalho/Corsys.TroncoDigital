@@ -8,6 +8,8 @@
 
 ---
 
+**Atualização incremental 29/10/2026:** P0 de suporte e P1 de sessões Master têm homologações DEV posteriores à data-base deste relatório. A matriz conserva `view-master-operacao` como PARCIAL até os gates de concorrência HTTP e demais critérios de release. Consulta ao handoff atualizado para evidências. Não repetir migrações, P0 ou testes SQL.
+
 ## 1. RESUMO EXECUTIVO
 
 O presente relatório consolida a auditoria final da versão V35 do Corsys Tronco Digital após as correções pontuais do Comando 11. Todas as 21 telas do sistema foram mapeadas diretamente contra os arquivos fonte do repositório, componentes de renderização (`Workspace.tsx` e `MasterConsole.tsx`), fontes de dados e testes existentes.
@@ -28,7 +30,7 @@ A classificação distingue rigorosamente **APTO PARA TESTE DEV**, **PARCIAL**, 
 | **02** | `view-master-clientes` | Clientes SaaS | `MasterConsole.tsx` (`tab === 'clients'`), `MasterClient360.tsx`, `MasterOnboarding.tsx` | `saas_tenants`, `saas_subscriptions`, `rpc/change_tenant_status` | `MasterConsole.test.tsx`, `MasterClient360.test.tsx` | **APTO PARA TESTE DEV** |
 | **03** | `view-master-cobranca` | Cobrança SaaS | `MasterBilling.tsx` | `saas_invoices`, `saas_dunning_events`, `v_saas_overdue_invoices` | `MasterBilling.test.tsx`, `MasterConsole.test.tsx` | **PARCIAL** (Depende de gateway real para boletos/PIX - P1) |
 | **04** | `view-master-planos` | Planos e Ofertas | `MasterCommercialCatalog.tsx`, `MasterPlanLifecycle.tsx`, `MasterPromotions.tsx` | `saas_plans`, `saas_plan_offers`, `rpc/save_saas_plan` | `MasterCommercialCatalog.test.tsx`, `MasterPlanLifecycle.test.tsx` | **APTO PARA TESTE DEV** |
-| **05** | `view-master-operacao` | Operação e Suporte | `MasterOperations.tsx`, `MasterSupportQueue.tsx` | `saas_support_tickets`, `saas_jobs`, `rpc/reply_master_tenant_support_idempotent`, `rpc/start_master_support_session` | `MasterOperations.test.tsx`, `MasterSupportSessions.test.tsx` | **PARCIAL** (P0 homologado; P1 sessões temporárias somente leitura preparado em código e migração incremental 20261029000000, aguardando aplicação no banco DEV e homologação) |
+| **05** | `view-master-operacao` | Operação e Suporte | `MasterOperations.tsx`, `MasterSupportQueue.tsx` | `saas_support_tickets`, `saas_jobs`, `rpc/reply_master_tenant_support_idempotent`, `rpc/start_master_support_session` | `MasterOperations.test.tsx`, `MasterSupportSessions.test.tsx` | **PARCIAL** (P0 homologado; P1 Master: migration 20261029021140 aplicada no DEV e ciclo real de abertura/encerramento auditado PASS em 29/10/2026; concorrência HTTP entre conexões independentes e gates de produção pendentes) |
 | **06** | `view-master-config` | Configurações Globais | `MasterPlatformConfig.tsx` | `saas_platform_configuration`, `rpc/update_saas_platform_config` | `MasterPlatformConfig.test.tsx`, `MasterConsole.test.tsx` | **APTO PARA TESTE DEV** |
 | **07** | `view-dashboard` | Visão Geral da Tesouraria | `FinancialDashboard.tsx`, `DailyCashFlow.tsx` em `Workspace.tsx` | `rpc/read_tenant_financial_dashboard`, `v_treasury_balances` | `FinancialDashboard.test.tsx`, `App.test.tsx` | **APTO PARA TESTE DEV** |
 | **08** | `view-integrantes` | Integrantes | `Members.tsx` em `Workspace.tsx` | `members`, `member_associations`, `rpc/upsert_member` | `Members.test.tsx`, `App.test.tsx` | **APTO PARA TESTE DEV** |
@@ -158,10 +160,10 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 ## 5. CLASSIFICAÇÃO DE BLOQUEIOS REMANESCENTES
 
 - **P0 (Bloqueia Operação Segura em Produção):**
-  - Migration SQL backend com `p_idempotency_key` nas RPCs `create_saas_support_ticket` e `reply_saas_support_ticket`. *(Atualmente mitigado no frontend por trava de reenvio, retenção de rascunhos e verificação no servidor).*
+  - **Resolvido no DEV:** migration de idempotência das RPCs `create_saas_support_ticket` e `reply_saas_support_ticket` aplicada, com homologação HTTP real A/B, isolamento, replay e payload divergente em `docs/V35_P0_SUPPORT_20261028.md`. A promoção para PROD continua sujeita aos gates próprios de release.
 - **P1 (Bloqueia Funcionalidade Contratada):**
   - Homologação de conector de gateway bancário (Asaas/Iugu/Mercado Pago) para geração e liquidação automatizada de boletos/PIX em produção.
-  - Implementação de RPC server-side para emissão de sessões temporárias de suporte Master (ADR 001).
+  - **Resolvido no DEV:** RPCs de sessões temporárias Master (ADR-0038), autorização MASTER/AAL2, `read_only`, auditoria e ciclo UI de abertura/encerramento aprovados; concorrência HTTP em conexões independentes permanece teste não executado.
 - **P2 (Melhoria de Roadmap Futuro):**
   - Paginação cursor-based infinita para conversas de suporte acima de 200 mensagens.
   - Streaming em tempo real via WebSocket (Supabase Realtime) para a fila de tarefas assíncronas.
