@@ -1,3 +1,7 @@
+## Entrada com MFA existente — 28/10/2026
+
+ConnectedApp valida identidade e MfaGate verifica assurance antes do Workspace. TOTP existente usa challengeAndVerify e requer confirmação aal2. Sem enrollment, novo backend ou migration; RPCs mantêm autorização Master/AAL2. Recuperação de senha preservada. ADR-0037.
+
 ## Continuidade e mútuas — 21/10/2026
 
 Finance→Mútuas por faixa usa RPCs66 e leitura RLS de mutual_batches/assignments/balances. Distribuição por número ou atribuição explícita de toda a faixa; alterar faixa invalida distribuição/prévia. Prévia verifica tenant, soma em centavos, vínculos e natureza/código reais, exige GERAR. Envio incerto conserva comando/chave; rejeição definitiva desbloqueia. Histórico paginado20, detalhes conferem cada cobrança. Sem pagamento ou alteração de classificação. Natureza neutra/repasse ainda depende de evolução contábil específica.

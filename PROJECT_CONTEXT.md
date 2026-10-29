@@ -1,3 +1,7 @@
+## P0 suporte e entrada MFA — 28/10/2026
+
+Frontend 99dfd64d publicado somente DEV (61da7570); compatibilidade de suporte corrigida. Login de michael@lojamais1.com confirmado: MASTER ativo, TOTP verificado e sessão aal1. MfaGate adiciona challenge do fator existente; não altera cadastro/permissões. 30 testes focados, tipos/build PASS; código real e P0 HTTP ainda pendentes. ADR-0037.
+
 ## Continuação operacional — 21/10/2026
 
 CI323/c6b2fd2 SUCCESS. Revalidação real B em duas abas preservou Loja/formulário; ágape UI B desktop/mobile375 sem overflow PASS, cobrança a4c4db6d cancelada/open0/integrity true. Mútuas agora têm UI com distribuição explícita, prévia da classificação/total, histórico e recuperação idempotente; seis testes focados PASS e build DEV PASS. HTTP/UI mútuas ainda a homologar. Repasse neutro continua lacuna: guard atual de member_receivable exige receita; não declarar esse tratamento pronto.

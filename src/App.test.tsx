@@ -14,6 +14,7 @@ function deferred<T>() { let resolve!: (value: T) => void; const promise = new P
 function mockClient(options: { user?: User | null; orgs?: typeof orgA[]; respond?: (table: string, id: string) => Promise<Result> } = {}) {
   let listener: (event: string, session: unknown) => void = () => {}
   const auth = {
+    mfa: { getAuthenticatorAssuranceLevel: vi.fn().mockResolvedValue({ data: { currentLevel: 'aal1', nextLevel: 'aal1' }, error: null }) },
     getUser: vi.fn().mockResolvedValue({ data: { user: options.user === undefined ? userA : options.user }, error: null }),
     onAuthStateChange: vi.fn(callback => { listener = callback; return { data: { subscription: { unsubscribe: vi.fn() } } } }),
     signInWithPassword: vi.fn().mockResolvedValue({ data: {}, error: null }),

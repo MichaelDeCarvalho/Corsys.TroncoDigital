@@ -1,3 +1,7 @@
+## MFA na entrada — 28/10/2026
+
+Lacuna de apresentação identificada: senha criava aal1 sem challenge disponível, mantendo Master negado corretamente. MfaGate solicita fator TOTP existente e falha fechado em erro; não altera grants/MFA/RLS. Código não é logado nem persistido pela UI. 30 testes focados PASS; validação real e homologação de suporte NÃO TESTADAS. ADR-0037.
+
 ## Controles da anuidade e gates HTTP — 19/10/2026
 
 HTTP real A/B ampliado: 10/13 RPCs legadas e reajuste novo PASS; nenhuma generalização para Master/AAL2 ou corrida de alocação do estorno. Anual DEV exige settings.manage/institutional.manage e assinatura apta; sem RLS/tabelas novas, anon revogado. SQL28 negativas rollback PASS; real anual pendente. Quatro avisos de definer autenticado refletem o desenho existente com controle interno; demais avisos anteriores preservados. Evidências em docs/V35_EXECUTION_20261019_CONTINUED.md.

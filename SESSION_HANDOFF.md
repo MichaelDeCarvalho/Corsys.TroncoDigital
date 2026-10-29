@@ -1,3 +1,7 @@
+## P0 suporte / MFA — 28/10/2026
+
+Branch fix/v35-mfa-challenge-dev-20261028 sobre 99dfd64d. MfaGate, integração App e testes adicionados; 30 testes/tipos/build PASS. Deploy somente DEV autorizado pelo usuário. Sem banco/PROD. Próximo: usuário confirma código TOTP no navegador, depois homologar chamados A/B e Master/idempotência HTTP. Não repetir migration/suítes já aprovadas. Evidências externas outputs/V35_P0_HOMOLOGACAO_20261028.md; ADR-0037.
+
 ## Continuidade de sessão e mútuas — 21/10/2026
 
 Atualização: CI323/c6b2fd2 SUCCESS. Refresh real B PASS preservando campos/Loja; ágape UI B criado, histórico integrante/R$1,25 conferido e mobile375/scroll375 PASS, screenshot agape-B-mobile-20261021.jpg. Cobrança a4c4db6d cancelada via RPC normal DEV/open0/integrity true. Aba duplicada fechada pelo usuário; viewport restaurado. UI mútuas+helper HTTP implementados,6 testes focados e tipos/build PASS; publicar versão DEV e executar somente gate novo B. A ágapes/mútuas agrupados depois. Repasse neutro ainda lacuna real do guard de categoria, não declarar resolvido.
