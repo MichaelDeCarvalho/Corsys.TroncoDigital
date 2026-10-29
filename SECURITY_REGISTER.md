@@ -1,3 +1,7 @@
+## Segregação B real / P0 suporte — 28/10/2026
+
+Sessão B autenticada: leituras de chamado/mensagens A retornaram zero; RPCs de resposta/criação A negadas 42501 e ticket estrangeiro em org B negado23503. Read-back confirmou nenhuma escrita/chave B indevida. Somente escopo P0 de suporte; não representa auditoria geral nem garantia absoluta. Timeout forçado não testado. Histórico de fixtures fechado e preservado. Relatório docs/V35_P0_SUPPORT_20261028.md.
+
 ## Homologação Master real — 28/10/2026
 
 MFA AAL2, UI e replay/concorrência HTTP/22023 PASS somente DEV. A/B e timeout forçado NÃO TESTADOS. Exclusão da fixture bloqueada por histórico imutável: sem bypass, encerramento normal confirmado. QA page opt-in restrita ao DEV e atores fixos, sem exportação de tokens. Evidência docs/V35_P0_SUPPORT_20261028.md.

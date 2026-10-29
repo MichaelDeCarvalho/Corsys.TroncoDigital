@@ -1,3 +1,7 @@
+## P0 suporte funcional concluído no DEV — 28/10/2026
+
+PASS frontend, MFA Master real/UI/HTTP, Loja A UI/HTTP, replay/concorrência/22023 e segregação B UI/HTTP. B HTTP403/42501,409/23503,403/42501; leituras A ocultas e nenhuma escrita indevida. #11/#12/#13 closed, baseline três abertos restaurado; histórico imutável preservado. Timeout forçado NÃO TESTADO; concorrência sem timeout. Sem migration/PROD/merge. Não repetir suíte aprovada. Evidência consolidada docs/V35_P0_SUPPORT_20261028.md. Próximo: revisão da branch para integração; V35 geral permanece aberta.
+
 ## P0 Master homologado — 28/10/2026
 
 Atualização: Loja A UI abertura/resposta e HTTP criação/resposta concorrência/replay/22023 PASS sem duplicação. Sessão A preexistente no navegador interno aproveitada. Chamados fictícios #11/#12/#13 fechados por Master, baseline três abertos restaurado. B ainda NÃO TESTADA; próxima entrada jobmcc@hotmail.com na mesma aba interna, mantendo sessionStorage com ID A 81caf24e-2891-4cd4-a112-7201b50cbce4. Master Edge preservado. Branch remota autorizada pelo usuário; não repetir A/Master.
