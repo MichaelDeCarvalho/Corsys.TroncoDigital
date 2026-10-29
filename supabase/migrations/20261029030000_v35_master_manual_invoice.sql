@@ -106,12 +106,14 @@ begin
     raise exception 'cannot issue invoice for trialing subscription' using errcode = '55000';
   end if;
 
-  if v_sub_started_at::date > v_service_period_end then
-    raise exception 'competence precedes subscription start date' using errcode = '55000';
+  -- A full monthly invoice cannot bill a partial subscription service period
+  -- without an approved proration rule. Fail closed for starts/cancellations in-month.
+  if v_sub_started_at::date > v_service_period_start then
+    raise exception 'subscription does not cover full competence: late start' using errcode = '55000';
   end if;
 
-  if v_sub_canceled_at is not null and v_sub_canceled_at::date < v_service_period_start then
-    raise exception 'competence is after subscription cancellation date' using errcode = '55000';
+  if v_sub_canceled_at is not null and v_sub_canceled_at::date < v_service_period_end then
+    raise exception 'subscription does not cover full competence: early cancellation' using errcode = '55000';
   end if;
 
   -- 5. Contractual price determination: strictly from saas_subscription_price_terms (NO FALLBACK)
@@ -288,12 +290,14 @@ begin
     raise exception 'cannot issue invoice for trialing subscription' using errcode = '55000';
   end if;
 
-  if v_sub_started_at::date > v_service_period_end then
-    raise exception 'competence precedes subscription start date' using errcode = '55000';
+  -- A full monthly invoice cannot bill a partial subscription service period
+  -- without an approved proration rule. Fail closed for starts/cancellations in-month.
+  if v_sub_started_at::date > v_service_period_start then
+    raise exception 'subscription does not cover full competence: late start' using errcode = '55000';
   end if;
 
-  if v_sub_canceled_at is not null and v_sub_canceled_at::date < v_service_period_start then
-    raise exception 'competence is after subscription cancellation date' using errcode = '55000';
+  if v_sub_canceled_at is not null and v_sub_canceled_at::date < v_service_period_end then
+    raise exception 'subscription does not cover full competence: early cancellation' using errcode = '55000';
   end if;
 
   -- 6. Contractual price determination: strictly from saas_subscription_price_terms (NO FALLBACK)
