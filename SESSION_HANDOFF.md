@@ -1,3 +1,7 @@
+## Continuidade V35 — exportações locais — 01/11/2026
+
+Continuidade: PR #19 integrado autorizado no commit 6042cedc, CI405 PASS, DEV 6df6ff0d Ready/100%. Exportações PDF (impressão nativa) e XLSX implementadas nesta branch para páginas financeiras, recebimentos, DRE e estrutura contábil, sem afirmar exportação integral. 14 testes focados PASS; tipos/build PASS antes do ajuste final de cancelamento da consulta de plano, que será verificado pelo CI. ADR-0041 e docs/V35_REMAINING_WORK.md registram escopo, limitações e sequência restante. Próximos PRs de baixo impacto DEV autorizados com CI aprovado; sem produção/secrets/migrations/financeiro real.
+
 ## Cliente 360 com navegação contextual — 01/11/2026
 
 - Base: main `99b057d4` (PR #18 integrado com autorização do proprietário; CI #403 PASS, Cloudflare DEV versão `819dbdeb` Ready/100% confirmada). A pendência de merge/publicação registrada abaixo para #18 está encerrada; não repetir homologações.
