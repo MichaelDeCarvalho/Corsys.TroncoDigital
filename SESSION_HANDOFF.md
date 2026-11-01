@@ -1,3 +1,12 @@
+## Gate RBAC SQL transacional DEV — 01/11/2026
+
+- **CI #376 PASS**, jobs frontend/static concluídos com sucesso na revisão `5588c342`. Testes e build passaram no CI; os 8 testes do Gemini são unitários/mocks.
+- **Teste SQL DEV em transação reversível, claims de autenticação simuladas e atores/organizações fictícios:** as RPCs da migração foram instaladas somente dentro de `BEGIN … ROLLBACK`. Validaram-se negativas sem `users.manage` e entre tenants (`42501`), bloqueio do último ADMIN (`55000`), atribuição e revogação, replay com chave idêntica sem duplicar auditoria, divergência de payload (`22023`), recusa de autoelevação para ADMIN e sucessão com administrador remanescente. A sequência chegou até a asserção de contagem após revogar o ator original; essa contagem inicial não era observável sob sua RLS. Com consulta sob a identidade do administrador sobrevivente, o cenário de sucessão foi validado.
+- **RLS de `user_profiles`** verificada em transação adicional, com claims do ADMIN aplicadas antes da instrução de leitura. Dois perfis fictícios da Loja A visíveis; perfil da Loja B oculto. PASS (SQL simulado, não HTTP). Não se ampliaram grants.
+- Primeiras tentativas esbarraram apenas em **fixtures incorretas**: coluna inexistente `organizations.slug` e ausência de `saas_tenant_accounts`; a última observação dependia de permissões do ator revogado. Essas execuções falharam e reverteram; não devem ser descritas como PASS integral.
+- **Read-back pós-ROLLBACK:** RPCs de atribuição/revogação não persistidas; política `user_profiles_select_org` não persistida; zero organizações, usuários ou auditorias de QA; migration `20261101000000` não aplicada. Nenhuma produção modificada.
+- **Status:** gate SQL de autorização/isolation/idempotência selecionado PASS nos cenários acima; concorrência sob sessões HTTP independentes e publicação DEV ainda **NOT EVALUATED**. Próxima ação exige aprovação operacional específica para **aplicar exclusivamente a migration DEV**; depois validar leitura/UI HTTP real com usuários de teste autorizados. Não publicar produção/Cloudflare automaticamente.
+
 ## Correções de segurança RBAC pré-deploy — 01/11/2026
 
 - Gemini produziu seis arquivos de RBAC, testou 8/8 mocks e compilou localmente; GitHub recebeu o commit `36cac365` **na main**, contrário ao relatório de não publicação. A branch `feat/v35-tenant-rbac` foi sincronizada com esse commit; alterações seguintes ocorreram somente nela.
