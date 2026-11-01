@@ -1,4 +1,4 @@
-import {render,screen,fireEvent,waitFor} from '@testing-library/react'
+import {render,screen,fireEvent,waitFor,within} from '@testing-library/react'
 import type {SupabaseClient} from '@supabase/supabase-js'
 import {vi} from 'vitest'
 import {MasterConsole} from './MasterConsole'
@@ -71,7 +71,7 @@ describe('Master read-only overview',()=>{
   const {client,rpc}=fixture()
   render(<MasterConsole client={client}/>)
   await screen.findByText('Loja Exemplo')
-  fireEvent.click(screen.getByRole('button',{name:'Cliente 360º'}))
+  fireEvent.click(within(screen.getByRole('row',{name:/Loja Exemplo/})).getByRole('button',{name:'Cliente 360º'}))
   await waitFor(()=>expect(rpc).toHaveBeenCalledWith('read_master_client_360',{p_organization_id:tenant.organization_id}))
   expect(screen.getByLabelText('Loja cliente')).toHaveValue(tenant.organization_id)
  })
