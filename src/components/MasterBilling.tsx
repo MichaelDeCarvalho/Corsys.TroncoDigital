@@ -9,6 +9,30 @@ import {
 } from '../lib/master-billing'
 import {checkedSigned} from '../lib/treasury-balances'
 
+// RPC error responses can be structured objects, not necessarily Error instances.
+// Translate known business codes without exposing raw database diagnostics.
+function describeInvoicePreviewError(err:unknown):string{
+ const error=typeof err==='object'&&err!==null ? err as {code?:unknown;message?:unknown} : null
+ const code=typeof error?.code==='string'?error.code:''
+ const message=typeof error?.message==='string'?error.message:''
+ if(code==='55000'){
+  if(message.includes('no contractual price term found'))
+   return 'Esta Loja não possui um termo de preço contratual válido para a competência selecionada. A emissão está bloqueada.'
+  if(message.includes('partial price term')||message.includes('conflicting or multiple price terms'))
+   return 'A competência possui termos de preço incompletos ou conflitantes. A emissão está bloqueada.'
+  return 'Não foi possível validar o contrato da assinatura para esta competência. A emissão está bloqueada.'
+ }
+ if(code==='42501'||code==='28000')
+  return 'A consulta exige uma sessão Master autorizada com MFA/AAL2. Verifique a autenticação.'
+ if(code==='PGRST202'||code==='42883')
+  return 'A função de prévia não está disponível neste ambiente. Verifique a publicação e o banco DEV.'
+ if(err instanceof Error)
+  return err.message || 'Não foi possível obter a prévia da fatura.'
+ if(/^[A-Z0-9]{5,12}$/.test(code))
+  return `Não foi possível obter a prévia da fatura (código ${code}).`
+ return 'Não foi possível obter a prévia da fatura. Verifique a sessão e a conexão.'
+}
+
 export function MasterBilling({client,tenants}:{client:SupabaseClient;tenants:Array<{organization_id:string;organization_name:string}>}){
  const [org,setOrg]=useState(''),[mode,setMode]=useState<'invoices'|'payments'>('invoices')
  const [page,setPage]=useState(0),[revision,setRevision]=useState(0)
@@ -39,6 +63,7 @@ export function MasterBilling({client,tenants}:{client:SupabaseClient;tenants:Ar
  function invalidatePreview(){
   previewReqRef.current++
   previewAbortRef.current?.abort()
+  setPreviewLoading(false)
   setPreview(null)
   setPreviewError('')
   setIssueError('')
@@ -99,6 +124,7 @@ export function MasterBilling({client,tenants}:{client:SupabaseClient;tenants:Ar
   const targetDue=manualDueDate
 
   setPreviewLoading(true)
+  setPreview(null)
   setPreviewError('')
   setIssueError('')
   setIssueSuccess(null)
@@ -114,8 +140,7 @@ export function MasterBilling({client,tenants}:{client:SupabaseClient;tenants:Ar
    }
   }catch(err:unknown){
    if(previewReqRef.current===reqId){
-    const msg=err instanceof Error?err.message:'Não foi possível obter a prévia da fatura.'
-    setPreviewError(msg)
+    setPreviewError(describeInvoicePreviewError(err))
     setPreview(null)
    }
   }finally{

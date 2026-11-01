@@ -1,7 +1,44 @@
+## Replay da fatura cancelada — idempotência SQL DEV — 01/11/2026
+
+- **Teste real com transação `ROLLBACK`, claims MASTER/AAL2 simuladas:** usando a chave idempotente existente da emissão HTTP da fatura `83ba5d3b-9db4-4b97-b657-00ce5c2dc88a` já cancelada, `public.issue_saas_manual_invoice` retornou **o UUID original**, sem gerar nova fatura, item, auditoria ou `void`. A mesma chave com descrição deliberadamente divergente foi rejeitada com SQLSTATE `22023`. Chave não exposta nos logs, documentos ou resposta.
+- **Read-back pós-transação:** 1 fatura histórica `void`, 1 item, 1 cancelamento, 0 pagamentos, 1 auditoria de emissão, 1 auditoria de cancelamento QA, 1 registro de idempotência, saldo aberto R$ 0,00. **PASS para replay sequencial do registro emitido via HTTP.**
+- **Limite:** contexto JWT foi simulado na transação; concorrência HTTP com duas conexões realmente independentes e tentativas com chaves diferentes ainda não executada. Não anunciar homologação completa nem liberar produção.
+- **Próxima ação:** planejar teste de estresse HTTP isolado com sessão/credenciais temporárias geridas fora do repositório, autorização negativa AAL1/tenant e mecanismo controlado de limpeza; não usar JWTs exibidos em capturas nem reaplicar migration ou emitir nova cobrança real sem autorização.
+
+## Gate de idempotência pós-HTTP — conferência em leitura — 01/11/2026
+
+- **Read-back do banco DEV, após a emissão real e o cancelamento:** `public.idempotency_keys` contém exatamente **uma** linha para `organization_id=94b84958-4dd9-435d-9a4e-244220835d70`, `operation='issue_saas_manual_invoice'`, `status='completed'`, `result_reference=83ba5d3b-9db4-4b97-b657-00ce5c2dc88a`, `completed_at` preenchido. A fatura continua `void`, saldo aberto zero, 1 evento de emissão e 1 evento de cancelamento QA.
+- **Revisão do mecanismo:** `private.idempotency_begin` compara `SHA-256` do payload e operação, usa conflito único `(organization_id,user_id,idempotency_key)`, faz `SELECT ... FOR UPDATE` e retorna `result_reference` quando `completed`; `public.issue_saas_manual_invoice` também serializa pela linha de organização com `FOR UPDATE` e checa faturas não canceladas por competência. Evidência do código + banco, **não equivalente** ao teste de corrida HTTP real.
+- **Gates pendentes:** emissão idempotente via duas conexões HTTP independentes simultâneas com mesmo/diferentes request IDs e duas sessões Master realmente autenticadas, AAL1, assinante tenant não-Master e JWT sem sessão válida; incluir cenário de timeout/retry mantendo chave. Necessitam tokens/sessões de teste apropriados geridos em ambiente seguro; **não reutilizar tokens expostos em capturas ou criar JWTs com segredos em scripts**, não emitir outra fatura persistente sem autorização operacional específica. Não mesclar PR #10 automaticamente e não publicar PROD.
+- **Estado:** último check conhecido `GitHub Actions #369 PASS`; PR #10 draft e sem merge. Nenhuma migration ou SQL adicional executada nesta conferência.
+
+## QA HTTP — Emissão real e cancelamento rastreável em DEV — 01/11/2026
+
+- **Operação real com MFA Master na UI DEV — PASS:** a Loja fictícia existente `DEV QA FINANCE A 20261015` emitiu uma única fatura de teste com competência 11/2026, vencimento 10/11/2026, valor R$ 1,00 e observação `TESTE QA DEV - SEM COBRANÇA COMERCIAL`. Documento `CORSYS-202611-00003`; id `83ba5d3b-9db4-4b97-b657-00ce5c2dc88a`. Captura do usuário confirmou sucesso e listagem atualizada. Consulta direta ao banco confirmou `open`, 1 item, 1 evento de emissão, 0 pagamentos e 0 alocações.
+- **Cancelamento administrativo DEV — PASS:** conforme autorização expressa anterior do proprietário para emitir e cancelar a fatura fictícia, operação foi executada via Supabase connector com precondições determinísticas de Loja/assinatura, competência, valor, documento, descrição, auditoria e ausência de pagamentos. Um registro `saas_invoice_voids` foi criado com motivo explícito de QA, `voided_by=NULL` para não atribuir indevidamente o cancelamento ao Master. Evento separado `saas_master_audit_logs.action='invoice.qa_void'`, sem staff fictício, registra a origem administrativa e autorização, na mesma transação atômica.
+- **Read-back pós-commit — PASS:** fatura histórica retida, `derived_status=void`, `amount_paid=0`, `amount_open=0`, 1 item, 1 void, 1 auditoria `invoice.manual_issue`, 1 auditoria `invoice.qa_void`, 0 alocações e 0 outras faturas. Nenhum registro comercial, produção ou Loja diferente foi alterado.
+- **Fixture:** o termo fictício `ca59a693-ec42-434b-bf0d-191755eb852a` (R$ 1,00, vigente apenas novembro/2026) **continua no DEV** para preservar o contexto histórico do teste. Atenção: a RPC pode permitir reemissão após `void`, de modo que a Loja QA deve ser usada somente sob procedimento controlado. Qualquer limpeza do termo requer avaliação do histórico/auditoria, sem exclusão de faturas imutáveis.
+- **Pendente:** concorrência HTTP entre conexões independentes, replay real com mesma chave, autorização negativa HTTP e workflow completo de cancelamento via UI (aqui foi cancelamento administrativo controlado). Não declarar produção pronta nem refazer testes SQL/CI aprovados. PR #10 segue draft, sem merge.
+
+## QA HTTP de faturamento manual — cenário positivo preparado — 01/11/2026
+
+- **Ambiente exclusivamente DEV:** já existia a Loja `DEV QA FINANCE A 20261015` (sem faturas/termos). Foi criado **somente um termo contratual fictício** para essa assinatura, identificador `ca59a693-ec42-434b-bf0d-191755eb852a`, valor R$ 1,00, competência e vigência 01/11/2026 a 30/11/2026; motivo explicita QA sem cobrança comercial. Nenhuma nova Loja, assinatura ou plano foi criada.
+- **Teste SQL positivo da prévia:** PASS sob transação com `ROLLBACK` e claims MASTER/AAL2 **simuladas**, validando R$ 1,00, BRL, 11/2026, período inteiro e `already_billed=false`. Não constitui teste HTTP autenticado real.
+- **Read-back:** seis organizações e seis assinaturas preservadas, um termo em QA FINANCE A, zero termos nas outras Lojas, zero faturas, itens e eventos `invoice.manual_issue`. A chamada HTTP negativa de TENANT A em 01/11/2026 retornou SQLSTATE `55000`, sem preço contratual, PASS.
+- **Próxima ação única:** operador Master autenticado com MFA na aplicação DEV selecionar **DEV QA FINANCE A 20261015**, competência **11/2026**, vencimento/observação em branco, clicar apenas `Consultar contrato e prévia`; deve mostrar total R$ 1,00 e não indicar já faturado. **Não emitir fatura antes de confirmar um procedimento de reversão/limpeza test-only.** Após concluir a homologação, remover com controle o termo QA identificando exatamente seu UUID, somente se não houver dependência financeira ativa. PR #10 segue draft sem merge e produção não foi alterada.
+
+## Cobrança SaaS Master — Migration e testes transacionais DEV confirmados — 29/10/2026
+
+- **Supabase DEV:** projeto `szqkdekwhzxsoxorgvaz`, migration `20261029204044_v35_master_manual_invoice` aplicada via Supabase API (arquivo do repositório renomeado para coincidir com a versão registrada). Não reaplicar. RPCs `public.preview_saas_manual_invoice` e `public.issue_saas_manual_invoice` presentes.
+- **Gate CI pré-aplicação:** GitHub Actions #361 PASS (jobs static/frontend) antes de corrigir a fixture SQL. Revisão documental/arquivo ainda depende de novo check. A primeira execução SQL transacional abortou em coluna inexistente `organizations.slug`; fixture corrigida na branch. Na segunda execução, `supabase/tests/test_master_manual_invoice_rollback.sql` completou sem erro, com `BEGIN; ... ROLLBACK;`, cobrindo preço contratual, ausência/parcialidade de termo, AAL2/MASTER, trial, emissão auditada, replay, descrição divergente e duplicidade sequencial. Não confundir com concorrência HTTP real.
+- **Verificação após ROLLBACK:** 0 faturas, 0 itens, 0 ajustes, 0 termos contratuais, 0 eventos `invoice.manual_issue`, 0 organizações/usuários/equipe de QA persistidos. RPCs=2; `anon` não tem EXECUTE; `authenticated` pode chamar somente sujeitando-se ao gate interno MASTER+AAL2.
+- **Escopo e riscos restantes:** Sem termos de preço cadastrados para as seis assinaturas DEV, nenhuma emissão real de fatura é possível (fail-closed). Requer conferência e cadastramento contratual explícito em etapa futura, não inferir preço do catálogo. Homologação HTTP real/MFA e concorrência independente ainda pendentes. Nenhuma publicação PROD; sem novas cobranças. PR #10 permanece draft, sem merge; `main` já tinha implementação do Gemini e não deve receber mais pushes para esta correção.
+- **Próxima ação:** obter verificação final do GitHub Actions da branch após ajustes e só então planejar homologação funcional segura, sem gerar faturas comerciais persistentes automaticamente.
+
 ## Cobrança SaaS Master — Emissão manual de faturas — 29/10/2026
 
 - Correção pontual de segurança e consolidação concluída:
-  - Migration incremental `supabase/migrations/20261029030000_v35_master_manual_invoice.sql`:
+  - Migration incremental `supabase/migrations/20261029204044_v35_master_manual_invoice.sql`:
     - Versionada sequencialmente após a migração P1 do DEV (`20261029021140_v35_master_readonly_support_sessions`), removida a versão antiga `20261029000001`.
     - Sequence `public.saas_invoice_seq` para numeração sequencial determinística e unívoca de faturas.
     - RPC `preview_saas_manual_invoice(uuid, date, date)`: exige `MASTER` + `AAL2` (`private.require_platform_staff`), validação de Loja existente, competência no dia 1 (`extract(day from competence) = 1`), busca da assinatura ativa em `saas_subscriptions` (rejeitando assinaturas em `trialing` sob `55000`) e derivação contratual de preço estritamente a partir de `saas_subscription_price_terms`. **Removido qualquer fallback para versões de plano ou plano base**: exige termo unívoco cobrindo todo o mês sem lacunas ou sobreposições (`55000`). Detecta fatura já emitida para o mês (`already_billed`). Retorna estrutura completa de itens e datas de prestação de serviço.
@@ -21,7 +58,7 @@
     - ADR-0039 (`docs/adr/0039-master-manual-saas-invoice.md`) atualizado.
     - `CURRENT_ARCHITECTURE.md` atualizado.
 - Branch de trabalho: `fix/v35-manual-invoice-safety-20261029`. Base: `51120a7845e6e992565a0c4621d4f989c093f298`.
-- Estado: Implementado no código e testes locais. Migração SQL remota NÃO aplicada ao Supabase DEV `szqkdekwhzxsoxorgvaz`; ambiente de produção e Cloudflare DEV preservados. Nenhuma alteração enviada diretamente para a `main`.
+- Estado: Implementado no código e testes locais. Migração SQL posteriormente aplicada ao Supabase DEV com identificador `20261029204044_v35_master_manual_invoice`; produção não alterada. Consulte a atualização de homologação no início deste documento. Nenhuma alteração enviada diretamente para a `main`.
 
 ## Mecanismo de logging de erros e monitoramento de exceções no App.tsx — 29/10/2026
 

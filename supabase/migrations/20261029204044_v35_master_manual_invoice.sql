@@ -1,7 +1,7 @@
 -- Corsys Tronco Digital V35
--- Migration: 20261029030000_v35_master_manual_invoice.sql
+-- Migration: 20261029204044_v35_master_manual_invoice.sql
 -- Goal: Deterministic, strictly contract-derived manual issuance of internal SaaS subscription invoices by Master staff.
--- Versioned sequentially after migration 20261029021140_v35_master_readonly_support_sessions.
+-- Applied to DEV via Supabase migration API as 20261029204044_v35_master_manual_invoice (29/10/2026).
 -- Prepared for Supabase / PostgreSQL. NOT executed in this environment.
 --
 -- Invariants:
@@ -106,12 +106,14 @@ begin
     raise exception 'cannot issue invoice for trialing subscription' using errcode = '55000';
   end if;
 
-  if v_sub_started_at::date > v_service_period_end then
-    raise exception 'competence precedes subscription start date' using errcode = '55000';
+  -- A full monthly invoice cannot bill a partial subscription service period
+  -- without an approved proration rule. Fail closed for starts/cancellations in-month.
+  if v_sub_started_at::date > v_service_period_start then
+    raise exception 'subscription does not cover full competence: late start' using errcode = '55000';
   end if;
 
-  if v_sub_canceled_at is not null and v_sub_canceled_at::date < v_service_period_start then
-    raise exception 'competence is after subscription cancellation date' using errcode = '55000';
+  if v_sub_canceled_at is not null and v_sub_canceled_at::date < v_service_period_end then
+    raise exception 'subscription does not cover full competence: early cancellation' using errcode = '55000';
   end if;
 
   -- 5. Contractual price determination: strictly from saas_subscription_price_terms (NO FALLBACK)
@@ -288,12 +290,14 @@ begin
     raise exception 'cannot issue invoice for trialing subscription' using errcode = '55000';
   end if;
 
-  if v_sub_started_at::date > v_service_period_end then
-    raise exception 'competence precedes subscription start date' using errcode = '55000';
+  -- A full monthly invoice cannot bill a partial subscription service period
+  -- without an approved proration rule. Fail closed for starts/cancellations in-month.
+  if v_sub_started_at::date > v_service_period_start then
+    raise exception 'subscription does not cover full competence: late start' using errcode = '55000';
   end if;
 
-  if v_sub_canceled_at is not null and v_sub_canceled_at::date < v_service_period_start then
-    raise exception 'competence is after subscription cancellation date' using errcode = '55000';
+  if v_sub_canceled_at is not null and v_sub_canceled_at::date < v_service_period_end then
+    raise exception 'subscription does not cover full competence: early cancellation' using errcode = '55000';
   end if;
 
   -- 6. Contractual price determination: strictly from saas_subscription_price_terms (NO FALLBACK)
