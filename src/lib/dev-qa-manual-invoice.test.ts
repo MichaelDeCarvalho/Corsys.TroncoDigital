@@ -1,9 +1,12 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { describe, expect, it, vi } from 'vitest'
 import {
+  EXPECTED_SUPABASE_DEV_URL,
   runManualInvoiceControlledFinancialTest,
   runManualInvoiceHTTPQA,
-  runManualInvoicePreflight
+  runManualInvoicePreflight,
+  validateQAOrganizationAndCompetence,
+  validateQATargetEnvironment
 } from './dev-qa-manual-invoice'
 
 const TEST_ORG_ID = '94b84958-4dd9-435d-9a4e-244220835d70'
@@ -13,9 +16,10 @@ const TEST_INVOICE_ID = '22222222-2222-4222-8222-222222222222'
 function createMockSupabaseClient(options?: {
   previewError?: { code: string; message: string } | null
   issueError?: { code: string; message: string } | null
+  missingAuditLog?: boolean
+  existingActiveInvoice?: boolean
 }): SupabaseClient {
   const rpcCalls: { name: string; args: unknown }[] = []
-
   const issuedKeys = new Map<string, string>()
 
   const rpc = vi.fn(async (name: string, args: Record<string, unknown>) => {
@@ -123,17 +127,35 @@ function createMockSupabaseClient(options?: {
               effective_to: null
             }
           ]
-        } else if (
-          table === 'saas_master_audit_logs' ||
-          table === 'audit_logs'
-        ) {
-          data = [
-            {
-              id: '55555555-5555-4555-8555-555555555555',
-              action: 'saas_invoice.manual_issue',
-              target_id: TEST_INVOICE_ID
-            }
-          ]
+        } else if (table === 'v_saas_invoice_balances') {
+          data = options?.existingActiveInvoice
+            ? [
+                {
+                  id: TEST_INVOICE_ID,
+                  competence: '2026-11-01',
+                  derived_status: 'open'
+                }
+              ]
+            : []
+        } else if (table === 'saas_master_audit_logs') {
+          data = options?.missingAuditLog
+            ? []
+            : [
+                {
+                  id: '55555555-5555-4555-8555-555555555555',
+                  staff_user_id: '66666666-6666-4666-8666-666666666666',
+                  organization_id: TEST_ORG_ID,
+                  action: 'invoice.manual_issue',
+                  resource_type: 'saas_invoices',
+                  resource_id: TEST_INVOICE_ID,
+                  metadata: {
+                    invoice_number: 'CORSYS-202611-00001',
+                    subscription_id: TEST_SUB_ID,
+                    competence: '2026-11-01',
+                    amount_due: 250.0
+                  }
+                }
+              ]
         }
         resolve({ data, error: null })
       }
@@ -144,8 +166,39 @@ function createMockSupabaseClient(options?: {
   return { rpc, from } as unknown as SupabaseClient
 }
 
-describe('Manual Invoice HTTP QA Runner (dev-qa-manual-invoice)', () => {
-  it('runs PREFLIGHT successfully without financial mutations', async () => {
+function createDeniedMockClient(errorCode = '42501'): SupabaseClient {
+  const rpc = vi.fn(async () => ({
+    data: null,
+    error: { code: errorCode, message: 'insufficient_privilege' }
+  }))
+  const from = vi.fn(() => ({
+    select: () => ({
+      eq: () => ({
+        then: (resolve: (r: unknown) => void) =>
+          resolve({ data: null, error: { code: errorCode, message: 'insufficient_privilege' } })
+      })
+    })
+  }))
+  return { rpc, from } as unknown as SupabaseClient
+}
+
+describe('Manual Invoice HTTP QA Runner Refactored (dev-qa-manual-invoice)', () => {
+  it('validates target environment and allowlists correctly', () => {
+    expect(() => validateQATargetEnvironment(EXPECTED_SUPABASE_DEV_URL)).not.toThrow()
+    expect(() => validateQATargetEnvironment('https://unauthorized-project.supabase.co')).toThrow(
+      /DEV QA target denied/
+    )
+
+    expect(() => validateQAOrganizationAndCompetence(TEST_ORG_ID, '2026-11-01')).not.toThrow()
+    expect(() =>
+      validateQAOrganizationAndCompetence('00000000-0000-0000-0000-000000000000', '2026-11-01')
+    ).toThrow(/organization .* is not in the explicit QA allowlist/)
+    expect(() => validateQAOrganizationAndCompetence(TEST_ORG_ID, '2025-01-01')).toThrow(
+      /competence .* is not in the explicit QA allowlist/
+    )
+  })
+
+  it('runs PREFLIGHT successfully under RLS without financial mutations', async () => {
     const client = createMockSupabaseClient()
     const reports: string[] = []
     const reportFn = (msg: string) => reports.push(msg)
@@ -160,19 +213,47 @@ describe('Manual Invoice HTTP QA Runner (dev-qa-manual-invoice)', () => {
     expect(reports.some((r) => r.includes('[PREFLIGHT PASS]'))).toBe(true)
   })
 
-  it('rejects controlled financial mutation when enableRealFinancialMutation is false', async () => {
+  it('rejects controlled financial mutation when operational confirmations are missing', async () => {
     const client = createMockSupabaseClient()
+    const reportFn = vi.fn()
+
+    // Missing enableRealFinancialMutation
+    await expect(
+      runManualInvoiceControlledFinancialTest(client, reportFn, {
+        enableRealFinancialMutation: false,
+        operationalAuthConfirmation: true
+      })
+    ).rejects.toThrow(/enableRealFinancialMutation flag must be explicitly set to true/)
+
+    // Missing operationalAuthConfirmation
+    await expect(
+      runManualInvoiceControlledFinancialTest(client, reportFn, {
+        enableRealFinancialMutation: true,
+        operationalAuthConfirmation: false
+      })
+    ).rejects.toThrow(/operationalAuthConfirmation must be explicitly confirmed/)
+  })
+
+  it('blocks controlled financial mutation if incompatible active invoice exists in historical check', async () => {
+    const client = createMockSupabaseClient({ existingActiveInvoice: true })
     const reportFn = vi.fn()
 
     await expect(
       runManualInvoiceControlledFinancialTest(client, reportFn, {
-        enableRealFinancialMutation: false
+        organizationId: TEST_ORG_ID,
+        competence: '2026-11-01',
+        enableRealFinancialMutation: true,
+        operationalAuthConfirmation: true
       })
-    ).rejects.toThrow(/Controlled financial mutation disabled by default/)
+    ).rejects.toThrow(/already has an active \(unvoided\) invoice/)
   })
 
-  it('executes controlled financial test successfully with concurrency, deduplication & duplicate block', async () => {
+  it('executes controlled financial test successfully with concurrency, deduplication & negative auth checks', async () => {
     const client = createMockSupabaseClient()
+    const unauthenticatedClient = createDeniedMockClient('P0001')
+    const tenantUserClient = createDeniedMockClient('42501')
+    const aal1StaffClient = createDeniedMockClient('42501')
+
     const reports: string[] = []
     const reportFn = (msg: string) => reports.push(msg)
 
@@ -182,13 +263,33 @@ describe('Manual Invoice HTTP QA Runner (dev-qa-manual-invoice)', () => {
       {
         organizationId: TEST_ORG_ID,
         competence: '2026-11-01',
-        enableRealFinancialMutation: true
+        enableRealFinancialMutation: true,
+        operationalAuthConfirmation: true,
+        unauthenticatedClient,
+        tenantUserClient,
+        aal1StaffClient
       }
     )
 
     expect(result.createdInvoiceId).toBe(TEST_INVOICE_ID)
-    expect(reports.some((r) => r.includes('[CONTROLLED TEST PASS] Replay verified'))).toBe(true)
+    expect(result.auditVerified).toBe(true)
+    expect(reports.some((r) => r.includes('[CONTROLLED TEST PASS] Real concurrency verified'))).toBe(true)
     expect(reports.some((r) => r.includes('Duplicate invoice correctly blocked'))).toBe(true)
+    expect(reports.some((r) => r.includes('Strict audit log verified in saas_master_audit_logs'))).toBe(true)
+  })
+
+  it('FAILS test if saas_master_audit_logs entry is missing (strict audit check)', async () => {
+    const client = createMockSupabaseClient({ missingAuditLog: true })
+    const reportFn = vi.fn()
+
+    await expect(
+      runManualInvoiceControlledFinancialTest(client, reportFn, {
+        organizationId: TEST_ORG_ID,
+        competence: '2026-11-01',
+        enableRealFinancialMutation: true,
+        operationalAuthConfirmation: true
+      })
+    ).rejects.toThrow(/AUDIT LOG VERIFICATION FAILED: saas_master_audit_logs record for invoice/)
   })
 
   it('runs runManualInvoiceHTTPQA wrapper in PREFLIGHT and CONTROLLED_FINANCIAL_TEST modes', async () => {
@@ -205,28 +306,27 @@ describe('Manual Invoice HTTP QA Runner (dev-qa-manual-invoice)', () => {
     const resControlled = await runManualInvoiceHTTPQA(client, reportFn, {
       mode: 'CONTROLLED_FINANCIAL_TEST',
       enableRealFinancialMutation: true,
+      operationalAuthConfirmation: true,
       organizationId: TEST_ORG_ID,
       competence: '2026-11-01'
     })
     expect(resControlled.success).toBe(true)
     expect(resControlled.mode).toBe('CONTROLLED_FINANCIAL_TEST')
     expect(resControlled.createdInvoiceId).toBe(TEST_INVOICE_ID)
+    expect(resControlled.auditVerified).toBe(true)
   })
 
-  it('restores globalThis.fetch even if an error occurs during execution', async () => {
+  it('preserves globalThis.fetch without mutating global state', async () => {
     const originalFetch = globalThis.fetch
-    const client = createMockSupabaseClient({
-      issueError: { code: '500', message: 'Fatal transport error' }
-    })
+    const client = createMockSupabaseClient()
     const reportFn = vi.fn()
 
-    await expect(
-      runManualInvoiceControlledFinancialTest(client, reportFn, {
-        organizationId: TEST_ORG_ID,
-        competence: '2026-11-01',
-        enableRealFinancialMutation: true
-      })
-    ).rejects.toThrow()
+    await runManualInvoiceControlledFinancialTest(client, reportFn, {
+      organizationId: TEST_ORG_ID,
+      competence: '2026-11-01',
+      enableRealFinancialMutation: true,
+      operationalAuthConfirmation: true
+    })
 
     expect(globalThis.fetch).toBe(originalFetch)
   })
