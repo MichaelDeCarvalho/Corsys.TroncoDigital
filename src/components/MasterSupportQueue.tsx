@@ -3,12 +3,14 @@ import type {SupabaseClient} from '@supabase/supabase-js'
 import {loadMasterTickets,loadMasterTicketMessages,type MasterTicket,
  type MasterTicketMessage} from '../lib/master-support'
 
-export function MasterSupportQueue({client}:{client:SupabaseClient}){
+export function MasterSupportQueue({client,initialOrganizationId=''}:{client:SupabaseClient;initialOrganizationId?:string}){
  const masterStorageKey = 'v35_master_ticket_search'
  const [page,setPage]=useState(0),[revision,setRevision]=useState(0)
+ const [organizationFilter,setOrganizationFilter]=useState(initialOrganizationId)
  const [tickets,setTickets]=useState<{rows:MasterTicket[];hasNext:boolean}|null>(null)
  const [ticketError,setTicketError]=useState('')
  const [search,setSearch]=useState(()=>{
+  if(initialOrganizationId)return ''
   try{
    return sessionStorage.getItem('v35_master_ticket_search')||''
   }catch{
@@ -59,11 +61,11 @@ export function MasterSupportQueue({client}:{client:SupabaseClient}){
  useEffect(()=>{
   let live=true;const controller=new AbortController()
   setTickets(null);setTicketError('');setSelected(null);setMessages(null)
-  loadMasterTickets(client,page,controller.signal)
+  loadMasterTickets(client,page,controller.signal,organizationFilter)
    .then(t=>{if(live)setTickets(t)})
    .catch(()=>{if(live)setTicketError('Fila de suporte indisponível ou incompleta para esta autenticação.')})
   return()=>{live=false;controller.abort()}
- },[client,page,revision])
+ },[client,page,revision,organizationFilter])
  useEffect(()=>{
   let live=true;const controller=new AbortController()
   setMessages(null);setThreadError('')
@@ -146,6 +148,12 @@ export function MasterSupportQueue({client}:{client:SupabaseClient}){
     onClick={()=>{setPage(0);setRevision(v=>v+1)}}>Atualizar chamados</button>
   </div>
   <p className="subtle">Chamados de clientes e internos são tratados separadamente. O histórico interno é restrito à plataforma. Tempo até primeira resposta e resolução são métricas de eventos reais, não contadores do navegador. Consulta somente leitura.</p>
+  {organizationFilter && (
+   <div role="status" className="panel" style={{padding:'0.65rem',marginBottom:'0.75rem'}}>
+    Chamados da Loja selecionada: <code>{organizationFilter}</code>
+    <button type="button" className="secondary" onClick={()=>{setOrganizationFilter('');setPage(0)}} style={{marginLeft:'0.75rem'}}>Mostrar todos os chamados</button>
+   </div>
+  )}
   {ticketError&&<p role="alert" className="message error">{ticketError}</p>}
   {!tickets&&!ticketError&&<p role="status">Consultando chamados Master…</p>}
   {tickets&&<>

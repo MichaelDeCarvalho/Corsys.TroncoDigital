@@ -2,7 +2,7 @@ import {fireEvent,render,screen,waitFor} from '@testing-library/react'
 import type {SupabaseClient} from '@supabase/supabase-js'
 import {vi} from 'vitest'
 import {MasterSupportQueue} from './MasterSupportQueue'
-import {loadMasterTicketMessages} from '../lib/master-support'
+import {loadMasterTickets,loadMasterTicketMessages} from '../lib/master-support'
 const tid='a752dda8-4ef0-4c58-9d3b-b8fee14ec624'
 const org='559ba052-c408-4418-b806-0c0c4b8e3603'
 const ticket={
@@ -37,6 +37,29 @@ describe('Master operational support queue',()=>{
   await screen.findByText('Resposta registrada de suporte')
   expect(from).toHaveBeenCalledWith('v_saas_support_ticket_metrics')
   expect(from).toHaveBeenCalledWith('saas_support_ticket_messages')
+ })
+ it('filters support on the server before pagination when opened from a client',async()=>{
+  const query={
+   select:vi.fn().mockReturnThis(),
+   order:vi.fn().mockReturnThis(),
+   eq:vi.fn().mockReturnThis(),
+   range:vi.fn().mockReturnThis(),
+   abortSignal:vi.fn().mockResolvedValue({data:[ticket],error:null}),
+  }
+  const client={from:vi.fn(()=>query)} as unknown as SupabaseClient
+  const result=await loadMasterTickets(client,0,new AbortController().signal,org)
+  expect(query.eq).toHaveBeenCalledWith('organization_id',org)
+  expect(result.rows).toHaveLength(1)
+  expect(query.range).toHaveBeenCalledWith(0,25)
+ })
+ it('shows which client was selected and permits returning to the global support queue',async()=>{
+  const {client}=mock()
+  render(<MasterSupportQueue client={client} initialOrganizationId={org}/>)
+  await screen.findByText('Dúvida sobre tesouraria')
+  expect(screen.getByText(org)).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button',{name:'Mostrar todos os chamados'}))
+  await screen.findByText('Dúvida sobre tesouraria')
+  expect(screen.queryByText(org)).not.toBeInTheDocument()
  })
  it('filters Master support tickets instantly by client, title or ID without page reload',async()=>{
   const {client}=mock()
