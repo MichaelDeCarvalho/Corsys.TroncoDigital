@@ -1,23 +1,24 @@
 ## Gate Final HTTP da Cobrança SaaS Master (HTTP QA Verification) — 01/11/2026
 
-- Mecanismo automatizado e reutilizável de QA HTTP real implementado em `src/lib/dev-qa-manual-invoice.ts`:
-  - **Modo 1: PREFLIGHT (Padrão/Read-only)**:
-    - Executa verificações de pré-condição sem produzir qualquer mutação financeira real no banco de dados.
-    - Valida integridade do schema, RLS, permissão de staff/Master, existência de contratos válidos em `saas_subscription_price_terms` e executa pré-visualização de faturas via RPC `preview_saas_manual_invoice`.
-    - Garante que a pré-visualização retorne preço unitário estritamente derivado do contrato e itens de fatura válidos.
-  - **Modo 2: TESTE FINANCEIRO CONTROLADO (Opcional, desativado por padrão)**:
-    - Exige autorização explícita via flag `enableRealFinancialMutation: true`.
-    - Utiliza competência isolada de teste (ex.: `2026-11-01`).
-    - Intercepta requisições HTTP para validar telemetria e respostas reais das RPCs:
-      a) Concorrência com a mesma chave de idempotência: 2 requisições simultâneas HTTP retornam exatamente a mesma fatura e UUID (`assertQAUUID`).
-      b) Concorrência com chaves diferentes para a mesma organização/competência: bloqueio de duplicidade garantido sob o SQLSTATE `55000`.
-      c) Verificação negativa de autorização: rejeição de organização inexistente (`23503`) e competências fora do primeiro dia do mês (`22023`).
-      d) Pós-verificação auditada: confirma gravação de logs em `saas_master_audit_logs` sem qualquer deleção de registros imutáveis.
-- Testes automatizados e integração:
-  - Criado `src/lib/dev-qa-manual-invoice.test.ts` com 5 testes unitários completos cobrindo ambos os modos, tratamento de erros, interceptação de fetch e restauração fail-closed de transporte.
-  - Suíte total de testes do faturamento manual (`MasterBilling.test.tsx` + `dev-qa-manual-invoice.test.ts`): 17/17 testes aprovados (`vitest run`).
+- Mecanismo automatizado e reutilizável de QA HTTP real refatorado e corrigido em `src/lib/dev-qa-manual-invoice.ts`:
+  - **Consulta Estrita de Auditoria**: Validação em `saas_master_audit_logs` utilizando os campos reais `resource_id`, `action` (`invoice.manual_issue`) e `metadata`. A ausência de registro válido de auditoria provoca reprovação estrita do teste (`throw Error`).
+  - **Concorrência Real de Requisições HTTP**: Execução simultânea real via `Promise.all`:
+    - Mesma chave e mesmo payload: deduplicação unívoca retornando o mesmo UUID (`assertQAUUID`).
+    - Chaves diferentes para mesma competência: emissão da primeira fatura e bloqueio da segunda com `SQLSTATE 55000`.
+  - **Autenticação Negativa Real/Preparada**: Validação de negação para chamadas anônimas, usuários de Loja (não-Master), e operadores Master AAL1 sem elevação de privilégios.
+  - **Controle de Segurança Multi-Fator (`CONTROLLED_FINANCIAL_TEST`)**:
+    - Desabilitado por padrão (`PREFLIGHT` read-only).
+    - Validação de URL de projeto DEV esperada (`https://szqkdekwhzxsoxorgvaz.supabase.co`).
+    - Allowlist explícita de organizações de QA (`94b84958-4dd9-435d-9a4e-244220835d70`, `7a6aa771-524d-4d5a-9d38-7006175e1cb4`) e competências de QA (`2026-11-01`, `2026-12-01`, `2027-01-01`).
+    - Exigência dupla de confirmação operacional: `enableRealFinancialMutation: true` E `operationalAuthConfirmation: true`.
+    - Checagem prévia de histórico em `v_saas_invoice_balances` para bloquear execuções com faturas ativas preexistentes.
+  - **Injeção Controlada de Transporte HTTP**: Substituição do patch global de `globalThis.fetch` por transporte injetado customizado (`customFetch`), eliminando qualquer colateral ou interferência em módulos externos.
+  - **RLS e Preflight**: Execução de `PREFLIGHT` sob isolamento rigoroso de RLS do cliente sem privilégios indevidos.
+- Suíte de Testes Automatizados:
+  - `src/lib/dev-qa-manual-invoice.test.ts` expandido para 8 testes unitários/integrados focados.
+  - Suíte total do módulo de faturamento manual: 20/20 testes aprovados (`MasterBilling.test.tsx` + `dev-qa-manual-invoice.test.ts`).
   - Verificação de tipos `npm run typecheck` e compilação do applet `compile_applet`: 0 erros, build aprovado.
-- Branch de trabalho: `fix/v35-manual-invoice-safety-20261029`. Nenhuma alteração enviada diretamente para a `main`.
+- Branch de trabalho: `fix/v35-manual-invoice-safety-20261029`. Push direto para a `main` desativado.
 
 ## Cobrança SaaS Master — Emissão manual de faturas — 29/10/2026
 
