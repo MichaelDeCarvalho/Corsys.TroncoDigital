@@ -1,3 +1,12 @@
+## Correções de segurança RBAC pré-deploy — 01/11/2026
+
+- Gemini produziu seis arquivos de RBAC, testou 8/8 mocks e compilou localmente; GitHub recebeu o commit `36cac365` **na main**, contrário ao relatório de não publicação. A branch `feat/v35-tenant-rbac` foi sincronizada com esse commit; alterações seguintes ocorreram somente nela.
+- **P0 corrigido em migration da branch:** coluna real `public.audit_logs.entity_id` é `uuid`, mas SQL original enviava `p_user_id::text`; `EXPLAIN` no Supabase DEV confirmou erro `42804`. Agora registra UUID corretamente. Contagem de administradores era executada antes de adquirir lock da Loja; migração agora adquire `FOR UPDATE` na organização antes de ler atribuições e validar o último ADMIN, prevenindo revogações concorrentes.
+- **P1 corrigido no cliente:** `loadTenantRbac` passou a falhar em consultas RLS de `member_user_links`, `members` e `user_profiles`, em vez de exibir listagens parciais como completas.
+- A migração `20261101000000_tenant_rbac_management.sql` **NÃO foi aplicada no Supabase DEV nem PROD**; não executar até o gate de revisão CI e teste SQL/RLS com rollback. A validação acima é inspeção do schema e `EXPLAIN`, não execução da nova função.
+- Os oito testes mock do Gemini não provam autorização real de `users.manage`, último administrador sob concorrência, isolamento cross-tenant ou auditoria HTTP. Fazer esses gates de forma proporcional antes de deploy; não gastar tokens do Gemini revalidando telas e módulos que não foram alterados.
+- Proteger `main`: evitar sincronização automática do AI Studio para a branch padrão. Feature branch é a fonte desta correção; nenhuma nova mudança direta na `main` foi feita por esta revisão.
+
 ## Cadastros — Perfis e Permissões (Tenant RBAC) — 01/11/2026
 
 - Concluída a implementação de Cadastros → Perfis e Permissões (`view-cadastros`):
