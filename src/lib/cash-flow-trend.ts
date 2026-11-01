@@ -29,7 +29,9 @@ export function bucketCashFlowTrend(
     const received = sample.reduce((sum, day) => sum + checkedSigned(day.received), 0)
     const paid = sample.reduce((sum, day) => sum + checkedSigned(day.paid), 0)
     const realized = sample.reduce((sum, day) => sum + checkedSigned(day.realized_net), 0)
-    if (Math.abs(received - paid - realized) >= 0.02) {
+    // The backend validates individual days with cent-level rounding tolerance.
+    // Aggregate tolerance must grow with the number of days in this display bucket.
+    if (Math.abs(received - paid - realized) > sample.length * 0.011) {
       throw new Error('Fluxo realizado inconsistente')
     }
     buckets.push({
