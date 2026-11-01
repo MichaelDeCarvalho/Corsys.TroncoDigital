@@ -1,3 +1,7 @@
+## Continuidade V35 — exportações locais — 01/11/2026
+
+Exportações locais: células textuais explícitas sem fórmulas; PDF via textContent e popup sem opener. Falhas de integridade bloqueiam exportação; troca de contexto descarta XLSX pendente. Arquivos não contêm credenciais. npm audit encontrou 6 avisos em ferramentas existentes, sem aviso para write-excel-file/fflate; correção em lote separado. ADR-0041.
+
 ## Sessões temporárias Master somente leitura (P1 preparado) — 28/10/2026
 
 Controles de segurança preparados no lote P1:

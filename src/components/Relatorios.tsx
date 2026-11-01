@@ -6,6 +6,7 @@ import { loadPeriodState, type PeriodState } from '../lib/periods'
 import { loadDreReport, summarizeDre, safeDreValue, type DreEntry } from '../lib/dre-report'
 import { loadAccountingCatalog, loadAccountingDetail, type Catalog, type Detail } from '../lib/accounting-plans'
 import { formatDate, formatMoney, formatCompetence, statusLabels } from '../lib/finance-data'
+import { createReportWorkbook, downloadReport, printReport, type ReportSnapshot } from '../lib/report-export'
 
 type ReportTab = 'posicao' | 'recebimentos' | 'inadimplencia' | 'fechamento' | 'contabil'
 
@@ -24,6 +25,10 @@ function sanitizeCsvCell(value: unknown): string {
 }
 
 export function Relatorios({ client, organizationId }: { client: SupabaseClient; organizationId: string }) {
+  return <TenantReports key={organizationId} client={client} organizationId={organizationId} />
+}
+
+function TenantReports({ client, organizationId }: { client: SupabaseClient; organizationId: string }) {
   const [activeTab, setActiveTab] = useState<ReportTab>('posicao')
 
   // Common filters
@@ -34,8 +39,9 @@ export function Relatorios({ client, organizationId }: { client: SupabaseClient;
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
   })
 
-  // Export Modal state for PDF / XLSX dependencies
-  const [exportNotice, setExportNotice] = useState<{ format: 'PDF' | 'XLSX'; reportName: string } | null>(null)
+  const [exportError, setExportError] = useState('')
+  const [exportBusy, setExportBusy] = useState(false)
+  const exportEpoch = useRef(0)
 
   // 1. Dashboard Consolidated KPI Values (Server-calculated)
   const [kpis, setKpis] = useState<DashboardValues | null>(null)
@@ -86,6 +92,8 @@ export function Relatorios({ client, organizationId }: { client: SupabaseClient;
   const [planDetail, setPlanDetail] = useState<Detail | null>(null)
   const [contabilLoading, setContabilLoading] = useState(false)
   const [contabilError, setContabilError] = useState('')
+  const planRequest = useRef<AbortController | null>(null)
+  useEffect(() => () => { planRequest.current?.abort() }, [activeTab])
 
   // Load Financial Dashboard KPIs on mount or organizationId change
   useEffect(() => {
@@ -374,17 +382,21 @@ export function Relatorios({ client, organizationId }: { client: SupabaseClient;
 
   // Change selected accounting plan
   async function handlePlanSelect(planId: string) {
+    planRequest.current?.abort()
     setSelectedPlanId(planId)
+    setPlanDetail(null)
+    setContabilError('')
     if (!planId) { setPlanDetail(null); return }
     const controller = new AbortController()
+    planRequest.current = controller
     try {
       setContabilLoading(true)
       const detail = await loadAccountingDetail(client, organizationId, planId, controller.signal)
-      setPlanDetail(detail)
+      if (!controller.signal.aborted) setPlanDetail(detail)
     } catch {
-      setContabilError('Não foi possível carregar as contas deste plano.')
+      if (!controller.signal.aborted) setContabilError('Não foi possível carregar as contas deste plano.')
     } finally {
-      setContabilLoading(false)
+      if (!controller.signal.aborted) setContabilLoading(false)
     }
   }
 
@@ -455,8 +467,56 @@ export function Relatorios({ client, organizationId }: { client: SupabaseClient;
     triggerCsvDownload(`plano-contas-${selectedPlanId.slice(0, 8)}.csv`, csv)
   }
 
-  function handleExtendedExportRequest(format: 'PDF' | 'XLSX', reportName: string) {
-    setExportNotice({ format, reportName })
+  useEffect(() => {
+    exportEpoch.current++
+    setExportError('')
+    setExportBusy(false)
+    return () => { exportEpoch.current++ }
+  }, [organizationId, activeTab, reportStart, reportEnd, reportCompetence, posicaoPage, recebimentosPage, selectedPlanId])
+
+  function currentReport(title: string): ReportSnapshot {
+    const base = { title, organizationId, filters: `Início: ${reportStart || 'sem limite'}; fim: ${reportEnd || 'sem limite'}` }
+    if (activeTab === 'posicao' && posicaoItems && !posicaoLoading && !posicaoError) return {
+      ...base, scope: `Amostra da página ${posicaoPage + 1}; não representa o total da Loja.`,
+      headers: ['Tipo', 'Descrição', 'Vencimento', 'Competência', 'Valor', 'Em aberto', 'Situação'],
+      rows: posicaoItems.map(row => [row.type, row.description, formatDate(row.dueDate), formatCompetence(row.competence), row.amount, row.openAmount, statusLabels[row.status] ?? row.status]),
+    }
+    if (activeTab === 'recebimentos' && recebimentosData && !recebimentosLoading && !recebimentosError) return {
+      ...base, scope: `Pagamentos da página ${recebimentosPage + 1}; exclui estornados; não representa o total da Loja.`,
+      headers: ['ID Pagamento', 'ID Integrante', 'Data do pagamento', 'Recebido', 'Alocado', 'Crédito disponível'],
+      rows: recebimentosData.items.map(row => [row.paymentId, row.memberId, formatDate(row.paymentDate), row.amount, row.allocatedAmount, row.availableAmount]),
+    }
+    if (activeTab === 'fechamento' && dreEntries && !fechamentoLoading && !fechamentoError) return {
+      ...base, filters: `Competência: ${reportCompetence}`,
+      scope: 'DRE agregada por conta na competência consultada; não equivale ao livro diário.',
+      headers: ['Competência', 'Plano', 'Código', 'Conta', 'Natureza', 'Classificação', 'Valor assinado'],
+      rows: dreEntries.map(row => [row.accounting_period, row.accounting_plan_id, row.account_code, row.account_description, row.nature, row.operational_classification ?? '', safeDreValue(row.signed_amount)]),
+    }
+    const plan = catalog?.plans.find(row => row.id === selectedPlanId)
+    if (activeTab === 'contabil' && planDetail && plan && !contabilLoading && !contabilError) return {
+      ...base, filters: `Plano: ${plan.name}; vigência: ${plan.valid_from} a ${plan.valid_to}; situação: ${plan.status}`,
+      scope: 'Estrutura consultada do plano selecionado (até 300 contas); não inclui lançamentos contábeis.',
+      headers: ['Código', 'Descrição', 'Natureza', 'Tipo', 'Ativa'],
+      rows: planDetail.accounts.map(row => [row.code, row.description, row.nature, row.row_type, row.active ? 'Sim' : 'Não']),
+    }
+    throw Error('Aguarde uma consulta válida antes de exportar.')
+  }
+
+  async function handleExtendedExportRequest(format: 'PDF' | 'XLSX', reportName: string) {
+    if (exportBusy) return
+    const epoch = exportEpoch.current
+    setExportError('')
+    try {
+      const report = currentReport(reportName)
+      if (format === 'PDF') { printReport(report); return }
+      setExportBusy(true)
+      const blob = await createReportWorkbook(report)
+      if (epoch === exportEpoch.current) downloadReport(blob, `relatorio-${activeTab}-${organizationId.slice(0, 8)}.xlsx`)
+    } catch (cause) {
+      if (epoch === exportEpoch.current) setExportError(cause instanceof Error ? cause.message : 'Não foi possível exportar o relatório.')
+    } finally {
+      if (epoch === exportEpoch.current) setExportBusy(false)
+    }
   }
 
   return (
@@ -472,6 +532,7 @@ export function Relatorios({ client, organizationId }: { client: SupabaseClient;
         <p className="subtle">
           Relatórios financeiros e contábeis consolidados da Loja. Todas as posições são sustentadas estritamente pelos contratos e dados reais do servidor.
         </p>
+        <p className="subtle">PDF abre a impressão do navegador, onde você pode salvar em PDF. XLSX gera um arquivo local. Posição e recebimentos exportam somente a página consultada; a DRE exporta as contas da competência e o plano exporta sua estrutura cadastral.</p>
 
         {/* Global Filter Bar */}
         <div className="finance-filters" role="search" aria-label="Filtros de relatórios" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'flex-end', margin: '1rem 0' }}>
@@ -573,10 +634,10 @@ export function Relatorios({ client, organizationId }: { client: SupabaseClient;
                 <button type="button" className="secondary" disabled={!posicaoItems || posicaoLoading || !!posicaoError} onClick={exportPosicaoPageCsv}>
                   <Download size={16} aria-hidden="true" style={{ marginRight: '0.25rem' }} /> Exportar Página (CSV)
                 </button>
-                <button type="button" className="quiet" onClick={() => handleExtendedExportRequest('PDF', 'Posição Financeira Geral')}>
+                <button type="button" className="quiet" disabled={exportBusy} onClick={() => handleExtendedExportRequest('PDF', 'Posição Financeira Geral')}>
                   PDF
                 </button>
-                <button type="button" className="quiet" onClick={() => handleExtendedExportRequest('XLSX', 'Posição Financeira Geral')}>
+                <button type="button" className="quiet" disabled={exportBusy} onClick={() => handleExtendedExportRequest('XLSX', 'Posição Financeira Geral')}>
                   XLSX
                 </button>
               </div>
@@ -694,10 +755,10 @@ export function Relatorios({ client, organizationId }: { client: SupabaseClient;
                 <button type="button" className="secondary" disabled={!recebimentosData || recebimentosLoading || !!recebimentosError} onClick={exportRecebimentosPageCsv}>
                   <Download size={16} aria-hidden="true" style={{ marginRight: '0.25rem' }} /> Exportar Página (CSV)
                 </button>
-                <button type="button" className="quiet" onClick={() => handleExtendedExportRequest('PDF', 'Relatório de Recebimentos')}>
+                <button type="button" className="quiet" disabled={exportBusy} onClick={() => handleExtendedExportRequest('PDF', 'Relatório de Recebimentos')}>
                   PDF
                 </button>
-                <button type="button" className="quiet" onClick={() => handleExtendedExportRequest('XLSX', 'Relatório de Recebimentos')}>
+                <button type="button" className="quiet" disabled={exportBusy} onClick={() => handleExtendedExportRequest('XLSX', 'Relatório de Recebimentos')}>
                   XLSX
                 </button>
               </div>
@@ -772,10 +833,10 @@ export function Relatorios({ client, organizationId }: { client: SupabaseClient;
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>C. Fechamento Mensal e DRE por Competência</h3>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button type="button" className="quiet" onClick={() => handleExtendedExportRequest('PDF', 'DRE Contábil')}>
+                <button type="button" className="quiet" disabled={exportBusy} onClick={() => handleExtendedExportRequest('PDF', 'DRE Contábil')}>
                   PDF
                 </button>
-                <button type="button" className="quiet" onClick={() => handleExtendedExportRequest('XLSX', 'DRE Contábil')}>
+                <button type="button" className="quiet" disabled={exportBusy} onClick={() => handleExtendedExportRequest('XLSX', 'DRE Contábil')}>
                   XLSX
                 </button>
               </div>
@@ -876,8 +937,8 @@ export function Relatorios({ client, organizationId }: { client: SupabaseClient;
                 <button type="button" className="secondary" disabled={!planDetail || contabilLoading || !!contabilError} onClick={exportChartOfAccountsCsv}>
                   <Download size={16} aria-hidden="true" style={{ marginRight: '0.25rem' }} /> Exportar Plano de Contas (CSV)
                 </button>
-                <button type="button" className="quiet" onClick={() => handleExtendedExportRequest('XLSX', 'Lançamentos Contábeis Classificados')}>
-                  Exportar Lançamentos (XLSX)
+                <button type="button" className="quiet" disabled={exportBusy} onClick={() => handleExtendedExportRequest('XLSX', 'Estrutura do Plano de Contas')}>
+                  Exportar Plano de Contas (XLSX)
                 </button>
               </div>
             </div>
@@ -955,62 +1016,8 @@ export function Relatorios({ client, organizationId }: { client: SupabaseClient;
           </div>
         )}
 
-        {/* Export Service Dependency Modal / Notice */}
-        {exportNotice && (
-          <div
-            className="modal-backdrop"
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(0,0,0,0.5)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 9999,
-            }}
-            onClick={() => setExportNotice(null)}
-          >
-            <div
-              className="panel"
-              style={{ maxWidth: '500px', width: '90%', padding: '1.5rem' }}
-              onClick={e => e.stopPropagation()}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="export-notice-title"
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', color: 'var(--primary-color, #1e3a8a)' }}>
-                <Info size={22} aria-hidden="true" />
-                <h3 id="export-notice-title" style={{ fontSize: '1.1rem', margin: 0 }}>Serviço de Exportação {exportNotice.format}</h3>
-              </div>
-              <p style={{ fontSize: '0.95rem', marginBottom: '1rem', lineHeight: '1.4' }}>
-                A geração do relatório <strong>{exportNotice.reportName}</strong> no formato <strong>{exportNotice.format}</strong> necessita do serviço estendido de relatórios no servidor.
-              </p>
-              <p className="subtle" style={{ fontSize: '0.85rem', marginBottom: '1.5rem' }}>
-                Para garantir a integridade dos dados, você pode exportar a página consultada em formato CSV.
-              </p>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                <button type="button" className="secondary" onClick={() => setExportNotice(null)}>
-                  Entendido
-                </button>
-                <button
-                  type="button"
-                  className="primary"
-                  onClick={() => {
-                    setExportNotice(null)
-                    if (activeTab === 'posicao') exportPosicaoPageCsv()
-                    else if (activeTab === 'recebimentos') exportRecebimentosPageCsv()
-                    else if (activeTab === 'contabil') exportChartOfAccountsCsv()
-                  }}
-                >
-                  Baixar CSV da página
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {exportError && <p role="alert" className="message error">{exportError}</p>}
+        {exportBusy && <p role="status">Gerando arquivo XLSX…</p>}
       </section>
     </div>
   )

@@ -2,6 +2,11 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { vi } from 'vitest'
 import { Relatorios } from './Relatorios'
+import { createReportWorkbook, downloadReport, printReport } from '../lib/report-export'
+vi.mock('../lib/report-export', () => ({
+  createReportWorkbook: vi.fn().mockResolvedValue(new Blob(['xlsx'])),
+  downloadReport: vi.fn(), printReport: vi.fn(),
+}))
 
 function mockSupabaseClient(overrides?: {
   kpisError?: boolean
@@ -181,6 +186,41 @@ function mockSupabaseClient(overrides?: {
 }
 
 describe('Relatorios component — Integridade Financeira (Comando 08-A)', () => {
+  it('exports the consulted page to XLSX with explicit scope and no false global totals', async () => {
+    const { client } = mockSupabaseClient()
+    render(<Relatorios client={client} organizationId="org-1" />)
+    await waitFor(() => expect(screen.getByRole('button', { name: /Exportar Página/ })).toBeEnabled())
+    fireEvent.click(screen.getByRole('button', { name: 'XLSX' }))
+    await waitFor(() => expect(downloadReport).toHaveBeenCalled())
+    expect(createReportWorkbook).toHaveBeenCalledWith(expect.objectContaining({ organizationId: 'org-1', scope: expect.stringContaining('Amostra da página 1') }))
+  })
+  it('prints only validated report rows through the PDF action', async () => {
+    const { client } = mockSupabaseClient()
+    render(<Relatorios client={client} organizationId="org-1" />)
+    await waitFor(() => expect(screen.getByRole('button', { name: /Exportar Página/ })).toBeEnabled())
+    fireEvent.click(screen.getByRole('button', { name: 'PDF' }))
+    expect(printReport).toHaveBeenCalledWith(expect.objectContaining({ title: 'Posição Financeira Geral', organizationId: 'org-1' }))
+  })
+  it('does not export inconsistent financial data', async () => {
+    const { client } = mockSupabaseClient({ integrityError: true })
+    render(<Relatorios client={client} organizationId="org-1" />)
+    await screen.findByText('Falha de integridade nos registros financeiros.')
+    fireEvent.click(screen.getByRole('button', { name: 'XLSX' }))
+    expect(await screen.findByText('Aguarde uma consulta válida antes de exportar.')).toBeInTheDocument()
+    expect(createReportWorkbook).not.toHaveBeenCalled()
+  })
+  it('discards an asynchronous export after the tenant changes', async () => {
+    let finish!: (blob: Blob) => void
+    vi.mocked(createReportWorkbook).mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+    const { client } = mockSupabaseClient()
+    const view = render(<Relatorios client={client} organizationId="org-1" />)
+    await waitFor(() => expect(screen.getByRole('button', { name: /Exportar Página/ })).toBeEnabled())
+    fireEvent.click(screen.getByRole('button', { name: 'XLSX' }))
+    view.rerender(<Relatorios client={client} organizationId="org-2" />)
+    finish(new Blob(['old tenant']))
+    await waitFor(() => expect(screen.queryByText('Gerando arquivo XLSX…')).not.toBeInTheDocument())
+    expect(downloadReport).not.toHaveBeenCalled()
+  })
   it('renders server-calculated global KPIs and paginated sample without false global totals', async () => {
     const { client } = mockSupabaseClient()
     render(<Relatorios client={client} organizationId="org-1" />)

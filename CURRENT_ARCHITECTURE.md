@@ -1,3 +1,7 @@
+## Continuidade V35 — exportações locais — 01/11/2026
+
+Relatorios gera XLSX local via write-excel-file 4.1.1 (carregamento sob demanda) e documento isolado para impressão/PDF. Exporta somente dados consultados sob os controles existentes; invalida gerações após troca de contexto. ADR-0041. Não cria backend de exportação integral.
+
 ## Estado de publicação DEV verificado — 01/11/2026
 
 Cloudflare Workers Builds conectado à main, Worker real `corsys-tronco-digital-dev` igual ao Wrangler. Revisão `bf4a4597` publicada na versão `6af131a5` Ready/100%. Breadcrumb traduzido exibe `corsys-digital-trunk-dev`; não usar esse texto como evidência de renomeação. Configuração e secrets preservados. Detalhes e incremento de atenção operacional no Master: `SESSION_HANDOFF.md`. Nenhuma mudança de arquitetura/deploy foi necessária.
