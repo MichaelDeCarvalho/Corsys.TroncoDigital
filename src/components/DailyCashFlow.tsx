@@ -1,6 +1,7 @@
 import {useEffect,useState,type FormEvent} from 'react'
 import type {SupabaseClient} from '@supabase/supabase-js'
 import {loadDailyCashFlow,summarizeCashFlow,type DailyCashFlowRow} from '../lib/daily-cash-flow'
+import {bucketCashFlowTrend} from '../lib/cash-flow-trend'
 import {formatDate,formatMoney} from '../lib/finance-data'
 import {checkedSigned} from '../lib/treasury-balances'
 const pad=(n:number)=>String(n).padStart(2,'0')
@@ -8,18 +9,26 @@ const today=()=>{
  const now=new Date()
  return `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`
 }
+const initialFrom=(lookbackDays:number)=>{
+ if(lookbackDays!==30)return today().slice(0,7)+'-01'
+ const now=new Date()
+ const start=new Date(now.getFullYear(),now.getMonth(),now.getDate()-29)
+ return `${start.getFullYear()}-${pad(start.getMonth()+1)}-${pad(start.getDate())}`
+}
 export function DailyCashFlow({
   client,
   organizationId,
   viewMode = 'consolidado',
+  defaultLookbackDays = 0,
 }: {
   client: SupabaseClient
   organizationId: string
   viewMode?: 'consolidado' | 'projetado' | 'movimentos' | 'saldo'
+  defaultLookbackDays?: 0 | 30
 }) {
-  const [from, setFrom] = useState(() => today().slice(0, 7) + '-01')
+  const [from, setFrom] = useState(() => initialFrom(defaultLookbackDays))
   const [to, setTo] = useState(() => today())
-  const [period, setPeriod] = useState(() => ({ from: today().slice(0, 7) + '-01', to: today() }))
+  const [period, setPeriod] = useState(() => ({ from: initialFrom(defaultLookbackDays), to: today() }))
   const [revision, setRevision] = useState(0)
   const [rows, setRows] = useState<DailyCashFlowRow[] | null>(null)
   const [error, setError] = useState('')
@@ -143,6 +152,40 @@ export function DailyCashFlow({
               </article>
             ))}
           </div>
+          {(viewMode === 'consolidado' || viewMode === 'movimentos') && (() => {
+            const trend = bucketCashFlowTrend(rows)
+            const maxMagnitude = Math.max(1, ...trend.flatMap(bucket => [Math.abs(bucket.received), Math.abs(bucket.paid)]))
+            const barWidth = (amount: number) => amount === 0 ? '0%' : `${Math.max(2, Math.abs(amount) / maxMagnitude * 100)}%`
+            return (
+              <figure className="panel" aria-label="Tendência de entradas e saídas realizadas" style={{ margin: '1rem 0', padding: '1rem' }}>
+                <figcaption style={{ fontWeight: 600, marginBottom: '0.75rem' }}>Tendência de entradas e saídas realizadas</figcaption>
+                <p className="subtle">Períodos consecutivos com valores fornecidos pelo banco. Barras indicam magnitude; estornos e sinais negativos permanecem nos valores escritos.</p>
+                {trend.every(bucket => bucket.received === 0 && bucket.paid === 0) ? (
+                  <p className="subtle">Sem entradas ou saídas realizadas no período selecionado.</p>
+                ) : (
+                  <div style={{ display: 'grid', gap: '0.8rem' }}>
+                    {trend.map(bucket => (
+                      <div key={bucket.from} style={{ display: 'grid', gap: '0.2rem' }}>
+                        <strong style={{ fontSize: '0.85rem' }}>{formatDate(bucket.from)} a {formatDate(bucket.to)} — líquido {formatMoney(bucket.realized)}</strong>
+                        {([
+                          ['Entradas', bucket.received, '#16a34a'],
+                          ['Saídas', bucket.paid, '#dc2626'],
+                        ] as const).map(([label, value, color]) => (
+                          <div key={label} style={{ display: 'grid', gridTemplateColumns: '5rem minmax(0,1fr) 7rem', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ fontSize: '0.82rem' }}>{label}</span>
+                            <div style={{ height: '0.7rem', borderRadius: '0.25rem', background: 'rgba(148,163,184,0.12)', overflow: 'hidden' }} aria-hidden="true">
+                              <div style={{ width: barWidth(value), height: '100%', background: color, borderRadius: '0.25rem' }} />
+                            </div>
+                            <strong style={{ fontSize: '0.82rem', textAlign: 'right' }}>{formatMoney(value)}</strong>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </figure>
+            )
+          })()}
           <div className="finance-table" role="region" tabIndex={0} aria-label="Movimentos do fluxo de caixa">
             <table>
               <thead>
