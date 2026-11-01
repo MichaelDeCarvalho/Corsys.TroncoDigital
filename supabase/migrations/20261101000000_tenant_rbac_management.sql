@@ -89,18 +89,20 @@ begin
     end if;
   end if;
 
-  -- 5. Anti Self-Elevation Protection
-  if v_role_code = 'ADMIN' and p_user_id = v_user then
+  -- 5. Managing ADMIN requires an existing ADMIN role in this organization.
+  -- A users.manage custom role must not be able to elevate an accomplice or itself.
+  if v_role_code = 'ADMIN' then
     select exists (
       select 1 from public.user_roles ur
-      join public.roles r on r.id = ur.role_id
+      join public.roles r on r.id = ur.role_id and r.organization_id = ur.organization_id
       where ur.organization_id = p_organization_id
         and ur.user_id = v_user
         and r.code = 'ADMIN'
     ) into v_is_caller_admin;
 
     if not v_is_caller_admin then
-      raise exception 'self-elevation to admin denied' using errcode = '42501';
+      raise exception 'ADMIN role management requires an existing ADMIN'
+        using errcode = '42501';
     end if;
   end if;
 
@@ -169,6 +171,7 @@ declare
   v_role_code text;
   v_role_name text;
   v_admin_count integer;
+  v_is_caller_admin boolean;
   v_res uuid;
 begin
   -- 1. Enforce RBAC permission
@@ -202,7 +205,23 @@ begin
     raise exception 'role not found in organization' using errcode = '23503';
   end if;
 
-  -- 4. Protection against removing the LAST Administrator
+  -- 4. Only an existing ADMIN can change ADMIN grants, even when the
+  -- caller has users.manage through a delegated custom role.
+  if v_role_code = 'ADMIN' then
+    select exists (
+      select 1 from public.user_roles ur
+      join public.roles r on r.id = ur.role_id and r.organization_id = ur.organization_id
+      where ur.organization_id = p_organization_id
+        and ur.user_id = v_user
+        and r.code = 'ADMIN'
+    ) into v_is_caller_admin;
+    if not v_is_caller_admin then
+      raise exception 'ADMIN role management requires an existing ADMIN'
+        using errcode = '42501';
+    end if;
+  end if;
+
+  -- 5. Protection against removing the LAST Administrator
   if v_role_code = 'ADMIN' then
     select count(distinct ur.user_id) into v_admin_count
     from public.user_roles ur
