@@ -75,6 +75,14 @@ describe('Master read-only overview',()=>{
   await waitFor(()=>expect(rpc).toHaveBeenCalledWith('read_master_client_360',{p_organization_id:tenant.organization_id}))
   expect(screen.getByLabelText('Loja cliente')).toHaveValue(tenant.organization_id)
  })
+ it('opens support scoped to the client chosen in the Master directory',async()=>{
+  const {client}=fixture()
+  render(<MasterConsole client={client}/>)
+  await screen.findByText('Loja Exemplo')
+  fireEvent.click(within(screen.getByRole('row',{name:/Loja Exemplo/})).getByRole('button',{name:'Suporte'}))
+  expect(await screen.findByText(tenant.organization_id)).toBeInTheDocument()
+  expect(screen.getByRole('button',{name:'Mostrar todos os chamados'})).toBeInTheDocument()
+ })
  it('loads the authorized catalog, including inactive subscribed plans, instead of free text',async()=>{
   const {client,from}=fixture()
   render(<MasterConsole client={client}/>)
