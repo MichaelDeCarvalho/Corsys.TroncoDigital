@@ -142,7 +142,7 @@ function TenantPanel({ client, organization, page, onNavigate }: { client: Supab
       </section>
 
       {/* Daily Cash Flow Section */}
-      <DailyCashFlow client={client} organizationId={organization.id} />
+      <DailyCashFlow client={client} organizationId={organization.id} defaultLookbackDays={30} />
 
       <div className="metric-grid"><article className="panel metric"><Users size={23} aria-hidden="true" /><p>Integrantes carregados</p><strong>{data.members.length}</strong><button className="text-button" onClick={() => onNavigate('members')}>Ver integrantes <ArrowUpRight size={16} aria-hidden="true" /></button></article><article className="panel metric"><MessagesSquare size={23} aria-hidden="true" /><p>Chamados abertos carregados</p><strong>{open.length}</strong><button className="text-button" onClick={() => onNavigate('support')}>Acompanhar chamados <ArrowUpRight size={16} aria-hidden="true" /></button></article><article className="panel info-card"><p className="eyebrow">Atendimento</p><h3>Precisa de ajuda?</h3><p>Abra um chamado para acompanhar sua solicitação junto ao suporte.</p><button className="secondary" onClick={() => onNavigate('support')}>Ir para atendimento</button></article></div>
       <section className="panel"><div className="section-title"><h2>Integrantes da Loja</h2><button className="text-button" onClick={() => onNavigate('members')}>Ver lista</button></div><MemberList members={data.members.slice(0, 5)} /></section>
