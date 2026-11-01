@@ -61,6 +61,12 @@ begin
     raise exception 'idempotency_key required (1..200 chars)' using errcode = '22023';
   end if;
 
+  -- Serialize role changes before inspecting membership/admin count (last-admin race protection).
+  perform 1 from public.organizations where id = p_organization_id for update;
+  if not found then
+    raise exception 'organization not found' using errcode = '23503';
+  end if;
+
   -- 3. Verify target role exists in organization
   select code, name into v_role_code, v_role_name
   from public.roles
@@ -114,9 +120,7 @@ begin
     return v_res;
   end if;
 
-  -- 7. Lock organization and assign role
-  perform 1 from public.organizations where id = p_organization_id for update;
-
+  -- 7. Assign role under the organization lock already held
   insert into public.user_roles (organization_id, user_id, role_id)
   values (p_organization_id, p_user_id, p_role_id)
   on conflict (organization_id, user_id, role_id) do nothing;
@@ -135,7 +139,7 @@ begin
     v_user,
     'user_role.assign',
     'user_roles',
-    p_user_id::text,
+    p_user_id,
     jsonb_build_object('role_id', p_role_id, 'role_code', v_role_code, 'role_name', v_role_name),
     btrim(p_reason)
   );
@@ -183,6 +187,12 @@ begin
     raise exception 'idempotency_key required (1..200 chars)' using errcode = '22023';
   end if;
 
+  -- Serialize role changes before inspecting membership/admin count (last-admin race protection).
+  perform 1 from public.organizations where id = p_organization_id for update;
+  if not found then
+    raise exception 'organization not found' using errcode = '23503';
+  end if;
+
   -- 3. Verify role exists in organization
   select code, name into v_role_code, v_role_name
   from public.roles
@@ -224,9 +234,7 @@ begin
     return v_res;
   end if;
 
-  -- 6. Lock organization and revoke role
-  perform 1 from public.organizations where id = p_organization_id for update;
-
+  -- 6. Revoke role under the organization lock already held
   delete from public.user_roles
   where organization_id = p_organization_id
     and user_id = p_user_id
@@ -246,7 +254,7 @@ begin
     v_user,
     'user_role.revoke',
     'user_roles',
-    p_user_id::text,
+    p_user_id,
     jsonb_build_object('role_id', p_role_id, 'role_code', v_role_code, 'role_name', v_role_name),
     btrim(p_reason)
   );
