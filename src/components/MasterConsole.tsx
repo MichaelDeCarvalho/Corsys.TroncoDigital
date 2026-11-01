@@ -31,6 +31,7 @@ import {
 
 export function MasterConsole({ client }: { client: SupabaseClient }) {
   const [overview, setOverview] = useState<MasterOverview | null>(null)
+  const [selectedClient360, setSelectedClient360] = useState('')
   const [tab, setTab] = useState<
     'overview' | 'commercial' | 'support' | 'billing' | 'onboarding' | 'client360' | 'config' | 'clients'
   >('overview')
@@ -281,7 +282,7 @@ export function MasterConsole({ client }: { client: SupabaseClient }) {
                 tenants={tenants}
                 page={page}
                 setPage={setPage}
-                onSelectClient360={() => setTab('client360')}
+                onSelectClient360={id => { setSelectedClient360(id); setTab('client360') }}
                 onSelectSupport={() => setTab('support')}
               />
 
@@ -330,7 +331,7 @@ export function MasterConsole({ client }: { client: SupabaseClient }) {
                 tenants={tenants}
                 page={page}
                 setPage={setPage}
-                onSelectClient360={() => setTab('client360')}
+                onSelectClient360={id => { setSelectedClient360(id); setTab('client360') }}
                 onSelectSupport={() => setTab('support')}
               />
             </div>
@@ -366,7 +367,7 @@ export function MasterConsole({ client }: { client: SupabaseClient }) {
 
           {/* Direct Sub-Views */}
           {tab === 'onboarding' && <MasterOnboarding client={client} />}
-          {tab === 'client360' && <MasterClient360 client={client} tenants={tenants.rows} />}
+          {tab === 'client360' && <MasterClient360 client={client} tenants={tenants.rows} initialOrganizationId={selectedClient360} />}
         </>
       )}
     </section>
@@ -403,7 +404,7 @@ function TenantDirectorySection({
   tenants: { rows: MasterTenant[]; hasNext: boolean }
   page: number
   setPage: React.Dispatch<React.SetStateAction<number>>
-  onSelectClient360: () => void
+  onSelectClient360: (organizationId: string) => void
   onSelectSupport: () => void
 }) {
   return (
@@ -497,7 +498,7 @@ function TenantDirectorySection({
                         type="button"
                         className="secondary text-xs px-2 py-1"
                         data-client360={row.organization_id}
-                        onClick={onSelectClient360}
+                        onClick={() => onSelectClient360(row.organization_id)}
                       >
                         Cliente 360º
                       </button>
