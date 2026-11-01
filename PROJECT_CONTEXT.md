@@ -1,3 +1,7 @@
+## Estado de publicação DEV verificado — 01/11/2026
+
+Cloudflare Workers Builds conectado à main, Worker real `corsys-tronco-digital-dev` igual ao Wrangler. Revisão `bf4a4597` publicada na versão `6af131a5` Ready/100%. Breadcrumb traduzido exibe `corsys-digital-trunk-dev`; não usar esse texto como evidência de renomeação. Configuração e secrets preservados. Detalhes e incremento de atenção operacional no Master: `SESSION_HANDOFF.md`. Nenhuma mudança de arquitetura/deploy foi necessária.
+
 ## RBAC DEV — 01/11/2026
 
 Tenant RBAC (Cadastros > Perfis e Permissões) instalado **somente** no Supabase DEV `szqkdekwhzxsoxorgvaz` com migração `20261101181945_tenant_rbac_management.sql` (ADR-0040, PR #11 draft). Interface do Gemini já versionada; a branch corrige autorização ADMIN, integridade da auditoria, serialização de último ADMIN e reenvio idempotente. Teste SQL rollback com claims simuladas PASS; revisão navegador/HTTP com sessões reais pendente. Produção e Cloudflare não alterados nesta etapa.

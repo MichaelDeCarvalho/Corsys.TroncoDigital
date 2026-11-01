@@ -1,3 +1,7 @@
+## Estado de publicação DEV verificado — 01/11/2026
+
+Cloudflare Workers Builds conectado à main, Worker real `corsys-tronco-digital-dev` igual ao Wrangler. Revisão `bf4a4597` publicada na versão `6af131a5` Ready/100%. Breadcrumb traduzido exibe `corsys-digital-trunk-dev`; não usar esse texto como evidência de renomeação. Configuração e secrets preservados. Detalhes e incremento de atenção operacional no Master: `SESSION_HANDOFF.md`. Nenhuma mudança de arquitetura/deploy foi necessária.
+
 ## Tenant RBAC — Perfis e Permissões DEV (01/11/2026)
 
 A migração `20261101181945_tenant_rbac_management.sql` (registro Supabase `tenant_rbac_management`) foi aplicada ao projeto DEV `szqkdekwhzxsoxorgvaz`. Publica `assign_tenant_user_role` e `revoke_tenant_user_role` em `SECURITY DEFINER` com `private.require_permission(organization_id,'users.manage')`, validação estrita de tenant/vínculo, chave idempotente, log `audit_logs` e serialização `organizations FOR UPDATE`. Alterações do perfil ADMIN exigem que o próprio ator também seja ADMIN da Loja; o último ADMIN não pode ser revogado. `user_profiles_select_org` permite leitura de perfis vinculados à Loja gerenciada, com RLS. Grants EXECUTE apenas authenticated e autorização checada no servidor. QA SQL rollback e read-back DEV PASS; HTTP com sessões reais e concorrência ainda pendentes. PR #11 em draft, produção sem alterações. ADR-0040.

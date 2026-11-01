@@ -1,3 +1,12 @@
+## Retomada DEV e atenção operacional Master — 01/11/2026
+
+- Base conferida: `bf4a459736478b2f9b68440948e58c5fe2e867bb` (PRs #15–#17 integrados). Cloudflare DEV já publicou essa revisão: versão `6af131a5`, estado Ready, tráfego 100%, origem Build/main. NÃO executar novo deploy para resolver a pendência antiga.
+- Identidade verificada no painel: Settings > Geral > Nome = `corsys-tronco-digital-dev`; URL do painel e Visit também usam esse nome, igual a `wrangler.dev.jsonc`. Apenas o breadcrumb mostra `corsys-digital-trunk-dev`, acompanhado de outros textos traduzidos. Tradução automática é a explicação inferida; não há evidência de renomeação. Nenhum Worker excluído, renomeado ou reconfigurado.
+- Integração existente: repositório MichaelDeCarvalho/Corsys.TroncoDigital, branch main, builds habilitados, raiz `/`, build `npm ci --ignore-scripts && npm run check`, deploy `npx wrangler deploy --config wrangler.dev.jsonc`. CI Foundation checks valida o bundle com dry-run; publicação real é realizada pela integração Cloudflare. Secrets/variáveis não alterados.
+- Incremento: área “Ações que exigem atenção” no Master com contagens reais de assinaturas em atraso, chamados abertos e rascunhos. Acesso aos clientes em atraso limpa busca/plano e reinicia paginação com filtro no servidor. Atalhos de suporte global e catálogo; estado vazio limitado aos três indicadores. Não representa tolerância, jobs, webhooks ou sessões do protótipo como dados verificados.
+- Validação local: 15 testes de MasterConsole PASS, incluindo três novos cenários (filtro contextual limpo, vazio e negação). Typecheck e build locais PASS (aviso de bundle maior que 500 kB); CI Foundation checks #402/run 41360855410 PASS no código 1fe4791 (PR #18 draft). Esta atualização posterior altera somente o registro de evidência. Sem migrations, operações financeiras ou produção; homologações anteriores não repetidas.
+- Continuidade: próxima lacuna exige inventário pontual contra código atual; tabela histórica V35_COVERAGE contém estados antigos e não deve determinar retrabalho. Aceite visual do novo painel e merge/publicação deste incremento permanecem pendentes até evidência correspondente.
+
 ## Configurações da Loja (Assinatura, Governança, Suporte, Privacidade) e Contraste DRE — 01/11/2026
 
 - **Branch de trabalho pretendida:** `feat/v35-tenant-settings-overview` (ambiente sem git remoto direto no workspace, código mantido no workspace para exportação).
