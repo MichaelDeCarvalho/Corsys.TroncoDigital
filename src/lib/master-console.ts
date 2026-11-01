@@ -80,3 +80,26 @@ export async function loadMasterTenants(client:SupabaseClient,page:number,filter
  }
  return {rows:rows.slice(0,MASTER_PAGE_SIZE),hasNext:rows.length>MASTER_PAGE_SIZE}
 }
+
+export type MasterPlanOption = { id: string; code: string; name: string; active: boolean }
+
+/**
+ * Read-only catalog for the Master tenant search selector.
+ * Filtering remains server-side through search_platform_master_tenants.
+ */
+export async function loadMasterPlanOptions(client: SupabaseClient, signal: AbortSignal): Promise<MasterPlanOption[]> {
+ const {data,error}=await client.from('saas_plans')
+  .select('id,code,name,active').order('name').limit(201).abortSignal(signal)
+ if(error)throw error
+ if(!Array.isArray(data)||data.length>200)throw Error('Incomplete Master plan catalog')
+ const ids=new Set<string>(),codes=new Set<string>()
+ for(const entry of data as MasterPlanOption[]){
+  if(!entry||typeof entry.id!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(entry.id)||
+   typeof entry.code!=='string'||entry.code.trim().length<1||entry.code.length>100||
+   typeof entry.name!=='string'||entry.name.trim().length<1||
+   typeof entry.active!=='boolean'||ids.has(entry.id)||codes.has(entry.code.toLowerCase()))
+   throw Error('Invalid Master plan option')
+  ids.add(entry.id);codes.add(entry.code.toLowerCase())
+ }
+ return (data as MasterPlanOption[]).slice().sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'))
+}
