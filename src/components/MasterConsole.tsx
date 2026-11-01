@@ -448,7 +448,7 @@ function TenantDirectorySection({
                 </option>
               ))}
             </select>
-            {planCatalogError && <p role="status" className="subtle">{planCatalogError}</p>
+            {planCatalogError && <p role="status" className="subtle">{planCatalogError}</p>}
           </div>
         </div>
         <div className="finance-sections">
