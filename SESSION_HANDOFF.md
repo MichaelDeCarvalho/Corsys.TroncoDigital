@@ -1,3 +1,10 @@
+## QA HTTP de faturamento manual — cenário positivo preparado — 01/11/2026
+
+- **Ambiente exclusivamente DEV:** já existia a Loja `DEV QA FINANCE A 20261015` (sem faturas/termos). Foi criado **somente um termo contratual fictício** para essa assinatura, identificador `ca59a693-ec42-434b-bf0d-191755eb852a`, valor R$ 1,00, competência e vigência 01/11/2026 a 30/11/2026; motivo explicita QA sem cobrança comercial. Nenhuma nova Loja, assinatura ou plano foi criada.
+- **Teste SQL positivo da prévia:** PASS sob transação com `ROLLBACK` e claims MASTER/AAL2 **simuladas**, validando R$ 1,00, BRL, 11/2026, período inteiro e `already_billed=false`. Não constitui teste HTTP autenticado real.
+- **Read-back:** seis organizações e seis assinaturas preservadas, um termo em QA FINANCE A, zero termos nas outras Lojas, zero faturas, itens e eventos `invoice.manual_issue`. A chamada HTTP negativa de TENANT A em 01/11/2026 retornou SQLSTATE `55000`, sem preço contratual, PASS.
+- **Próxima ação única:** operador Master autenticado com MFA na aplicação DEV selecionar **DEV QA FINANCE A 20261015**, competência **11/2026**, vencimento/observação em branco, clicar apenas `Consultar contrato e prévia`; deve mostrar total R$ 1,00 e não indicar já faturado. **Não emitir fatura antes de confirmar um procedimento de reversão/limpeza test-only.** Após concluir a homologação, remover com controle o termo QA identificando exatamente seu UUID, somente se não houver dependência financeira ativa. PR #10 segue draft sem merge e produção não foi alterada.
+
 ## Cobrança SaaS Master — Migration e testes transacionais DEV confirmados — 29/10/2026
 
 - **Supabase DEV:** projeto `szqkdekwhzxsoxorgvaz`, migration `20261029204044_v35_master_manual_invoice` aplicada via Supabase API (arquivo do repositório renomeado para coincidir com a versão registrada). Não reaplicar. RPCs `public.preview_saas_manual_invoice` e `public.issue_saas_manual_invoice` presentes.
