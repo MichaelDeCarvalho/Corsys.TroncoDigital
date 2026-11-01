@@ -2,9 +2,11 @@ import {useEffect,useState} from 'react'
 import type {SupabaseClient} from '@supabase/supabase-js'
 import {formatDate,formatMoney} from '../lib/finance-data'
 import {loadMasterClient360,type MasterClient360} from '../lib/master-client-360'
-export function MasterClient360({client,tenants,initialOrganizationId=''}:{
+export function MasterClient360({client,tenants,initialOrganizationId='',onOpenBilling,onOpenSupport}:{
  client:SupabaseClient;tenants:Array<{organization_id:string;organization_name:string}>
  initialOrganizationId?:string
+ onOpenBilling?:(organizationId:string)=>void
+ onOpenSupport?:(organizationId:string)=>void
 }){
  const [organization,setOrganization]=useState(initialOrganizationId)
  const [state,setState]=useState<MasterClient360|null>(null)
@@ -40,7 +42,7 @@ export function MasterClient360({client,tenants,initialOrganizationId=''}:{
   {denied&&<p role="alert" className="message error">Esta consulta exige MASTER com MFA ativo.</p>}
   {error&&<p role="alert" className="message error">{error}</p>}
   {organization&&!state&&!error&&!denied&&<p role="status">Consultando Cliente 360°…</p>}
-  {state&&<>
+  {state&&state.organization_id===organization&&tenants.some(t=>t.organization_id===organization)&&<>
    <h4>{state.name}{state.number?' — nº '+state.number:''}</h4>
    <p>Situação da Loja: <strong>{state.status}</strong> · Situação comercial: <strong>{state.commercial_status??'Não informada'}</strong></p>
    <p>Cliente desde: {state.customer_since?formatDate(state.customer_since):'Não informado'} · Cobrança: {state.billing_provider??'Não configurada'}</p>
@@ -52,6 +54,10 @@ export function MasterClient360({client,tenants,initialOrganizationId=''}:{
     <article className="panel metric"><p>Saldo comercial vencido</p><strong>{formatMoney(Number(state.invoices_overdue_amount))}</strong></article>
     <article className="panel metric"><p>Chamados do cliente</p><strong>{state.tickets_total}</strong></article>
     <article className="panel metric"><p>Chamados ainda abertos</p><strong>{state.tickets_open}</strong></article>
+   </div>
+   <div className="finance-sections" role="group" aria-label="Ações do Cliente 360">
+    {onOpenBilling&&<button type="button" className="secondary" onClick={()=>onOpenBilling(state.organization_id)}>Ver cobranças desta Loja</button>}
+    {onOpenSupport&&<button type="button" className="secondary" onClick={()=>onOpenSupport(state.organization_id)}>Ver chamados desta Loja</button>}
    </div>
    <p className="subtle">Atualizado em {formatDate(state.as_of)}. Valores refletem apenas o faturamento SaaS, não a tesouraria institucional. Não há alterações automáticas em contrato, cobrança, conta ou suporte.</p>
   </>}

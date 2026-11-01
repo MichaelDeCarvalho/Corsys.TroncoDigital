@@ -1,3 +1,11 @@
+## Cliente 360 com navegação contextual — 01/11/2026
+
+- Base: main `99b057d4` (PR #18 integrado com autorização do proprietário; CI #403 PASS, Cloudflare DEV versão `819dbdeb` Ready/100% confirmada). A pendência de merge/publicação registrada abaixo para #18 está encerrada; não repetir homologações.
+- Incremento: Cliente 360 abre cobranças e chamados para a Loja cujo resumo foi validado. MasterConsole preserva o contexto e MasterBilling aceita seleção inicial somente entre as Lojas disponíveis. Navegação geral de Cobrança SaaS limpa o contexto anterior. Resumo e ações ficam ocultos sem seleção válida ou em falha de autorização.
+- Referência funcional: inventário V35 SHARED-A040 (Cobranças) e SHARED-A043 (Suporte). Implementação reutiliza os módulos existentes; não afirma paridade integral das demais abas do protótipo.
+- Testes locais: 38 cenários nos três componentes afetados PASS (36 na execução conjunta, depois 17 no MasterConsole com duas integrações novas); typecheck PASS antes dos dois últimos testes adicionados. CI do PR verificará o conjunto final, tipos e build. Nenhuma escrita remota financeira, migration, alteração de secrets/PROD ou deploy manual.
+- Próxima ação: conferir CI do PR e revisar integração/publicação exclusivamente DEV. Aceite visual real do incremento ainda NÃO AVALIADO; mocks não comprovam RLS/HTTP. Arquitetura e contratos do servidor preservados.
+
 ## Retomada DEV e atenção operacional Master — 01/11/2026
 
 - Base conferida: `bf4a459736478b2f9b68440948e58c5fe2e867bb` (PRs #15–#17 integrados). Cloudflare DEV já publicou essa revisão: versão `6af131a5`, estado Ready, tráfego 100%, origem Build/main. NÃO executar novo deploy para resolver a pendência antiga.

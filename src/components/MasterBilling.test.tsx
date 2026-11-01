@@ -97,6 +97,21 @@ async function choose(){
 }
 
 describe('Master billing read model',()=>{
+ it('loads invoices for a customer selected by Client 360 without issuing an invoice',async()=>{
+  const {client,from,rpc}=fixture()
+  render(<MasterBilling client={client} tenants={tenants} initialOrganizationId={org}/>)
+  await screen.findByText('DEV-0001')
+  expect(screen.getByLabelText('Loja cliente')).toHaveValue(org)
+  expect(from).toHaveBeenCalledWith('v_saas_invoice_balances')
+  expect(rpc).not.toHaveBeenCalled()
+ })
+ it('ignores a contextual customer outside the available directory',()=>{
+  const {client,from,rpc}=fixture()
+  render(<MasterBilling client={client} tenants={tenants} initialOrganizationId="foreign"/>)
+  expect(screen.getByLabelText('Loja cliente')).toHaveValue('')
+  expect(from).not.toHaveBeenCalled()
+  expect(rpc).not.toHaveBeenCalled()
+ })
  it('renders commercial invoices and reconciles base, interest, fees, adjustments',async()=>{
   const {client,from}=fixture()
   render(<MasterBilling client={client} tenants={tenants}/>)

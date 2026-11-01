@@ -20,6 +20,13 @@ const planRows=[
 function fixture(denied=false, planError=false, totals=summary){
  const rpc=vi.fn(async(name:string)=>{
   if(denied)return {data:null,error:{code:'42501'}}
+  if(name==='read_master_client_360')return {data:{
+   organization_id:tenant.organization_id,name:tenant.organization_name,number:'101',status:'active',
+   commercial_status:'active',customer_since:null,billing_email:null,billing_provider:null,
+   subscription_id:null,subscription_status:'active',subscription_start:null,subscription_end:null,
+   plan_version_id:null,invoices_total:0,invoices_open_amount:'0.00',invoices_overdue_amount:'0.00',
+   tickets_total:1,tickets_open:1,as_of:'2026-11-01',integrity_ok:true,
+  },error:null}
   return {data:name==='read_platform_master_overview'?totals:[tenant],error:null}
  })
  const query={
@@ -32,6 +39,15 @@ function fixture(denied=false, planError=false, totals=summary){
  return {client:{rpc,from} as unknown as SupabaseClient,rpc,from}
 }
 describe('Master read-only overview',()=>{
+ it.each(['Ver cobranças desta Loja','Ver chamados desta Loja'])('keeps the selected Client 360 customer when opening %s',async(action)=>{
+  const {client}=fixture()
+  render(<MasterConsole client={client}/>)
+  await screen.findByText('Loja Exemplo')
+  fireEvent.click(within(screen.getByRole('row',{name:/Loja Exemplo/})).getByRole('button',{name:'Cliente 360º'}))
+  fireEvent.click(await screen.findByRole('button',{name:action}))
+  if(action==='Ver cobranças desta Loja')expect(screen.getByLabelText('Loja cliente')).toHaveValue(tenant.organization_id)
+  else expect(await screen.findByText(tenant.organization_id)).toBeInTheDocument()
+ })
  it('opens attention overdue clients with a fresh server filter, clearing previous search and plan',async()=>{
   const {client,rpc}=fixture()
   render(<MasterConsole client={client}/>)

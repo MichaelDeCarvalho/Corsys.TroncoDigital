@@ -33,6 +33,7 @@ export function MasterConsole({ client }: { client: SupabaseClient }) {
   const [overview, setOverview] = useState<MasterOverview | null>(null)
   const [selectedClient360, setSelectedClient360] = useState('')
   const [selectedSupportOrgId, setSelectedSupportOrgId] = useState('')
+  const [selectedBillingOrgId, setSelectedBillingOrgId] = useState('')
   const [tab, setTab] = useState<
     'overview' | 'commercial' | 'support' | 'billing' | 'onboarding' | 'client360' | 'config' | 'clients'
   >('overview')
@@ -181,7 +182,7 @@ export function MasterConsole({ client }: { client: SupabaseClient }) {
             <button
               className="secondary"
               aria-pressed={tab === 'billing'}
-              onClick={() => setTab('billing')}
+              onClick={() => { setSelectedBillingOrgId(''); setTab('billing') }}
             >
               Cobrança SaaS
             </button>
@@ -371,7 +372,7 @@ export function MasterConsole({ client }: { client: SupabaseClient }) {
           {/* VIEW 3: view-master-cobranca (Cobrança SaaS) */}
           {tab === 'billing' && (
             <div id="view-master-cobranca">
-              <MasterBilling client={client} tenants={tenants.rows} />
+              <MasterBilling client={client} tenants={tenants.rows} initialOrganizationId={selectedBillingOrgId} />
             </div>
           )}
 
@@ -398,7 +399,9 @@ export function MasterConsole({ client }: { client: SupabaseClient }) {
 
           {/* Direct Sub-Views */}
           {tab === 'onboarding' && <MasterOnboarding client={client} />}
-          {tab === 'client360' && <MasterClient360 client={client} tenants={tenants.rows} initialOrganizationId={selectedClient360} />}
+          {tab === 'client360' && <MasterClient360 client={client} tenants={tenants.rows} initialOrganizationId={selectedClient360}
+            onOpenBilling={id => { setSelectedBillingOrgId(id); setTab('billing') }}
+            onOpenSupport={id => { setSelectedSupportOrgId(id); setTab('support') }} />}
         </>
       )}
     </section>
