@@ -1,3 +1,29 @@
+## Configurações da DRE (`src/components/DreConfig.tsx`) — 01/11/2026
+
+- Concluída a implementação de Configurações da DRE (`view-config-dre`):
+  - **Plano Contábil Vigente**:
+    - Consulta determinística do plano em vigor a partir de `loadAccountingCatalog` (`accounting_plans`), identificando planos com status `published` e vigência correspondente ao período atual.
+    - Exibição de nome do plano, status (`Publicado (Vigente)` ou `Rascunho`), intervalo de vigência formatado (`DD/MM/AAAA`) e identificador.
+  - **Diagnóstico de Cobertura Contábil e Pendências Reais**:
+    - Cruzamento automático entre categorias financeiras ativas (`financial_categories`) e mapeamentos do plano (`financial_category_account_mappings`).
+    - Cruzamento entre contas financeiras ativas (`financial_accounts`) e mapeamentos patrimoniais (`financial_account_accounting_mappings`).
+    - Exibição de percentuais e contadores de cobertura, com listagem explícita das pendências reais (categorias e contas sem vínculo contábil).
+    - Exibição de cobertura 100% quando todas as entidades ativas estão associadas a contas analíticas.
+  - **Resumo da DRE e Comparativo por Competência**:
+    - Consulta consolidada de lançamentos reais via `loadDreReport` (`read_tenant_dre`) e agregação mensal via `summarizeDre`.
+    - Apresentação de cartões de KPI consolidados (Total de Receitas, Custos/Despesas e Resultado do Período).
+    - Tabela comparativa por competência com valores de receitas, custos/despesas, resultado líquido, indicador de situação (Superávit/Déficit/Equilíbrio) e variação versus mês anterior calculada estritamente com dados históricos.
+  - **Regime Contábil**:
+    - Consulta a `organization_settings` (`report_texts`). Exibe o regime contábil unicamente quando houver valor previamente persistido no banco; sem inventar dados quando inexistente (informando que a apuração contábil na DRE opera por competência).
+  - **Acesso e Navegação**:
+    - Atalhos diretos para "Plano de Contas" (`onNavigate('structure')`) e "DRE Detalhada" (`onNavigate('dre')`).
+    - Tratamento explícito de permissões negadas (`42501` / `28000`) para `finance.read` e `reports.read`, erros de escopo (`23503`) e botão para recarregar dados.
+  - **Testes e Validação**:
+    - Criado `src/components/DreConfig.test.tsx` com 8 testes unitários/integrados cobrindo plano vigente, cobertura total, identificação de pendências reais, regime persistido vs ausente, comparativo da DRE, navegação e tratamento de erro de permissão (8/8 PASS).
+    - Suíte de DRE (`DreConfig.test.tsx`, `DreReport.test.tsx`, `DreView.test.tsx`): 14/14 PASS.
+    - Tipagem TypeScript (`npm run typecheck`) e compilação do applet (`compile_applet`): 0 erros, build aprovado.
+- Nenhuma migration aplicada, sem alterações no faturamento, RBAC, Cloudflare ou banco de produção.
+
 ## Cadastros — Perfis e Permissões (Tenant RBAC) — 01/11/2026
 
 - Concluída a implementação de Cadastros → Perfis e Permissões (`view-cadastros`):

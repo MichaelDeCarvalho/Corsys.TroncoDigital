@@ -84,7 +84,7 @@ function TenantPanel({ client, organization, page, onNavigate }: { client: Supab
   const open = data.tickets.filter(ticket => !['resolved', 'closed'].includes(ticket.status))
   return <>
     {page === 'structure' && <PlanoContas key={organization.id} client={client} organizationId={organization.id} />}
-    {page === 'dre-config' && <DreConfig key={organization.id} client={client} organizationId={organization.id} />}
+    {page === 'dre-config' && <DreConfig key={organization.id} client={client} organizationId={organization.id} onNavigate={onNavigate} />}
     {page === 'contas-pagar' && <ContasPagar key={organization.id} client={client} organizationId={organization.id} />}
     {page === 'contas-receber' && <ContasReceber key={organization.id} client={client} organizationId={organization.id} />}
     {page === 'tesouraria' && <Tesouraria key={organization.id} client={client} organizationId={organization.id} />}
