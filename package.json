@@ -34,8 +34,8 @@
     "jsdom": "27.0.0",
     "tailwindcss": "4.1.14",
     "typescript": "5.8.2",
-    "vite": "6.4.3",
-    "vitest": "5.0.2",
-    "wrangler": "4.151.0"
+    "vite": "6.4.5",
+    "vitest": "5.0.5",
+    "wrangler": "4.156.1"
   }
 }
