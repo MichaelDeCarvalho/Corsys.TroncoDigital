@@ -95,6 +95,8 @@ export function DreConfig({ client, organizationId, onNavigate }: DreConfigProps
         ])
 
         if (!active) return
+        // Do not confuse a denied/failed settings read with an absent persisted regime.
+        if (settingsRes.error) throw settingsRes.error
 
         // 1. Extract persisted regime if present in report_texts; never invent values
         const reportTexts = settingsRes.data?.[0]?.report_texts as Record<string, unknown> | null | undefined
@@ -115,10 +117,9 @@ export function DreConfig({ client, organizationId, onNavigate }: DreConfigProps
         const publishedPlans = catData.plans.filter((p) => p.status === 'published')
         // Prefer published plan covering today, or most recently started published plan, or first draft
         const currentPublished =
-          publishedPlans.find((p) => p.valid_from <= today && p.valid_to >= today) ||
-          publishedPlans[0] ||
-          null
-        const targetPlan = currentPublished || catData.plans[0] || null
+          publishedPlans.find((p) => p.valid_from <= today && (!p.valid_to || p.valid_to >= today)) || null
+        // An expired/future published plan may be displayed for diagnostics, but is NOT vigente.
+        const targetPlan = currentPublished || publishedPlans[0] || catData.plans[0] || null
         setActivePlan(targetPlan)
 
         // 3. Load mapping details for diagnostic if a plan exists
@@ -198,19 +199,30 @@ export function DreConfig({ client, organizationId, onNavigate }: DreConfigProps
   }
 
   // Calculate Coverage Diagnostics
+  const activeAnalyticAccountIds = new Set(detail?.accounts
+    .filter((account) => account.active && account.row_type === 'analytic')
+    .map((account) => account.id) ?? [])
   const activeCategories = catalog?.categories.filter((c) => c.active) ?? []
-  const mappedCategoryIds = new Set(detail?.categoryMappings.map((m) => m.category_id) ?? [])
+  const mappedCategoryIds = new Set(detail?.categoryMappings
+    .filter((mapping) => activeAnalyticAccountIds.has(mapping.accounting_account_id))
+    .map((mapping) => mapping.category_id) ?? [])
   const unmappedCategories: Source[] = activeCategories.filter((c) => !mappedCategoryIds.has(c.id))
-  const categoryCoveragePercent = activeCategories.length
+  // Missing catalog/plan data cannot truthfully imply 100% coverage.
+  const categoryCoveragePercent = detail && activePlan && activeCategories.length
     ? Math.round(((activeCategories.length - unmappedCategories.length) / activeCategories.length) * 100)
-    : 100
+    : null
 
   const activeCash = catalog?.cash.filter((c) => c.active) ?? []
-  const mappedCashIds = new Set(detail?.cashMappings.map((m) => m.financial_account_id) ?? [])
+  const mappedCashIds = new Set(detail?.cashMappings
+    .filter((mapping) => activeAnalyticAccountIds.has(mapping.accounting_account_id))
+    .map((mapping) => mapping.financial_account_id) ?? [])
   const unmappedCash: Source[] = activeCash.filter((c) => !mappedCashIds.has(c.id))
-  const cashCoveragePercent = activeCash.length
+  const cashCoveragePercent = detail && activePlan && activeCash.length
     ? Math.round(((activeCash.length - unmappedCash.length) / activeCash.length) * 100)
-    : 100
+    : null
+  const today = new Date().toISOString().slice(0, 10)
+  const planIsCurrent = activePlan?.status === 'published'
+    && activePlan.valid_from <= today && (!activePlan.valid_to || activePlan.valid_to >= today)
 
   const analyticAccountsCount = detail?.accounts.filter((a) => a.active && a.row_type === 'analytic').length ?? 0
   const totalAccountsCount = detail?.accounts.length ?? 0
@@ -298,11 +310,11 @@ export function DreConfig({ client, organizationId, onNavigate }: DreConfigProps
                     <span
                       className="pill"
                       style={{
-                        backgroundColor: activePlan.status === 'published' ? '#dcfce7' : '#fef9c3',
-                        color: activePlan.status === 'published' ? '#15803d' : '#854d0e',
+                        backgroundColor: planIsCurrent ? '#dcfce7' : '#fef9c3',
+                        color: planIsCurrent ? '#15803d' : '#854d0e',
                       }}
                     >
-                      {activePlan.status === 'published' ? 'Publicado (Vigente)' : 'Rascunho'}
+                      {activePlan.status === 'draft' ? 'Rascunho' : planIsCurrent ? 'Publicado (Vigente)' : 'Publicado (Fora da Vigência)'}
                     </span>
                   </div>
                   <p className="subtle">
@@ -383,7 +395,7 @@ export function DreConfig({ client, organizationId, onNavigate }: DreConfigProps
               <div className="panel metric" style={{ margin: 0 }}>
                 <p>Cobertura de Categorias</p>
                 <strong style={{ color: categoryCoveragePercent === 100 ? '#15803d' : '#b45309' }}>
-                  {categoryCoveragePercent}%
+                  {categoryCoveragePercent === null ? '—' : `${categoryCoveragePercent}%`}
                 </strong>
                 <span className="subtle">
                   {activeCategories.length - unmappedCategories.length} de {activeCategories.length} ativas vinculadas
@@ -393,7 +405,7 @@ export function DreConfig({ client, organizationId, onNavigate }: DreConfigProps
               <div className="panel metric" style={{ margin: 0 }}>
                 <p>Cobertura de Contas Financeiras</p>
                 <strong style={{ color: cashCoveragePercent === 100 ? '#15803d' : '#b45309' }}>
-                  {cashCoveragePercent}%
+                  {cashCoveragePercent === null ? '—' : `${cashCoveragePercent}%`}
                 </strong>
                 <span className="subtle">
                   {activeCash.length - unmappedCash.length} de {activeCash.length} ativas vinculadas
@@ -409,7 +421,7 @@ export function DreConfig({ client, organizationId, onNavigate }: DreConfigProps
 
             {/* Pendências Reais */}
             <div style={{ marginTop: '1.25rem' }}>
-              {unmappedCategories.length === 0 && unmappedCash.length === 0 ? (
+              {activePlan && detail && categoryCoveragePercent !== null && cashCoveragePercent !== null && unmappedCategories.length === 0 && unmappedCash.length === 0 ? (
                 <div
                   className="callout"
                   style={{
@@ -431,6 +443,9 @@ export function DreConfig({ client, organizationId, onNavigate }: DreConfigProps
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {(categoryCoveragePercent === null || cashCoveragePercent === null) && (
+                    <p role="status" className="subtle">Cobertura não aferida: exige plano contábil e cadastros ativos completos.</p>
+                  )}
                   {unmappedCategories.length > 0 && (
                     <div
                       className="callout"
@@ -626,7 +641,10 @@ export function DreConfig({ client, organizationId, onNavigate }: DreConfigProps
                         </thead>
                         <tbody>
                           {monthlySummary.map((m, idx) => {
-                            const prev = idx > 0 ? monthlySummary[idx - 1] : null
+                            const prevCandidate = idx > 0 ? monthlySummary[idx - 1] : null
+                            // Compare only consecutive months; missing competence is not the previous month.
+                            const monthNumber = (value: string) => Number(value.slice(0, 4)) * 12 + Number(value.slice(5, 7))
+                            const prev = prevCandidate && monthNumber(m.month) - monthNumber(prevCandidate.month) === 1 ? prevCandidate : null
                             const diff = prev !== null ? m.result - prev.result : null
 
                             return (
