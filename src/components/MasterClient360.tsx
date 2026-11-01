@@ -2,10 +2,11 @@ import {useEffect,useState} from 'react'
 import type {SupabaseClient} from '@supabase/supabase-js'
 import {formatDate,formatMoney} from '../lib/finance-data'
 import {loadMasterClient360,type MasterClient360} from '../lib/master-client-360'
-export function MasterClient360({client,tenants}:{
+export function MasterClient360({client,tenants,initialOrganizationId=''}:{
  client:SupabaseClient;tenants:Array<{organization_id:string;organization_name:string}>
+ initialOrganizationId?:string
 }){
- const [organization,setOrganization]=useState('')
+ const [organization,setOrganization]=useState(initialOrganizationId)
  const [state,setState]=useState<MasterClient360|null>(null)
  const [error,setError]=useState(''),[denied,setDenied]=useState(false)
  const [revision,setRevision]=useState(0)
