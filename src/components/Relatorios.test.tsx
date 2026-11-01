@@ -216,6 +216,8 @@ describe('Relatorios component — Integridade Financeira (Comando 08-A)', () =>
   it('connects reportCompetence to loadPeriodState and read_tenant_dre in Fechamento & DRE', async () => {
     const { client } = mockSupabaseClient()
     render(<Relatorios client={client} organizationId="org-1" />)
+    // Fixed fixture period: do not depend on today's month.
+    fireEvent.change(screen.getByLabelText('Competência Contábil (AAAA-MM)'), {target:{value:'2026-10'}})
 
     const tab = screen.getByRole('button', { name: 'Fechamento & DRE' })
     fireEvent.click(tab)
