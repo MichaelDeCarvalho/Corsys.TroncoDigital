@@ -33,6 +33,13 @@ describe('Master Client 360 privacy and billing',()=>{
   expect(screen.getByText(/R\$\s?50,00/)).toBeInTheDocument()
   expect(screen.getByText(/não a tesouraria institucional/)).toBeInTheDocument()
  })
+ it('preselects a tenant when navigating from the directory',async()=>{
+  const {client,rpc}=fixture()
+  render(<MasterClient360 client={client} tenants={tenants} initialOrganizationId={org}/>)
+  await screen.findByText(/Loja TESTE — nº 101/)
+  expect(screen.getByLabelText('Loja cliente')).toHaveValue(org)
+  expect(rpc).toHaveBeenCalledWith('read_master_client_360',{p_organization_id:org})
+ })
  it('does not reveal summary on denied Master role or AAL2',async()=>{
   const {client}=fixture(null,{code:'42501'})
   render(<MasterClient360 client={client} tenants={tenants}/>)
