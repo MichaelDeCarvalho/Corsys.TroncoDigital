@@ -1,3 +1,10 @@
+## Replay da fatura cancelada — idempotência SQL DEV — 01/11/2026
+
+- **Teste real com transação `ROLLBACK`, claims MASTER/AAL2 simuladas:** usando a chave idempotente existente da emissão HTTP da fatura `83ba5d3b-9db4-4b97-b657-00ce5c2dc88a` já cancelada, `public.issue_saas_manual_invoice` retornou **o UUID original**, sem gerar nova fatura, item, auditoria ou `void`. A mesma chave com descrição deliberadamente divergente foi rejeitada com SQLSTATE `22023`. Chave não exposta nos logs, documentos ou resposta.
+- **Read-back pós-transação:** 1 fatura histórica `void`, 1 item, 1 cancelamento, 0 pagamentos, 1 auditoria de emissão, 1 auditoria de cancelamento QA, 1 registro de idempotência, saldo aberto R$ 0,00. **PASS para replay sequencial do registro emitido via HTTP.**
+- **Limite:** contexto JWT foi simulado na transação; concorrência HTTP com duas conexões realmente independentes e tentativas com chaves diferentes ainda não executada. Não anunciar homologação completa nem liberar produção.
+- **Próxima ação:** planejar teste de estresse HTTP isolado com sessão/credenciais temporárias geridas fora do repositório, autorização negativa AAL1/tenant e mecanismo controlado de limpeza; não usar JWTs exibidos em capturas nem reaplicar migration ou emitir nova cobrança real sem autorização.
+
 ## Gate de idempotência pós-HTTP — conferência em leitura — 01/11/2026
 
 - **Read-back do banco DEV, após a emissão real e o cancelamento:** `public.idempotency_keys` contém exatamente **uma** linha para `organization_id=94b84958-4dd9-435d-9a4e-244220835d70`, `operation='issue_saas_manual_invoice'`, `status='completed'`, `result_reference=83ba5d3b-9db4-4b97-b657-00ce5c2dc88a`, `completed_at` preenchido. A fatura continua `void`, saldo aberto zero, 1 evento de emissão e 1 evento de cancelamento QA.
