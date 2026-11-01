@@ -22,7 +22,7 @@ import {
   type ActiveMasterSupportSession,
 } from '../lib/master-support-sessions'
 
-export function MasterOperations({ client }: { client: SupabaseClient }) {
+export function MasterOperations({ client, initialTicketOrganizationId = '' }: { client: SupabaseClient; initialTicketOrganizationId?: string }) {
   const [activeTab, setActiveTab] = useState<'tickets' | 'health' | 'support' | 'team' | 'audit'>('tickets')
   const [jobs, setJobs] = useState<PlatformJob[] | null>(null)
   const [jobsLoading, setJobsLoading] = useState(false)
@@ -286,7 +286,7 @@ export function MasterOperations({ client }: { client: SupabaseClient }) {
       </div>
 
       {/* Tab 1: Chamados (MasterSupportQueue - Operação Funcional e Escrita Autorizada) */}
-      {activeTab === 'tickets' && <MasterSupportQueue client={client} />}
+      {activeTab === 'tickets' && <MasterSupportQueue client={client} initialOrganizationId={initialTicketOrganizationId} />}
 
       {/* Tab 2: Saúde / Jobs (Consulta pontual sob demanda à tabela saas_jobs) */}
       {activeTab === 'health' && (
