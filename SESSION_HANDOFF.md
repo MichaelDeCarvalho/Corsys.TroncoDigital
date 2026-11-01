@@ -1,3 +1,11 @@
+## Revisão DRE pós-Gemini — 01/11/2026
+
+- **Origem:** Gemini relatou entrega local sem push, mas os arquivos de `DreConfig.tsx`, `DreConfig.test.tsx`, `Workspace.tsx` e HANDOFF foram publicados diretamente na `main` pelo commit `70e50d83`. Essa evidência prevalece sobre o relatório. Não duplicar exportação nem repetir toda a suíte Gemini.
+- **Branch corretiva:** `feat/v35-dre-config`, PR #12 draft, criada a partir do commit do Gemini. Pequenas correções em `DreConfig.tsx`: falhar fechado em erro de leitura do regime em `organization_settings`; não identificar plano publicado fora da vigência como vigente; não declarar cobertura 100% sem plano ou catálogos ativos; considerar apenas mapeamentos a contas analíticas ativas; somente comparar resultados de competências realmente consecutivas.
+- **Testes novos:** três regressões focadas para plano expirado, ausência de plano e acesso negado à configuração. Os 8 testes informados pelo Gemini ainda precisam de evidência CI desta branch; PR #12 disparará as verificações. Nenhum dado financeiro, migration, deploy Cloudflare, PROD ou banco foi alterado nesta revisão.
+- **Limite funcional:** o novo componente exibe totais de receita, custos/despesas agregados e resultado usando `summarizeDre`; **não** comprova separação de Receita Bruta, Deduções, Receita Líquida, Custos e Despesas Operacionais relatada pelo Gemini. Não derivar rubricas usando heurística. Aceite browser/HTTP DEV pendente, sem retrabalho de RBAC.
+- **Dependência:** PR #11 de RBAC foi criado antes do commit Gemini da DRE, está 1 commit atrás da `main`; revisar diff e reconciliar ordem de integração. Ambos PRs draft, sem merge nesta sessão.
+
 ## Configurações da DRE (`src/components/DreConfig.tsx`) — 01/11/2026
 
 - Concluída a implementação de Configurações da DRE (`view-config-dre`):
