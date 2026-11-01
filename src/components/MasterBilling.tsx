@@ -9,8 +9,8 @@ import {
 } from '../lib/master-billing'
 import {checkedSigned} from '../lib/treasury-balances'
 
-export function MasterBilling({client,tenants}:{client:SupabaseClient;tenants:Array<{organization_id:string;organization_name:string}>}){
- const [org,setOrg]=useState(''),[mode,setMode]=useState<'invoices'|'payments'>('invoices')
+export function MasterBilling({client,tenants,initialOrganizationId=''}:{client:SupabaseClient;tenants:Array<{organization_id:string;organization_name:string}>;initialOrganizationId?:string}){
+ const [org,setOrg]=useState(()=>tenants.some(t=>t.organization_id===initialOrganizationId)?initialOrganizationId:''),[mode,setMode]=useState<'invoices'|'payments'>('invoices')
  const [page,setPage]=useState(0),[revision,setRevision]=useState(0)
  const [rows,setRows]=useState<{invoices?:MasterInvoice[];payments?:MasterPayment[];hasNext:boolean}|null>(null)
  const [selected,setSelected]=useState<MasterInvoice|null>(null)

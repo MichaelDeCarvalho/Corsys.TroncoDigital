@@ -24,6 +24,27 @@ async function select(){
  await screen.findByText(/Loja TESTE — nº 101/)
 }
 describe('Master Client 360 privacy and billing',()=>{
+ it('opens billing and support only for the validated selected customer',async()=>{
+  const {client}=fixture()
+  const onOpenBilling=vi.fn(),onOpenSupport=vi.fn()
+  render(<MasterClient360 client={client} tenants={tenants} onOpenBilling={onOpenBilling} onOpenSupport={onOpenSupport}/>)
+  expect(screen.queryByRole('button',{name:'Ver cobranças desta Loja'})).not.toBeInTheDocument()
+  await select()
+  fireEvent.click(screen.getByRole('button',{name:'Ver cobranças desta Loja'}))
+  fireEvent.click(screen.getByRole('button',{name:'Ver chamados desta Loja'}))
+  expect(onOpenBilling).toHaveBeenCalledWith(org)
+  expect(onOpenSupport).toHaveBeenCalledWith(org)
+  fireEvent.change(screen.getByLabelText('Loja cliente'),{target:{value:''}})
+  expect(screen.queryByRole('group',{name:'Ações do Cliente 360'})).not.toBeInTheDocument()
+ })
+ it('hides contextual actions when the server rejects the selected customer',async()=>{
+  const {client}=fixture(null,{code:'42501'})
+  const onOpenSupport=vi.fn()
+  render(<MasterClient360 client={client} tenants={tenants} initialOrganizationId={org} onOpenSupport={onOpenSupport}/>)
+  await screen.findByRole('alert')
+  expect(screen.queryByRole('button',{name:'Ver chamados desta Loja'})).not.toBeInTheDocument()
+  expect(onOpenSupport).not.toHaveBeenCalled()
+ })
  it('shows only a selected tenant commercial and SaaS support summary',async()=>{
   const {client,rpc}=fixture()
   render(<MasterClient360 client={client} tenants={tenants}/>)
