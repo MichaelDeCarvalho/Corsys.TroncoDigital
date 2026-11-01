@@ -17,11 +17,14 @@ function seconds(value:unknown){
  const n=typeof value==='string'&&/^\d+$/.test(value)?Number(value):value
  if(!Number.isSafeInteger(n)||Number(n)<0)throw Error('Untrusted ticket service metrics')
 }
-export async function loadMasterTickets(client:SupabaseClient,page:number,signal:AbortSignal){
+export async function loadMasterTickets(client:SupabaseClient,page:number,signal:AbortSignal,organizationId?:string){
  if(!Number.isSafeInteger(page)||page<0||page>800)throw Error('Invalid ticket offset')
- const {data,error}=await client.from('v_saas_support_ticket_metrics')
+ const org=organizationId?.trim()||''
+ if(org&&!uuid.test(org))throw Error('Invalid Master support organization')
+ const query=client.from('v_saas_support_ticket_metrics')
   .select('id,ticket_seq,organization_id,ticket_scope,related_organization_id,subject,category,priority,status,opened_at,updated_at,opened_by_display,first_response_seconds,resolution_seconds')
   .order('opened_at',{ascending:false}).order('id')
+ const {data,error}=await (org?query.eq('organization_id',org):query)
   .range(page*MASTER_SUPPORT_PAGE,(page+1)*MASTER_SUPPORT_PAGE).abortSignal(signal)
  if(error)throw error
  if(!Array.isArray(data)||data.length>MASTER_SUPPORT_PAGE+1)
@@ -34,6 +37,7 @@ export async function loadMasterTickets(client:SupabaseClient,page:number,signal
    typeof row.subject!=='string'||typeof row.priority!=='string'||
    typeof row.status!=='string'||typeof row.opened_at!=='string'||
    typeof row.updated_at!=='string')throw Error('Unexpected support ticket data')
+  if(org&&row.organization_id!==org)throw Error('Unexpected tenant in Master support filter')
   seconds(row.first_response_seconds);seconds(row.resolution_seconds)
   ids.add(row.id)
  }
