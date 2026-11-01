@@ -17,10 +17,10 @@ const planRows=[
  {id:'0677479d-475b-4639-9225-2fe34be37114',code:'PLANO_MENSAL',name:'Plano Mensal',active:true},
  {id:'ad51fd98-1a89-4f4f-a9e7-a4b90124b0bb',code:'PLANO_LEGADO',name:'Plano Legado',active:false},
 ]
-function fixture(denied=false, planError=false){
+function fixture(denied=false, planError=false, totals=summary){
  const rpc=vi.fn(async(name:string)=>{
   if(denied)return {data:null,error:{code:'42501'}}
-  return {data:name==='read_platform_master_overview'?summary:[tenant],error:null}
+  return {data:name==='read_platform_master_overview'?totals:[tenant],error:null}
  })
  const query={
   select:vi.fn().mockReturnThis(),
@@ -32,6 +32,35 @@ function fixture(denied=false, planError=false){
  return {client:{rpc,from} as unknown as SupabaseClient,rpc,from}
 }
 describe('Master read-only overview',()=>{
+ it('opens attention overdue clients with a fresh server filter, clearing previous search and plan',async()=>{
+  const {client,rpc}=fixture()
+  render(<MasterConsole client={client}/>)
+  await screen.findByText('Loja Exemplo')
+  fireEvent.change(screen.getByLabelText('Buscar cliente'),{target:{value:'outra loja'}})
+  await screen.findByRole('option',{name:'Plano Mensal (PLANO_MENSAL)'})
+  fireEvent.change(screen.getByLabelText('Plano comercial'),{target:{value:'PLANO_MENSAL'}})
+  fireEvent.submit(screen.getByRole('form',{name:'Filtrar clientes SaaS'}))
+  await screen.findByText('Loja Exemplo')
+  fireEvent.click(screen.getByRole('button',{name:'Ver clientes em atraso'}))
+  await waitFor(()=>expect(rpc).toHaveBeenCalledWith('search_platform_master_tenants',{
+   p_search:null,p_subscription_status:'past_due',p_plan_search:null,p_limit:26,p_offset:0,
+  }))
+  await screen.findByText('Clientes SaaS e Implantação')
+  expect(screen.getByLabelText('Buscar cliente')).toHaveValue('')
+  expect(screen.getByLabelText('Status comercial')).toHaveValue('past_due')
+  expect(screen.getByLabelText('Plano comercial')).toHaveValue('')
+ })
+ it('shows a bounded empty attention state using server totals',async()=>{
+  const {client}=fixture(false,false,{...summary,subscriptions_past_due:0,support_tickets_open:0,plan_drafts:0})
+  render(<MasterConsole client={client}/>)
+  expect(await screen.findByText('Nenhuma pendência nesses três indicadores.')).toBeInTheDocument()
+ })
+ it('does not expose attention controls after authorization is denied',async()=>{
+  const {client}=fixture(true)
+  render(<MasterConsole client={client}/>)
+  await screen.findByRole('alert')
+  expect(screen.queryByRole('button',{name:'Ver clientes em atraso'})).not.toBeInTheDocument()
+ })
  it('renders platform totals and tenant names returned by authorized server functions',async()=>{
   const {client,rpc}=fixture()
   render(<MasterConsole client={client}/>)

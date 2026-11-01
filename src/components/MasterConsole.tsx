@@ -136,7 +136,7 @@ export function MasterConsole({ client }: { client: SupabaseClient }) {
 
       <p className="subtle">
         Acesso exclusivo de administrador da plataforma com MFA (AAL2). Esta área é separada dos dados e das
-        permissões financeiras das Lojas. Somente leitura nesta etapa; não há sessão de suporte nem impersonação de cliente.
+        permissões financeiras das Lojas. Operações privilegiadas exigem autorização no servidor e auditoria.
       </p>
 
       {denied && (
@@ -234,7 +234,37 @@ export function MasterConsole({ client }: { client: SupabaseClient }) {
                 ))}
               </div>
 
-              {/* Actions Requiring Attention & Fast Shortcuts */}
+              <section className="panel space-y-3" aria-label="Ações que exigem atenção">
+                <h3>Ações que exigem atenção</h3>
+                <p className="subtle">Contagens da plataforma na data dos indicadores, independentes dos filtros do diretório.</p>
+                <div className="metric-grid">
+                  <article className="panel">
+                    <p>Assinaturas em atraso</p>
+                    <strong>{overview.subscriptions_past_due}</strong>
+                    <button type="button" className="secondary" onClick={() => {
+                      setSearch(''); setStatus('past_due'); setPlan(''); setPage(0)
+                      setFilters({ search: '', status: 'past_due', plan: '' }); setTab('clients')
+                    }}>Ver clientes em atraso</button>
+                  </article>
+                  <article className="panel">
+                    <p>Chamados abertos</p>
+                    <strong>{overview.support_tickets_open}</strong>
+                    <button type="button" className="secondary" onClick={() => {
+                      setSelectedSupportOrgId(''); setTab('support')
+                    }}>Ver fila de suporte</button>
+                  </article>
+                  <article className="panel">
+                    <p>Rascunhos de plano</p>
+                    <strong>{overview.plan_drafts}</strong>
+                    <button type="button" className="secondary" onClick={() => setTab('commercial')}>Ver planos e ofertas</button>
+                  </article>
+                </div>
+                {overview.subscriptions_past_due === 0 && overview.support_tickets_open === 0 && overview.plan_drafts === 0 && (
+                  <p>Nenhuma pendência nesses três indicadores.</p>
+                )}
+              </section>
+
+              {/* Fast Shortcuts */}
               <section className="panel space-y-3" aria-label="Ações rápidas da Plataforma">
                 <div className="section-title">
                   <h3>Ações Rápidas do Master</h3>
