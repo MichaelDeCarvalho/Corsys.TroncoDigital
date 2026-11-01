@@ -14,6 +14,8 @@ import {
   type MasterTenant,
   type MasterTenantFilters,
   DEFAULT_MASTER_TENANT_FILTERS,
+  loadMasterPlanOptions,
+  type MasterPlanOption,
 } from '../lib/master-console'
 import {
   ShieldCheck,
@@ -37,6 +39,8 @@ export function MasterConsole({ client }: { client: SupabaseClient }) {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<'all' | 'active' | 'past_due'>('all')
   const [plan, setPlan] = useState('')
+  const [planOptions, setPlanOptions] = useState<MasterPlanOption[] | null>(null)
+  const [planCatalogError, setPlanCatalogError] = useState('')
   const [filters, setFilters] = useState<MasterTenantFilters>(DEFAULT_MASTER_TENANT_FILTERS)
   const [tenants, setTenants] = useState<{ rows: MasterTenant[]; hasNext: boolean } | null>(null)
   const [error, setError] = useState('')
@@ -71,10 +75,25 @@ export function MasterConsole({ client }: { client: SupabaseClient }) {
     }
   }, [client, page, revision, filters])
 
+  useEffect(() => {
+    if (overview?.access !== 'MASTER' || overview.mfa_required !== true) return
+    let active = true
+    const controller = new AbortController()
+    setPlanOptions(null)
+    setPlanCatalogError('')
+    loadMasterPlanOptions(client, controller.signal)
+      .then(options => { if (active) setPlanOptions(options) })
+      .catch(() => {
+        if (active && !controller.signal.aborted) setPlanCatalogError('Não foi possível carregar os planos do catálogo.')
+      })
+    return () => { active = false; controller.abort() }
+  }, [client, overview?.access, overview?.mfa_required])
+
   function submitFilters(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (plan && (!planOptions || !planOptions.some(option => option.code === plan))) return
     setPage(0)
-    setFilters({ search: search.trim(), status, plan: plan.trim() })
+    setFilters({ search: search.trim(), status, plan })
   }
 
   function clearFilters() {
@@ -255,6 +274,8 @@ export function MasterConsole({ client }: { client: SupabaseClient }) {
                 setStatus={setStatus}
                 plan={plan}
                 setPlan={setPlan}
+                planOptions={planOptions}
+                planCatalogError={planCatalogError}
                 submitFilters={submitFilters}
                 clearFilters={clearFilters}
                 tenants={tenants}
@@ -302,6 +323,8 @@ export function MasterConsole({ client }: { client: SupabaseClient }) {
                 setStatus={setStatus}
                 plan={plan}
                 setPlan={setPlan}
+                planOptions={planOptions}
+                planCatalogError={planCatalogError}
                 submitFilters={submitFilters}
                 clearFilters={clearFilters}
                 tenants={tenants}
@@ -357,6 +380,8 @@ function TenantDirectorySection({
   setStatus,
   plan,
   setPlan,
+  planOptions,
+  planCatalogError,
   submitFilters,
   clearFilters,
   tenants,
@@ -371,6 +396,8 @@ function TenantDirectorySection({
   setStatus: (v: 'all' | 'active' | 'past_due') => void
   plan: string
   setPlan: (v: string) => void
+  planOptions: MasterPlanOption[] | null
+  planCatalogError: string
   submitFilters: (e: FormEvent<HTMLFormElement>) => void
   clearFilters: () => void
   tenants: { rows: MasterTenant[]; hasNext: boolean }
@@ -408,13 +435,20 @@ function TenantDirectorySection({
           </div>
           <div>
             <label htmlFor="master-search-plan">Plano comercial</label>
-            <input
+            <select
               id="master-search-plan"
-              maxLength={100}
               value={plan}
-              placeholder="Nome ou código do plano"
               onChange={e => setPlan(e.target.value)}
-            />
+              disabled={!planOptions}
+            >
+              <option value="">{planCatalogError ? 'Catálogo indisponível' : planOptions ? 'Todos os planos' : 'Carregando planos…'}</option>
+              {planOptions?.map(option => (
+                <option key={option.id} value={option.code}>
+                  {option.name} ({option.code}){option.active ? '' : ' — Inativo'}
+                </option>
+              ))}
+            </select>
+            {planCatalogError && <p role="status" className="subtle">{planCatalogError}</p>}
           </div>
         </div>
         <div className="finance-sections">
