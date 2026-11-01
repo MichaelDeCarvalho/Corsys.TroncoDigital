@@ -98,6 +98,9 @@ export async function loadTenantRbac(
   if (permissionsRes.error) throw permissionsRes.error
   if (rolePermsRes.error) throw rolePermsRes.error
   if (userRolesRes.error) throw userRolesRes.error
+  if (memberLinksRes.error) throw memberLinksRes.error
+  if (membersRes.error) throw membersRes.error
+  if (profilesRes.error) throw profilesRes.error
 
   const rawRoles: TenantRole[] = rolesRes.data ?? []
   const rawPermissions: TenantPermission[] = permissionsRes.data ?? []

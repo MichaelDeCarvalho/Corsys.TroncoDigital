@@ -1,7 +1,7 @@
 -- Corsys Tronco Digital V35
--- Migration: 20261101000000_tenant_rbac_management.sql
+-- Migration: 20261101181945_tenant_rbac_management.sql
 -- Goal: Secure tenant-level RBAC role assignment and revocation with users.manage permission enforcement.
--- Prepared for Supabase / PostgreSQL. NOT executed in this environment.
+-- Applied to Supabase DEV using the migration API; production remains untouched.
 
 -- ============================================================================
 -- 1. RLS Policy for user_profiles under organization user management
@@ -61,6 +61,12 @@ begin
     raise exception 'idempotency_key required (1..200 chars)' using errcode = '22023';
   end if;
 
+  -- Serialize role changes before inspecting membership/admin count (last-admin race protection).
+  perform 1 from public.organizations where id = p_organization_id for update;
+  if not found then
+    raise exception 'organization not found' using errcode = '23503';
+  end if;
+
   -- 3. Verify target role exists in organization
   select code, name into v_role_code, v_role_name
   from public.roles
@@ -83,18 +89,20 @@ begin
     end if;
   end if;
 
-  -- 5. Anti Self-Elevation Protection
-  if v_role_code = 'ADMIN' and p_user_id = v_user then
+  -- 5. Managing ADMIN requires an existing ADMIN role in this organization.
+  -- A users.manage custom role must not be able to elevate an accomplice or itself.
+  if v_role_code = 'ADMIN' then
     select exists (
       select 1 from public.user_roles ur
-      join public.roles r on r.id = ur.role_id
+      join public.roles r on r.id = ur.role_id and r.organization_id = ur.organization_id
       where ur.organization_id = p_organization_id
         and ur.user_id = v_user
         and r.code = 'ADMIN'
     ) into v_is_caller_admin;
 
     if not v_is_caller_admin then
-      raise exception 'self-elevation to admin denied' using errcode = '42501';
+      raise exception 'ADMIN role management requires an existing ADMIN'
+        using errcode = '42501';
     end if;
   end if;
 
@@ -114,9 +122,7 @@ begin
     return v_res;
   end if;
 
-  -- 7. Lock organization and assign role
-  perform 1 from public.organizations where id = p_organization_id for update;
-
+  -- 7. Assign role under the organization lock already held
   insert into public.user_roles (organization_id, user_id, role_id)
   values (p_organization_id, p_user_id, p_role_id)
   on conflict (organization_id, user_id, role_id) do nothing;
@@ -135,7 +141,7 @@ begin
     v_user,
     'user_role.assign',
     'user_roles',
-    p_user_id::text,
+    p_user_id,
     jsonb_build_object('role_id', p_role_id, 'role_code', v_role_code, 'role_name', v_role_name),
     btrim(p_reason)
   );
@@ -165,6 +171,7 @@ declare
   v_role_code text;
   v_role_name text;
   v_admin_count integer;
+  v_is_caller_admin boolean;
   v_res uuid;
 begin
   -- 1. Enforce RBAC permission
@@ -183,6 +190,12 @@ begin
     raise exception 'idempotency_key required (1..200 chars)' using errcode = '22023';
   end if;
 
+  -- Serialize role changes before inspecting membership/admin count (last-admin race protection).
+  perform 1 from public.organizations where id = p_organization_id for update;
+  if not found then
+    raise exception 'organization not found' using errcode = '23503';
+  end if;
+
   -- 3. Verify role exists in organization
   select code, name into v_role_code, v_role_name
   from public.roles
@@ -192,7 +205,23 @@ begin
     raise exception 'role not found in organization' using errcode = '23503';
   end if;
 
-  -- 4. Protection against removing the LAST Administrator
+  -- 4. Only an existing ADMIN can change ADMIN grants, even when the
+  -- caller has users.manage through a delegated custom role.
+  if v_role_code = 'ADMIN' then
+    select exists (
+      select 1 from public.user_roles ur
+      join public.roles r on r.id = ur.role_id and r.organization_id = ur.organization_id
+      where ur.organization_id = p_organization_id
+        and ur.user_id = v_user
+        and r.code = 'ADMIN'
+    ) into v_is_caller_admin;
+    if not v_is_caller_admin then
+      raise exception 'ADMIN role management requires an existing ADMIN'
+        using errcode = '42501';
+    end if;
+  end if;
+
+  -- 5. Protection against removing the LAST Administrator
   if v_role_code = 'ADMIN' then
     select count(distinct ur.user_id) into v_admin_count
     from public.user_roles ur
@@ -224,9 +253,7 @@ begin
     return v_res;
   end if;
 
-  -- 6. Lock organization and revoke role
-  perform 1 from public.organizations where id = p_organization_id for update;
-
+  -- 6. Revoke role under the organization lock already held
   delete from public.user_roles
   where organization_id = p_organization_id
     and user_id = p_user_id
@@ -246,7 +273,7 @@ begin
     v_user,
     'user_role.revoke',
     'user_roles',
-    p_user_id::text,
+    p_user_id,
     jsonb_build_object('role_id', p_role_id, 'role_code', v_role_code, 'role_name', v_role_name),
     btrim(p_reason)
   );

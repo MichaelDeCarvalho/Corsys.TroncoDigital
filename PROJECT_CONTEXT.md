@@ -1,3 +1,7 @@
+## RBAC DEV — 01/11/2026
+
+Tenant RBAC (Cadastros > Perfis e Permissões) instalado **somente** no Supabase DEV `szqkdekwhzxsoxorgvaz` com migração `20261101181945_tenant_rbac_management.sql` (ADR-0040, PR #11 draft). Interface do Gemini já versionada; a branch corrige autorização ADMIN, integridade da auditoria, serialização de último ADMIN e reenvio idempotente. Teste SQL rollback com claims simuladas PASS; revisão navegador/HTTP com sessões reais pendente. Produção e Cloudflare não alterados nesta etapa.
+
 ## Sessões temporárias Master somente leitura (P1 preparado) — 28/10/2026
 
 P0 funcional de suporte concluído e homologado em DEV. Lote P1 preparado sem execução remota: migration incremental 20261029000000_v35_master_readonly_support_sessions.sql com RPCs `start_master_support_session`, `get_active_master_support_session` e `end_master_support_session`. Autorização estrita MASTER + AAL2, vínculo a `auth.uid()` e Loja, motivo obrigatório (5..500 chars), validade fixa 15 minutos pelo servidor, escopo `read_only`, replay idempotente sem renovação, encerramento auditado em `saas_master_audit_logs`. Integração na UI em `MasterOperations.tsx` (aba Suporte) com seleção de Loja, contador regressivo e encerramento. Script de teste de rollback transacional `supabase/tests/test_master_support_sessions_rollback.sql` concluído. Testes unitários focados PASS. Homologação remota DEV pendente; sem SQL remoto, sem push, sem merge. ADR-0038.

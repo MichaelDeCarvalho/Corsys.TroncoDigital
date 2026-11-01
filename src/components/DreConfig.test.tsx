@@ -13,6 +13,9 @@ type MockOptions = {
   permissionError?: boolean
   dreError?: boolean
   dreEmpty?: boolean
+  expiredPublishedPlan?: boolean
+  noPlans?: boolean
+  settingsError?: boolean
 }
 
 function createMockClient(options: MockOptions = {}) {
@@ -83,11 +86,16 @@ function createMockClient(options: MockOptions = {}) {
         if (options.permissionError) {
           return Promise.reject({ code: '42501', message: 'permission denied: finance.read' })
         }
+        if (options.settingsError && table === 'organization_settings') {
+          return Promise.resolve({ data: null, error: { code: '42501', message: 'permission denied: settings' } })
+        }
 
         let data: unknown[] = []
 
         if (table === 'accounting_plans') {
-          if (options.hasPublishedPlan !== false) {
+          if (options.noPlans) {
+            data = []
+          } else if (options.hasPublishedPlan !== false) {
             data = [
               {
                 id: PLAN_ID,
@@ -95,7 +103,7 @@ function createMockClient(options: MockOptions = {}) {
                 name: 'Plano Contábil Geral 2026',
                 status: 'published',
                 valid_from: '2026-01-01',
-                valid_to: '2026-12-31',
+                valid_to: options.expiredPublishedPlan ? '2025-12-31' : '2026-12-31',
               },
             ]
           } else {
@@ -168,6 +176,29 @@ describe('DreConfig Component (DreConfig.tsx)', () => {
     expect(screen.getByText('Publicado (Vigente)')).toBeInTheDocument()
     expect(screen.getByText(/01\/01\/2026/)).toBeInTheDocument()
     expect(screen.getByText(/31\/12\/2026/)).toBeInTheDocument()
+  })
+
+  it('never labels an expired published plan as vigente', async () => {
+    const { client } = createMockClient({ expiredPublishedPlan: true })
+    render(<DreConfig client={client} organizationId={ORG_ID} />)
+    await screen.findByText('Plano Contábil Geral 2026')
+    expect(screen.getByText('Publicado (Fora da Vigência)')).toBeInTheDocument()
+    expect(screen.queryByText('Publicado (Vigente)')).not.toBeInTheDocument()
+  })
+
+  it('does not report integral coverage without an accounting plan', async () => {
+    const { client } = createMockClient({ noPlans: true })
+    render(<DreConfig client={client} organizationId={ORG_ID} />)
+    await screen.findByText(/Nenhum plano contábil cadastrado para esta Loja/)
+    expect(screen.queryByText('Cobertura Integral (100%)')).not.toBeInTheDocument()
+    expect(screen.getByText(/Cobertura não aferida/)).toBeInTheDocument()
+  })
+
+  it('does not silently treat settings access errors as missing regime', async () => {
+    const { client } = createMockClient({ settingsError: true })
+    render(<DreConfig client={client} organizationId={ORG_ID} />)
+    await screen.findByText(/Seu perfil não possui permissão para consultar a estrutura contábil/)
+    expect(screen.queryByText('Plano Contábil Geral 2026')).not.toBeInTheDocument()
   })
 
   it('renders full coverage (100%) when all categories and cash accounts are mapped', async () => {
