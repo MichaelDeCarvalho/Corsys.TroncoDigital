@@ -32,6 +32,7 @@ import {
 export function MasterConsole({ client }: { client: SupabaseClient }) {
   const [overview, setOverview] = useState<MasterOverview | null>(null)
   const [selectedClient360, setSelectedClient360] = useState('')
+  const [selectedSupportOrgId, setSelectedSupportOrgId] = useState('')
   const [tab, setTab] = useState<
     'overview' | 'commercial' | 'support' | 'billing' | 'onboarding' | 'client360' | 'config' | 'clients'
   >('overview')
@@ -187,7 +188,7 @@ export function MasterConsole({ client }: { client: SupabaseClient }) {
             <button
               className="secondary"
               aria-pressed={tab === 'support'}
-              onClick={() => setTab('support')}
+              onClick={() => { setSelectedSupportOrgId(''); setTab('support') }}
             >
               Operação e suporte
             </button>
@@ -259,7 +260,7 @@ export function MasterConsole({ client }: { client: SupabaseClient }) {
                   <button
                     type="button"
                     className="secondary inline-flex items-center gap-1.5 px-3 py-2 text-sm"
-                    onClick={() => setTab('support')}
+                    onClick={() => { setSelectedSupportOrgId(''); setTab('support') }}
                   >
                     <Headphones size={16} aria-hidden="true" />
                     Fila de Suporte
@@ -283,7 +284,7 @@ export function MasterConsole({ client }: { client: SupabaseClient }) {
                 page={page}
                 setPage={setPage}
                 onSelectClient360={id => { setSelectedClient360(id); setTab('client360') }}
-                onSelectSupport={() => setTab('support')}
+                onSelectSupport={id => { setSelectedSupportOrgId(id); setTab('support') }}
               />
 
               <div className="bg-slate-50 border rounded-md p-4 text-xs text-slate-600">
@@ -332,7 +333,7 @@ export function MasterConsole({ client }: { client: SupabaseClient }) {
                 page={page}
                 setPage={setPage}
                 onSelectClient360={id => { setSelectedClient360(id); setTab('client360') }}
-                onSelectSupport={() => setTab('support')}
+                onSelectSupport={id => { setSelectedSupportOrgId(id); setTab('support') }}
               />
             </div>
           )}
@@ -354,7 +355,7 @@ export function MasterConsole({ client }: { client: SupabaseClient }) {
           {/* VIEW 5: view-master-operacao (Operação e Suporte) */}
           {tab === 'support' && (
             <div id="view-master-operacao">
-              <MasterOperations client={client} />
+              <MasterOperations client={client} initialTicketOrganizationId={selectedSupportOrgId} />
             </div>
           )}
 
@@ -405,7 +406,7 @@ function TenantDirectorySection({
   page: number
   setPage: React.Dispatch<React.SetStateAction<number>>
   onSelectClient360: (organizationId: string) => void
-  onSelectSupport: () => void
+  onSelectSupport: (organizationId: string) => void
 }) {
   return (
     <section className="panel space-y-4">
@@ -506,7 +507,7 @@ function TenantDirectorySection({
                         type="button"
                         className="secondary text-xs px-2 py-1"
                         data-v32-support={row.organization_id}
-                        onClick={onSelectSupport}
+                        onClick={() => onSelectSupport(row.organization_id)}
                       >
                         Suporte
                       </button>
