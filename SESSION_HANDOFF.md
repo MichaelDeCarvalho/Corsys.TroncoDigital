@@ -1,3 +1,23 @@
+## Cadastros — Perfis e Permissões (Tenant RBAC) — 01/11/2026
+
+- Concluída a implementação de Cadastros → Perfis e Permissões (`view-cadastros`):
+  - **Migration Incremental `supabase/migrations/20261101000000_tenant_rbac_management.sql`**:
+    - Política RLS `user_profiles_select_org`: Permite consulta de perfis por gestores com a permissão `users.manage` no mesmo tenant.
+    - RPC `assign_tenant_user_role(uuid, uuid, uuid, text, text)`: Exige permissão `users.manage`, valida vínculo do usuário ao tenant, bloqueia autoelevação para o papel `ADMIN`, registra auditoria em `audit_logs` e executa sob idempotência (`private.idempotency_begin`/`complete`).
+    - RPC `revoke_tenant_user_role(uuid, uuid, uuid, text, text)`: Exige permissão `users.manage`, protege contra a remoção do **último administrador** da Loja (`55000`), registra auditoria e executa sob idempotência.
+    - **Atenção**: Migration **NÃO foi aplicada no Supabase DEV** conforme diretriz de restrição de execução remota.
+  - **Biblioteca Cliente `src/lib/tenant-rbac.ts`**:
+    - Tipagem completa (`RoleSummary`, `TenantUserSummary`, `TenantRbacData`) e funções `loadTenantRbac`, `assignTenantUserRole` e `revokeTenantUserRole`.
+  - **Componente de Interface `src/components/Cadastros.tsx`**:
+    - Visualização dos 4 perfis de sistema (`ADMIN`, `TREASURER`, `VIEWER`, `MEMBER`) com suas respectivas permissões e número de usuários atribuídos.
+    - Tabela de usuários vinculados à Loja com seus papéis atuais e seletores para atribuição/revogação de perfil.
+    - Modal de confirmação com exigência de justificativa auditada (mínimo 3 caracteres), tratamento amigável de erros (remoção de último admin, falta de permissão, autoelevação) e recarregamento reativo e imediato da interface.
+  - **Suíte de Testes Automatizados**:
+    - `src/lib/tenant-rbac.test.ts` (4/4 testes PASS).
+    - `src/components/Cadastros.test.tsx` (4/4 testes PASS).
+    - Verificação de tipos `npm run typecheck` e compilação do applet `compile_applet`: 0 erros, build aprovado.
+- Branch de destino: `feat/v35-tenant-rbac`. Alterações preservadas no workspace para exportação. Nenhuma mudança publicada em produção, Cloudflare ou `main`.
+
 ## Gate Final HTTP da Cobrança SaaS Master (HTTP QA Verification) — 01/11/2026
 
 - Mecanismo automatizado e reutilizável de QA HTTP real refatorado e corrigido em `src/lib/dev-qa-manual-invoice.ts`:
