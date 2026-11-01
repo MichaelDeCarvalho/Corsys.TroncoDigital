@@ -1,3 +1,18 @@
+## Configurações da Loja (Assinatura, Governança, Suporte, Privacidade) e Contraste DRE — 01/11/2026
+
+- **Branch de trabalho pretendida:** `feat/v35-tenant-settings-overview` (ambiente sem git remoto direto no workspace, código mantido no workspace para exportação).
+- **Assinatura e Plano SaaS (`Configuracoes.tsx`):** consulta funcional a `saas_subscriptions`, `saas_plans` e `saas_plan_versions` filtrada por `organization_id` estrito. Preço histórico exibido a partir de `saas_plan_versions.price` contratado (sem inventar preço atual). Apresenta versão, vigência contratual (`valid_from` / `valid_to`), período/competência atual, âncora de faturamento e badges de situação (`active`, `trialing`, `past_due`, `suspended`, etc.).
+- **Governança e Auditoria (`Configuracoes.tsx`):** consulta funcional a `audit_logs` da Loja com data/hora, ação traduzida, identificação do responsável (com resolução de nome via `user_profiles` quando disponível) e justificativa/motivo. Contexto técnico e dados sensíveis (`technical_context`, `before_data`, `after_data`) estritamente omitidos da UI.
+- **Suporte e Privacidade (`Configuracoes.tsx`):** integração com central de chamados via `onNavigate('support')`; preservação total de `TenantIdentity.tsx`; painel de privacidade e LGPD mantendo funções não disponíveis devidamente informadas como em homologação na plataforma Master, sem simulação local de exportação, exclusão ou backup.
+- **Tratamento de estados:** carregamento real, vazio, permissão negada (`42501`/`28000` para `settings.manage` e `audit.read`) e isolamento fail-closed por `organization_id`.
+- **Correção de contraste na DRE (`DreConfig.tsx`):** corrigido o contraste de textos em avisos com fundo amarelo claro (`#fffbeb`, `#fef9c3`, `#fef3c7`) e fundo claro/branco (`#f8fafc`), aplicando cores escuras de alto contraste (`#78350f`, `#92400e`, `#14532d`, `#0f172a`, `#334155`), preservando o tema escuro CorSys e sem alterar cálculos ou regras de negócio.
+- **Evidências:**
+  - `src/components/Configuracoes.test.tsx`: 10/10 PASS.
+  - `src/components/DreConfig.test.tsx`: 11/11 PASS.
+  - `npm run typecheck`: 0 erros.
+  - `compile_applet`: Build succeeded.
+- **Salvaguardas:** nenhuma migration executada, sem deploy Cloudflare/PROD, sem push direto na `main`.
+
 ## Integração V35 RBAC + DRE — 01/11/2026
 
 - Branch consolidada: `integration/v35-rbac-dre-20261101` sobre `main` (commit Gemini `70e50d83`). Incorpora somente correções funcionais dos PRs #11 (RBAC) e #12 (DRE), migração RBAC versionada realmente instalada em DEV (`20261101181945`), ADR-0040 e histórico técnico das duas frentes.

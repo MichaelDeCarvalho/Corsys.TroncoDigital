@@ -94,7 +94,7 @@ function TenantPanel({ client, organization, page, onNavigate }: { client: Supab
     {page === 'inadimplencia' && <DelinquencyReport key={organization.id} client={client} organizationId={organization.id} />}
     {page === 'relatorios' && <Relatorios key={organization.id} client={client} organizationId={organization.id} />}
     {page === 'cadastros' && <Cadastros members={data.members} client={client} organizationId={organization.id} onSaved={() => setRevision(v => v + 1)} onReload={() => setRevision(v => v + 1)} />}
-    {page === 'configuracoes' && <Configuracoes client={client} organizationId={organization.id} />}
+    {page === 'configuracoes' && <Configuracoes client={client} organizationId={organization.id} onNavigate={onNavigate} />}
     {sent && page === 'support' && <p role="status" className="message">Chamado enviado. A lista foi atualizada.</p>}
     {page === 'home' && <>
       <section className="hero-card"><div><span className="pill">{organization.status === 'active' ? 'Loja ativa' : 'Loja inativa'}</span><h2>{organization.name}</h2><p>Painel Gerencial de Tesouraria e Acompanhamento Integrado.</p></div><Building2 size={58} strokeWidth={1.2} aria-hidden="true" /></section>

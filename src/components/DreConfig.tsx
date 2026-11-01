@@ -311,7 +311,8 @@ export function DreConfig({ client, organizationId, onNavigate }: DreConfigProps
                       className="pill"
                       style={{
                         backgroundColor: planIsCurrent ? '#dcfce7' : '#fef9c3',
-                        color: planIsCurrent ? '#15803d' : '#854d0e',
+                        color: planIsCurrent ? '#14532d' : '#713f12',
+                        fontWeight: 600,
                       }}
                     >
                       {activePlan.status === 'draft' ? 'Rascunho' : planIsCurrent ? 'Publicado (Vigente)' : 'Publicado (Fora da Vigência)'}
@@ -324,43 +325,51 @@ export function DreConfig({ client, organizationId, onNavigate }: DreConfigProps
                     Identificador: <code>{activePlan.id}</code>
                   </p>
                   {activePlan.status === 'draft' && (
-                    <p className="subtle" style={{ color: '#b45309', marginTop: '6px' }}>
+                    <p style={{ color: '#b45309', marginTop: '6px', fontSize: '0.85rem' }}>
                       <em>Atenção: Este plano está em modo rascunho. Para que tenha validade fiscal e contábil, é necessário publicá-lo no Plano de Contas.</em>
                     </p>
                   )}
                 </div>
 
-                <div style={{ flex: '1 1 240px', background: 'var(--bg-subtle, #f8fafc)', padding: '1rem', borderRadius: '8px' }}>
-                  <strong style={{ fontSize: '0.9rem', display: 'block', marginBottom: '6px' }}>
+                <div style={{ flex: '1 1 240px', background: '#f8fafc', border: '1px solid #cbd5e1', padding: '1rem', borderRadius: '8px' }}>
+                  <strong style={{ fontSize: '0.9rem', display: 'block', marginBottom: '6px', color: '#0f172a' }}>
                     Regime Contábil de Apuração
                   </strong>
                   {regimeLoaded && persistedRegime ? (
                     <div>
-                      <span className="pill" style={{ background: '#e0e7ff', color: '#3730a3', fontWeight: 600 }}>
+                      <span className="pill" style={{ background: '#e0e7ff', color: '#312e81', fontWeight: 600 }}>
                         {persistedRegime}
                       </span>
-                      <p className="subtle" style={{ fontSize: '0.8rem', marginTop: '6px' }}>
+                      <p style={{ fontSize: '0.8rem', marginTop: '6px', color: '#334155' }}>
                         Regime configurado e persistido institucionalmente nos parâmetros da Loja.
                       </p>
                     </div>
                   ) : (
                     <div>
-                      <span className="subtle" style={{ fontStyle: 'italic', display: 'block', marginBottom: '4px' }}>
+                      <span style={{ fontStyle: 'italic', display: 'block', marginBottom: '4px', color: '#475569', fontSize: '0.85rem' }}>
                         Nenhum regime contábil persistido nos parâmetros da Loja.
                       </span>
-                      <p className="subtle" style={{ fontSize: '0.8rem' }}>
-                        A DRE opera estritamente pelo <strong>regime de competência</strong> com base nos fatos contábeis registrados (<code>v_dre_entries</code>), e a tesouraria acompanha as liquidações efetivas.
+                      <p style={{ fontSize: '0.8rem', color: '#334155', margin: 0 }}>
+                        A DRE opera estritamente pelo <strong style={{ color: '#0f172a' }}>regime de competência</strong> com base nos fatos contábeis registrados (<code style={{ color: '#0f172a', background: '#e2e8f0', padding: '1px 4px', borderRadius: '4px' }}>v_dre_entries</code>), e a tesouraria acompanha as liquidações efetivas.
                       </p>
                     </div>
                   )}
                 </div>
               </div>
             ) : (
-              <div className="callout warning" style={{ marginTop: '1rem' }}>
-                <p>
-                  <strong>Nenhum plano contábil cadastrado para esta Loja.</strong>
+              <div
+                className="callout warning"
+                style={{
+                  marginTop: '1rem',
+                  backgroundColor: '#fffbeb',
+                  borderColor: '#fde68a',
+                  color: '#78350f',
+                }}
+              >
+                <p style={{ margin: 0, marginBottom: '4px' }}>
+                  <strong style={{ color: '#78350f' }}>Nenhum plano contábil cadastrado para esta Loja.</strong>
                 </p>
-                <p className="subtle">
+                <p style={{ margin: 0, fontSize: '0.875rem', color: '#92400e' }}>
                   Para gerar a DRE e classificar receitas e despesas, crie e publique um plano contábil.
                 </p>
                 {onNavigate && (
@@ -427,16 +436,16 @@ export function DreConfig({ client, organizationId, onNavigate }: DreConfigProps
                   style={{
                     backgroundColor: '#f0fdf4',
                     borderColor: '#86efac',
-                    color: '#166534',
+                    color: '#14532d',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '10px',
                   }}
                 >
-                  <CheckCircle2 size={20} style={{ color: '#16a34a', flexShrink: 0 }} aria-hidden="true" />
+                  <CheckCircle2 size={20} style={{ color: '#15803d', flexShrink: 0 }} aria-hidden="true" />
                   <div>
-                    <strong>Cobertura Integral (100%)</strong>
-                    <p style={{ margin: 0, fontSize: '0.85rem' }}>
+                    <strong style={{ color: '#14532d' }}>Cobertura Integral (100%)</strong>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: '#166534' }}>
                       Todas as categorias e contas financeiras ativas possuem mapeamento correspondente no plano contábil.
                     </p>
                   </div>
@@ -452,16 +461,16 @@ export function DreConfig({ client, organizationId, onNavigate }: DreConfigProps
                       style={{
                         backgroundColor: '#fffbeb',
                         borderColor: '#fde68a',
-                        color: '#92400e',
+                        color: '#78350f',
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                        <AlertTriangle size={18} style={{ color: '#d97706', flexShrink: 0 }} aria-hidden="true" />
-                        <strong>
+                        <AlertTriangle size={18} style={{ color: '#b45309', flexShrink: 0 }} aria-hidden="true" />
+                        <strong style={{ color: '#78350f' }}>
                           {unmappedCategories.length} categoria(s) ativa(s) sem vínculo com o plano contábil:
                         </strong>
                       </div>
-                      <p className="subtle" style={{ fontSize: '0.85rem', marginBottom: '8px' }}>
+                      <p style={{ fontSize: '0.85rem', marginBottom: '8px', color: '#92400e' }}>
                         Lançamentos nestas categorias não serão classificados nas rubricas de receitas ou despesas da DRE:
                       </p>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
@@ -469,7 +478,7 @@ export function DreConfig({ client, organizationId, onNavigate }: DreConfigProps
                           <span
                             key={c.id}
                             className="pill"
-                            style={{ background: '#fef3c7', color: '#78350f', border: '1px solid #fcd34d' }}
+                            style={{ background: '#fef3c7', color: '#78350f', border: '1px solid #fcd34d', fontWeight: 600 }}
                           >
                             {c.name}
                           </span>
@@ -484,16 +493,16 @@ export function DreConfig({ client, organizationId, onNavigate }: DreConfigProps
                       style={{
                         backgroundColor: '#fffbeb',
                         borderColor: '#fde68a',
-                        color: '#92400e',
+                        color: '#78350f',
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                        <AlertTriangle size={18} style={{ color: '#d97706', flexShrink: 0 }} aria-hidden="true" />
-                        <strong>
+                        <AlertTriangle size={18} style={{ color: '#b45309', flexShrink: 0 }} aria-hidden="true" />
+                        <strong style={{ color: '#78350f' }}>
                           {unmappedCash.length} conta(s) financeira(s) ativa(s) sem vínculo patrimonial:
                         </strong>
                       </div>
-                      <p className="subtle" style={{ fontSize: '0.85rem', marginBottom: '8px' }}>
+                      <p style={{ fontSize: '0.85rem', marginBottom: '8px', color: '#92400e' }}>
                         Contas bancárias ou de caixa sem contrapartida contábil cadastrada:
                       </p>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
@@ -501,7 +510,7 @@ export function DreConfig({ client, organizationId, onNavigate }: DreConfigProps
                           <span
                             key={acc.id}
                             className="pill"
-                            style={{ background: '#fef3c7', color: '#78350f', border: '1px solid #fcd34d' }}
+                            style={{ background: '#fef3c7', color: '#78350f', border: '1px solid #fcd34d', fontWeight: 600 }}
                           >
                             {acc.name}
                           </span>
@@ -666,7 +675,8 @@ export function DreConfig({ client, organizationId, onNavigate }: DreConfigProps
                                     className="pill"
                                     style={{
                                       backgroundColor: m.result > 0 ? '#dcfce7' : m.result < 0 ? '#fee2e2' : '#f3f4f6',
-                                      color: m.result > 0 ? '#15803d' : m.result < 0 ? '#b91c1c' : '#4b5563',
+                                      color: m.result > 0 ? '#14532d' : m.result < 0 ? '#991b1b' : '#1f2937',
+                                      fontWeight: 600,
                                     }}
                                   >
                                     {m.result > 0 ? 'Superávit' : m.result < 0 ? 'Déficit' : 'Equilíbrio'}
