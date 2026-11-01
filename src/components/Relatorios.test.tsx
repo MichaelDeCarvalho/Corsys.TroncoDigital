@@ -217,6 +217,9 @@ describe('Relatorios component — Integridade Financeira (Comando 08-A)', () =>
     const { client } = mockSupabaseClient()
     render(<Relatorios client={client} organizationId="org-1" />)
 
+    const compInput = screen.getByLabelText('Competência Contábil (AAAA-MM)')
+    fireEvent.change(compInput, { target: { value: '2026-10' } })
+
     const tab = screen.getByRole('button', { name: 'Fechamento & DRE' })
     fireEvent.click(tab)
 

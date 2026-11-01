@@ -1,3 +1,24 @@
+## Gate Final HTTP da Cobrança SaaS Master (HTTP QA Verification) — 01/11/2026
+
+- Mecanismo automatizado e reutilizável de QA HTTP real implementado em `src/lib/dev-qa-manual-invoice.ts`:
+  - **Modo 1: PREFLIGHT (Padrão/Read-only)**:
+    - Executa verificações de pré-condição sem produzir qualquer mutação financeira real no banco de dados.
+    - Valida integridade do schema, RLS, permissão de staff/Master, existência de contratos válidos em `saas_subscription_price_terms` e executa pré-visualização de faturas via RPC `preview_saas_manual_invoice`.
+    - Garante que a pré-visualização retorne preço unitário estritamente derivado do contrato e itens de fatura válidos.
+  - **Modo 2: TESTE FINANCEIRO CONTROLADO (Opcional, desativado por padrão)**:
+    - Exige autorização explícita via flag `enableRealFinancialMutation: true`.
+    - Utiliza competência isolada de teste (ex.: `2026-11-01`).
+    - Intercepta requisições HTTP para validar telemetria e respostas reais das RPCs:
+      a) Concorrência com a mesma chave de idempotência: 2 requisições simultâneas HTTP retornam exatamente a mesma fatura e UUID (`assertQAUUID`).
+      b) Concorrência com chaves diferentes para a mesma organização/competência: bloqueio de duplicidade garantido sob o SQLSTATE `55000`.
+      c) Verificação negativa de autorização: rejeição de organização inexistente (`23503`) e competências fora do primeiro dia do mês (`22023`).
+      d) Pós-verificação auditada: confirma gravação de logs em `saas_master_audit_logs` sem qualquer deleção de registros imutáveis.
+- Testes automatizados e integração:
+  - Criado `src/lib/dev-qa-manual-invoice.test.ts` com 5 testes unitários completos cobrindo ambos os modos, tratamento de erros, interceptação de fetch e restauração fail-closed de transporte.
+  - Suíte total de testes do faturamento manual (`MasterBilling.test.tsx` + `dev-qa-manual-invoice.test.ts`): 17/17 testes aprovados (`vitest run`).
+  - Verificação de tipos `npm run typecheck` e compilação do applet `compile_applet`: 0 erros, build aprovado.
+- Branch de trabalho: `fix/v35-manual-invoice-safety-20261029`. Nenhuma alteração enviada diretamente para a `main`.
+
 ## Cobrança SaaS Master — Emissão manual de faturas — 29/10/2026
 
 - Correção pontual de segurança e consolidação concluída:
