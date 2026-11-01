@@ -41,6 +41,8 @@ export function Cadastros({
     type: 'assign' | 'revoke'
     user: TenantUserSummary
     role: TenantRole
+    idempotencyKey: string
+    attempted: boolean
   } | null>(null)
   const [selectedAssignRoleId, setSelectedAssignRoleId] = useState('')
   const [reason, setReason] = useState('')
@@ -86,6 +88,7 @@ export function Cadastros({
       return
     }
 
+    setActionModal((current) => current ? { ...current, attempted: true } : current)
     setSubmittingAction(true)
     setActionError('')
     setActionSuccess('')
@@ -97,7 +100,8 @@ export function Cadastros({
           organizationId,
           actionModal.user.user_id,
           actionModal.role.id,
-          reason
+          reason,
+          actionModal.idempotencyKey
         )
         setActionSuccess(`Perfil ${actionModal.role.name} atribuído com sucesso.`)
       } else {
@@ -106,7 +110,8 @@ export function Cadastros({
           organizationId,
           actionModal.user.user_id,
           actionModal.role.id,
-          reason
+          reason,
+          actionModal.idempotencyKey
         )
         setActionSuccess(`Perfil ${actionModal.role.name} revogado com sucesso.`)
       }
@@ -438,7 +443,9 @@ export function Cadastros({
                                                 setActionModal({
                                                   type: 'revoke',
                                                   user: u,
-                                                  role
+                                                  role,
+                                                   idempotencyKey: crypto.randomUUID(),
+                                                   attempted: false
                                                 })
                                               }}
                                             >
@@ -484,7 +491,9 @@ export function Cadastros({
                                           setActionModal({
                                             type: 'assign',
                                             user: u,
-                                            role: roleToAssign
+                                            role: roleToAssign,
+                                             idempotencyKey: crypto.randomUUID(),
+                                             attempted: false
                                           })
                                         }}
                                       >
@@ -546,6 +555,7 @@ export function Cadastros({
                 type="button"
                 style={{ background: 'none', border: 'none', cursor: 'pointer' }}
                 onClick={() => setActionModal(null)}
+                disabled={submittingAction}
               >
                 <X size={20} />
               </button>
@@ -573,6 +583,7 @@ export function Cadastros({
                 placeholder="Ex: Definido em reunião de diretoria da Loja"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
+                 disabled={actionModal.attempted || submittingAction}
                 style={{ width: '100%', padding: '0.5rem' }}
               />
             </div>
