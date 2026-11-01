@@ -59,7 +59,7 @@ const mockPreviewData = {
  existing_invoice_number: null
 }
 
-function fixture(opts:{foreign?:boolean;integrity?:boolean;badBreakdown?:boolean;previewData?:unknown;rpcError?:boolean}={}){
+function fixture(opts:{foreign?:boolean;integrity?:boolean;badBreakdown?:boolean;previewData?:unknown;rpcError?:boolean;rpcResponseError?:{code:string;message:string}}={}){
  const rows:Record<string,unknown[]>={
   v_saas_invoice_balances:[{...inv,organization_id:opts.foreign?'other':org,
    integrity_ok:opts.integrity===false?false:true}],
@@ -72,6 +72,10 @@ function fixture(opts:{foreign?:boolean;integrity?:boolean;badBreakdown?:boolean
   return chain
  })
  const rpc=vi.fn((fnName:string)=>{
+  if(opts.rpcResponseError){
+   const p=Promise.resolve({data:null,error:opts.rpcResponseError})
+   return Object.assign(p,{abortSignal:()=>p})
+  }
   if(opts.rpcError){
    const p=Promise.resolve({data:null,error:new Error('RPC failed')})
    return Object.assign(p,{abortSignal:()=>p})
@@ -207,6 +211,19 @@ describe('Master manual SaaS invoice issuance',()=>{
   fireEvent.click(screen.getByRole('button',{name:'Consultar contrato e prévia'}))
 
   await screen.findByText(/Esta competência já possui uma fatura ativa emitida/)
+  expect(screen.queryByRole('button',{name:'Confirmar e emitir fatura'})).not.toBeInTheDocument()
+ })
+
+ it('explains missing contract from a plain PostgREST error and blocks issuance',async()=>{
+  const {client}=fixture({rpcResponseError:{
+   code:'55000',message:'no contractual price term found for subscription and competence'
+  }})
+  render(<MasterBilling client={client} tenants={tenants}/>)
+  await choose()
+  fireEvent.click(screen.getByRole('button',{name:'Emitir fatura manual'}))
+  fireEvent.change(screen.getByLabelText(/Competência/),{target:{value:'2026-11'}})
+  fireEvent.click(screen.getByRole('button',{name:'Consultar contrato e prévia'}))
+  await screen.findByText(/não possui um termo de preço contratual válido/)
   expect(screen.queryByRole('button',{name:'Confirmar e emitir fatura'})).not.toBeInTheDocument()
  })
 
