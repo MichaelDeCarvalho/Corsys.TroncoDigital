@@ -1,3 +1,12 @@
+## Deploy DEV tenant RBAC — 01/11/2026
+
+- **Autorização operacional:** confirmação do proprietário para aplicar a migração exclusivamente no DEV. Supabase DEV projeto `szqkdekwhzxsoxorgvaz` ACTIVE_HEALTHY; migration original ainda não aplicada antes da execução.
+- **Implantação:** `mcp__Supabase__apply_migration` retornou `success:true`; versão no banco `20261101181945`, name `tenant_rbac_management`. Para manter histórico determinístico, arquivo versionado renomeado a `supabase/migrations/20261101181945_tenant_rbac_management.sql`, removendo o nome antigo `20261101000000_tenant_rbac_management.sql` somente da branch `feat/v35-tenant-rbac`. `main` não alterada nesta sessão.
+- **Evidências:** 2 RPCs instaladas, 1 RLS `user_profiles_select_org`, `anon` sem EXECUTE, `authenticated` com EXECUTE sujeito a `users.manage` interno. Nenhuma organização/perfil/vínculo existente alterado (6 organizações, 6 atribuições); 0 auditorias RBAC persistentes. Smoke SQL após instalação, com usuário delegado e outro usuário fictício, passou: não-ADMIN com `users.manage` não pode conceder ou revogar ADMIN (`42501`); pode atribuir TREASURER; replay retorna mesma referência e produz 1 auditoria na transação. ROLLBACK e read-back confirmaram zero usuários/papéis fictícios e zero auditorias persistentes.
+- **Corretivo de privilégio:** a migração pré-deploy foi reforçada: conceder/revogar ADMIN exige também ser ADMIN da mesma Loja; elimina elevação indireta por administradores delegados (`users.manage`). ADR-0040. CI #378 PASS para revisão que incorporou o guard; mudanças posteriores são documentação e alinhamento de versão.
+- **Limites:** SQL usou claims simuladas, não HTTP de sessões reais. Nem deploy Cloudflare nem merge PR #11, nem produção, ocorreram. UI React do RBAC permanece pendente de homologação browser com atores reais.
+- **Próxima etapa:** conferir CI do head do PR #11 e fazer aceite de UI/HTTP no DEV com sessões autorizadas, sem realizar mudanças comerciais e antes de qualquer liberação à produção.
+
 ## Gate RBAC SQL transacional DEV — 01/11/2026
 
 - **CI #376 PASS**, jobs frontend/static concluídos com sucesso na revisão `5588c342`. Testes e build passaram no CI; os 8 testes do Gemini são unitários/mocks.
