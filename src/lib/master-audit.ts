@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 export type AuditFilters = { from: string; to: string; action: string; organization: string }
 export type MasterAuditEvent = {
   id: string; created_at: string; staff_user_id: string | null; organization_id: string | null;
-  action: string; resource_type: string; resource_id: string | null
+  action: string; resource_type: string | null; resource_id: string | null
 }
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 function dateValue(value: string) {
@@ -29,7 +29,7 @@ export async function loadMasterAudit(client: SupabaseClient, filters: AuditFilt
     const time = Date.parse(row.created_at)
     if (typeof row.id !== 'string' || !validId(row.id) || typeof row.created_at !== 'string' || (previous !== null && BigInt(row.id) >= previous) ||
       !Number.isFinite(time) || time < start || time >= end + 86400000 ||
-      typeof row.action !== 'string' || typeof row.resource_type !== 'string' ||
+      typeof row.action !== 'string' || !(row.resource_type === null || typeof row.resource_type === 'string') ||
       !(row.resource_id === null || typeof row.resource_id === 'string') ||
       !(row.staff_user_id === null || (typeof row.staff_user_id === 'string' && uuid.test(row.staff_user_id))) ||
       !(row.organization_id === null || (typeof row.organization_id === 'string' && uuid.test(row.organization_id))) ||

@@ -23,6 +23,10 @@ it('uses the last visible ID as cursor and excludes the lookahead event', async 
   expect(result.rows).toHaveLength(25)
   expect(result.next).toBe('76')
 })
+it('accepts historical events with nullable resource type as defined by the schema', async () => {
+  const result = await loadMasterAudit(fixture([{ ...event, resource_type: null }]).client, filters, null, new AbortController().signal)
+  expect(result.rows[0].resource_type).toBeNull()
+})
 it.each([
   { ...filters, from: '2026-02-30' }, { ...filters, to: '2026-01-01' },
   { ...filters, from: '2024-01-01' }, { ...filters, organization: 'bad' },

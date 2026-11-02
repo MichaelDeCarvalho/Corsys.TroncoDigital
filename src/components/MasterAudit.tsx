@@ -52,7 +52,7 @@ export function MasterAudit({ client }: { client: SupabaseClient }) {
     {data && <>
       {!data.rows.length ? <p>Nenhum evento nesta consulta.</p> : <div className="finance-table" role="region" aria-label="Eventos de auditoria" tabIndex={0}><table>
         <thead><tr><th>Evento</th><th>Data (UTC)</th><th>Ação</th><th>Responsável (ID)</th><th>Loja (ID)</th><th>Tipo de recurso</th><th>Recurso (ID)</th></tr></thead>
-        <tbody>{data.rows.map(row => <tr key={row.id}><th scope="row">{row.id}</th><td>{new Date(row.created_at).toISOString()}</td><td>{row.action}</td><td>{row.staff_user_id ?? '—'}</td><td>{row.organization_id ?? 'Plataforma'}</td><td>{row.resource_type}</td><td>{row.resource_id ?? '—'}</td></tr>)}</tbody>
+        <tbody>{data.rows.map(row => <tr key={row.id}><th scope="row">{row.id}</th><td>{new Date(row.created_at).toISOString()}</td><td>{row.action}</td><td>{row.staff_user_id ?? '—'}</td><td>{row.organization_id ?? 'Plataforma'}</td><td>{row.resource_type ?? '—'}</td><td>{row.resource_id ?? '—'}</td></tr>)}</tbody>
       </table></div>}
       <div className="finance-pagination">
         <button type="button" className="secondary" disabled={page === 0} onClick={() => setPage(value => value - 1)}>Eventos anteriores da navegação</button>
