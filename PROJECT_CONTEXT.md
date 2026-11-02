@@ -1,3 +1,11 @@
+## Auditoria Master ativada somente DEV — 01/11/2026
+
+Ativação especificamente autorizada pelo proprietário. Migration master_audit_read_model aplicada somente ao DEV szqkdekwhzxsoxorgvaz, versão real 20261102000933; arquivo alinhado sem alterar SQL aplicado. MASTER_AUDIT_READ_MODEL_SQL_PASS em transação ROLLBACK: resultado autorizado e ordenado, sem metadata, faixa inválida negada, AAL1/não-staff/anon negados, SELECT direto negado. Read-back: 5 eventos antes/depois, RLS true, SELECT authenticated false, anon EXECUTE false, authenticated EXECUTE true sujeito ao helper MASTER+AAL2, search_path vazio. São claims SQL simuladas, não HTTP/MFA real. CI412 PASS para implementação; atualização de registro/versão será checada no PR. Produção e secrets preservados.
+
+## Auditoria Master preparada — 01/11/2026
+
+Auditoria Master com leitura minimizada preparada (ADR-0042), ainda NÃO ativada. Nova RPC mantém MASTER+AAL2, omite metadata e não concede SELECT à tabela. PRs20/21 integrados, CI407/409 PASS. Aprovação específica para ativação da consulta administrativa cross-tenant continua necessária.
+
 ## Continuidade V35 — exportações locais — 01/11/2026
 
 Exportações locais dos relatórios consultados implementadas para DEV (ADR-0041): XLSX sob demanda e impressão para PDF, com escopo explícito e sem serviço externo. Pendências comprovadas consolidadas em docs/V35_REMAINING_WORK.md; sistema V35 ainda não concluído.

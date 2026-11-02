@@ -1,3 +1,11 @@
+## Auditoria Master ativada somente DEV — 01/11/2026
+
+Ativação especificamente autorizada pelo proprietário. Migration master_audit_read_model aplicada somente ao DEV szqkdekwhzxsoxorgvaz, versão real 20261102000933; arquivo alinhado sem alterar SQL aplicado. MASTER_AUDIT_READ_MODEL_SQL_PASS em transação ROLLBACK: resultado autorizado e ordenado, sem metadata, faixa inválida negada, AAL1/não-staff/anon negados, SELECT direto negado. Read-back: 5 eventos antes/depois, RLS true, SELECT authenticated false, anon EXECUTE false, authenticated EXECUTE true sujeito ao helper MASTER+AAL2, search_path vazio. São claims SQL simuladas, não HTTP/MFA real. CI412 PASS para implementação; atualização de registro/versão será checada no PR. Produção e secrets preservados.
+
+## Auditoria Master preparada — 01/11/2026
+
+Nova leitura administrativa é uma ampliação intencional do acesso do MASTER a eventos cross-tenant; exige aprovação de ativação. Sem acesso SUPPORT/BILLING/tenant/anon, metadados omitidos e sem SELECT direto. Testes clientes PASS; controles SQL/HTTP reais ainda NÃO AVALIADOS. Não aplicar migration até aprovação. Docker local sem daemon; ver ADR-0042.
+
 ## Ferramentas corrigidas — 01/11/2026
 
 Avisos Vite/Vitest/Wrangler e transitivas corrigidos com versões 6.4.5/5.0.5/4.156.1. npm audit: zero vulnerabilidades conhecidas na consulta executada. Isso não substitui auditoria de aplicação. CI deve validar composição final com exportações.
