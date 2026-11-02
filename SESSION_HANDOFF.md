@@ -1,3 +1,7 @@
+## Auditoria Master preparada — 01/11/2026
+
+PR20 integrado e2e346f3 (CI407 PASS), PR21 integrado c3e9d529 (CI409 PASS). Próximo pacote: Auditoria Master preparada com RPC mínima, filtros e paginação, IDs bigint preservados, metadata omitido. 12 testes cliente/integração MasterOperations PASS e typecheck PASS. Teste SQL de autorização/read-back preparado mas NÃO executado; Docker local indisponível, Python local indisponível e CI fará gramática/build. Migration 20261102001000 NÃO aplicada; aprovação específica necessária para ativar consulta cross-tenant de MASTER+AAL2. Após aprovação: aplicar somente DEV, executar gate SQL em ROLLBACK, read-back de grants/RLS e aceite HTTP/UI com sessão real. Sem produção/secrets nem criação de usuários. Consulta DEV de Edge Functions retornou lista vazia: consumidor de convites não implantado, entrega real continua pendente.
+
 ## Correções de ferramentas — 01/11/2026
 
 Vite 6.4.5, Vitest 5.0.5 e Wrangler 4.156.1 fixados, sem atualização major. npm audit retornou zero vulnerabilidades após instalação. 478 testes/tipos/build PASS sobre base 6042cedc; main com exportações do PR20 foi reconciliada sem conflitos, CI do PR validará composição final. PR20 integrado e2e346f3, CI407 PASS, publicação automática DEV ainda a conferir. Nenhuma alteração financeira, migration ou secret.

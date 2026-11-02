@@ -13,6 +13,7 @@ import {
   Info,
 } from 'lucide-react'
 import { MasterSupportQueue } from './MasterSupportQueue'
+import { MasterAudit } from './MasterAudit'
 import { loadPlatformJobs, type PlatformJob } from '../lib/master-config'
 import { loadMasterTenants, type MasterTenant } from '../lib/master-console'
 import {
@@ -580,32 +581,8 @@ export function MasterOperations({ client, initialTicketOrganizationId = '' }: {
         </section>
       )}
 
-      {/* Tab 5: Auditoria Master (Painel Informativo — Dependência de Backend) */}
-      {activeTab === 'audit' && (
-        <section className="panel space-y-4">
-          <div className="section-title">
-            <h3 className="flex items-center gap-2">
-              <FileCheck size={18} aria-hidden="true" />
-              Trilha de Auditoria do Control Plane
-            </h3>
-            <span className="pill text-xs">Painel Informativo / Dependência de Backend</span>
-          </div>
+      {activeTab === 'audit' && <MasterAudit client={client} />}
 
-          <div className="bg-slate-50 border rounded-md p-4 text-xs text-slate-700 space-y-2">
-            <p className="font-semibold text-slate-900">
-              Persistência Server-side e Status da Interface:
-            </p>
-            <p>
-              Os eventos administrativos, alterações de planos, aprovações e ações da equipe são gravados
-              de forma imutável no banco com <code>actor_user_id</code>, timestamp e chave de idempotência.
-            </p>
-            <p>
-              A interface de consulta com filtros cronológicos, busca textual e exportação de logs de auditoria
-              depende de RPC dedicada com controle de acesso, mantida como dependência técnica de homologação.
-            </p>
-          </div>
-        </section>
-      )}
     </div>
   )
 }

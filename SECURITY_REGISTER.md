@@ -1,3 +1,7 @@
+## Auditoria Master preparada — 01/11/2026
+
+Nova leitura administrativa é uma ampliação intencional do acesso do MASTER a eventos cross-tenant; exige aprovação de ativação. Sem acesso SUPPORT/BILLING/tenant/anon, metadados omitidos e sem SELECT direto. Testes clientes PASS; controles SQL/HTTP reais ainda NÃO AVALIADOS. Não aplicar migration até aprovação. Docker local sem daemon; ver ADR-0042.
+
 ## Ferramentas corrigidas — 01/11/2026
 
 Avisos Vite/Vitest/Wrangler e transitivas corrigidos com versões 6.4.5/5.0.5/4.156.1. npm audit: zero vulnerabilidades conhecidas na consulta executada. Isso não substitui auditoria de aplicação. CI deve validar composição final com exportações.

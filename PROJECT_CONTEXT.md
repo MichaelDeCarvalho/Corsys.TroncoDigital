@@ -1,3 +1,7 @@
+## Auditoria Master preparada — 01/11/2026
+
+Auditoria Master com leitura minimizada preparada (ADR-0042), ainda NÃO ativada. Nova RPC mantém MASTER+AAL2, omite metadata e não concede SELECT à tabela. PRs20/21 integrados, CI407/409 PASS. Aprovação específica para ativação da consulta administrativa cross-tenant continua necessária.
+
 ## Continuidade V35 — exportações locais — 01/11/2026
 
 Exportações locais dos relatórios consultados implementadas para DEV (ADR-0041): XLSX sob demanda e impressão para PDF, com escopo explícito e sem serviço externo. Pendências comprovadas consolidadas em docs/V35_REMAINING_WORK.md; sistema V35 ainda não concluído.

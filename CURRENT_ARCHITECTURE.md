@@ -1,3 +1,7 @@
+## Auditoria Master preparada — 01/11/2026
+
+Modelo proposto list_master_audit_events: RPC read-only em SECURITY DEFINER com private.require_platform_staff(MASTER), search_path vazio, EXECUTE somente authenticated; retorna 7 colunas sem metadata. Filtros UTC/ação/Loja e cursor bigint textual. Tabela/RLS/grants existentes preservados. Código e migration preparados, NÃO aplicados. ADR-0042.
+
 ## Continuidade V35 — exportações locais — 01/11/2026
 
 Relatorios gera XLSX local via write-excel-file 4.1.1 (carregamento sob demanda) e documento isolado para impressão/PDF. Exporta somente dados consultados sob os controles existentes; invalida gerações após troca de contexto. ADR-0041. Não cria backend de exportação integral.
