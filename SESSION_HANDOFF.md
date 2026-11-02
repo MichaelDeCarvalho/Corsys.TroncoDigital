@@ -1,3 +1,7 @@
+## Correções de ferramentas — 01/11/2026
+
+Vite 6.4.5, Vitest 5.0.5 e Wrangler 4.156.1 fixados, sem atualização major. npm audit retornou zero vulnerabilidades após instalação. 478 testes/tipos/build PASS sobre base 6042cedc; main com exportações do PR20 foi reconciliada sem conflitos, CI do PR validará composição final. PR20 integrado e2e346f3, CI407 PASS, publicação automática DEV ainda a conferir. Nenhuma alteração financeira, migration ou secret.
+
 ## Continuidade V35 — exportações locais — 01/11/2026
 
 Continuidade: PR #19 integrado autorizado no commit 6042cedc, CI405 PASS, DEV 6df6ff0d Ready/100%. Exportações PDF (impressão nativa) e XLSX implementadas nesta branch para páginas financeiras, recebimentos, DRE e estrutura contábil, sem afirmar exportação integral. 14 testes focados PASS; tipos/build PASS antes do ajuste final de cancelamento da consulta de plano, que será verificado pelo CI. ADR-0041 e docs/V35_REMAINING_WORK.md registram escopo, limitações e sequência restante. Próximos PRs de baixo impacto DEV autorizados com CI aprovado; sem produção/secrets/migrations/financeiro real.

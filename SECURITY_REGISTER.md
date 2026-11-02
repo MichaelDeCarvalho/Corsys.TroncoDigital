@@ -1,3 +1,7 @@
+## Ferramentas corrigidas — 01/11/2026
+
+Avisos Vite/Vitest/Wrangler e transitivas corrigidos com versões 6.4.5/5.0.5/4.156.1. npm audit: zero vulnerabilidades conhecidas na consulta executada. Isso não substitui auditoria de aplicação. CI deve validar composição final com exportações.
+
 ## Continuidade V35 — exportações locais — 01/11/2026
 
 Exportações locais: células textuais explícitas sem fórmulas; PDF via textContent e popup sem opener. Falhas de integridade bloqueiam exportação; troca de contexto descarta XLSX pendente. Arquivos não contêm credenciais. npm audit encontrou 6 avisos em ferramentas existentes, sem aviso para write-excel-file/fflate; correção em lote separado. ADR-0041.
