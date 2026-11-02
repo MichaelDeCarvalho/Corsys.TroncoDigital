@@ -1,3 +1,17 @@
+## SMTP DEV ativo e teste de envio aceito — 01/11/2026 Brasil
+
+Atualização que supersede os bloqueios operacionais anotados abaixo: proprietário configurou pessoalmente o SMTP personalizado no Supabase DEV, remetente `michael@lojamais1.com`, nome `CorSys Tronco Digital`, host `smtp.resend.com`, porta `465`; corrigiu whitespace inicial que havia no host. UI confirmou toggle SMTP ativo e senha armazenada, sempre oculta e não lida pelo agente. Com autorização específica do proprietário, o painel de usuários enviou um único e-mail de recuperação para `michael@lojamais1.com` e exibiu “Password recovery sent” / “Sent password recovery to michael@lojamais1.com”. Nenhuma senha foi alterada e nenhum link foi aberto. Isto confirma aceite do envio pelo fluxo Supabase Auth; caixa de entrada/entrega final não foi verificada. Não foi convite de onboarding. Nenhuma API key ou secret foi lida/registrada.
+
+Próximo: implementar consumidor idempotente e autorizado de `onboarding_invite` usando Supabase Auth Admin no servidor; não há Edge Function consumidora implantada, e nenhum convite real foi enviado. Não repetir o e-mail de recuperação como verificação. Consultar a entrega Resend apenas se necessário e sem ler conteúdo de reset.
+
+## SMTP DEV conferido no Brave — 01/11/2026 Brasil
+
+Brave confirmado na organização correta fblwfnjkisduhzuylazo. Navegação ao projeto DEV /auth/smtp funcionou; switch Toggle SMTP aria-checked=false. SMTP personalizado desativado. Somente leitura, nenhum campo ou credencial alterado; remetente escolhido michael@lojamais1.com ainda depende da configuração SMTP. Próxima intervenção: proprietário habilitar/configurar SMTP Resend no DEV e inserir pessoalmente a chave no campo Password; não enviá-la ao chat. Atualiza bloqueio anterior de conta incorreta. Implementação do consumidor onboarding_invite continua pendente e nenhuma mensagem foi enviada.
+
+## Continuidade dos convites — 01/11/2026 Brasil
+
+Proprietário definiu michael@lojamais1.com como remetente dos convites. PR23 integrado em 01aed19d, CI415 PASS, aceite real da auditoria encerrado no escopo registrado abaixo. Consulta read-only do Resend confirmou lojamais1.com verificado, envio habilitado; nenhuma mensagem foi enviada. Tentativa de abrir SMTP do Supabase DEV redirecionou para /dashboard/organizations e mostrou somente a organização cxhyntqrxtpfzasvwdyi (3 projetos), da outra conta; DEV pertence a fblwfnjkisduhzuylazo. Painel DEV/SMTP não foi acessado nem alterado. Próxima intervenção: proprietário abrir painel do projeto szqkdekwhzxsoxorgvaz pela conta correta; depois conferir somente estado SMTP/remetente, sem extrair senha/chaves. Resend conversation_id para chamadas futuras: 01a199a2-09c0-7424-96de-8a25d9db56c1. Nota local ainda não commitada; incorporar na próxima entrega de convites.
+
 ## Aceite real da Auditoria Master — 01/11/2026 Brasil
 
 - Proprietário conectou sessão Master real e concluiu MFA no navegador; não foram extraídos JWT, senha ou OTP. Após atualizar a aba antiga, Master > Operação e suporte > Auditoria retornou 5 eventos reais (IDs 25, 24, 21, 20, 1), sem metadata.
