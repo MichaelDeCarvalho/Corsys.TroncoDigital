@@ -1,3 +1,7 @@
+## Auditoria Master ativada somente DEV — 01/11/2026
+
+Ativação especificamente autorizada pelo proprietário. Migration master_audit_read_model aplicada somente ao DEV szqkdekwhzxsoxorgvaz, versão real 20261102000933; arquivo alinhado sem alterar SQL aplicado. MASTER_AUDIT_READ_MODEL_SQL_PASS em transação ROLLBACK: resultado autorizado e ordenado, sem metadata, faixa inválida negada, AAL1/não-staff/anon negados, SELECT direto negado. Read-back: 5 eventos antes/depois, RLS true, SELECT authenticated false, anon EXECUTE false, authenticated EXECUTE true sujeito ao helper MASTER+AAL2, search_path vazio. São claims SQL simuladas, não HTTP/MFA real. CI412 PASS para implementação; atualização de registro/versão será checada no PR. Produção e secrets preservados.
+
 ## Auditoria Master preparada — 01/11/2026
 
 Modelo proposto list_master_audit_events: RPC read-only em SECURITY DEFINER com private.require_platform_staff(MASTER), search_path vazio, EXECUTE somente authenticated; retorna 7 colunas sem metadata. Filtros UTC/ação/Loja e cursor bigint textual. Tabela/RLS/grants existentes preservados. Código e migration preparados, NÃO aplicados. ADR-0042.

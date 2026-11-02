@@ -1,3 +1,9 @@
+## Atualização de ativação — 01/11/2026
+
+Ativação especificamente autorizada pelo proprietário. Migration master_audit_read_model aplicada somente ao DEV szqkdekwhzxsoxorgvaz, versão real 20261102000933; arquivo alinhado sem alterar SQL aplicado. MASTER_AUDIT_READ_MODEL_SQL_PASS em transação ROLLBACK: resultado autorizado e ordenado, sem metadata, faixa inválida negada, AAL1/não-staff/anon negados, SELECT direto negado. Read-back: 5 eventos antes/depois, RLS true, SELECT authenticated false, anon EXECUTE false, authenticated EXECUTE true sujeito ao helper MASTER+AAL2, search_path vazio. São claims SQL simuladas, não HTTP/MFA real. CI412 PASS para implementação; atualização de registro/versão será checada no PR. Produção e secrets preservados.
+
+A proposta abaixo foi aprovada para DEV; as referências a aprovação pendente e migration não aplicada registram o estado anterior, substituído por esta evidência.
+
 # ADR-0042 — Leitura minimizada da auditoria Master
 
 Data: 01/11/2026. Status: proposta, ativação DEV depende de aprovação específica.
@@ -14,7 +20,7 @@ Cliente valida intervalo, Loja, ordenação, limites e cursor, omite campos ines
 
 ## Ativação e verificação
 
-Migration `20261102001000_master_audit_read_model.sql` preparada, NÃO aplicada. Antes da ativação exigir aprovação para o acesso administrativo novo. Depois aplicar somente DEV e executar `supabase/tests/test_master_audit_read_model.sql`: claims simuladas, resultado autorizado, AAL1 e não-staff negados, anon sem EXECUTE, SELECT direto negado e histórico preservado em ROLLBACK. Testes SQL preparados não são execução real; Docker local indisponível nesta sessão. CI valida gramática, tipos, testes cliente e build; não valida autorização real da RPC.
+Migration `20261102000933_master_audit_read_model.sql` preparada, NÃO aplicada. Antes da ativação exigir aprovação para o acesso administrativo novo. Depois aplicar somente DEV e executar `supabase/tests/test_master_audit_read_model.sql`: claims simuladas, resultado autorizado, AAL1 e não-staff negados, anon sem EXECUTE, SELECT direto negado e histórico preservado em ROLLBACK. Testes SQL preparados não são execução real; Docker local indisponível nesta sessão. CI valida gramática, tipos, testes cliente e build; não valida autorização real da RPC.
 
 Após gate SQL, homologar UI/HTTP com sessão MASTER AAL2 real; OTP permanece com o proprietário. Não inferir sucesso de ausência de dados.
 
