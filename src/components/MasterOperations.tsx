@@ -282,7 +282,7 @@ export function MasterOperations({ client, initialTicketOrganizationId = '' }: {
           data-operation-tab="audit"
           onClick={() => setActiveTab('audit')}
         >
-          Auditoria Master (Informativo)
+          Auditoria Master
         </button>
       </div>
 
