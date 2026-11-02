@@ -1,3 +1,11 @@
+## Aceite real da Auditoria Master — 01/11/2026 Brasil
+
+- Proprietário conectou sessão Master real e concluiu MFA no navegador; não foram extraídos JWT, senha ou OTP. Após atualizar a aba antiga, Master > Operação e suporte > Auditoria retornou 5 eventos reais (IDs 25, 24, 21, 20, 1), sem metadata.
+- Filtro de ação support_session.start retornou apenas evento 20. Combinação dessa ação com Loja 94b84958-4dd9-435d-9a4e-244220835d70 retornou vazio explícito. Data UTC 01/11/2026 e essa Loja retornaram os eventos 25/24. Filtros restaurados à consulta inicial. Sem paginação real além da primeira página (há somente 5 eventos); não criar histórico artificial para esse teste.
+- Leitura administrativa separada confirmou 5 eventos preservados, sem escrita/cancelamento/alteração financeira. Negativas AAL1/tenant/anon seguem comprovadas pelo gate SQL anterior, não repetidas como HTTP.
+- PR22 integrado 88b0fb7d; CI413 PASS; Cloudflare DEV585995d2 Ready/100%. Inclui as correções de ferramentas do PR21. Removido rótulo Informativo da aba funcional; alteração apenas de apresentação.
+- Próximo bloqueio de onboarding: nenhuma Edge Function implantada para consumir convite. Resend conectado tem somente lojamais1.com verified/sending enabled; remetente do CorSys ainda não definido pelo proprietário. Pergunta enviada; nenhuma mensagem, domínio, chave, DNS ou secret alterado. Não tratar tarefa enfileirada como convite entregue.
+
 ## Auditoria Master ativada somente DEV — 01/11/2026
 
 Ativação especificamente autorizada pelo proprietário. Migration master_audit_read_model aplicada somente ao DEV szqkdekwhzxsoxorgvaz, versão real 20261102000933; arquivo alinhado sem alterar SQL aplicado. MASTER_AUDIT_READ_MODEL_SQL_PASS em transação ROLLBACK: resultado autorizado e ordenado, sem metadata, faixa inválida negada, AAL1/não-staff/anon negados, SELECT direto negado. Read-back: 5 eventos antes/depois, RLS true, SELECT authenticated false, anon EXECUTE false, authenticated EXECUTE true sujeito ao helper MASTER+AAL2, search_path vazio. São claims SQL simuladas, não HTTP/MFA real. CI412 PASS para implementação; atualização de registro/versão será checada no PR. Produção e secrets preservados.

@@ -4,10 +4,10 @@ Este registro substitui inferências a partir das tabelas históricas de cobertu
 
 | Pendência | Evidência / próxima ação |
 |---|---|
-| PDF e XLSX dos recortes consultados | Implementação nesta branch, ADR-0041. Validar CI e publicação DEV. |
-| Atualização de ferramentas com avisos de segurança | npm audit identificou Vite, Vitest/mocker e Wrangler/Miniflare/undici. Correções propostas pelo registro: Vite 6.4.5, Vitest 5.0.5, Wrangler 4.156.1; validar em lote separado, sem `audit fix --force`. |
+| PDF e XLSX dos recortes consultados | Implementados no PR20, CI407 PASS e publicados DEV. PDF usa impressão nativa; recortes têm abrangência explícita, não exportação integral. |
+| Ferramentas de desenvolvimento | Corrigidas no PR21 (Vite 6.4.5, Vitest 5.0.5, Wrangler 4.156.1), CI409 PASS, npm audit zero avisos conhecidos na execução; incorporadas na publicação DEV585995d2. |
 | Diário/Razão detalhados e exportação integral | Relatorios.tsx consulta agregados DRE/estrutura, não livro diário. Não rotular recorte como relatório integral. Conferir contrato contábil antes de implementar. |
-| Auditoria Master consultável | Aba audit de MasterOperations.tsx é informativa. Precisa contrato de leitura privilegiado, filtros/paginação, minimização e testes de autorização; não abrir SELECT à tabela backend para contornar essa dependência. |
+| Auditoria Master consultável | PR22 integrado, migration DEV20261102000933, CI413 e SQL PASS; leitura/filtros UI reais MASTER/MFA PASS, 5 eventos preservados. Negativas HTTP independentes e página adicional não executadas; SQL negativo anterior preservado. |
 | Convite de onboarding entregue | MasterOnboarding.tsx informa apenas tarefa enfileirada. Conferir consumidor e provider; não anunciar e-mail entregue sem execução observada. |
 | Privacidade/portabilidade/retencão | Configuracoes.tsx mantém operações em homologação. Exige fluxo backend com autorização, auditoria, escopo e retenção definidos, sem exclusão financeira histórica. |
 | Publicação de plano contábil | AccountingPlans.tsx informa publicação automática indisponível; conferir regras de vínculos/vigência antes de comando novo. |
