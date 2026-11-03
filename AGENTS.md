@@ -12,6 +12,14 @@ Use, nesta ordem:
 7. `docs/engineering/ecc-adoption.md`;
 8. documentação oficial atual quando APIs/SDKs/plataformas puderem ter mudado.
 
+## Retomada rápida V35 (controle vivo)
+
+- O proprietário decidiu **finalizar toda a V35 antes de iniciar Beta**; não reduzir o escopo para MVP sem nova decisão.
+- **Ler primeiro** `docs/V35_SESSION_CURSOR.md` (microentrega ativa), depois `docs/V35_EXECUTION_BOARD.md` (macroetapas, microentregas, estado e DoD). Esses arquivos indexam a execução; não substituem a precedência do código, ADRs e evidências.
+- Após cada PR/marco, atualizar o cursor e o handoff com revisão Git, testes realmente executados, estado de publicação/homologação e próximo ID; preservar histórico em vez de apagar notas antigas.
+- Não reabrir estados históricos de `docs/V35_COVERAGE.md` ou outra matriz sem conciliar com a HEAD e evidências atuais. Uma única microentrega ativa por ciclo.
+- `sources/` é estritamente somente leitura quando presente; não alterar protótipos ou documentos-fonte para ajustar comportamento.
+
 ## Regra de trabalho
 
 - Inspecione antes de alterar.
