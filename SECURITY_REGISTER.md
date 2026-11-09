@@ -1,3 +1,11 @@
+**Advisory Supabase (09/11/2026):** o lint `authenticated_security_definer_function_executable` sinaliza as três RPCs de M01.02 porque são `SECURITY DEFINER` em `public` com EXECUTE para `authenticated` — exposição **intencional para operação Master** e não autorização ampla. O controle interno `private.require_platform_staff('MASTER')` com AAL2 foi exercitado no PostgreSQL DEV com negações AAL1/não-Master, mas um gate HTTP/JWT real permanece pendente. Não eliminar indiscriminadamente os grants sem revisar o contrato da interface. Referência: https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable
+
+## M01.02 — segurança verificada em DEV (09/11/2026)
+
+- Supabase DEV `szqkdekwhzxsoxorgvaz`, migration `20261109190747`. `anon` sem EXECUTE nas 3 RPCs; `authenticated` somente com validação interna `private.require_platform_staff('MASTER')` e AAL2. Todas SECURITY DEFINER com `search_path` vazio verificado.
+- Negativas reais no PostgreSQL com **claims SQL simuladas**: AAL1 Master e AAL2 não-Master barrados nas 3 RPCs. Positivo Master+AAL2, transação/rollback com reservas fictícias, expiração conservadora e observação idempotente/auditoria higienizada PASS. Nenhum fixture persistido no DEV.
+- Limites: não houve JWT HTTP real, Auth Admin, acesso do usuário convidado, entrega de e-mail, reenvio ou atualização de produção. Existência de conta Auth não confirma que houve entrega; nunca liberar retry com base exclusiva nisso. ADR-0044.
+
 ## M01.02 — falha externa ambígua (09/11/2026)
 
 Risco: `inviteUserByEmail` pode ter concluído externamente antes de timeout; `auth.users` presente/ausente é evidência insuficiente para um retry. Mitigação proposta (ADR-0044): claims stale em quarentena, preserve `attempts>0`, sem liberar email/requeue; consulta Master+AAL2 limitada e sem PII; observações imutáveis idempotentes; lock de linha em expiração e no registro. Pendência: revisão do SQL, testes de integração, homologação JWT real no DEV e reconciliação verificável com provedor; nenhuma ativação ou convite autorizado por esta branch.
