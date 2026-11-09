@@ -1,3 +1,9 @@
+## M01.02 — reconciliação de convites (09/11/2026)
+
+- A partir de `main=04f99e97521a2841bc2d628277ff791724bc0c93`, preparada branch `feat/v35-m0102-invite-reconciliation`. Propõe migration somente ADITIVA e RPCs de consulta/expiração/observação para Master+AAL2, respeitando o isolamento de operações e sem alterar Auth/convites.
+- Expiração é quarentena: `running` velho vira `failed/invite_outcome_unknown`, `attempts=1` preservado; não há reenvio, retry, reset de reserva, criação/vínculo de usuários ou prova de delivery. Observação de conta existente é apenas leitura e não habilita acesso.
+- ADR-0044 e gate PostgreSQL descartável no mesmo script `check_onboarding_invite_pg.py`; resultados dependem de CI do PR. A migration **não foi aplicada** no Supabase DEV, nenhum deploy ou convite foi executado. Encerramento da M01.02 e homologação DEV ainda pendentes.
+
 ## V35 M01.01 — ativação técnica DEV autorizada e verificada (09/11/2026)
 
 - Autorização específica do proprietário: integrar PR #26 e ativar migration/Edge Function **somente DEV**, **sem envio de convites**.

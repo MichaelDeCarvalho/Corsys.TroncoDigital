@@ -19,7 +19,7 @@ def extract(source_text, start, end):
     value, = matches
     return value
 
-def sql(query, app="invite-gate", succeeds=True):
+def sql(query, app="invite-gate", succeeds=True, error_code="42501"):
     result = subprocess.run(
         ["psql", "-XAtq", "-v", "ON_ERROR_STOP=1", "-v", "VERBOSITY=verbose",
          "-h", "127.0.0.1", "-p", "55432", "-U", "postgres", "-d", "onboarding_gate"],
@@ -29,7 +29,7 @@ def sql(query, app="invite-gate", succeeds=True):
     if succeeds:
         assert result.returncode == 0, result.stderr
         return result.stdout.strip()
-    assert result.returncode != 0 and "42501" in result.stderr, result.stderr
+    assert result.returncode != 0 and error_code in result.stderr, result.stderr
 
 def table(src, name):
     return extract(src, rf"create table public\.{name} \(", r"\n\);")
@@ -154,3 +154,103 @@ where sanitized_summary::text like '%@%' or
 assert sql("select count(*) from saas_onboarding_step_events;") == "6"
 assert sql("select count(*) from saas_onboarding_runs where status <> 'awaiting_invite';") == "0"
 print("PASS two concurrent blocked claimants, deduplication, replay, finalization and sanitized audit")
+
+
+# M01.02: rollback boundary first, then test new functions in disposable PG only.
+reconciliation = source("v35_onboarding_invite_reconciliation").strip().splitlines()
+assert reconciliation[0].strip().lower() == "begin;" and reconciliation[-1].strip().lower() == "commit;"
+reconciliation_body = "\n".join(reconciliation[1:-1])
+assert not re.search(r"(?im)^\s*(commit|rollback|start\s+transaction)\s*;", reconciliation_body)
+reconcile_exists = "select to_regprocedure('public.expire_onboarding_invite_claims(integer)') is not null;"
+assert sql("begin;\n" + reconciliation_body + "\n" + reconcile_exists +
+           "\nrollback;\n" + reconcile_exists) == "t\nf"
+sql("begin;\n" + reconciliation_body + "\ncommit;")
+print("PASS reconciliation migration DDL rollback")
+
+reconcile_list = "select count(*) from public.list_onboarding_invite_reconciliation(25);"
+expire = "select public.expire_onboarding_invite_claims(25);"
+observation_id = uid(81)
+observe = lambda job, id, code: (
+    f"select public.observe_onboarding_invite_reconciliation('{job}','{id}','{code}');"
+)
+for role in ("anon",):
+    sql(f"set role {role};" + reconcile_list, succeeds=False)
+    sql(f"set role {role};" + expire, succeeds=False)
+    sql(f"set role {role};" + observe(jobs[3], observation_id, "review_pending"),
+        succeeds=False)
+sql(caller(master, "aal1") + reconcile_list, succeeds=False)
+sql(caller(support, "aal2") + expire, succeeds=False)
+sql(caller(support, "aal2") + observe(jobs[3], observation_id, "review_pending"),
+    succeeds=False)
+assert sql("""select
+ has_function_privilege('anon','public.list_onboarding_invite_reconciliation(integer)','EXECUTE')::text
+ || '|' ||
+ has_function_privilege('authenticated','public.list_onboarding_invite_reconciliation(integer)','EXECUTE')::text
+ || '|' ||
+ has_function_privilege('anon','public.expire_onboarding_invite_claims(integer)','EXECUTE')::text
+ || '|' ||
+ has_function_privilege('authenticated','public.expire_onboarding_invite_claims(integer)','EXECUTE')::text;""") == "false|true|false|true"
+sql(caller(master, "aal2") +
+    "select public.list_onboarding_invite_reconciliation(0);",
+    succeeds=False, error_code="22023")
+print("PASS reconciliation Master/AAL2 grants and parameter guards")
+
+# One stale in-flight claim, one fresh claim, both reserve attempts and email.
+stale_run, fresh_run = uid(61), uid(62)
+stale_job, fresh_job = uid(71), uid(72)
+for run, job, email, delay in [
+    (stale_run, stale_job, "stale@example.test", "20 minutes"),
+    (fresh_run, fresh_job, "fresh@example.test", "1 minute"),
+]:
+    sql(f"""
+    insert into saas_onboarding_runs(
+      id,status,current_step,organization_id,invite_email,idempotency_key,created_by
+    ) values (
+      '{run}','awaiting_invite','invite','{orgs[1]}','{email}','{run}','{master}'
+    );
+    insert into saas_jobs(
+      id,organization_id,job_type,status,attempts,locked_at,
+      idempotency_key,correlation_id,sanitized_payload,last_error_code
+    ) values (
+      '{job}','{orgs[1]}','onboarding_invite','running',1,
+      now() - interval '{delay}','onboarding-invite:{run}','{run}',
+      '{{"onboarding_run_id":"{run}"}}','invite_outcome_unknown'
+    );
+    insert into saas_onboarding_step_events(
+      onboarding_run_id,step,event_type,sanitized_summary,actor_user_id
+    ) values (
+      '{run}','invite','started','{{"job_id":"{job}","outcome":"reserved"}}','{master}'
+    );
+    """)
+
+# Auth existence is an observation only, not confirmation of delivery.
+sql(f"insert into auth.users values ('{uid(80)}','stale@example.test');")
+assert sql(caller(master, "aal2") + reconcile_list) == "3"  # failed unknown + 2 running
+assert sql(caller(master, "aal2") +
+           f"select auth_user_present::text from public.list_onboarding_invite_reconciliation(25) where job_id='{stale_job}';") == "true"
+assert sql(caller(master, "aal2") + expire) == "1"
+assert sql(caller(master, "aal2") + expire) == "0"
+assert sql(f"select status || ':' || attempts || ':' || last_error_code from saas_jobs where id='{stale_job}';") == (
+    "failed:1:invite_outcome_unknown"
+)
+assert sql(f"select status || ':' || attempts from saas_jobs where id='{fresh_job}';") == "running:1"
+assert sql(server + f"select count(*) from public.claim_onboarding_invite('{stale_run}','{master}');") == "0"
+assert sql(caller(master, "aal2") +
+           f"select stale::text from public.list_onboarding_invite_reconciliation(25) where job_id='{fresh_job}';") == "false"
+print("PASS stale-only expiry, repeated invocation, reservation preserved, no retry")
+
+# Auditable, idempotent observation; a changed note cannot recycle the same request ID.
+baseline_events = int(sql("select count(*) from public.saas_onboarding_step_events;"))
+assert sql(caller(master, "aal2") + observe(stale_job, observation_id, "auth_checked")) == "t"
+assert sql(caller(master, "aal2") + observe(stale_job, observation_id, "auth_checked")) == "t"
+sql(caller(master, "aal2") + observe(stale_job, observation_id, "provider_checked"),
+    succeeds=False, error_code="22023")
+assert sql(caller(master, "aal2") + observe(fresh_job, uid(82), "review_pending")) == "f"
+assert sql("select count(*) from public.saas_onboarding_step_events;") == str(baseline_events + 1)
+assert sql(f"""select sanitized_summary->>'auth_user_present'
+ from public.saas_onboarding_step_events
+ where sanitized_summary->>'request_id' = '{observation_id}';""") == "true"
+assert sql("""select count(*) from public.saas_onboarding_step_events
+ where sanitized_summary::text like '%@%';""") == "0"
+assert sql(f"select attempts from saas_jobs where id='{stale_job}';") == "1"
+print("PASS immutable sanitized observations, idempotency, no recipient disclosure")

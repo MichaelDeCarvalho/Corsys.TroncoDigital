@@ -45,7 +45,7 @@ Cada microentrega tem **um único ID permanente**. Não promover por inferência
 | M00.01 | Criar quadro mestre, cursor e regra de atualização | CONCLUIDO | PR #25 integrado em `639ef08a`; cursor e quadro disponíveis em `main` |
 | M00.02 | Reconciliar microentregas de cada macro com inventário e código antes de executar | A_CONFERIR | Não reutilizar estados históricos como pendências |
 | M01.01 | Consumidor idempotente e autorizado do job `onboarding_invite` | INTEGRADO | PR #26 em `b32692dc`; migration DEV `20261109184607`, Edge ACTIVE v1/JWT; end-to-end JWT real/convite **não homologado**, sem envios |
-| M01.02 | Claim/lease, retry, expiração, deduplicação e reconciliação de envio Auth | PENDENTE_CONFIRMADO | Reutilizar `saas_jobs`, tratar resultados incertos sem segundo convite indevido |
+| M01.02 | Claim/lease, retry, expiração, deduplicação e reconciliação de envio Auth | EM_EXECUCAO | Branch `feat/v35-m0102-invite-reconciliation`: expiração fail-closed, observação e auditoria propostas; **retry não liberado** sem prova externa; SQL/CI pendentes |
 | M01.03 | Vínculo explícito do usuário à organização, papel inicial mínimo e aceite de termos | A_CONFERIR | Revisar regras de `user_roles`, `saas_terms_acceptances` e fluxos de ativação; não elevar privilégio automaticamente |
 | M01.04 | Homologar convite real DEV com usuário autorizado, negativas e auditoria | A_CONFERIR | SMTP DEV aceitou **um teste de recuperação**, não um convite nem confirmação de entrega |
 | M02.01 | Reconciliar pendências reais dos fluxos financeiros e cadastros V35 | A_CONFERIR | Aproveitar gates A/B, JWT/RLS, estornos, recorrência e demais evidências já aprovadas |
