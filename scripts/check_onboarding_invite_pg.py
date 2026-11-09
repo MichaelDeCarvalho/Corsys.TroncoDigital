@@ -254,3 +254,6 @@ assert sql("""select count(*) from public.saas_onboarding_step_events
  where sanitized_summary::text like '%@%';""") == "0"
 assert sql(f"select attempts from saas_jobs where id='{stale_job}';") == "1"
 print("PASS immutable sanitized observations, idempotency, no recipient disclosure")
+
+from check_onboarding_acceptance_pg import check as check_acceptance
+check_acceptance(sql, source, table, extract, caller, uid)

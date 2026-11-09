@@ -304,3 +304,9 @@ p { line-height: 1.6; }
 .bank-reconciliation p { overflow-wrap: anywhere; }
 .bank-reconciliation .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (max-width: 600px) { .bank-reconciliation .metric-grid { grid-template-columns: minmax(0, 1fr); } }
+
+.onboarding-acceptance { justify-content: stretch; }
+.onboarding-acceptance .panel { width: min(100%, 52rem); max-width: none; min-width: 0; margin-inline: auto; }
+.onboarding-document { white-space: pre-wrap; overflow-wrap: anywhere; margin-block: 1rem; line-height: 1.6; }
+.onboarding-hash { overflow-wrap: anywhere; }
+.onboarding-acceptance form { display: grid; gap: 1rem; justify-items: start; }

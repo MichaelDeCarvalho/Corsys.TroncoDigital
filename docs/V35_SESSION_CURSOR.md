@@ -1,3 +1,23 @@
+- Roteiro do gate M01.03: [V35_M0103_DEV_GATE.md](V35_M0103_DEV_GATE.md). Minuta recebida como referência não vigente; documento oficial e destinatário do teste pendentes.
+
+## M01.03 — callback e documento oficial
+
+Verificação local: typecheck, 32 testes do App e três do dispatcher passaram. O job PostgreSQL/onboarding do run 42686830483 passou na revisão eb110eb. O frontend daquele run falhou na resolução de tipos de node:crypto no teste. A revisão seguinte isolou o import no runner Vitest e passou localmente.
+
+PR #31 — callback /onboarding/accept?run_id=..., com sessão validada pelo Auth existente e sem abertura do Workspace durante o aceite. O convite usa o redirect construído exclusivamente a partir de ONBOARDING_APP_ORIGIN (HTTPS). Sem origem configurada, o dispatcher retorna 503 antes da reserva. A tela exibe texto UTF-8 como texto puro, verifica SHA-256 e exige ação explícita. O banco compara o mesmo conteúdo oficial e revalida vigência/versão/hash em toda nova ativação. O fluxo comercial exige termos mesmo se a flag legada estiver desligada. Replay concluído consulta o recibo, sem novo aceite.
+
+Integração: revisar PR e CI. Homologação: aprovar o texto UTF-8 integral, versão, vigência e SHA-256 dos bytes exatos; provisionar metadados e conteúdo privado da mesma versão em transação separada e autorizada. Com aprovação específica, aplicar a migration no DEV antes de publicar Edge e frontend, configurar ONBOARDING_APP_ORIGIN e incluir o callback na allowlist Auth. Conferir primeiro que ausência de conteúdo, hash divergente, sessão inválida e usuário de outra Loja bloqueiam. Na M01.04, autorizar destinatário e envio separadamente e conferir callback/JWT real, acesso posterior, perfil da Loja, recibo e replay. Nenhuma publicação nem alteração DEV nesta etapa.
+
+## Evidência M01.03 e gate de homologação
+
+PR #31, revisão 302b4c9: job onboarding do GitHub Actions 42683699415 aprovado. Gate M01.03 em PostgreSQL 17 descartável confirmou rollback do DDL, negação anônima e de identidade diferente/não confirmada, finalização restrita e atômica, recusa de consentimento ausente e versão/hash inválidos, serialização de duas sessões e um único perfil/recibo/evento na Loja correta.
+
+Homologação: aprovar a versão e o hash do documento oficial e definir a origem do conteúdo para exibição. Preparar a tela de aceite e o retorno do Auth. Após aprovação específica, aplicar a migration M01.03 somente no Supabase DEV e publicar a função compatível. Conferir permissões e ausência de vínculo antes do aceite. Em M01.04, com destinatário autorizado separadamente, validar o retorno Auth, o aceite real, a Loja/perfil, o recibo/auditoria e o replay com JWT real.
+
+## V35 M01.03 — vínculo e aceite
+
+M01.03 preparada sobre main 625a516a (PR #30). O Auth fornece o UUID ao finalizar o despacho. A RPC de aceite exige esse UUID autenticado, e-mail confirmado, perfil de sistema da própria Loja e, quando exigido, consentimento explícito à versão publicada vigente e ao hash. Vínculo, recibo, conclusão e auditoria são atômicos. Execuções antigas sem prova de identidade permanecem sem vínculo. Três testes locais do handler passaram. Gate PostgreSQL descartável incluído no CI. Ativação DEV aguarda aprovação.
+
 ## Estado vigente — M01.02 aplicada e verificada no DEV (09/11/2026)
 
 - **Autorização:** proprietário aprovou aplicação da migration M01.02 e testes **somente** no Supabase DEV `szqkdekwhzxsoxorgvaz`, sem convites/PROD. A aplicação ocorreu após PR #28 e #29 integrados, `main=b39da8b732c583da8fb809e06c23268211180202`.
