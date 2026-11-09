@@ -1,3 +1,7 @@
+## V35 M01.02 — RPCs de reconciliação no DEV (09/11/2026)
+
+No projeto `szqkdekwhzxsoxorgvaz`, migration `v35_onboarding_invite_reconciliation` registrada na versão `20261109190747` ativou 3 RPCs de consulta/expiração/observação, restritas à verificação Master+AAL2 no servidor, além de EXECUTE restrito a authenticated. A expiração marca `failed/invite_outcome_unknown` sem zerar tentativas ou liberar destinatário. Observações não acionam retry/Auth. SQL rollback DEV PASS para autorização, expiração e idempotência; nenhuma mudança de estado persistente fora da implantação. JWT HTTP real e entrega não homologados. Ver ADR-0044, cursor e handoff.
+
 ## M01.02 — extensão proposta de reconciliação (09/11/2026)
 
 Migration proposta `20261109220000_v35_onboarding_invite_reconciliation.sql` adiciona RPCs Master/AAL2 read-only para monitoramento de convites, expiração controlada por row-lock/skip-locked (sem reenvio e preservando attempts/reserva), e observação auditável por idempotency key. A inspeção de `auth.users` devolve apenas um booleano e não prova entrega; nenhum retry é autorizado. Nenhuma migration/deploy M01.02 aplicada em DEV ou PROD. Ver ADR-0044.
