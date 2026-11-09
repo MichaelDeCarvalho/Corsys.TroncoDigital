@@ -1,3 +1,11 @@
+## M01.02 — ativação no DEV e testes SQL (09/11/2026)
+
+- Proprietário autorizou aplicar a migration M01.02 somente no projeto Supabase DEV `szqkdekwhzxsoxorgvaz` e executar testes de autorização e reconciliação, **sem envio de convites e sem produção**. PRs #28/#29 já integrados em `main=b39da8b732c583da8fb809e06c23268211180202`.
+- Supabase registrou `v35_onboarding_invite_reconciliation` na versão real `20261109190747`; as RPCs `list_onboarding_invite_reconciliation`, `expire_onboarding_invite_claims` e `observe_onboarding_invite_reconciliation` foram lidas de volta. Privilégios anon negados, authenticated EXECUTE concedido com autorização determinística Master/AAL2; funções SECURITY DEFINER/search_path vazio.
+- SQL DEV: chamada Master/AAL2 com claims simuladas PASS; AAL1 Master e AAL2 não-Master negados nas três funções; transação com fixtures fictícias validou expiração stale uma vez, preservação de claim recente/attempts, nenhuma liberação de reenvio, observações auditáveis/idempotentes e payload sem e-mail. `ROLLBACK` executado. Read-back posterior confirmou **0 jobs de convite, 0 eventos de convite e 0 runs sintéticas** persistidos.
+- A migration original `20261109220000_v35_onboarding_invite_reconciliation.sql` foi renomeada para `20261109190747_v35_onboarding_invite_reconciliation.sql`, preservando conteúdo; não reaplicar a migração no DEV.
+- Não houve chamadas Auth Admin, teste JWT HTTP real, convites, deploy de Edge Function ou PROD. Reenvio seguro com resultado externo ambíguo **continua bloqueado** até existir comprovação verificável. M01.02 com gates de DB DEV aceitos, mas **não integralmente concluída** pelo escopo de retry; próxima microentrega independente: M01.03, seguida do gate M01.04 com autorização específica.
+
 ## Marco M01.02 — PR #28 integrado, sem ativação (09/11/2026)
 
 - GitHub `main=bf326254fba3e7a66a2f02137fa1e5c6da818461`, PR #28 integrado após CI static/frontend/onboarding PASS na revisão `4474b658`. Migration `20261109220000_v35_onboarding_invite_reconciliation.sql` está versionada, **não aplicada ao Supabase DEV**. Nenhuma função Edge foi republicada nem convite enviado.
