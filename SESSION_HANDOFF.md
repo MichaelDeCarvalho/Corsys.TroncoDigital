@@ -1,3 +1,7 @@
+## V35 M02.01 — reconciliação financeira
+
+M02.01 reconciliada sobre main 0a753406. Matriz em docs/V35_M0201_FINANCIAL_RECONCILIATION.md. Próxima M02.02: garantir completude da leitura de vínculos ativos na conciliação sob truncamento de estornos. Repasse neutro segue lacuna de domínio; confirmar regra contábil antes de implementar. Gates financeiros A/B anteriores preservados. Revisão exclusivamente documental.
+
 ## Marco M01.03 integrado; M02.01 iniciada (09/11/2026)
 
 - GitHub PR #31 `feat(v35): M01.03` integrado na `main` via squash `0addb8281300b018e6e8396feba2d6d08d458467` após CI HEAD `23b04c9` 3/3 PASS. Code review da origem do documento oficial e condições fail-closed registrada no próprio PR. Não ocorreu ativação DEV/PROD; não reaplicar testes previamente aprovados.
