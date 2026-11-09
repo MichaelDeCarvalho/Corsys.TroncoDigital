@@ -1,3 +1,7 @@
+## M01.02 — estado em desenvolvimento (09/11/2026)
+
+Continuação após a M01.01 implantada em DEV: branch de reconciliação fail-closed criada com três RPCs propostas, ADR-0044 e gate CI PostgreSQL. Nenhuma alteração Auth, envio de e-mail, PROD ou DEV nesta etapa. Não confundir relatório de autenticação existente com prova de entrega de convite. Validar PR, homologar com autorização específica e seguir M01.03/M01.04.
+
 ## V35 M01.01 — implantação técnica autorizada (09/11/2026)
 
 Decisão do proprietário: fase 1, integrar PR #26 e implantar somente o consumidor de convites no DEV **sem envios**. Integração `b32692dc1b1bd94713c23d0760ff4965001a8ee0`; migration registrada no banco DEV Supabase DEV szqkdekwhzxsoxorgvaz como `20261109184607`; Edge Function `onboarding-invite` ACTIVE v1 com JWT habilitado. Ver `docs/V35_SESSION_CURSOR.md`. Próximos: M01.02 recuperação/reconciliação e M01.04 JWT/MFA + convite real **somente mediante nova autorização**. A V35 inteira e Beta não estão concluídos.
