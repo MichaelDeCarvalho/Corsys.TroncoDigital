@@ -132,6 +132,7 @@ as $$
 declare
   v_run_id uuid;
   v_auth_exists boolean;
+  v_prior_note text;
 begin
   perform private.require_platform_staff('MASTER');
   if p_job_id is null or p_request_id is null
@@ -165,13 +166,19 @@ begin
     return false;
   end if;
 
-  if exists (
-    select 1 from public.saas_onboarding_step_events e
-    where e.onboarding_run_id = v_run_id and e.step = 'invite'
-      and e.sanitized_summary->>'job_id' = p_job_id::text
-      and e.sanitized_summary->>'request_id' = p_request_id::text
-      and e.sanitized_summary->>'outcome' = 'reconciliation_observation'
-  ) then
+  select e.sanitized_summary->>'note_code' into v_prior_note
+  from public.saas_onboarding_step_events e
+  where e.onboarding_run_id = v_run_id and e.step = 'invite'
+    and e.sanitized_summary->>'job_id' = p_job_id::text
+    and e.sanitized_summary->>'request_id' = p_request_id::text
+    and e.sanitized_summary->>'outcome' = 'reconciliation_observation'
+  order by e.id desc limit 1;
+
+  if found then
+    if v_prior_note is distinct from p_note_code then
+      raise exception 'reconciliation request reused with different note'
+        using errcode = '22023';
+    end if;
     return true;
   end if;
 
