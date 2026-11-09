@@ -1,3 +1,7 @@
+## Estado atual M01.02 — 09/11/2026
+
+PR #28 integrado e migration de reconciliação aplicada **somente DEV** `szqkdekwhzxsoxorgvaz`, versão real `20261109190747`. Testes SQL de grants, autorização simulada Master/AAL2, negativas, expiração idempotente, preservação da reserva, observação sanitizada e rollback passaram. Nenhum envio nem retry. **Faltam** validação HTTP/JWT real, evidência externa para retry seguro, vínculo/papel/termos (M01.03) e homologação de convite autorizado (M01.04). Priorizar cursor vigente, que atualiza registros históricos abaixo.
+
 ## Atualização vigente — ativação M01.01 no DEV (09/11/2026)
 
 O registro abaixo é histórico da retomada de 01/11/2026, quando **não existia** consumidor. Agora, no Supabase DEV szqkdekwhzxsoxorgvaz, a migration `20261109184607` e a Edge Function `onboarding-invite` ACTIVE v1 (`verify_jwt=true`) estão aplicadas após PR #26 integrado `b32692dc1b1bd94713c23d0760ff4965001a8ee0`. **Nenhum convite foi disparado ou homologado**. Ainda faltam M01.02 (reconciliação), M01.03 (vínculo/papel/termos) e M01.04 (aceite JWT/SMTP/convite real com autorização específica). Fonte operacional: `docs/V35_SESSION_CURSOR.md`.
