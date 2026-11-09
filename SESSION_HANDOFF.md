@@ -1,3 +1,9 @@
+## Marco M01.02 — PR #28 integrado, sem ativação (09/11/2026)
+
+- GitHub `main=bf326254fba3e7a66a2f02137fa1e5c6da818461`, PR #28 integrado após CI static/frontend/onboarding PASS na revisão `4474b658`. Migration `20261109220000_v35_onboarding_invite_reconciliation.sql` está versionada, **não aplicada ao Supabase DEV**. Nenhuma função Edge foi republicada nem convite enviado.
+- Segurança: observação de existência de conta Auth não comprova envio, bloqueio contra reenvio permanece e expiração conserva `attempts=1`. ADR-0044. Próximo gate depende de autorização específica para aplicar as três RPCs no DEV e realizar read-back/negativas sem envio; M01.03 pode ser desenvolvida de forma independente. Não reaplicar M01.01.
+- Classificação: `INTEGRADO` ≠ `HOMOLOGADO_DEV` ≠ `CONCLUIDO`.
+
 ## M01.02 — reconciliação de convites (09/11/2026)
 
 - A partir de `main=04f99e97521a2841bc2d628277ff791724bc0c93`, preparada branch `feat/v35-m0102-invite-reconciliation`. Propõe migration somente ADITIVA e RPCs de consulta/expiração/observação para Master+AAL2, respeitando o isolamento de operações e sem alterar Auth/convites.
