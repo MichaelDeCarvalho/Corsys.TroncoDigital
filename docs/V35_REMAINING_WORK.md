@@ -1,3 +1,7 @@
+## Atualização vigente — ativação M01.01 no DEV (09/11/2026)
+
+O registro abaixo é histórico da retomada de 01/11/2026, quando **não existia** consumidor. Agora, no Supabase DEV szqkdekwhzxsoxorgvaz, a migration `20261109184607` e a Edge Function `onboarding-invite` ACTIVE v1 (`verify_jwt=true`) estão aplicadas após PR #26 integrado `b32692dc1b1bd94713c23d0760ff4965001a8ee0`. **Nenhum convite foi disparado ou homologado**. Ainda faltam M01.02 (reconciliação), M01.03 (vínculo/papel/termos) e M01.04 (aceite JWT/SMTP/convite real com autorização específica). Fonte operacional: `docs/V35_SESSION_CURSOR.md`.
+
 # V35 — pendências comprovadas na retomada de 01/11/2026
 
 Este registro substitui inferências a partir das tabelas históricas de cobertura, sem declarar revisão integral nem reabrir homologações aprovadas. Estado observado no código após PR #19 (`6042cedc`).

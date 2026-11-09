@@ -1,3 +1,7 @@
+## V35 M01.01 — implantação técnica autorizada (09/11/2026)
+
+Decisão do proprietário: fase 1, integrar PR #26 e implantar somente o consumidor de convites no DEV **sem envios**. Integração `b32692dc1b1bd94713c23d0760ff4965001a8ee0`; migration registrada no banco DEV Supabase DEV szqkdekwhzxsoxorgvaz como `20261109184607`; Edge Function `onboarding-invite` ACTIVE v1 com JWT habilitado. Ver `docs/V35_SESSION_CURSOR.md`. Próximos: M01.02 recuperação/reconciliação e M01.04 JWT/MFA + convite real **somente mediante nova autorização**. A V35 inteira e Beta não estão concluídos.
+
 ## Auditoria Master ativada somente DEV — 01/11/2026
 
 Ativação especificamente autorizada pelo proprietário. Migration master_audit_read_model aplicada somente ao DEV szqkdekwhzxsoxorgvaz, versão real 20261102000933; arquivo alinhado sem alterar SQL aplicado. MASTER_AUDIT_READ_MODEL_SQL_PASS em transação ROLLBACK: resultado autorizado e ordenado, sem metadata, faixa inválida negada, AAL1/não-staff/anon negados, SELECT direto negado. Read-back: 5 eventos antes/depois, RLS true, SELECT authenticated false, anon EXECUTE false, authenticated EXECUTE true sujeito ao helper MASTER+AAL2, search_path vazio. São claims SQL simuladas, não HTTP/MFA real. CI412 PASS para implementação; atualização de registro/versão será checada no PR. Produção e secrets preservados.

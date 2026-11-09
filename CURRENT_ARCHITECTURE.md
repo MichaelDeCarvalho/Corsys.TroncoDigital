@@ -1,3 +1,7 @@
+## V35 M01.01 — implantação DEV (09/11/2026)
+
+Consumer server-side `onboarding-invite` implantado exclusivamente no Supabase DEV szqkdekwhzxsoxorgvaz (ACTIVE v1; `verify_jwt=true`), derivado do PR #26 integrado em `b32692dc1b1bd94713c23d0760ff4965001a8ee0`. A migration `v35_onboarding_invite_consumer` foi aplicada e registrada em `20261109184607`; contrato RPC: autenticação/autorização do Master AAL2 pela função `authorize_onboarding_invite_dispatch` (EXECUTE authenticated) e claim/finalização sob service_role. Comportamento Auth real/JWT/entrega **não** homologado; apenas a existência do deploy e os grants foram confirmados. Nenhuma produção/secret afetado nem convite enviado. M01.02 cobre reconciliação; M01.04 é o gate funcional com destinatário autorizado.
+
 ## Auditoria Master ativada somente DEV — 01/11/2026
 
 Ativação especificamente autorizada pelo proprietário. Migration master_audit_read_model aplicada somente ao DEV szqkdekwhzxsoxorgvaz, versão real 20261102000933; arquivo alinhado sem alterar SQL aplicado. MASTER_AUDIT_READ_MODEL_SQL_PASS em transação ROLLBACK: resultado autorizado e ordenado, sem metadata, faixa inválida negada, AAL1/não-staff/anon negados, SELECT direto negado. Read-back: 5 eventos antes/depois, RLS true, SELECT authenticated false, anon EXECUTE false, authenticated EXECUTE true sujeito ao helper MASTER+AAL2, search_path vazio. São claims SQL simuladas, não HTTP/MFA real. CI412 PASS para implementação; atualização de registro/versão será checada no PR. Produção e secrets preservados.
