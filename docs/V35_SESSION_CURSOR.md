@@ -1,3 +1,13 @@
+## M01.02 — código integrado, ainda NÃO ativado (09/11/2026)
+
+- PR #28 integrado na `main` em `bf326254fba3e7a66a2f02137fa1e5c6da818461`, checks `static`, `frontend` e `onboarding` PASS na revisão `4474b658`.
+- Migration de reconciliação `supabase/migrations/20261109220000_v35_onboarding_invite_reconciliation.sql` **somente versionada no GitHub**: não aplicada no DEV/PROD e não alterou a Edge Function M01.01.
+- O código adiciona consulta Master/AAL2, expiração em quarentena e observação idempotente. Expiração preserva tentativas e reservas; **não há retry/reenvio** de resultados desconhecidos. Pendente autorização específica para aplicar no DEV e teste com JWT real, sem envio.
+- A M01.02 está `INTEGRADO`, não `CONCLUIDO`/`HOMOLOGADO_DEV`. A retomada deve priorizar revisão do estado real, aplicação autorizada e gate de read-back/negativas, ou avançar para M01.03 sem ativar nada.
+- M01.04 (envio de convite de teste com destinatário autorizado) continua bloqueada por aprovação separada. Nenhum convite foi disparado neste ciclo.
+
+---
+
 ## Em execução — M01.02, 09/11/2026 (sem ativação)
 
 - **Base:** main `04f99e97521a2841bc2d628277ff791724bc0c93` após PR #27; branch `feat/v35-m0102-invite-reconciliation`. Confirmar commits atuais ao retomar.
