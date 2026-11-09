@@ -41,7 +41,9 @@ def check(sql, source, table, extract, caller, uid):
     """)
     def finish(identity):
         return f"select public.finish_onboarding_invite_with_identity('{job}','{operator}','{identity}');"
-    def accept(terms=version, digest="current-hash", consent="true"):
+    content = "CI synthetic bytes"
+    digest_ok = sql(f"select encode(sha256(convert_to('{content}', 'UTF8')), 'hex');")
+    def accept(terms=version, digest=digest_ok, consent="true"):
         return f"select public.accept_onboarding_invite('{run}','{terms}','{digest}',{consent});"
 
     sql("set role authenticated;" + finish(user), succeeds=False)
@@ -52,6 +54,15 @@ def check(sql, source, table, extract, caller, uid):
     sql(caller(stranger, "aal2") + accept(), succeeds=False)
     sql(caller(user, "aal1") + accept(), succeeds=False)
     sql(f"update auth.users set email_confirmed_at=now() where id='{user}';")
+    read = f"select public.read_onboarding_invite_terms('{run}')->>'status';"
+    sql("set role anon;" + read, succeeds=False)
+    sql(caller(stranger, "aal2") + read, succeeds=False)
+    assert sql(caller(user, "aal1") + read) == "blocked"
+    sql(f"insert into private.onboarding_terms_documents values ('{version}', '{content}');")
+    assert sql(caller(user, "aal1") + read) == "blocked"
+    sql(caller(user, "aal1") + accept(), succeeds=False, error_code="22023")
+    sql(f"update saas_terms_versions set document_hash='{digest_ok}' where id='{version}';")
+    assert sql(caller(user, "aal1") + read) == "ready"
     for attempt in (accept(consent="false"), accept(expired, "old-hash"), accept(digest="wrong")):
         sql(caller(user, "aal1") + attempt, succeeds=False, error_code="22023")
     assert sql(f"select count(*) from user_roles where user_id='{user}';") == "0"
@@ -76,4 +87,5 @@ def check(sql, source, table, extract, caller, uid):
     assert sql(f"select terms_version_id from saas_terms_acceptances where user_id='{user}';") == version
     assert sql(f"select count(*) from saas_onboarding_step_events where onboarding_run_id='{run}' and step='completed' and actor_user_id='{user}' and sanitized_summary::text not like '%@%';") == "1"
     assert sql(f"select status from saas_onboarding_runs where id='{run}';") == "completed"
+    assert sql(caller(user, "aal1") + read) == "completed"
     print("PASS M01.03 PostgreSQL rollback, identity, permissions, terms, tenant scope, concurrent replay and audit")

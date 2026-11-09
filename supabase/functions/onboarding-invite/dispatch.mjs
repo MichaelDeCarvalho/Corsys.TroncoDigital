@@ -20,7 +20,7 @@ export async function dispatch(request, { authorize, claim, invite, finish }) {
 
     let invitedUserId = null;
     try {
-      invitedUserId = await invite(job.recipient);
+      invitedUserId = await invite(job.recipient, runId);
     } catch {
       // A transport failure can follow a successful send.
     }

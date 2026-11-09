@@ -9,7 +9,15 @@ if (!url || !anonKey || !serviceKey) throw new Error("Missing Supabase runtime c
 const auth = { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false };
 const server = createClient(url, serviceKey, { auth });
 
-Deno.serve((request) => dispatch(request, {
+const configuredOrigin = Deno.env.get("ONBOARDING_APP_ORIGIN");
+const appOrigin = configuredOrigin ? new URL(configuredOrigin) : null;
+if (appOrigin && (appOrigin.protocol !== "https:" || appOrigin.href !== appOrigin.origin + "/")) {
+  throw new Error("Invalid onboarding app origin");
+}
+
+Deno.serve((request) => !appOrigin
+  ? Response.json({ outcome: "dispatch_unavailable" }, { status: 503 })
+  : dispatch(request, {
   async authorize(authorization: string) {
     const caller = createClient(url, anonKey, {
       auth,
@@ -26,8 +34,11 @@ Deno.serve((request) => dispatch(request, {
     if (error) throw error;
     return data;
   },
-  async invite(email: string) {
-    const { data, error } = await server.auth.admin.inviteUserByEmail(email);
+  async invite(email: string, runId: string) {
+    if (!appOrigin) throw new Error("Missing onboarding app origin");
+    const redirect = new URL("/onboarding/accept", appOrigin);
+    redirect.searchParams.set("run_id", runId);
+    const { data, error } = await server.auth.admin.inviteUserByEmail(email, { redirectTo: redirect.href });
     return error ? null : data.user?.id ?? null;
   },
   async finish(jobId: string, actor: string, invitedUserId: string | null) {

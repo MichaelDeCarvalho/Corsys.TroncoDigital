@@ -39,6 +39,54 @@ begin
 end;
 $$;
 
+-- Official UTF-8 plain text is provisioned separately by the document owner.
+create table private.onboarding_terms_documents (
+  version_id uuid primary key references public.saas_terms_versions(id),
+  document_text text not null check (length(btrim(document_text)) > 0)
+);
+revoke all on private.onboarding_terms_documents from public, anon, authenticated, service_role;
+create trigger onboarding_terms_documents_immutable
+before update or delete on private.onboarding_terms_documents
+for each row execute function private.prevent_financial_mutation();
+
+create function public.read_onboarding_invite_terms(p_run_id uuid)
+returns jsonb
+language plpgsql stable security definer set search_path = ''
+as $$
+declare
+  v_status text;
+  v_document jsonb;
+begin
+  select r.status into v_status
+  from public.saas_onboarding_runs r
+  join private.onboarding_invite_identity i on i.run_id = r.id
+  join auth.users u on u.id = i.user_id
+  where r.id = p_run_id and u.id = auth.uid() and u.email_confirmed_at is not null
+    and u.invited_at is not null and lower(btrim(u.email)) = lower(btrim(r.invite_email))
+    and ((r.status = 'awaiting_invite' and r.current_step = 'invite' and i.activated_at is null)
+      or (r.status = 'completed' and i.activated_at is not null));
+  if not found then
+    raise exception 'invite unavailable' using errcode = '42501';
+  end if;
+  if v_status = 'completed' then
+    return jsonb_build_object('status', 'completed');
+  end if;
+  select jsonb_build_object('status', 'ready', 'version_id', t.id, 'version', t.version,
+    'document_hash', t.document_hash, 'document_text', d.document_text)
+  into v_document
+  from public.saas_terms_versions t
+  join private.onboarding_terms_documents d on d.version_id = t.id
+  where t.document_type = 'terms' and t.active and t.status = 'published'
+    and t.effective_at <= statement_timestamp()
+    and (t.valid_to is null or t.valid_to > statement_timestamp())
+    and t.document_hash = encode(sha256(convert_to(d.document_text, 'UTF8')), 'hex');
+  return coalesce(v_document, jsonb_build_object('status', 'blocked'));
+end;
+$$;
+
+revoke all on function public.read_onboarding_invite_terms(uuid) from public, anon, authenticated;
+grant execute on function public.read_onboarding_invite_terms(uuid) to authenticated;
+
 create function public.accept_onboarding_invite(
   p_run_id uuid, p_terms_version_id uuid, p_document_hash text, p_accept_terms boolean
 )
@@ -81,20 +129,18 @@ begin
     raise exception 'invite unavailable' using errcode = '42501';
   end if;
 
-  if v_run.terms_acceptance_required then
-    if p_accept_terms is not true then
-      raise exception 'explicit terms acceptance required' using errcode = '22023';
-    end if;
-    perform 1 from public.saas_terms_versions t
-    where t.id = p_terms_version_id and t.document_hash = p_document_hash
-      and t.document_type = 'terms' and t.active and t.status = 'published'
-      and t.effective_at <= v_now and (t.valid_to is null or t.valid_to > v_now)
-    for share;
-    if not found then
-      raise exception 'current terms version and hash required' using errcode = '22023';
-    end if;
-  elsif p_accept_terms is distinct from false or p_terms_version_id is not null or p_document_hash is not null then
-    raise exception 'unexpected terms acceptance' using errcode = '22023';
+  if p_accept_terms is not true then
+    raise exception 'explicit terms acceptance required' using errcode = '22023';
+  end if;
+  perform 1 from public.saas_terms_versions t
+  join private.onboarding_terms_documents d on d.version_id = t.id
+  where t.id = p_terms_version_id and t.document_hash = p_document_hash
+    and t.document_type = 'terms' and t.active and t.status = 'published'
+    and t.effective_at <= v_now and (t.valid_to is null or t.valid_to > v_now)
+    and t.document_hash = encode(sha256(convert_to(d.document_text, 'UTF8')), 'hex')
+  for share of t;
+  if not found then
+    raise exception 'current official terms version and hash required' using errcode = '22023';
   end if;
 
   -- Match the lock used by tenant RBAC assignment and revocation.
@@ -116,10 +162,8 @@ begin
   insert into public.user_roles(organization_id, user_id, role_id)
   values (v_run.organization_id, v_user, v_role);
 
-  if v_run.terms_acceptance_required then
-    insert into public.saas_terms_acceptances(organization_id, user_id, terms_version_id)
-    values (v_run.organization_id, v_user, p_terms_version_id);
-  end if;
+  insert into public.saas_terms_acceptances(organization_id, user_id, terms_version_id)
+  values (v_run.organization_id, v_user, p_terms_version_id);
 
   update private.onboarding_invite_identity set activated_at = v_now,
     terms_version_id = p_terms_version_id, terms_hash = p_document_hash where run_id = p_run_id;

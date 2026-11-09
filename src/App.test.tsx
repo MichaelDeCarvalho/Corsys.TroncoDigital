@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { SupabaseClient, User } from '@supabase/supabase-js'
-import { vi } from 'vitest'
+import { afterEach, beforeEach, vi } from 'vitest'
+import { createHash, webcrypto } from 'node:crypto'
 import App, { ConnectedApp, ErrorBoundary } from './App'
 import { Workspace } from './components/Workspace'
 import { errorMonitor } from './lib/error-monitor'
@@ -316,3 +317,91 @@ describe('Error boundary and authentication exception logging', () => {
 })
 
 
+
+describe('Onboarding Auth callback', () => {
+  const runId = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'
+  const versionId = '11111111-2222-3333-4444-555555555555'
+  const path = '/onboarding/accept?run_id=' + runId
+  const text = 'CI fixture bytes\n<em>plain text</em>'
+  const documentHash = createHash('sha256').update(text, 'utf8').digest('hex')
+  const terms = { status: 'ready', version_id: versionId, version: 'fixture', document_hash: documentHash, document_text: text }
+
+  beforeEach(() => {
+    window.history.replaceState(null, '', path)
+    vi.stubGlobal('crypto', webcrypto)
+  })
+
+  afterEach(() => {
+    window.history.replaceState(null, '', '/')
+    vi.unstubAllGlobals()
+  })
+
+  it.each([path + '#error_code=otp_expired', '/onboarding/accept?run_id=bad', path + '#type=recovery'])(
+    'blocks invalid callbacks without tenant access (%s)', async url => {
+      window.history.replaceState(null, '', url)
+      const mock = mockClient()
+      render(<ConnectedApp client={mock.client} />)
+      await screen.findByRole('heading', { name: 'Convite indisponível' })
+      expect(mock.rpc).not.toHaveBeenCalled()
+      expect(mock.from).not.toHaveBeenCalled()
+    },
+  )
+
+  it('requires a verified Auth user', async () => {
+    const mock = mockClient({ user: null })
+    render(<ConnectedApp client={mock.client} />)
+    await screen.findByRole('heading', { name: 'Convite indisponível' })
+    expect(mock.rpc).not.toHaveBeenCalled()
+  })
+
+  it.each([{ status: 'blocked' }, { ...terms, document_text: 'Different bytes' }])(
+    'blocks an unavailable or mismatched document', async data => {
+      const mock = mockClient()
+      mock.rpc.mockResolvedValue({ data, error: null })
+      render(<ConnectedApp client={mock.client} />)
+      expect(await screen.findByRole('alert')).toHaveTextContent('aceite está bloqueado')
+      expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+      expect(mock.rpc).toHaveBeenCalledTimes(1)
+    },
+  )
+
+  it('shows exact text and submits only after explicit consent', async () => {
+    const mock = mockClient()
+    mock.rpc.mockResolvedValueOnce({ data: terms, error: null }).mockResolvedValueOnce({ data: orgA.id, error: null })
+    render(<ConnectedApp client={mock.client} />)
+    const document = await screen.findByRole('article', { name: 'Documento oficial' })
+    expect(document.textContent).toBe(text)
+    expect(document.querySelector('em')).toBeNull()
+    const button = screen.getByRole('button', { name: 'Aceitar e vincular à Loja' })
+    expect(button).toBeDisabled()
+    fireEvent.click(screen.getByRole('checkbox'))
+    fireEvent.click(button)
+    expect(await screen.findByText(/Aceite registrado/)).toBeInTheDocument()
+    expect(mock.rpc).toHaveBeenLastCalledWith('accept_onboarding_invite', {
+      p_run_id: runId, p_terms_version_id: versionId, p_document_hash: documentHash, p_accept_terms: true,
+    })
+    expect(mock.from).not.toHaveBeenCalled()
+  })
+
+  it('requires a new read and consent after an acceptance error', async () => {
+    const mock = mockClient()
+    mock.rpc.mockResolvedValueOnce({ data: terms, error: null })
+      .mockResolvedValueOnce({ data: null, error: { message: 'version rotated' } })
+      .mockResolvedValueOnce({ data: terms, error: null })
+    render(<ConnectedApp client={mock.client} />)
+    fireEvent.click(await screen.findByRole('checkbox'))
+    fireEvent.click(screen.getByRole('button', { name: 'Aceitar e vincular à Loja' }))
+    await screen.findByRole('alert')
+    fireEvent.click(screen.getByRole('button', { name: 'Consultar novamente' }))
+    expect(await screen.findByRole('checkbox')).not.toBeChecked()
+    expect(mock.rpc).toHaveBeenLastCalledWith('read_onboarding_invite_terms', { p_run_id: runId })
+  })
+
+  it('shows the recorded result after a lost acceptance response', async () => {
+    const mock = mockClient()
+    mock.rpc.mockResolvedValue({ data: { status: 'completed' }, error: null })
+    render(<ConnectedApp client={mock.client} />)
+    await screen.findByText(/Aceite registrado/)
+    expect(mock.rpc).toHaveBeenCalledTimes(1)
+  })
+})

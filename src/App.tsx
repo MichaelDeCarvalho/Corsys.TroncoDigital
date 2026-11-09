@@ -2,6 +2,7 @@ import { Component, useEffect, useRef, useState, type ErrorInfo, type ReactNode 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { getSupabaseClient } from './lib/supabase'
 import { useAuth } from './auth/useAuth'
+import { OnboardingAcceptance, readOnboardingCallback } from './auth/OnboardingAcceptance'
 import { Login } from './auth/Login'
 import { NewPassword } from './auth/PasswordRecovery'
 import { Workspace } from './components/Workspace'
@@ -73,6 +74,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 }
 
 export function ConnectedApp({ client }: { client: SupabaseClient }) {
+  const [onboarding] = useState(() => readOnboardingCallback(new URL(window.location.href)))
   const auth = useAuth(client)
   const lastLoggedAuth = useRef<string | null>(null)
 
@@ -117,6 +119,18 @@ export function ConnectedApp({ client }: { client: SupabaseClient }) {
         </div>
       </main>
     )
+  }
+  if (onboarding) {
+    if (onboarding.invalid || auth.recovery || auth.status !== 'authenticated' || !auth.user) {
+      return <main className="session-screen"><section className="panel">
+        <h1>Convite indisponível</h1>
+        <p role="alert">O retorno do convite está inválido ou a sessão não pôde ser confirmada.</p>
+        <a href="/">Voltar ao acesso</a>
+      </section></main>
+    }
+    return <div inert={auth.validating || undefined} aria-busy={auth.validating || undefined}>
+      <OnboardingAcceptance key={auth.user.id + onboarding.runId} client={client} runId={onboarding.runId} />
+    </div>
   }
   if (auth.recovery) {
     if (auth.status === 'authenticated' && auth.user) {
