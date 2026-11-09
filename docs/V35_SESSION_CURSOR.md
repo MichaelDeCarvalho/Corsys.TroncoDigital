@@ -1,3 +1,14 @@
+## Estado vigente — M01.03 integrada no GitHub, sem ativação DEV (09/11/2026)
+
+- **Código:** PR #31, revisão `23b04c9319782550e83ac2dc4862cb1dd2c25bb5`, integrada via squash no commit `0addb8281300b018e6e8396feba2d6d08d458467`. CI static/frontend/onboarding **3/3 PASS**; diffs e origem documental revisados.
+- **Implementação integrada:** callback `/onboarding/accept`, aceite explícito, identidade Supabase Auth associada à Loja, perfil mínimo, documento imutável em `private.onboarding_terms_documents`, hash SHA-256 verificado no browser/servidor, receipt e auditoria atômicos, retry de aceite idempotente e falha fechada quando não há documento publicado.
+- **Estado de ambiente:** migration `20261109233000_v35_onboarding_acceptance.sql` **não aplicada** no Supabase DEV; nenhuma Edge Function, frontend ou Auth redirect da M01.03 publicado; nenhum envio de convite nem alteração em PROD. **INTEGRADO ≠ HOMOLOGADO_DEV**.
+- **Decisão jurídica/comercial:** minuta de Termos de Uso não vigente; aprovação de texto oficial UTF-8, versão, data de vigência, hash e publicação somente após revisão jurídica/comercial. Não registrar documento fictício. M01.04 (convite real/JWT/aceite positivo) exige autorização separada e destinatário controlado.
+- **Roteiro de ativação técnica DEV:** `docs/V35_M0103_DEV_GATE.md`. A aplicação de migration, deploy, configuração de origem e alterações do Auth dependem de aprovação específica; se autorizadas antes do texto jurídico definitivo, só executar negativas/controles permitidos, sem habilitar aceite indevido.
+- **Próxima microentrega independente:** M02.01 — reconciliação do inventário V35 com componentes atuais, migrations e evidências existentes. Já identificada presença de `AccountTransfers`, `MutualBatches`, `DreReport`, `BankReconciliation`, `Relatorios`, `AccountingPlans` e migrations correlatas: a existência **não** prova paridade, mas impede reconstrução presumida. Investigar somente lacunas sem evidência; iniciar por fluxos financeiros da Loja.
+
+---
+
 - Roteiro do gate M01.03: [V35_M0103_DEV_GATE.md](V35_M0103_DEV_GATE.md). Minuta recebida como referência não vigente; documento oficial e destinatário do teste pendentes.
 
 ## M01.03 — callback e documento oficial
