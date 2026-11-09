@@ -1,3 +1,7 @@
+## M01.02 — falha externa ambígua (09/11/2026)
+
+Risco: `inviteUserByEmail` pode ter concluído externamente antes de timeout; `auth.users` presente/ausente é evidência insuficiente para um retry. Mitigação proposta (ADR-0044): claims stale em quarentena, preserve `attempts>0`, sem liberar email/requeue; consulta Master+AAL2 limitada e sem PII; observações imutáveis idempotentes; lock de linha em expiração e no registro. Pendência: revisão do SQL, testes de integração, homologação JWT real no DEV e reconciliação verificável com provedor; nenhuma ativação ou convite autorizado por esta branch.
+
 ## V35 M01.01 — ativação técnica e limites (09/11/2026)
 
 Supabase DEV szqkdekwhzxsoxorgvaz: read-back da migration `20261109184607` confirmou RPC de autorização disponível apenas a authenticated e sujeita a Master/AAL2; claim/finalização sem EXECUTE para anon/authenticated, com EXECUTE a service_role. Edge Function `onboarding-invite` implantada ACTIVE v1 com `verify_jwt=true`; uso de Auth Admin permanece somente server-side. Execução real de JWT/MFA/Auth **não avaliada**; deploy não comprova autorização dinâmica, entrega de e-mail nem associação segura. Nenhuma invocação de convite ou mudança de produção realizada. Se o resultado de envio for incerto, o job fica reservado; M01.02 exige procedimento seguro de reconciliação.
