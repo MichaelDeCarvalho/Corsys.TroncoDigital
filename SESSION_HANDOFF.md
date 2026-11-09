@@ -1,3 +1,7 @@
+## V35 M01.03 — vínculo e aceite
+
+M01.03 preparada sobre main 625a516a (PR #30). O Auth fornece o UUID ao finalizar o despacho. A RPC de aceite exige esse UUID autenticado, e-mail confirmado, perfil de sistema da própria Loja e, quando exigido, consentimento explícito à versão publicada vigente e ao hash. Vínculo, recibo, conclusão e auditoria são atômicos. Execuções antigas sem prova de identidade permanecem sem vínculo. Três testes locais do handler passaram. Gate PostgreSQL descartável incluído no CI. Ativação DEV aguarda aprovação.
+
 ## M01.02 — ativação no DEV e testes SQL (09/11/2026)
 
 - Proprietário autorizou aplicar a migration M01.02 somente no projeto Supabase DEV `szqkdekwhzxsoxorgvaz` e executar testes de autorização e reconciliação, **sem envio de convites e sem produção**. PRs #28/#29 já integrados em `main=b39da8b732c583da8fb809e06c23268211180202`.

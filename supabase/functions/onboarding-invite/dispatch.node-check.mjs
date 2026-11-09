@@ -32,10 +32,10 @@ test("overlapping requests send once when the queue grants one claim", async () 
     invite: async (email) => {
       assert.equal(email, "invite@example.test");
       sent++;
-      return true;
+      return "invited-user";
     },
     finish: async (...args) => {
-      assert.deepEqual(args, ["job", "master", true]);
+      assert.deepEqual(args, ["job", "master", "invited-user"]);
       return true;
     },
   };
@@ -59,10 +59,10 @@ test("ambiguous transport and finalization failures remain reserved", async () =
       invite: async () => {
         sent++;
         if (transportThrows) throw new Error("private provider response");
-        return true;
+        return "invited-user";
       },
       finish: async (_job, _actor, accepted) => {
-        assert.equal(accepted, !transportThrows);
+        assert.equal(accepted, transportThrows ? null : "invited-user");
         if (!transportThrows) throw new Error("lost finalization");
         return true;
       },

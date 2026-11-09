@@ -28,13 +28,13 @@ Deno.serve((request) => dispatch(request, {
   },
   async invite(email: string) {
     const { data, error } = await server.auth.admin.inviteUserByEmail(email);
-    return !error && Boolean(data.user?.id);
+    return error ? null : data.user?.id ?? null;
   },
-  async finish(jobId: string, actor: string, accepted: boolean) {
-    const { data, error } = await server.rpc("finish_onboarding_invite", {
+  async finish(jobId: string, actor: string, invitedUserId: string | null) {
+    const { data, error } = await server.rpc("finish_onboarding_invite_with_identity", {
       p_job_id: jobId,
       p_actor: actor,
-      p_accepted: accepted,
+      p_invited_user_id: invitedUserId,
     });
     if (error) throw error;
     return data === true;

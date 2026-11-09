@@ -18,15 +18,15 @@ export async function dispatch(request, { authorize, claim, invite, finish }) {
     const job = await claim(runId, actor);
     if (!job) return reply(409, "not_dispatchable");
 
-    let accepted = false;
+    let invitedUserId = null;
     try {
-      accepted = await invite(job.recipient);
+      invitedUserId = await invite(job.recipient);
     } catch {
       // A transport failure can follow a successful send.
     }
 
     try {
-      if (await finish(job.job_id, actor, accepted) && accepted) {
+      if (await finish(job.job_id, actor, invitedUserId) && invitedUserId) {
         return reply(200, "auth_accepted");
       }
     } catch {

@@ -393,3 +393,7 @@ Ver docs/DEV_FINANCIAL_HTTP_GATE.md. Estrutura financeira fictícia persistida n
 ## V35 M01.01 — 09/11/2026
 
 M01.01 prepara uma Edge Function manual com autorização Master/AAL2, reserva transacional em saas_jobs e chamada Auth Admin server-side. O resultado registrado é aceite do Auth. Ver ADR 0043.
+
+## V35 M01.03 — vínculo e aceite
+
+M01.03 preparada sobre main 625a516a (PR #30). O Auth fornece o UUID ao finalizar o despacho. A RPC de aceite exige esse UUID autenticado, e-mail confirmado, perfil de sistema da própria Loja e, quando exigido, consentimento explícito à versão publicada vigente e ao hash. Vínculo, recibo, conclusão e auditoria são atômicos. Execuções antigas sem prova de identidade permanecem sem vínculo. Três testes locais do handler passaram. Gate PostgreSQL descartável incluído no CI. Ativação DEV aguarda aprovação.

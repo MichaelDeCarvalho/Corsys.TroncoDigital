@@ -540,3 +540,7 @@ Migrations62/63 aditivas DEV, sem ampliar escrita em tabelas/RLS. Duas permissõ
 ## V35 M01.01 — 09/11/2026
 
 M01.01 reserva uma tentativa antes de chamar Auth Admin. Resultado incerto exige reconciliação e impede reenvio. A migration e a função aguardam aprovação para ativação. Testes de PostgreSQL real e entrega DEV seguem pendentes.
+
+## V35 M01.03 — vínculo e aceite
+
+M01.03 preparada sobre main 625a516a (PR #30). O Auth fornece o UUID ao finalizar o despacho. A RPC de aceite exige esse UUID autenticado, e-mail confirmado, perfil de sistema da própria Loja e, quando exigido, consentimento explícito à versão publicada vigente e ao hash. Vínculo, recibo, conclusão e auditoria são atômicos. Execuções antigas sem prova de identidade permanecem sem vínculo. Três testes locais do handler passaram. Gate PostgreSQL descartável incluído no CI. Ativação DEV aguarda aprovação.
