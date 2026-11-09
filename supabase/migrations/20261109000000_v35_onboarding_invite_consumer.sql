@@ -97,6 +97,13 @@ begin
       last_error_code = case when p_accepted then null else 'invite_outcome_unknown' end
   where j.id = p_job_id and j.job_type = 'onboarding_invite'
     and j.status = 'running' and j.attempts = 1
+    and exists (
+      select 1 from public.saas_onboarding_step_events e
+      where e.onboarding_run_id::text = j.correlation_id
+        and e.step = 'invite' and e.event_type = 'started'
+        and e.actor_user_id = p_actor
+        and e.sanitized_summary->>'job_id' = j.id::text
+    )
   returning j.correlation_id::uuid into v_run_id;
 
   if not found then
