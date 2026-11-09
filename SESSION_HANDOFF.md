@@ -1,3 +1,12 @@
+## V35 M01.01 — ativação técnica DEV autorizada e verificada (09/11/2026)
+
+- Autorização específica do proprietário: integrar PR #26 e ativar migration/Edge Function **somente DEV**, **sem envio de convites**.
+- PR #26 integrado à main em `b32692dc1b1bd94713c23d0760ff4965001a8ee0`; CI #424 PASS (static, frontend, onboarding) para `7a7ee9f`. Não repetir gates anteriores por mudança de conversa.
+- Supabase DEV szqkdekwhzxsoxorgvaz: migration `v35_onboarding_invite_consumer` aplicada com sucesso, versão real `20261109184607`. SQL enviado sem delimitadores externos `BEGIN/COMMIT`; read-back 3 RPCs presentes, `authenticated` EXECUTE apenas em autorização; `claim` e `finish` EXECUTE somente service_role; `anon` não pode executar autorização.
+- Edge Function `onboarding-invite` implantada DEV, status ACTIVE, versão 1, `verify_jwt=true`, dois arquivos lidos de volta; nenhuma função existia previamente. 0 jobs `onboarding_invite` e 0 eventos de convite na verificação read-only.
+- Renomeado arquivo de migration para `supabase/migrations/20261109184607_v35_onboarding_invite_consumer.sql`, alinhando a versão de código ao registro do banco; conteúdo SQL inalterado.
+- **Não homologado:** runtime com JWT Master/AAL2 real, funcionamento final da Edge, envio/recebimento de convite, associação de usuário/Loja e termos. Nenhum convite realizado. Fase 2 requer autorização separada e destinatário autorizado; M01.02 continua aberta.
+
 ## Evidência M01.01 no PR #26
 
 PR #26, revisão 0278175, CI #423, job onboarding aprovado. PostgreSQL 17 descartável confirmou presença das RPCs antes do ROLLBACK e ausência após ele, com os delimitadores da migration excluídos. O gate usa tabelas, helpers e triggers extraídos das migrations e claims Auth simuladas. Passaram Master/AAL2, negações anon/AAL1/não-Master, RPCs de fila restritas a service_role, concorrência observada entre sessões PostgreSQL, deduplicação, conta existente, replay, ator da reserva na finalização, resultado incerto e auditoria sanitizada. Três testes Node do handler passaram no mesmo job. Runtime Edge, JWT real e envio DEV ficam para o gate de ativação.
