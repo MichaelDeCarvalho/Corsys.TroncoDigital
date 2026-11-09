@@ -1,3 +1,7 @@
+## M01.02 — migration ativada só em DEV (09/11/2026)
+
+Autorização específica cumprida: migration `v35_onboarding_invite_reconciliation` aplicada no Supabase DEV `szqkdekwhzxsoxorgvaz`, versão real `20261109190747`, e SQL read-back/rollback PASS; sem envio de convites, Edge redeploy ou PROD. M01.02 preserva fail-closed para resultado externo incerto, sem retry automático. A M01.03 é o próximo trabalho de código. M01.04 requer autorização para teste HTTP/JWT real e convite com destinatário controlado. Ver cursor vigente.
+
 ## M01.02 — estado em desenvolvimento (09/11/2026)
 
 Continuação após a M01.01 implantada em DEV: branch de reconciliação fail-closed criada com três RPCs propostas, ADR-0044 e gate CI PostgreSQL. Nenhuma alteração Auth, envio de e-mail, PROD ou DEV nesta etapa. Não confundir relatório de autenticação existente com prova de entrega de convite. Validar PR, homologar com autorização específica e seguir M01.03/M01.04.
