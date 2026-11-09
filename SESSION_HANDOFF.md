@@ -1,3 +1,7 @@
+## Fechamento M02.02-A — integração GitHub (09/11/2026)
+
+PR #33 integrado `a320ca9a`, matriz M02.01. PR #34 foi apontado para main e reconciliado com squash antecedente por ref protegida com lease; revisão final `50ba0d59` CI static/frontend/onboarding PASS 3/3, merge `16bfd8e8d0838a20f2be5464a5e9c122eef0d3ea`. Completeness checks e testes focados de conciliação integrados; DEV/runtime remoto não testados e nenhuma alteração em Supabase/Cloudflare/produção. Permanecem limites de snapshot entre várias leituras, potencial migração para projeção server-side se exigida por concorrência; não confundir leitura completa com snapshot transacional. Repasse neutro aguarda decisão contábil explícita de titularidade/passivo/baixa; a matriz M02.01 já lista próximo escopo independente.
+
 ## V35 M02.02-A — integridade da conciliação
 
 M02.02-A: leitura da conciliação restringe estornos aos IDs dos vínculos do extrato, em lotes de 100. Confere contagem exata e totais por linha em centavos; leitura truncada ou incoerente bloqueia as ações. Oito testes focados e typecheck locais passaram. Gate DEV futuro somente do cenário de truncamento, se autorizado. Repasse neutro depende da definição contábil.
