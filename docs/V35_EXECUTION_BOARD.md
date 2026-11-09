@@ -44,7 +44,7 @@ Cada microentrega tem **um único ID permanente**. Não promover por inferência
 |---|---|---|---|
 | M00.01 | Criar quadro mestre, cursor e regra de atualização | EM_EXECUCAO | Este PR documental; não comprova desenvolvimento de runtime |
 | M00.02 | Reconciliar microentregas de cada macro com inventário e código antes de executar | A_CONFERIR | Não reutilizar estados históricos como pendências |
-| M01.01 | Consumidor idempotente e autorizado do job `onboarding_invite` | PENDENTE_CONFIRMADO | `MasterOnboarding.tsx` enfileira via `provision_saas_onboarding_database`; nenhuma Edge Function consumidora documentada no DEV |
+| M01.01 | Consumidor idempotente e autorizado do job `onboarding_invite` | EM_EXECUCAO | Implementação em revisão, três testes locais do handler aprovados. Ativação e homologação DEV pendentes. |
 | M01.02 | Claim/lease, retry, expiração, deduplicação e reconciliação de envio Auth | PENDENTE_CONFIRMADO | Reutilizar `saas_jobs`, tratar resultados incertos sem segundo convite indevido |
 | M01.03 | Vínculo explícito do usuário à organização, papel inicial mínimo e aceite de termos | A_CONFERIR | Revisar regras de `user_roles`, `saas_terms_acceptances` e fluxos de ativação; não elevar privilégio automaticamente |
 | M01.04 | Homologar convite real DEV com usuário autorizado, negativas e auditoria | A_CONFERIR | SMTP DEV aceitou **um teste de recuperação**, não um convite nem confirmação de entrega |

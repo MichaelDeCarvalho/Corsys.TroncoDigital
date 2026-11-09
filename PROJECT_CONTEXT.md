@@ -520,3 +520,6 @@ Ver docs/DEV_FINANCIAL_HTTP_GATE.md. Estrutura financeira fictícia persistida n
 - Os fluxos do piloto V35 ainda não estão integralmente implementados; pagamentos/recorrência/planos/relatórios e paridade de todas as telas continuam backlog.
 - Produção não autorizada; CI/HTTP real novos e homologação visual permanecem gates de aceite.
 
+## V35 M01.01 — 09/11/2026
+
+M01.01 prepara despacho de convite por operador Master com MFA. Vínculo, papel inicial, termos e homologação DEV continuam nas microentregas seguintes.

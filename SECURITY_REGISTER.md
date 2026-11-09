@@ -521,3 +521,6 @@ Negociação HTTP/UI A/B aprovada com cleanup/flags restauradas e caixa preserva
 
 Migrations62/63 aditivas DEV, sem ampliar escrita em tabelas/RLS. Duas permissões internas, isolamento, limite de entradas, período aberto, locks e fingerprint, idempotência, preservação de alocações e caixa. SQL A/B rollback PASS com30 negativas; UI local cobre escopo da prévia, edição, chave incerta e PT409. HTTP/UI real ainda pendentes. Limites: não cria juros, exige mesma classificação publicada, sem cancelamento integral de acordo. Não alegar aprovação integral da Etapa2. ADR-0033.
 
+## V35 M01.01 — 09/11/2026
+
+M01.01 reserva uma tentativa antes de chamar Auth Admin. Resultado incerto exige reconciliação e impede reenvio. A migration e a função aguardam aprovação para ativação. Testes de PostgreSQL real e entrega DEV seguem pendentes.

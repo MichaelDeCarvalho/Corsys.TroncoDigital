@@ -1,3 +1,7 @@
+## V35 M01.01 — 09/11/2026
+
+M01.01 preparada na branch feat/v35-m01-invite-consumer a partir da main 639ef08a (PR #25). Três testes locais do handler passaram com adaptadores simulados. SQL, runtime Edge e entrega DEV ainda sem homologação. M01.02 segue com reconciliação e expiração operacional. Ativação depende de aprovação específica.
+
 ## Cursor ativo V35 — 03/11/2026 (governança em branch)
 
 - **Decisão vigente:** concluir integralmente a V35 antes de iniciar Beta. Escopo rastreado em `docs/V35_EXECUTION_BOARD.md`; próxima microentrega e protocolo de retomada em `docs/V35_SESSION_CURSOR.md`.
