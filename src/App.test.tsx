@@ -1,7 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { SupabaseClient, User } from '@supabase/supabase-js'
 import { afterEach, beforeEach, vi } from 'vitest'
-import { createHash, webcrypto } from 'node:crypto'
 import App, { ConnectedApp, ErrorBoundary } from './App'
 import { Workspace } from './components/Workspace'
 import { errorMonitor } from './lib/error-monitor'
@@ -323,10 +322,11 @@ describe('Onboarding Auth callback', () => {
   const versionId = '11111111-2222-3333-4444-555555555555'
   const path = '/onboarding/accept?run_id=' + runId
   const text = 'CI fixture bytes\n<em>plain text</em>'
-  const documentHash = createHash('sha256').update(text, 'utf8').digest('hex')
+  const documentHash = '0e170656f3a5cb700bb338e63bc6041b6493634eb4b801a2c4fe49a8b13aaaa8'
   const terms = { status: 'ready', version_id: versionId, version: 'fixture', document_hash: documentHash, document_text: text }
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    const { webcrypto } = await vi.importActual<{ webcrypto: Crypto }>('node:crypto')
     window.history.replaceState(null, '', path)
     vi.stubGlobal('crypto', webcrypto)
   })
