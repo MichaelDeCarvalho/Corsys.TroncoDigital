@@ -1,3 +1,13 @@
+## Em execução — M01.02, 09/11/2026 (sem ativação)
+
+- **Base:** main `04f99e97521a2841bc2d628277ff791724bc0c93` após PR #27; branch `feat/v35-m0102-invite-reconciliation`. Confirmar commits atuais ao retomar.
+- **Escopo desta branch:** migration proposta `20261109220000_v35_onboarding_invite_reconciliation.sql` adicionando RPCs Master/AAL2 para consulta limitada, expiração de claims antigos sem liberar reserva e observação auditável idempotente; ADR-0044 e testes PostgreSQL descartável. Não altera fluxo M01.01 nem sua função implantada.
+- **Risco crítico:** `auth.users` não comprova entrega de e-mail nem a ausência de efeito externo. **Nenhum retry automático ou manual foi autorizado/implementado.** Claims `running` vencidos passam a `failed/invite_outcome_unknown` mantendo `attempts=1`; destino continua reservado.
+- **Status:** código em revisão, **migration M01.02 não aplicada no DEV**, nenhum deploy, nenhum JWT real e nenhum convite enviado. Revisar CI da branch/PR antes de qualquer merge; autorização específica antes de ativar novas RPCs no DEV.
+- **Próximo:** concluir CI + revisão do PR; definir gate de ativação DEV separado e M01.03 (vínculo/papel/termos) sem repetição de testes M01.01. M01.04 somente com autorização de destinatário de teste.
+
+---
+
 ## Estado operacional vigente — 09/11/2026: M01.01 ativação técnica DEV
 
 - **Código:** PR #26 integrado à main no commit `b32692dc1b1bd94713c23d0760ff4965001a8ee0`; CI #424 static/frontend/onboarding PASS na revisão `7a7ee9f`. Verificar nova HEAD antes de iniciar outro trabalho.
