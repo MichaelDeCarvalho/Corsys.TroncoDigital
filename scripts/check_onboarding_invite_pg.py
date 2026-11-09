@@ -241,11 +241,11 @@ print("PASS stale-only expiry, repeated invocation, reservation preserved, no re
 
 # Auditable, idempotent observation; a changed note cannot recycle the same request ID.
 baseline_events = int(sql("select count(*) from public.saas_onboarding_step_events;"))
-assert sql(caller(master, "aal2") + observe(stale_job, observation_id, "auth_checked")) == "true"
-assert sql(caller(master, "aal2") + observe(stale_job, observation_id, "auth_checked")) == "true"
+assert sql(caller(master, "aal2") + observe(stale_job, observation_id, "auth_checked")) == "t"
+assert sql(caller(master, "aal2") + observe(stale_job, observation_id, "auth_checked")) == "t"
 sql(caller(master, "aal2") + observe(stale_job, observation_id, "provider_checked"),
     succeeds=False, error_code="22023")
-assert sql(caller(master, "aal2") + observe(fresh_job, uid(82), "review_pending")) == "false"
+assert sql(caller(master, "aal2") + observe(fresh_job, uid(82), "review_pending")) == "f"
 assert sql("select count(*) from public.saas_onboarding_step_events;") == str(baseline_events + 1)
 assert sql(f"""select sanitized_summary->>'auth_user_present'
  from public.saas_onboarding_step_events
