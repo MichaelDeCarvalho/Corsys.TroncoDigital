@@ -1,3 +1,7 @@
+## M01.02 — extensão proposta de reconciliação (09/11/2026)
+
+Migration proposta `20261109220000_v35_onboarding_invite_reconciliation.sql` adiciona RPCs Master/AAL2 read-only para monitoramento de convites, expiração controlada por row-lock/skip-locked (sem reenvio e preservando attempts/reserva), e observação auditável por idempotency key. A inspeção de `auth.users` devolve apenas um booleano e não prova entrega; nenhum retry é autorizado. Nenhuma migration/deploy M01.02 aplicada em DEV ou PROD. Ver ADR-0044.
+
 ## V35 M01.01 — implantação DEV (09/11/2026)
 
 Consumer server-side `onboarding-invite` implantado exclusivamente no Supabase DEV szqkdekwhzxsoxorgvaz (ACTIVE v1; `verify_jwt=true`), derivado do PR #26 integrado em `b32692dc1b1bd94713c23d0760ff4965001a8ee0`. A migration `v35_onboarding_invite_consumer` foi aplicada e registrada em `20261109184607`; contrato RPC: autenticação/autorização do Master AAL2 pela função `authorize_onboarding_invite_dispatch` (EXECUTE authenticated) e claim/finalização sob service_role. Comportamento Auth real/JWT/entrega **não** homologado; apenas a existência do deploy e os grants foram confirmados. Nenhuma produção/secret afetado nem convite enviado. M01.02 cobre reconciliação; M01.04 é o gate funcional com destinatário autorizado.
