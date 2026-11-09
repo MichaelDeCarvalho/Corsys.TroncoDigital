@@ -19,20 +19,43 @@ export async function loadBankImports(client:SupabaseClient,org:string,signal:Ab
 }
 export async function loadBankDetail(client:SupabaseClient,org:string,statement:BankImport,signal:AbortSignal){
  if(statement.organization_id!==org)throw Error('Invalid statement tenant')
- const r=await client.from('v_bank_reconciliation_lines').select('organization_id,statement_line_id,statement_import_id,transaction_date,description,amount,matched_amount,reconciliation_status,integrity_ok')
+ const r=await client.from('v_bank_reconciliation_lines').select('organization_id,statement_line_id,statement_import_id,transaction_date,description,amount,matched_amount,reconciliation_status,integrity_ok',{count:'exact'})
   .eq('organization_id',org).eq('statement_import_id',statement.id).order('transaction_date').order('statement_line_id').limit(501).abortSignal(signal)
  const lines=rows(r.data,r.error,org,500) as BankLine[]
- if(!lines.length||new Set(lines.map(x=>x.statement_line_id)).size!==lines.length||lines.some(x=>x.statement_import_id!==statement.id||!uuid.test(x.statement_line_id)||!x.integrity_ok||checkedSigned(x.matched_amount)<0||checkedSigned(x.matched_amount)>Math.abs(checkedSigned(x.amount))))throw Error('Invalid statement detail')
- const [m,v,c]=await Promise.all([
-  client.from('bank_reconciliation_matches').select('id,organization_id,statement_line_id,matched_amount').eq('organization_id',org).in('statement_line_id',lines.map(x=>x.statement_line_id)).limit(1001).abortSignal(signal),
-  client.from('bank_reconciliation_match_reversals').select('match_id,organization_id').eq('organization_id',org).limit(1001).abortSignal(signal),
+ if(r.count!==lines.length||!lines.length||new Set(lines.map(x=>x.statement_line_id)).size!==lines.length||lines.some(x=>x.statement_import_id!==statement.id||!uuid.test(x.statement_line_id)||!x.integrity_ok||checkedSigned(x.matched_amount)<0||checkedSigned(x.matched_amount)>Math.abs(checkedSigned(x.amount))))throw Error('Invalid statement detail')
+ const [m,c]=await Promise.all([
+  client.from('bank_reconciliation_matches').select('id,organization_id,statement_line_id,matched_amount',{count:'exact'}).eq('organization_id',org).in('statement_line_id',lines.map(x=>x.statement_line_id)).limit(1000).abortSignal(signal),
   client.from('v_financial_account_movements').select('organization_id,financial_account_id,source_id,movement_type,movement_date,signed_amount')
    .eq('organization_id',org).eq('financial_account_id',statement.financial_account_id).gte('movement_date',statement.period_start).lte('movement_date',statement.period_end)
    .order('movement_date').order('source_id').limit(501).abortSignal(signal),
  ])
  const matches=rows(m.data,m.error,org,1000) as BankMatch[]
- const reversed=rows(v.data,v.error,org,1000) as {organization_id:string;match_id:string}[]
  const movements=rows(c.data,c.error,org,500) as BankMovement[]
- if(matches.some(x=>!uuid.test(x.id)||!lines.some(l=>l.statement_line_id===x.statement_line_id)||checkedSigned(x.matched_amount)<=0)||new Set(matches.map(x=>x.id)).size!==matches.length||movements.some(x=>x.financial_account_id!==statement.financial_account_id||!uuid.test(x.source_id)||!Number.isFinite(checkedSigned(x.signed_amount))))throw Error('Invalid bank facts')
- return {lines,matches:matches.filter(x=>!reversed.some(v=>v.match_id===x.id)),movements}
+ const lineIds=new Set(lines.map(x=>x.statement_line_id))
+ if(m.count!==matches.length||matches.some(x=>!uuid.test(x.id)||!lineIds.has(x.statement_line_id)||checkedSigned(x.matched_amount)<=0)||new Set(matches.map(x=>x.id)).size!==matches.length||movements.some(x=>x.financial_account_id!==statement.financial_account_id||!uuid.test(x.source_id)||!Number.isFinite(checkedSigned(x.signed_amount))))throw Error('Invalid or incomplete bank facts')
+
+ const reversed=new Set<string>()
+ // Bound the filter size and verify counts even when the API caps returned rows.
+ for(let offset=0;offset<matches.length;offset+=100){
+  const ids=matches.slice(offset,offset+100).map(x=>x.id)
+  const v=await client.from('bank_reconciliation_match_reversals').select('match_id,organization_id',{count:'exact'})
+   .eq('organization_id',org).in('match_id',ids).abortSignal(signal)
+  const entries=rows(v.data,v.error,org,ids.length) as {organization_id:string;match_id:string}[]
+  if(v.count!==entries.length)throw Error('Incomplete bank match reversals')
+  for(const entry of entries){
+   if(!ids.includes(entry.match_id)||reversed.has(entry.match_id))throw Error('Invalid bank match reversal')
+   reversed.add(entry.match_id)
+  }
+ }
+ const active=matches.filter(x=>!reversed.has(x.id))
+ const centsByLine=new Map<string,number>()
+ for(const match of active){
+  const total=(centsByLine.get(match.statement_line_id)??0)+Math.round(checkedSigned(match.matched_amount)*100)
+  if(!Number.isSafeInteger(total))throw Error('Invalid bank match total')
+  centsByLine.set(match.statement_line_id,total)
+ }
+ if(lines.some(line=>(centsByLine.get(line.statement_line_id)??0)!==Math.round(checkedSigned(line.matched_amount)*100))){
+  throw Error('Inconsistent bank match totals')
+ }
+ return {lines,matches:active,movements}
 }

@@ -12,7 +12,15 @@ function fixture(status='validated'){
   bank_reconciliation_matches:[],bank_reconciliation_match_reversals:[],v_financial_account_movements:[{organization_id:org,financial_account_id:account,source_id:payment,movement_type:'member_payment',movement_date:'2026-09-01',signed_amount:'250.00'}],
  }
  const rpc=vi.fn().mockResolvedValue({data:id,error:null})
- const from=vi.fn((name:string)=>{const q={select:()=>q,eq:()=>q,in:()=>q,gte:()=>q,lte:()=>q,order:()=>q,limit:()=>q,abortSignal:()=>Promise.resolve({data:data[name],error:null})};return q})
+ const from=vi.fn((name:string)=>{
+  let selected: string[] | undefined
+  const q={select:()=>q,eq:()=>q,in:(field:string,ids:string[])=>{if(field==='match_id')selected=ids;return q},gte:()=>q,lte:()=>q,order:()=>q,limit:()=>q,abortSignal:()=>{
+   const values=data[name] as {match_id?:string}[]
+   const result=selected?values.filter(row=>row.match_id&&selected?.includes(row.match_id)):values
+   return Promise.resolve({data:result.slice(0,1000),count:result.length,error:null})
+  }}
+  return q
+ })
  return {client:{rpc,from} as unknown as SupabaseClient,rpc,data,statement}
 }
 async function choose(){
@@ -54,5 +62,42 @@ describe('bank reconciliation journey',()=>{
   await expect(loadBankDetail(client,org,statement,new AbortController().signal)).rejects.toThrow()
   data.v_bank_reconciliation_lines=[{...(data.v_bank_reconciliation_lines[0] as object),organization_id:'foreign'}]
   await expect(loadBankDetail(client,org,statement,new AbortController().signal)).rejects.toThrow()
+ })
+})
+
+describe('bank match completeness',()=>{
+ const matchId=(n:number)=>`10000000-0000-4000-8000-${String(n).padStart(12,'0')}`
+ function history(size:number){
+  const f=fixture()
+  f.data.bank_reconciliation_matches=Array.from({length:size},(_,i)=>({
+   id:matchId(i+1),organization_id:org,statement_line_id:line,matched_amount:'0.01',
+  }))
+  f.data.v_bank_reconciliation_lines=[{...(f.data.v_bank_reconciliation_lines[0] as object),
+   matched_amount:((size-1)/100).toFixed(2),reconciliation_status:'partial'}]
+  f.data.bank_reconciliation_match_reversals=[
+   ...Array.from({length:1100},(_,i)=>({match_id:matchId(2000+i),organization_id:org})),
+   {match_id:matchId(size),organization_id:org},
+  ]
+  return f
+ }
+ it('finds the relevant reversal beyond unrelated history at the API row cap',async()=>{
+  const {client,statement}=history(1000)
+  const result=await loadBankDetail(client,org,statement,new AbortController().signal)
+  expect(result.matches).toHaveLength(999)
+  expect(result.matches.some(match=>match.id===matchId(1000))).toBe(false)
+ })
+ it('rejects match truncation at the API row cap',async()=>{
+  const {client,statement}=history(1001)
+  await expect(loadBankDetail(client,org,statement,new AbortController().signal)).rejects.toThrow('incomplete bank facts')
+ })
+ it('rejects a foreign reversal even when the id matches',async()=>{
+  const {client,statement,data}=history(1)
+  data.bank_reconciliation_match_reversals=[{match_id:matchId(1),organization_id:'foreign'}]
+  await expect(loadBankDetail(client,org,statement,new AbortController().signal)).rejects.toThrow('scope')
+ })
+ it('rejects a snapshot whose active matches disagree with the line total',async()=>{
+  const {client,statement,data}=history(2)
+  data.bank_reconciliation_match_reversals=[]
+  await expect(loadBankDetail(client,org,statement,new AbortController().signal)).rejects.toThrow('Inconsistent bank match totals')
  })
 })
