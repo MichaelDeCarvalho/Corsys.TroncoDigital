@@ -35,6 +35,30 @@ jobs:
       - name: Preserve V35 baseline and applied migrations
         run: python scripts/check_v35_preservation.py
 
+  onboarding:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: onboarding-ci
+          POSTGRES_DB: onboarding_gate
+        ports:
+          - 55432:5432
+        options: --health-cmd "pg_isready -U postgres -d onboarding_gate" --health-interval 2s --health-timeout 3s --health-retries 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24'
+      - name: Onboarding handler
+        run: node --test supabase/functions/onboarding-invite/dispatch.node-check.mjs
+      - name: Onboarding PostgreSQL rollback and concurrency
+        run: python3 scripts/check_onboarding_invite_pg.py
+
   frontend:
     runs-on: ubuntu-latest
     timeout-minutes: 10

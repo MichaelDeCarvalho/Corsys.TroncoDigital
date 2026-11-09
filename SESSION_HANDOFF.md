@@ -1,3 +1,11 @@
+## Evidência M01.01 no PR #26
+
+PR #26, revisão 0278175, CI #423, job onboarding aprovado. PostgreSQL 17 descartável confirmou presença das RPCs antes do ROLLBACK e ausência após ele, com os delimitadores da migration excluídos. O gate usa tabelas, helpers e triggers extraídos das migrations e claims Auth simuladas. Passaram Master/AAL2, negações anon/AAL1/não-Master, RPCs de fila restritas a service_role, concorrência observada entre sessões PostgreSQL, deduplicação, conta existente, replay, ator da reserva na finalização, resultado incerto e auditoria sanitizada. Três testes Node do handler passaram no mesmo job. Runtime Edge, JWT real e envio DEV ficam para o gate de ativação.
+
+## V35 M01.01 — 09/11/2026
+
+M01.01 preparada na branch feat/v35-m01-invite-consumer a partir da main 639ef08a (PR #25). Três testes locais do handler passaram com adaptadores simulados. SQL, runtime Edge e entrega DEV ainda sem homologação. M01.02 segue com reconciliação e expiração operacional. Ativação depende de aprovação específica.
+
 ## Cursor ativo V35 — 03/11/2026 (governança em branch)
 
 - **Decisão vigente:** concluir integralmente a V35 antes de iniciar Beta. Escopo rastreado em `docs/V35_EXECUTION_BOARD.md`; próxima microentrega e protocolo de retomada em `docs/V35_SESSION_CURSOR.md`.

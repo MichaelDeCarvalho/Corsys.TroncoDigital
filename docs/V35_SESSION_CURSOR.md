@@ -4,7 +4,7 @@
 
 ## Snapshot verificável na criação deste controle
 
-- Inspeção GitHub em 03/11/2026: `origin/main` apontava para `e72cbe424c7238a758037c542eb473f5837042f2` (PR #24 integrado). **Revalidar** esse HEAD; não presumir que permaneceu atual.
+- Main verificada por fetch em 09/11/2026: 639ef08a46493ad0b6bc963920f0271959e59253 (PR #25). Branch feat/v35-m01-invite-consumer criada desta revisão com árvore limpa.
 - Supabase DEV autorizado: `szqkdekwhzxsoxorgvaz`; Worker DEV `corsys-tronco-digital-dev`.
 - Histórico: PRs #15–#24 integrados conforme registros. Não reexecutar homologações por mera mudança de conversa.
 - SMTP DEV configurado pelo proprietário (via Supabase Auth/Resend); painel aceitou **um e-mail de recuperação**. Isso **não comprova** recebimento no destino nem envio de convites.
@@ -14,7 +14,7 @@
 
 - **Macro ativa:** M01 — Onboarding, identidades e convites.
 - **Micro ativa:** M01.01 — Revisar contratos reais e implementar consumidor autorizado de `onboarding_invite`, integrando M01.02 apenas se dependência técnica inseparável; documentar limites sem marcar etapa inteira como concluída.
-- **Próximo ato técnico:** confrontar migrations `saas_jobs`/`saas_onboarding_runs`, RPCs e Auth/role/termos com código na HEAD atual; desenhar claim/lease idempotente, tratamento de e-mails existentes, retry e resultado ambíguo; preparar migration + Edge Function + testes focados + ADR/handoff, em branch/PR.
+- **Próximo ato técnico:** revisar a M01.01 e executar a M01.02 para expiração e reconciliação. A ativação DEV exige aprovação específica.
 - **Bloqueio de ativação:** novas capacidades de acesso/segurança **não** são ativadas sem aprovação específica. Não ler, criar, alterar ou solicitar secrets pelo chat; credenciais permanecem no navegador.
 - **Não confundir:** `queued` ≠ convite enviado; aceite do Auth SMTP ≠ entregue na caixa postal; usuário convidado ≠ papel concedido/termos aceitos; CI aprovado ≠ homologação real.
 
@@ -30,3 +30,8 @@
 
 - Criado como documentação de governança em branch, ainda **não** como implementação da microentrega M01.01.
 - Última verificação de deploy do PR #24 não é inferida do merge. Próxima execução deve conferir apenas se necessário ao ID ativo.
+- M01.01 em revisão: consumidor e migration preparados; 3 testes locais do handler aprovados. Teste PostgreSQL real, ativação e homologação DEV pendentes.
+
+## Evidência M01.01 no PR #26
+
+PR #26, revisão 0278175, CI #423, job onboarding aprovado. PostgreSQL 17 descartável confirmou presença das RPCs antes do ROLLBACK e ausência após ele, com os delimitadores da migration excluídos. O gate usa tabelas, helpers e triggers extraídos das migrations e claims Auth simuladas. Passaram Master/AAL2, negações anon/AAL1/não-Master, RPCs de fila restritas a service_role, concorrência observada entre sessões PostgreSQL, deduplicação, conta existente, replay, ator da reserva na finalização, resultado incerto e auditoria sanitizada. Três testes Node do handler passaram no mesmo job. Runtime Edge, JWT real e envio DEV ficam para o gate de ativação.

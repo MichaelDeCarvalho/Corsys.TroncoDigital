@@ -378,3 +378,6 @@ Ver docs/DEV_FINANCIAL_HTTP_GATE.md. Estrutura financeira fictícia persistida n
 
 `recurring_member_terms` registra `effective_from`, `effective_to` inclusivo, `term_type` e `override_amount`. A nova RPC autenticada `public.transition_member_term` exige `settings.manage` e assinatura elegível, fecha uma linha aberta com lock e opcionalmente cria sucessor em única transação. Também suporta apenas encerrar o termo, retornando à regra geral. Preserva lançamentos existentes. O frontend `MemberConfiguration` chama a RPC com idempotency key e não recebe grants de escrita direta. Alteração apenas DEV, migração `20261008211155`. Segurança exercitada via SQL/claims simuladas A/B; HTTP/JWT real permanece obrigatório antes de homologar.
 
+## V35 M01.01 — 09/11/2026
+
+M01.01 prepara uma Edge Function manual com autorização Master/AAL2, reserva transacional em saas_jobs e chamada Auth Admin server-side. O resultado registrado é aceite do Auth. Ver ADR 0043.
