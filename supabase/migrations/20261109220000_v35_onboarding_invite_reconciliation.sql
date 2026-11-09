@@ -93,8 +93,8 @@ begin
       and j.attempts = 1
       and j.locked_at <= pg_catalog.now() - interval '15 minutes'
     order by j.locked_at, j.id
-    for update of j skip locked
     limit p_limit
+    for update of j skip locked
   loop
     update public.saas_jobs j
     set status = 'failed',
