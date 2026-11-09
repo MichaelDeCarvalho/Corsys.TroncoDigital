@@ -1,3 +1,14 @@
+## Estado vigente — M01.02 aplicada e verificada no DEV (09/11/2026)
+
+- **Autorização:** proprietário aprovou aplicação da migration M01.02 e testes **somente** no Supabase DEV `szqkdekwhzxsoxorgvaz`, sem convites/PROD. A aplicação ocorreu após PR #28 e #29 integrados, `main=b39da8b732c583da8fb809e06c23268211180202`.
+- **Migration:** `v35_onboarding_invite_reconciliation` aplicada em DEV; versão real Supabase `20261109190747`; arquivo versionado renomeado, **sem alterar SQL**, para `supabase/migrations/20261109190747_v35_onboarding_invite_reconciliation.sql`. Não executar novamente sob versão antiga.
+- **Read-back:** três RPCs presentes; `anon` EXECUTE negado e `authenticated` EXECUTE concedido com autorização interna Master/AAL2; SECURITY DEFINER com `search_path` vazio verificado. Antes e depois: **0 jobs, 0 eventos e 0 runs sintéticas** persistidos.
+- **Gates DEV:** Master/AAL2 com claims SQL simuladas PASS; Master/AAL1 e não-Master/AAL2 negados nas três RPCs; testes rollback com reservas fictícias PASS (claim stale/fresco, expiração uma vez, tentativas e reserva preservadas, observação idempotente/rejeição de alteração, auditoria sanitizada). Não foi utilizado JWT HTTP real.
+- **Limite de escopo:** nenhum e-mail, convite, Auth Admin, retry nem deploy de Edge Function M01.02. A existência de usuário Auth **não comprova entrega**. Sem evidência externa de ausência de efeito, reenvio segue fail-closed; não classificar a M01.02 inteira como CONCLUIDO devido à parte de retry/reconciliação externa.
+- **Próxima tarefa de código:** M01.03 — vínculo explícito do usuário, papel mínimo e aceite de termos, reconciliando código atual antes de implementar. M01.04 continua sem autorização para enviar convite de teste; runtime Edge/JWT real não homologado. Fazer Work apenas quando necessário e mediante prompt do usuário.
+
+---
+
 ## M01.02 — código integrado, ainda NÃO ativado (09/11/2026)
 
 - PR #28 integrado na `main` em `bf326254fba3e7a66a2f02137fa1e5c6da818461`, checks `static`, `frontend` e `onboarding` PASS na revisão `4474b658`.
