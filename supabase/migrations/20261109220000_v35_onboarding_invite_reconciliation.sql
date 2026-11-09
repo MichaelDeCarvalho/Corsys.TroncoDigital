@@ -36,7 +36,8 @@ begin
     j.last_error_code,
     (j.status = 'running'
       and j.attempts = 1
-      and j.locked_at <= pg_catalog.now() - interval '15 minutes'),
+      and (j.locked_at is null
+        or j.locked_at <= pg_catalog.now() - interval '15 minutes')),
     exists (
       select 1 from auth.users u
       where pg_catalog.lower(pg_catalog.btrim(u.email)) =
@@ -91,7 +92,8 @@ begin
     where j.job_type = 'onboarding_invite'
       and j.status = 'running'
       and j.attempts = 1
-      and j.locked_at <= pg_catalog.now() - interval '15 minutes'
+      and (j.locked_at is null
+        or j.locked_at <= pg_catalog.now() - interval '15 minutes')
     order by j.locked_at, j.id
     limit p_limit
     for update of j skip locked
