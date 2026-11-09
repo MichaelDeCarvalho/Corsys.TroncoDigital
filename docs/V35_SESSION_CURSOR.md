@@ -1,3 +1,13 @@
+## M02.02-A integrada — correção de conciliação (09/11/2026)
+
+- PR #33 M02.01 reconciliou inventário financeiro e foi integrado à `main` em `a320ca9a120c9f51ac4b71e2f53ca94e8f9cfa1f`.
+- PR #34 M02.02-A, originalmente empilhado no #33, foi reconciliado com a `main` por commit com base única em `a320ca9a` (lease conferido; sem descartar arquivos funcionais). Revisão final `50ba0d593a69f455642b60a0186154ebe6d695c1`, CI frontend/static/onboarding **3/3 PASS**; integrado por squash em `16bfd8e8d0838a20f2be5464a5e9c122eef0d3ea`.
+- Correção: estornos por lista de IDs do extrato em lotes, contagens exatas para linhas/matches/estornos, soma de vínculos ativos em centavos comparada ao total de cada linha e falha fechada sob inconsistência/truncamento. Oito testes focados e typecheck aprovados antes do rebase. **Não há transação única entre as múltiplas consultas**; se a integração exigir consistência de snapshot sob escrita concorrente, avaliar RPC de leitura única, sem declarar garantia inexistente.
+- Código integrado, **não publicado/homologado DEV** neste ciclo; nenhuma migration, operação financeira, PROD ou envio de convite.
+- M02.02 continua EM_EXECUCAO: repasse neutro **bloqueado até definição da natureza e titularidade contábil pela Loja**. Próxima alternativa independente já rastreada na matriz: paridade de consulta do Fluxo de Caixa (movimentos detalhados/ranking), respeitando RPC existente. Não reexecutar gates A/B já aprovados.
+
+---
+
 ## V35 M02.02-A — integridade da conciliação
 
 M02.02-A: leitura da conciliação restringe estornos aos IDs dos vínculos do extrato, em lotes de 100. Confere contagem exata e totais por linha em centavos; leitura truncada ou incoerente bloqueia as ações. Oito testes focados e typecheck locais passaram. Gate DEV futuro somente do cenário de truncamento, se autorizado. Repasse neutro depende da definição contábil.
