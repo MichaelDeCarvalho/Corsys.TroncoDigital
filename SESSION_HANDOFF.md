@@ -1,3 +1,9 @@
+## Marco M01.03 integrado; M02.01 iniciada (09/11/2026)
+
+- GitHub PR #31 `feat(v35): M01.03` integrado na `main` via squash `0addb8281300b018e6e8396feba2d6d08d458467` após CI HEAD `23b04c9` 3/3 PASS. Code review da origem do documento oficial e condições fail-closed registrada no próprio PR. Não ocorreu ativação DEV/PROD; não reaplicar testes previamente aprovados.
+- M01.03 tem migration `20261109233000_v35_onboarding_acceptance.sql`, callback e UI de aceite prontos **somente em código**. Texto de Termos de Uso segue como minuta não vigente, sem publicação, versão, hash nem vigência; M01.04 depende de documento oficial, autorização de ambiente/destinatário e JWT/convite real. Gate: `docs/V35_M0103_DEV_GATE.md`.
+- Continuidade sem bloqueio jurídico: microentrega M02.01 iniciada como **reconciliação**, não codificação presumida. Inventário V35 tem 21 telas; na árvore de `src/components` existem `AccountTransfers`, `MutualBatches`, `Relatorios`, `AccountingPlans`, `BankReconciliation`, `FinancialDashboard` etc., e migrations correlatas. Os históricos de paridade têm lacunas, mas nem todas estão atualizadas; classificar com evidência concreta após inspeção de código e gates existentes. Próxima ação: analisar recortes financeiros/cadastros efetivamente não homologados, registrar matriz objetiva, sem repetir provas A/B anteriores.
+
 ## M01.03 — callback e documento oficial
 
 Verificação local: typecheck, 32 testes do App e três do dispatcher passaram. O job PostgreSQL/onboarding do run 42686830483 passou na revisão eb110eb. O frontend daquele run falhou na resolução de tipos de node:crypto no teste. A revisão seguinte isolou o import no runner Vitest e passou localmente.
