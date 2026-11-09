@@ -1,3 +1,11 @@
+## Cursor ativo V35 — 03/11/2026 (governança em branch)
+
+- **Decisão vigente:** concluir integralmente a V35 antes de iniciar Beta. Escopo rastreado em `docs/V35_EXECUTION_BOARD.md`; próxima microentrega e protocolo de retomada em `docs/V35_SESSION_CURSOR.md`.
+- **Base da inspeção:** `main` em `e72cbe424c7238a758037c542eb473f5837042f2` (PR #24 integrado); validar HEAD na execução seguinte. Este registro documental **não** implementa novos convites ou alterações de banco.
+- **Próxima microentrega:** M01.01, consumidor server-side seguro e idempotente de `onboarding_invite`, com contrato real de fila/Auth, tests focados e PR. Sem nova capacidade sensível ativada sem aprovação específica.
+- **Não repetir:** aceite da auditoria Master, gates financeiros/RLS já aprovados no escopo registrado e teste SMTP de recuperação. A evidência de SMTP **não** equivale ao convite, envio e entrega final.
+- **Este arquivo preserva fatos históricos abaixo:** textos antigos devem ser interpretados na revisão e data de origem; a posição atual fica no cursor compacto.
+
 ## SMTP DEV ativo e teste de envio aceito — 01/11/2026 Brasil
 
 Atualização que supersede os bloqueios operacionais anotados abaixo: proprietário configurou pessoalmente o SMTP personalizado no Supabase DEV, remetente `michael@lojamais1.com`, nome `CorSys Tronco Digital`, host `smtp.resend.com`, porta `465`; corrigiu whitespace inicial que havia no host. UI confirmou toggle SMTP ativo e senha armazenada, sempre oculta e não lida pelo agente. Com autorização específica do proprietário, o painel de usuários enviou um único e-mail de recuperação para `michael@lojamais1.com` e exibiu “Password recovery sent” / “Sent password recovery to michael@lojamais1.com”. Nenhuma senha foi alterada e nenhum link foi aberto. Isto confirma aceite do envio pelo fluxo Supabase Auth; caixa de entrada/entrega final não foi verificada. Não foi convite de onboarding. Nenhuma API key ou secret foi lida/registrada.
