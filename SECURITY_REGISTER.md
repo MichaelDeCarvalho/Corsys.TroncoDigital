@@ -544,3 +544,7 @@ M01.01 reserva uma tentativa antes de chamar Auth Admin. Resultado incerto exige
 ## V35 M01.03 — vínculo e aceite
 
 M01.03 preparada sobre main 625a516a (PR #30). O Auth fornece o UUID ao finalizar o despacho. A RPC de aceite exige esse UUID autenticado, e-mail confirmado, perfil de sistema da própria Loja e, quando exigido, consentimento explícito à versão publicada vigente e ao hash. Vínculo, recibo, conclusão e auditoria são atômicos. Execuções antigas sem prova de identidade permanecem sem vínculo. Três testes locais do handler passaram. Gate PostgreSQL descartável incluído no CI. Ativação DEV aguarda aprovação.
+
+## V35 M02.02-D — Fluxo de Caixa
+
+M02.02-D sobre main 698dd1b. read_tenant_cash_flow_detail exige finance.read e produz uma fotografia por chamada: detalhe de 25 linhas, ranking líquido das 10 categorias positivas e saldos históricos completos. Saldo inclui abertura, transferências e estornos; conciliação e DRE seguem contratos próprios. Ranking usa alocações existentes no registro do pagamento e correções anteriores àquele registro; o estorno abate a mesma composição na data efetiva. Resíduo fica sem categoria. Consultas posteriores podem observar commits novos. PostgreSQL 17 descartável no CI, sem ativação DEV.

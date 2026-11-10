@@ -59,6 +59,13 @@ jobs:
       - name: Onboarding PostgreSQL rollback and concurrency
         run: python3 scripts/check_onboarding_invite_pg.py
 
+      - name: Cash flow PostgreSQL gate
+        env:
+          PGPASSWORD: onboarding-ci
+        run: |
+          createdb -h 127.0.0.1 -p 55432 -U postgres cash_flow_gate
+          python3 scripts/check_cash_flow_pg.py
+
   frontend:
     runs-on: ubuntu-latest
     timeout-minutes: 10

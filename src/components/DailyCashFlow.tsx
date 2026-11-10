@@ -22,11 +22,13 @@ export function DailyCashFlow({
   organizationId,
   viewMode = 'consolidado',
   defaultLookbackDays = 0,
+  historical = false,
 }: {
   client: SupabaseClient
   organizationId: string
   viewMode?: 'consolidado' | 'projetado' | 'movimentos' | 'saldo'
   defaultLookbackDays?: 0 | 30
+  historical?: boolean
 }) {
   const [from, setFrom] = useState(() => initialFrom(defaultLookbackDays))
   const [to, setTo] = useState(() => today())
@@ -74,10 +76,14 @@ export function DailyCashFlow({
         e não devem ser confundidos com a projeção por vencimento.
       </p>
       <TreasuryBalances client={client} organizationId={organizationId} />
-      <p className="subtle">
-        A posição de saldo inicial e a evolução acumulada por data exigem consulta histórica específica
-        no servidor; a página não estima esses valores somando resultados paginados.
-      </p>
+      <form onSubmit={search} aria-label="Período do saldo contábil">
+        <label>De <input type="date" required value={from} onChange={event => setFrom(event.target.value)} /></label>
+        <label>Até <input type="date" required value={to} onChange={event => setTo(event.target.value)} /></label>
+        <button type="submit">Aplicar</button>
+      </form>
+      {error && <p role="alert">{error}</p>}
+      <CashFlowMovementDetail key={`${organizationId}:${period.from}:${period.to}:${revision}`}
+        client={client} organizationId={organizationId} from={period.from} to={period.to} historical balanceOnly />
     </section>
   }
 
@@ -219,7 +225,7 @@ export function DailyCashFlow({
           <p className="subtle">Consulta completa de até 93 dias, sem somar páginas limitadas. Não confundir total a receber com recebimento provável ou projeção com saldo conciliado.</p>
           {(viewMode === 'consolidado' || viewMode === 'movimentos') &&
             <CashFlowMovementDetail key={`${organizationId}:${period.from}:${period.to}`}
-              client={client} organizationId={organizationId} from={period.from} to={period.to} />}
+              client={client} organizationId={organizationId} from={period.from} to={period.to} historical={historical} />}
         </>
       )}
     </section>

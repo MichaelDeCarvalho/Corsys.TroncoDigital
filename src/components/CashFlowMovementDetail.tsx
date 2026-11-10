@@ -7,16 +7,20 @@ import {
   type CashFlowMovementPage,
 } from '../lib/cash-flow-movement-detail'
 
+import { loadCashFlowSnapshot } from '../lib/cash-flow-snapshot'
+
 export function CashFlowMovementDetail({
-  client, organizationId, from, to,
+  client, organizationId, from, to, historical = false, balanceOnly = false,
 }: {
   client: SupabaseClient
   organizationId: string
   from: string
   to: string
+  historical?: boolean
+  balanceOnly?: boolean
 }) {
   const [page, setPage] = useState(0)
-  const [detail, setDetail] = useState<CashFlowMovementPage | null>(null)
+  const [detail, setDetail] = useState<CashFlowMovementPage | Awaited<ReturnType<typeof loadCashFlowSnapshot>> | null>(null)
   const [error, setError] = useState('')
   const [denied, setDenied] = useState(false)
 
@@ -26,7 +30,8 @@ export function CashFlowMovementDetail({
     setDetail(null)
     setError('')
     setDenied(false)
-    loadCashFlowMovementPage(client, organizationId, from, to, page, abort.signal)
+    const load = historical ? loadCashFlowSnapshot : loadCashFlowMovementPage
+    load(client, organizationId, from, to, page, abort.signal)
       .then(data => { if (active) setDetail(data) })
       .catch(failure => {
         if (!active) return
@@ -37,7 +42,7 @@ export function CashFlowMovementDetail({
         }
       })
     return () => { active = false; abort.abort() }
-  }, [client, organizationId, from, to, page])
+  }, [client, organizationId, from, to, page, historical])
 
   return <section aria-label="Movimentações operacionais detalhadas" className="panel">
     <h3>Movimentações realizadas — detalhamento por conta</h3>
@@ -45,19 +50,36 @@ export function CashFlowMovementDetail({
     {error && <p role="alert" className="message error">{error}</p>}
     {denied && <p role="alert" className="message error">Seu perfil não autoriza consultar estas movimentações.</p>}
     {!detail && !error && !denied && <p role="status">Consultando movimentos do período…</p>}
-    {detail && <>
+    {detail && 'history' in detail && <>
+      <h3>Evolução do saldo contábil</h3>
+      <p>Saldo inicial: {formatMoney(detail.opening)} · Saldo final: {formatMoney(detail.closing)}</p>
+      <p className="subtle">Saldo derivado dos lançamentos. A conciliação bancária é uma consulta separada.</p>
+      {balanceOnly && <div className="finance-table"><table>
+        <thead><tr><th>Data</th><th>Saldo no fim do dia</th></tr></thead>
+        <tbody>{detail.history.map(row => <tr key={row.day}><td>{formatDate(row.day)}</td><td>{formatMoney(row.balance)}</td></tr>)}</tbody>
+      </table></div>}
+      {!balanceOnly && <>
+        <h3>Maiores Despesas</h3>
+        <p>Despesa líquida do período: {formatMoney(detail.expenseNet)}. Ranking das dez maiores categorias com saldo positivo após estornos.</p>
+        {!detail.expenses.length ? <p>Nenhuma categoria com despesa líquida positiva.</p> :
+          <ol>{detail.expenses.map(item => <li key={item.category_id ?? 'unallocated'}>
+            {item.category ?? 'Sem categoria identificada'} — {formatMoney(item.amount)}
+          </li>)}</ol>}
+      </>}
+    </>}
+    {detail && !balanceOnly && <>
       {!detail.total ? <p>Nenhum movimento efetivo no período selecionado.</p> :
         <div className="finance-table" role="region" tabIndex={0} aria-label="Detalhamento de movimentos realizados">
           <table>
             <thead><tr>
               <th>Data</th><th>Descrição do evento</th><th>Conta financeira</th>
-              <th>Referência</th><th>Entrada</th><th>Saída</th>
+              {historical && <><th>Descrição da origem</th><th>Categoria</th></>}<th>Referência</th><th>Entrada</th><th>Saída</th>
             </tr></thead>
             <tbody>{detail.rows.map(movement => <tr key={movement.key}>
               <td>{formatDate(movement.movementDate)}</td>
               <td>{movement.label}</td>
               <td>{movement.account}</td>
-              <td><code>{movement.sourceId.slice(0, 8)}</code></td>
+              {historical && <><td>{movement.description ?? 'Sem descrição registrada'}</td><td>{movement.category ?? 'Sem categoria identificada'}</td></>}<td><code>{movement.sourceId.slice(0, 8)}</code></td>
               <td>{movement.incoming ? formatMoney(movement.incoming) : '—'}</td>
               <td>{movement.outgoing ? formatMoney(movement.outgoing) : '—'}</td>
             </tr>)}</tbody>
@@ -70,7 +92,7 @@ export function CashFlowMovementDetail({
         <button type="button" className="secondary" disabled={!detail.hasNext}
           onClick={() => setPage(value => value + 1)}>Próxima</button>
       </div>
-      <p className="subtle">A categoria e a descrição do lançamento de origem ainda exigem um modelo de consulta consolidada; não são inferidas do tipo do movimento. Os totais globais são apresentados apenas pelo relatório diário.</p>
+
     </>}
   </section>
 }
