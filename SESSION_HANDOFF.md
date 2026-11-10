@@ -1,3 +1,7 @@
+## M02.02-C — reuso de saldos reais da Tesouraria (10/11/2026)
+
+M02.02-B integrada PR #37 / `66db9bf7`, CI 3/3 PASS (sem DEV). Branch `feat/v35-m0202-c-cash-flow-balances`: componente DailyCashFlow no modo Saldo reaproveita TreasuryBalances, que obtém saldo financeiro derivado de movimentos contabilizados por conta, com isolamento de Loja e sem afirmar conciliação bancária. Nenhuma migration/deploy/operação financeira. Testes de modo, saldo por conta e bloqueio cross-tenant propostos. Saldo inicial e evolução por competência ainda requerem backend; não somar página de movimentos. Registrar CI e PR antes de integrar.
+
 ## V35 M02.02-B — detalhe operacional por conta em PR (10/11/2026)
 
 Branch `feat/v35-m0202-b-cash-flow-movements` em código da main `c41b6823`: leitor paginado 25 movimentos/consulta, filtros por Loja/período/tipos operacionais, verificação de contagem exata, UUID/dia/direção, contas autorizadas e negação fail-closed a dados truncados/cross-tenant. UI detalhada em Consolidado e Receitas × Desp. após validação do resumo diário; não soma página como total do período. Nenhuma migration, escrita financeira ou deploy, apenas PR/CI. Limite declarado: descrição/categoria de origem e ranking de despesas ainda necessitam consulta backend sem inferências; não declarar paridade V35 completa ou snapshot transacional único. Decisão de desconsiderar repasse neutro permanece válida.
