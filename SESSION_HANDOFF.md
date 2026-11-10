@@ -1,3 +1,12 @@
+## Marco 10/11/2026 — M02.02-D integrada; M02.03 aguarda autorização DEV
+
+- PR #40, HEAD `746bd5819d04c4eb91f276c1d1434d4e6309af27`, revisão do contrato SQL e testes registrada no PR; CI #459 static/onboarding/frontend **3/3 PASS**. Integrado à `main` no squash `86f1c62634d4e2dc0a5ad1fbac1cd49218517907`.
+- M02.02-A/B/C/D **integradas somente em código**. Migration de D `20261110220000_v35_cash_flow_detail.sql` **ausente** na leitura do DEV em 10/11/2026; frontend novo **não publicado**, QA de JWT/finance.read reais não realizado. Gate necessário: [V35_M0203_DEV_GATE.md](docs/V35_M0203_DEV_GATE.md) (no cursor use link direto). Não declarar M02.03 homologada.
+- **Reconciliada M03.01 antes de reconstruir:** `AccountingPrepublication.tsx` já contém a confirmação expressa e a RPC `publish_validated_accounting_plan`, com tratamento idempotente e testes de frontend. Migrations `20261009162535` e `20261009165809` e ADRs 0014/0015 registram autorização, rechecagem sob lock por Loja, imutabilidade e gate DEV SQL A/B rollback. Read-back no Supabase DEV confirmou ambas RPCs de preview/publicação existentes; anon sem EXECUTE na função validada, authenticated sem EXECUTE no comando legado, função validada autenticada com autorização interna `accounting.manage`. **M03.01 NÃO é funcionalidade ausente**; faltam conferir JWT/HTTP real, simultaneidade e UX quando necessário. A nota residual da tela sobre "publicação automática indisponível" não deve ser interpretada como inexistência de publicação validada manual.
+- Próxima microentrega de código deve reconciliar o restante do domínio M03 contra a V35, priorizando lacunas contábeis reais; M02.03 exige autorização específica de ativação DEV.
+
+---
+
 ## V35 M02.02-D — Fluxo de Caixa
 
 M02.02-D sobre main 698dd1b. read_tenant_cash_flow_detail exige finance.read e produz uma fotografia por chamada: detalhe de 25 linhas, ranking líquido das 10 categorias positivas e saldos históricos completos. Saldo inclui abertura, transferências e estornos; conciliação e DRE seguem contratos próprios. Ranking usa alocações existentes no registro do pagamento e correções anteriores àquele registro; o estorno abate a mesma composição na data efetiva. Resíduo fica sem categoria. Consultas posteriores podem observar commits novos. PostgreSQL 17 descartável no CI, sem ativação DEV.
