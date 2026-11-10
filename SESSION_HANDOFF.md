@@ -1,3 +1,11 @@
+## Decisão de escopo — 10/11/2026: desconsiderar repasse neutro
+
+O proprietário declarou que **repasse neutro não integra o comportamento de negócio desejado**. A menção nos campos `DYN-008-F002` e `view-plano-contas-F082` do protótipo HTML V35 permanece apenas como **evidência histórica da fonte original**; não constitui requisito autorizado para produção. **Não implementar** categoria neutra, tratamento patrimonial/passivo, RPC, mapeamento ou cenários de estorno/baixa específicos desse conceito. Não alterar `sources/` nem o HTML original.
+
+Esta decisão substitui instruções históricas de "confirmar regra contábil" ou "repasse neutro bloqueado" presentes abaixo. A M02.02 segue para paridade de Fluxo de Caixa e gates realmente pendentes, sem esse bloqueio. Outros tipos de repasse/obrigação efetivamente contratados continuam sujeitos às regras já existentes, sem inferir mudanças.
+
+---
+
 ## Fechamento M02.02-A — integração GitHub (09/11/2026)
 
 PR #33 integrado `a320ca9a`, matriz M02.01. PR #34 foi apontado para main e reconciliado com squash antecedente por ref protegida com lease; revisão final `50ba0d59` CI static/frontend/onboarding PASS 3/3, merge `16bfd8e8d0838a20f2be5464a5e9c122eef0d3ea`. Completeness checks e testes focados de conciliação integrados; DEV/runtime remoto não testados e nenhuma alteração em Supabase/Cloudflare/produção. Permanecem limites de snapshot entre várias leituras, potencial migração para projeção server-side se exigida por concorrência; não confundir leitura completa com snapshot transacional. Repasse neutro aguarda decisão contábil explícita de titularidade/passivo/baixa; a matriz M02.01 já lista próximo escopo independente.
