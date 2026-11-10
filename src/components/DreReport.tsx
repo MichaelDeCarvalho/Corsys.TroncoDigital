@@ -51,11 +51,12 @@ export function DreReport({client,organizationId}:{client:SupabaseClient;organiz
    <p className="subtle">Período: {range}. Informações classificadas e registradas na contabilidade.</p>
    {!rows.length?<p>Nenhum lançamento contabilizado de resultado para este período.</p>:<>
     <h3>Resultado por competência</h3>
+    <p className="subtle">A receita é apresentada pelo valor assinado das contas históricas. Receita bruta, deduções e receita líquida exigem classificação própria.</p>
     <div className="finance-table" role="region" aria-label="Resultado contábil por competência" tabIndex={0}>
-     <table><thead><tr><th>Competência</th><th>Receitas</th><th>Custos/despesas</th><th>Resultado</th></tr></thead>
+     <table><thead><tr><th>Competência</th><th>Receitas</th><th>Custos</th><th>Despesas</th><th>Resultado antes do financeiro</th><th>Resultado financeiro</th><th>Resultado</th></tr></thead>
       <tbody>{months.map(m=><tr key={m.month}>
        <th scope="row">{m.month.slice(0,7)}</th>
-       <td>{formatMoney(m.revenue)}</td><td>{formatMoney(m.expenses)}</td><td>{formatMoney(m.result)}</td>
+       <td>{formatMoney(m.revenue)}</td><td>{formatMoney(m.cost)}</td><td>{formatMoney(m.expenses)}</td><td>{formatMoney(m.operatingResult)}</td><td>{formatMoney(m.financialResult)}</td><td>{formatMoney(m.result)}</td>
       </tr>)}</tbody>
      </table>
     </div>

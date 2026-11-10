@@ -230,7 +230,7 @@ export function DreConfig({ client, organizationId, onNavigate }: DreConfigProps
   // Summarize DRE by Month with Comparative Analysis
   const monthlySummary = dreRows ? summarizeDre(dreRows) : []
   const totalRevenue = monthlySummary.reduce((acc, m) => acc + m.revenue, 0)
-  const totalExpenses = monthlySummary.reduce((acc, m) => acc + m.expenses, 0)
+  const totalExpenses = monthlySummary.reduce((acc, m) => acc + m.cost + m.expenses, 0)
   const consolidatedResult = monthlySummary.reduce((acc, m) => acc + m.result, 0)
 
   return (
@@ -643,6 +643,7 @@ export function DreConfig({ client, organizationId, onNavigate }: DreConfigProps
                             <th scope="col">Competência</th>
                             <th scope="col" style={{ textAlign: 'right' }}>Receitas</th>
                             <th scope="col" style={{ textAlign: 'right' }}>Custos/Despesas</th>
+                            <th scope="col" style={{ textAlign: 'right' }}>Resultado financeiro</th>
                             <th scope="col" style={{ textAlign: 'right' }}>Resultado Líquido</th>
                             <th scope="col" style={{ textAlign: 'center' }}>Situação</th>
                             <th scope="col" style={{ textAlign: 'right' }}>Variação vs Mês Anterior</th>
@@ -665,8 +666,9 @@ export function DreConfig({ client, organizationId, onNavigate }: DreConfigProps
                                   {formatMoney(m.revenue)}
                                 </td>
                                 <td style={{ textAlign: 'right', color: '#b91c1c' }}>
-                                  {formatMoney(m.expenses)}
+                                  {formatMoney(m.cost + m.expenses)}
                                 </td>
+                                <td style={{ textAlign: 'right' }}>{formatMoney(m.financialResult)}</td>
                                 <td style={{ textAlign: 'right', fontWeight: 600, color: m.result >= 0 ? '#15803d' : '#b91c1c' }}>
                                   {formatMoney(m.result)}
                                 </td>

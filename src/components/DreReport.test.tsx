@@ -59,7 +59,12 @@ describe('DRE by competence',()=>{
   await expect(loadDreReport(over.client,'org','2026-09','2026-09')).rejects.toThrow()
  })
  it('does not merge unlike account natures and computes net only from backend signed facts',()=>{
-  const summarized=summarizeDre(good)
-  expect(summarized).toEqual([{month:'2026-09-01',revenue:150.5,expenses:-40.25,result:110.25}])
+  const summarized=summarizeDre([
+   ...good,
+   {...entry('expense','-10.10'),nature:'cost'},
+   {...entry('expense','5.05'),nature:'financial_result'},
+   {...entry('revenue','-0.01'),account_description:'Deduções',account_code:'99'},
+  ])
+  expect(summarized).toEqual([{month:'2026-09-01',revenue:150.49,cost:-10.1,expenses:-40.25,financialResult:5.05,operatingResult:100.14,result:105.19}])
  })
 })

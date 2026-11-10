@@ -45,17 +45,25 @@ export async function loadDreReport(
     typeof row.account_description!=='string')throw Error('Relatório contábil inconsistente')
   safeDreValue(row.signed_amount)
  }
+ summarizeDre(data as DreEntry[])
  return data as DreEntry[]
 }
 export function summarizeDre(rows:DreEntry[]){
- const months=new Map<string,{revenue:number;expenses:number;result:number}>()
+ const months=new Map<string,Record<DreEntry['nature'],bigint>>()
  for(const row of rows){
-  const curr=months.get(row.accounting_period)??{revenue:0,expenses:0,result:0}
-  const amount=safeDreValue(row.signed_amount)
-  if(row.nature==='revenue')curr.revenue+=amount
-  else curr.expenses+=amount
-  curr.result+=amount
-  months.set(row.accounting_period,curr)
+  const current=months.get(row.accounting_period)??{revenue:0n,cost:0n,expense:0n,financial_result:0n}
+  current[row.nature]+=BigInt(Math.round(safeDreValue(row.signed_amount)*100))
+  months.set(row.accounting_period,current)
  }
- return [...months.entries()].sort(([a],[b])=>a.localeCompare(b)).map(([month,amount])=>({month,...amount}))
+ function amount(cents:bigint){
+  const value=Number(cents)
+  if(!Number.isSafeInteger(value))throw Error('Total contábil fora do limite de precisão')
+  return value/100
+ }
+ return [...months.entries()].sort(([a],[b])=>a.localeCompare(b)).map(([month,totals])=>{
+  const operating=totals.revenue+totals.cost+totals.expense
+  return {month,revenue:amount(totals.revenue),cost:amount(totals.cost),
+   expenses:amount(totals.expense),financialResult:amount(totals.financial_result),
+   operatingResult:amount(operating),result:amount(operating+totals.financial_result)}
+ })
 }
