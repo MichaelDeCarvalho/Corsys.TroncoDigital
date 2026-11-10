@@ -3,6 +3,7 @@ import type {SupabaseClient} from '@supabase/supabase-js'
 import {loadDailyCashFlow,summarizeCashFlow,type DailyCashFlowRow} from '../lib/daily-cash-flow'
 import {bucketCashFlowTrend} from '../lib/cash-flow-trend'
 import {CashFlowMovementDetail} from './CashFlowMovementDetail'
+import {TreasuryBalances} from './TreasuryBalances'
 import {formatDate,formatMoney} from '../lib/finance-data'
 import {checkedSigned} from '../lib/treasury-balances'
 const pad=(n:number)=>String(n).padStart(2,'0')
@@ -40,6 +41,7 @@ export function DailyCashFlow({
     setRows(null)
     setError('')
     setDenied(false)
+    if (viewMode === 'saldo') return
     loadDailyCashFlow(client, organizationId, period.from, period.to)
       .then(data => { if (active) setRows(data) })
       .catch(failure => {
@@ -48,7 +50,7 @@ export function DailyCashFlow({
         else setError('O fluxo de caixa não pôde ser calculado com integridade. Nenhum total parcial foi apresentado.')
       })
     return () => { active = false }
-  }, [client, organizationId, period, revision])
+  }, [client, organizationId, period, revision, viewMode])
 
   function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -64,22 +66,19 @@ export function DailyCashFlow({
   }
 
   if (viewMode === 'saldo') {
-    return (
-      <section className="panel" aria-label="Saldo do fluxo de caixa">
-        <div className="section-title">
-          <h2>Saldo de Caixa e Bancos — Dependência de Conciliação</h2>
-        </div>
-        <div className="message subtle" style={{ padding: '1rem', background: 'var(--highlight, #f3f4f6)', borderRadius: '6px', margin: '1rem 0' }}>
-          <p style={{ fontWeight: 600, marginBottom: '0.5rem' }}>Visualização de saldos indisponível neste relatório</p>
-          <p>
-            Os saldos acumulados de caixa dependem dos registros de conciliação e extratos bancários da Tesouraria e não são calculados cumulativamente no navegador para evitar inconsistências contábeis.
-          </p>
-          <p style={{ marginTop: '0.5rem', fontSize: '0.88rem' }}>
-            Para consultar saldos de contas bancárias e fundos, utilize o módulo de <strong>Tesouraria</strong>.
-          </p>
-        </div>
-      </section>
-    )
+    return <section className="panel" aria-label="Saldo do fluxo de caixa">
+      <h2>Saldos contábeis de caixa e bancos</h2>
+      <p className="subtle">
+        Valores derivados dos lançamentos efetivamente registrados por conta financeira,
+        inclusive saldos de abertura e transferências. Não representam saldo bancário conciliado
+        e não devem ser confundidos com a projeção por vencimento.
+      </p>
+      <TreasuryBalances client={client} organizationId={organizationId} />
+      <p className="subtle">
+        A posição de saldo inicial e a evolução acumulada por data exigem consulta histórica específica
+        no servidor; a página não estima esses valores somando resultados paginados.
+      </p>
+    </section>
   }
 
   const metrics = rows ? (() => {
