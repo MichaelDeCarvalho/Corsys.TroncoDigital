@@ -1,3 +1,11 @@
+## Decisão de escopo — 10/11/2026: desconsiderar repasse neutro
+
+O proprietário declarou que **repasse neutro não integra o comportamento de negócio desejado**. A menção nos campos `DYN-008-F002` e `view-plano-contas-F082` do protótipo HTML V35 permanece apenas como **evidência histórica da fonte original**; não constitui requisito autorizado para produção. **Não implementar** categoria neutra, tratamento patrimonial/passivo, RPC, mapeamento ou cenários de estorno/baixa específicos desse conceito. Não alterar `sources/` nem o HTML original.
+
+Esta decisão substitui instruções históricas de "confirmar regra contábil" ou "repasse neutro bloqueado" presentes abaixo. A M02.02 segue para paridade de Fluxo de Caixa e gates realmente pendentes, sem esse bloqueio. Outros tipos de repasse/obrigação efetivamente contratados continuam sujeitos às regras já existentes, sem inferir mudanças.
+
+---
+
 ## M02.02-A integrada — correção de conciliação (09/11/2026)
 
 - PR #33 M02.01 reconciliou inventário financeiro e foi integrado à `main` em `a320ca9a120c9f51ac4b71e2f53ca94e8f9cfa1f`.
