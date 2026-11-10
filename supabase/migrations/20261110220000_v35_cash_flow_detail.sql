@@ -110,7 +110,7 @@ begin
  ), opening as (
   select coalesce(sum(amount),0) amount from daily where movement_date<p_from_date
  ), closing as (
-  select d::date day,opening.amount+sum(coalesce(daily.amount,0)) over(order by d) balance
+  select d::date as day,opening.amount+sum(coalesce(daily.amount,0)) over(order by d) balance
   from generate_series(p_from_date::timestamp,p_to_date::timestamp,interval '1 day') d
   cross join opening left join daily on daily.movement_date=d::date
  )
