@@ -89,6 +89,18 @@ describe('Master Support Sessions Client Library', () => {
     expect(session?.id).toBe(mockSession.id)
     expect(session?.scope).toBe('read_only')
     expect(session?.seconds_remaining).toBe(840)
+    for (const invalid of [
+      { organization_id: mockSession.staff_user_id },
+      { scope: 'write' },
+      { is_active: 'false' },
+      { expires_at: '2026-10-28T18:16:00Z' },
+      { seconds_remaining: 901 },
+    ]) {
+      mockClient.rpc.mockResolvedValue({ data: { ...mockSession, ...invalid }, error: null })
+      await expect(getActiveMasterSupportSession(mockClient, orgId)).rejects.toThrow('Dados de sessão')
+    }
+    mockClient.rpc.mockResolvedValue({ data: { ...mockSession, seconds_remaining: 0 }, error: null })
+    await expect(getActiveMasterSupportSession(mockClient, orgId)).resolves.toBeNull()
   })
 
   it('returns null when no session is active', async () => {
@@ -177,6 +189,7 @@ describe('MasterOperations UI — Tab 3: Sessões de Suporte', () => {
 
   it('renders start session form and creates session with 15min notice', async () => {
     const newSessionId = '99999999-9999-9999-9999-999999999999'
+    let starts = 0
 
     mockClient.rpc.mockImplementation((rpcName: string, args: any) => {
       if (rpcName === 'list_platform_master_tenants') {
@@ -199,6 +212,7 @@ describe('MasterOperations UI — Tab 3: Sessões de Suporte', () => {
         return Promise.resolve({ data: null, error: null })
       }
       if (rpcName === 'start_master_support_session') {
+        if (++starts === 1) return Promise.reject(new Error('Resposta perdida'))
         return Promise.resolve({ data: newSessionId, error: null })
       }
       return Promise.resolve({ data: null, error: null })
@@ -220,9 +234,15 @@ describe('MasterOperations UI — Tab 3: Sessões de Suporte', () => {
     const submitBtn = screen.getByRole('button', {
       name: /Iniciar Sessão Temporária \(15 min\)/i,
     })
-    expect(submitBtn).toBeEnabled()
+    await waitFor(() => expect(submitBtn).toBeEnabled())
 
     fireEvent.click(submitBtn)
+    expect(await screen.findByRole('alert')).toHaveTextContent('Resposta perdida')
+    fireEvent.click(submitBtn)
+    await screen.findByText(/Sessão de suporte iniciada com sucesso/)
+    const commands = mockClient.rpc.mock.calls.filter(([name]: [string]) => name === 'start_master_support_session')
+    expect(commands).toHaveLength(2)
+    expect(commands[0]).toEqual(commands[1])
 
     await waitFor(() => {
       expect(mockClient.rpc).toHaveBeenCalledWith(

@@ -43,12 +43,24 @@ export async function getActiveMasterSupportSession(
     throw new Error(error.message || 'Falha ao consultar sessão ativa de suporte.')
   }
 
-  if (!data) return null
+  if (data === null) return null
+  if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Dados de sessão inválidos.')
 
   const row = data as Record<string, unknown>
   if (!row.id || typeof row.id !== 'string' || !UUID_REGEX.test(row.id)) {
     throw new Error('Dados de sessão corrompidos ou inesperados do servidor.')
   }
+
+  if (typeof row.organization_id !== 'string' || row.organization_id.toLowerCase() !== org.toLowerCase()
+    || row.scope !== 'read_only' || row.is_active !== true
+    || typeof row.staff_user_id !== 'string' || !UUID_REGEX.test(row.staff_user_id)
+    || typeof row.started_at !== 'string' || typeof row.expires_at !== 'string'
+    || Date.parse(row.expires_at) - Date.parse(row.started_at) !== 900000
+    || typeof row.seconds_remaining !== 'number' || !Number.isInteger(row.seconds_remaining)
+    || row.seconds_remaining < 0 || row.seconds_remaining > 900) {
+    throw new Error('Dados de sessão corrompidos ou inesperados do servidor.')
+  }
+  if (row.seconds_remaining === 0) return null
 
   return {
     id: row.id,
@@ -59,8 +71,8 @@ export async function getActiveMasterSupportSession(
     started_at: String(row.started_at || ''),
     expires_at: String(row.expires_at || ''),
     created_at: String(row.created_at || ''),
-    is_active: Boolean(row.is_active),
-    seconds_remaining: Math.max(0, Number(row.seconds_remaining) || 0),
+    is_active: true,
+    seconds_remaining: row.seconds_remaining as number,
   }
 }
 

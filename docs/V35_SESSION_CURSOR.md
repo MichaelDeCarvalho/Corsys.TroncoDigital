@@ -1,3 +1,9 @@
+## V35 M04.02 — reconciliação de sessões temporárias
+
+M04.02 reconciliada sobre main 82014d1. As três RPCs existentes exigem MASTER/AAL2 e auth.uid, ligam sessão ao operador e Loja, geram prazo de 15 minutos no servidor, serializam abertura por Loja, preservam chave/replay e auditam abertura/encerramento. O helper de leitura exige vínculo, escopo read_only e janela ativa; a sessão não cria identidade nem papel tenant. Gate SQL DEV de 29/10 com rollback preservado. A auditoria UI posterior observou eventos históricos de início/fim, sem provar o ciclo completo com JWT. Neste PR, o cliente valida escopo, Loja e prazo, bloqueia comandos até consulta válida e reutiliza a chave após perda de resposta com o mesmo payload. Contagem usa prazo monotônico de apresentação; a expiração efetiva continua no servidor. 14 testes focados e typecheck locais. Homologação pendente: JWT Master/AAL2, sessão simultânea de outro operador, negações de escrita e outra Loja, expiração e auditoria no escopo autorizado.
+
+M04.03 começa em PR separado: loadPlatformJobs limita aos 25 mais recentes sem filtro de status/tipo/Loja nem paginação. Falhas antigas podem ficar inacessíveis pela tela Saúde/Jobs. Implementar diagnóstico consultável com filtros e paginação estável, preservando autorização e dados sanitizados; não acionar retry nesta entrega.
+
 ## Marco 10/11/2026 — M03.03 rubricas integradas e M04.01 reconciliada parcialmente
 
 - PR #42, HEAD `dd975efc0beb1ba2934b254aa4927e11ef736510`, CI #463 static/frontend/onboarding **3/3 PASS**, integrado em `b9b0fb542d31eeef20879586e25cf5a981372e8d`. DRE, comparativo e Relatórios apresentam receita registrada, custo, despesa, resultado operacional antes do financeiro e resultado financeiro, usando `read_tenant_dre`/naturezas históricas e soma por competência em centavos.
