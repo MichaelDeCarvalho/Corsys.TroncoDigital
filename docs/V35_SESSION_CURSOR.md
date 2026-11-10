@@ -1,3 +1,11 @@
+## M02.02-C — saldo contábil por conta no Fluxo de Caixa (10/11/2026)
+
+- PR #37 M02.02-B integrado na `main=66db9bf751093b46e5d4df23e57437df0c7200d5`, CI static/frontend/onboarding 3/3 PASS. Detalhamento paginado operacional em código; nenhuma publicação DEV ou alteração em produção.
+- Branch `feat/v35-m0202-c-cash-flow-balances`: modo **Saldo** do Fluxo de Caixa reutiliza `TreasuryBalances` e `v_financial_account_balances` já existentes, com escopo Loja e RLS do backend; não calcula saldo por soma de páginas nem o classifica como conciliado. Teste de rejeição de conta estrangeira incluído. **Sem migration/deploy**, CI deste incremento a verificar.
+- Mantêm-se pendentes saldo inicial/evolução histórica, descrição e categoria do movimento de origem e ranking de maiores despesas. Exigem leitura server-side real e testes específicos; não apresentar resultados parciais como globais. A M02.02-A continua integrada, aguardando gate DEV. Repasse neutro está desconsiderado.
+
+---
+
 ## M02.02-B — detalhamento paginado do Fluxo de Caixa (10/11/2026)
 
 - Branch `feat/v35-m0202-b-cash-flow-movements` baseada na `main=c41b68237064209242a2848148f723055fe2b076`. Incremento frontend **somente código, sem migration/deploy**: o modo Consolidado e Receitas × Desp. exibe eventos operacionais reais paginados por conta a partir de `v_financial_account_movements` (RLS/security_invoker existente), sem misturar transferências/abertura com recebimentos e pagamentos.
