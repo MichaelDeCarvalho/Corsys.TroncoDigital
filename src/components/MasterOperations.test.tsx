@@ -94,7 +94,7 @@ describe('MasterOperations (view-master-operacao)', () => {
 
   it('applies status, type and organization filters without exposing payloads or mutation controls', async () => {
     render(<MasterOperations client={mockClient} />)
-    fireEvent.click(screen.getByRole('tab', { name: /Saúde \\/ Jobs/i }))
+    fireEvent.click(screen.getByRole('tab', { name: /Saúde.*Jobs/i }))
     await screen.findByText('generate_invoice')
     fireEvent.change(screen.getByLabelText('Filtrar status'), {target:{value:'failed'}})
     fireEvent.change(screen.getByLabelText('Filtrar tipo de job'), {target:{value:'evaluate_dunning'}})
