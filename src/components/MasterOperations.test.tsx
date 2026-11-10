@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react'
 import { MasterOperations } from './MasterOperations'
 
 describe('MasterOperations (view-master-operacao)', () => {
@@ -53,13 +53,18 @@ describe('MasterOperations (view-master-operacao)', () => {
           }
         }
         if (table === 'saas_jobs') {
+          const filters: Record<string,string> = {}
           const query: any = {
             select: vi.fn(() => query),
-            eq: vi.fn(() => query),
+            eq: vi.fn((field:string,value:string) => { filters[field] = value; return query }),
             or: vi.fn(() => query),
             order: vi.fn(() => query),
             limit: vi.fn(() => query),
-            abortSignal: vi.fn().mockResolvedValue({ data: mockJobs, error: null }),
+            abortSignal: vi.fn(async () => ({
+              data: mockJobs.filter(item => Object.entries(filters)
+                .every(([field,value]) => String((item as Record<string, unknown>)[field]) === value)),
+              error: null,
+            })),
           }
           return query
         }
@@ -86,8 +91,8 @@ describe('MasterOperations (view-master-operacao)', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/Fila de Tarefas Assíncronas/i)).toBeInTheDocument()
-      expect(screen.getByText('generate_invoice')).toBeInTheDocument()
-      expect(screen.getByText('evaluate_dunning')).toBeInTheDocument()
+      expect(within(screen.getByRole('table')).getByText('generate_invoice')).toBeInTheDocument()
+      expect(within(screen.getByRole('table')).getByText('evaluate_dunning')).toBeInTheDocument()
       expect(screen.getByText('EMAIL_PROVIDER_UNAVAILABLE')).toBeInTheDocument()
     })
   })
@@ -95,13 +100,15 @@ describe('MasterOperations (view-master-operacao)', () => {
   it('applies status, type and organization filters without exposing payloads or mutation controls', async () => {
     render(<MasterOperations client={mockClient} />)
     fireEvent.click(screen.getByRole('tab', { name: /Saúde.*Jobs/i }))
-    await screen.findByText('generate_invoice')
+    await waitFor(() => expect(within(screen.getByRole('table')).getByText('generate_invoice')).toBeInTheDocument())
     fireEvent.change(screen.getByLabelText('Filtrar status'), {target:{value:'failed'}})
     fireEvent.change(screen.getByLabelText('Filtrar tipo de job'), {target:{value:'evaluate_dunning'}})
     fireEvent.change(screen.getByLabelText('Filtrar Loja por UUID'), {target:{value:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'}})
     fireEvent.click(screen.getByRole('button',{name:'Aplicar filtros'}))
     await waitFor(() => {
-      expect(screen.getByText('evaluate_dunning')).toBeInTheDocument()
+      const table = within(screen.getByRole('table'))
+      expect(table.getByText('evaluate_dunning')).toBeInTheDocument()
+      expect(table.queryByText('generate_invoice')).not.toBeInTheDocument()
     })
     expect(screen.queryByText('job-key-2026-09')).not.toBeInTheDocument()
     expect(screen.queryByRole('button',{name:/reprocessar|retry/i})).not.toBeInTheDocument()
