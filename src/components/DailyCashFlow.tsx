@@ -2,6 +2,7 @@ import {useEffect,useState,type FormEvent} from 'react'
 import type {SupabaseClient} from '@supabase/supabase-js'
 import {loadDailyCashFlow,summarizeCashFlow,type DailyCashFlowRow} from '../lib/daily-cash-flow'
 import {bucketCashFlowTrend} from '../lib/cash-flow-trend'
+import {CashFlowMovementDetail} from './CashFlowMovementDetail'
 import {formatDate,formatMoney} from '../lib/finance-data'
 import {checkedSigned} from '../lib/treasury-balances'
 const pad=(n:number)=>String(n).padStart(2,'0')
@@ -44,7 +45,7 @@ export function DailyCashFlow({
       .catch(failure => {
         if (!active) return
         if (['42501', '28000'].includes((failure as { code?: string } | null)?.code ?? '')) setDenied(true)
-        else setError('O fluxo de caixa não pôde ser calculated com integridade. Nenhum total parcial foi apresentado.')
+        else setError('O fluxo de caixa não pôde ser calculado com integridade. Nenhum total parcial foi apresentado.')
       })
     return () => { active = false }
   }, [client, organizationId, period, revision])
@@ -217,6 +218,9 @@ export function DailyCashFlow({
             </table>
           </div>
           <p className="subtle">Consulta completa de até 93 dias, sem somar páginas limitadas. Não confundir total a receber com recebimento provável ou projeção com saldo conciliado.</p>
+          {(viewMode === 'consolidado' || viewMode === 'movimentos') &&
+            <CashFlowMovementDetail key={`${organizationId}:${period.from}:${period.to}`}
+              client={client} organizationId={organizationId} from={period.from} to={period.to} />}
         </>
       )}
     </section>

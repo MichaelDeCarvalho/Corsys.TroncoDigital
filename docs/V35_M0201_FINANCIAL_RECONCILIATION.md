@@ -1,3 +1,5 @@
+> **Atualização M02.02-B (10/11/2026):** um leitor paginado de movimentos operacionais por conta foi preparado em branch, sem migrations ou mudança DEV. O relatório diário existente continua a única fonte de totais consolidados; páginas de detalhes não substituem agregação. A descrição/categoria da obrigação de origem e o ranking de maiores despesas permanecem lacunas pendentes. Não marcar paridade completa até gate e revisão.
+
 # V35 M02.01 — Reconciliação financeira
 
 **Decisão superveniente de escopo (10/11/2026):** a opção “Neutra / repasse” e sua conta correlata constam do HTML de referência, mas o proprietário determinou **desconsiderá-las**. Os registros originais do protótipo não devem ser alterados; a matriz abaixo registra que não há pendência de implementação ou de regra contábil relativa a esse item.

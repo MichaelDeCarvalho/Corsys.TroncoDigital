@@ -1,3 +1,7 @@
+## V35 M02.02-B — detalhe operacional por conta em PR (10/11/2026)
+
+Branch `feat/v35-m0202-b-cash-flow-movements` em código da main `c41b6823`: leitor paginado 25 movimentos/consulta, filtros por Loja/período/tipos operacionais, verificação de contagem exata, UUID/dia/direção, contas autorizadas e negação fail-closed a dados truncados/cross-tenant. UI detalhada em Consolidado e Receitas × Desp. após validação do resumo diário; não soma página como total do período. Nenhuma migration, escrita financeira ou deploy, apenas PR/CI. Limite declarado: descrição/categoria de origem e ranking de despesas ainda necessitam consulta backend sem inferências; não declarar paridade V35 completa ou snapshot transacional único. Decisão de desconsiderar repasse neutro permanece válida.
+
 ## Decisão de escopo — 10/11/2026: desconsiderar repasse neutro
 
 O proprietário declarou que **repasse neutro não integra o comportamento de negócio desejado**. A menção nos campos `DYN-008-F002` e `view-plano-contas-F082` do protótipo HTML V35 permanece apenas como **evidência histórica da fonte original**; não constitui requisito autorizado para produção. **Não implementar** categoria neutra, tratamento patrimonial/passivo, RPC, mapeamento ou cenários de estorno/baixa específicos desse conceito. Não alterar `sources/` nem o HTML original.

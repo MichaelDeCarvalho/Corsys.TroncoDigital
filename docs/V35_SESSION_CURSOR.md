@@ -1,3 +1,11 @@
+## M02.02-B — detalhamento paginado do Fluxo de Caixa (10/11/2026)
+
+- Branch `feat/v35-m0202-b-cash-flow-movements` baseada na `main=c41b68237064209242a2848148f723055fe2b076`. Incremento frontend **somente código, sem migration/deploy**: o modo Consolidado e Receitas × Desp. exibe eventos operacionais reais paginados por conta a partir de `v_financial_account_movements` (RLS/security_invoker existente), sem misturar transferências/abertura com recebimentos e pagamentos.
+- A consulta valida escopo da Loja, período de 1–93 dias, tipo/direção, conta financeira, contagem exata do PostgREST e completude da página antes de exibir; páginas não são somadas como saldos globais. Documentação e testes focados incluídos em PR, resultados de CI a conferir. **Não** homologado DEV nem produção.
+- A V35 ainda exige categoria/descrição real de origem, ranking de maiores despesas e visão de saldo com base confiável. Não inventar categoria nem deduzir natureza contábil da direção da caixa; avaliar RPC de leitura consolidada no próximo incremento. Guardas de M02.02-A preservadas. Repasse neutro foi DESCONSIDERADO em 10/11/2026.
+
+---
+
 ## Decisão de escopo — 10/11/2026: desconsiderar repasse neutro
 
 O proprietário declarou que **repasse neutro não integra o comportamento de negócio desejado**. A menção nos campos `DYN-008-F002` e `view-plano-contas-F082` do protótipo HTML V35 permanece apenas como **evidência histórica da fonte original**; não constitui requisito autorizado para produção. **Não implementar** categoria neutra, tratamento patrimonial/passivo, RPC, mapeamento ou cenários de estorno/baixa específicos desse conceito. Não alterar `sources/` nem o HTML original.
