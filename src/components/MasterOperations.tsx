@@ -14,7 +14,10 @@ import {
 } from 'lucide-react'
 import { MasterSupportQueue } from './MasterSupportQueue'
 import { MasterAudit } from './MasterAudit'
-import { loadPlatformJobs, type PlatformJob } from '../lib/master-config'
+import {
+  loadPlatformJobPage, platformJobStatuses, platformJobTypes,
+  type PlatformJob, type PlatformJobFilters, type JobCursor,
+} from '../lib/platform-job-history'
 import { loadMasterTenants, type MasterTenant } from '../lib/master-console'
 import {
   generateSupportIdempotencyKey,
@@ -27,39 +30,63 @@ import {
 export function MasterOperations({ client, initialTicketOrganizationId = '' }: { client: SupabaseClient; initialTicketOrganizationId?: string }) {
   const [activeTab, setActiveTab] = useState<'tickets' | 'health' | 'support' | 'team' | 'audit'>('tickets')
   const [jobs, setJobs] = useState<PlatformJob[] | null>(null)
+  const [jobNextCursor, setJobNextCursor] = useState<JobCursor | null>(null)
   const [jobsLoading, setJobsLoading] = useState(false)
   const [jobsError, setJobsError] = useState('')
   const [jobsRevision, setJobsRevision] = useState(0)
+  const emptyFilters: PlatformJobFilters = { status: '', jobType: '', organizationId: '' }
+  const [jobDraft, setJobDraft] = useState<PlatformJobFilters>(emptyFilters)
+  const [jobFilters, setJobFilters] = useState<PlatformJobFilters>(emptyFilters)
+  const [jobCursors, setJobCursors] = useState<Array<JobCursor | null>>([null])
+  const [jobPage, setJobPage] = useState(0)
 
   useEffect(() => {
     if (activeTab !== 'health') return
     let live = true
     const controller = new AbortController()
-
+    setJobs(null)
+    setJobNextCursor(null)
     setJobsLoading(true)
     setJobsError('')
-
-    loadPlatformJobs(client, controller.signal)
-      .then(rows => {
-        if (live) {
-          setJobs(rows)
-          setJobsLoading(false)
-        }
-      })
-      .catch((err: any) => {
-        if (!live || controller.signal.aborted) return
-        setJobsError(
-          err?.message ||
-            'Não foi possível consultar os jobs da plataforma. Acesso restrito a MASTER/MFA.'
-        )
+    loadPlatformJobPage(client, jobFilters, jobCursors[jobPage], controller.signal)
+      .then(result => {
+        if (!live) return
+        setJobs(result.rows)
+        setJobNextCursor(result.next)
         setJobsLoading(false)
       })
+      .catch(() => {
+        if (!live || controller.signal.aborted) return
+        setJobs(null)
+        setJobNextCursor(null)
+        setJobsError('Não foi possível verificar a consulta de jobs. Verifique o acesso Master e os filtros informados.')
+        setJobsLoading(false)
+      })
+    return () => { live = false; controller.abort() }
+  }, [client, activeTab, jobFilters, jobCursors, jobPage, jobsRevision])
 
-    return () => {
-      live = false
-      controller.abort()
-    }
-  }, [client, activeTab, jobsRevision])
+  function applyJobFilters(e: React.FormEvent) {
+    e.preventDefault()
+    setJobFilters({ ...jobDraft, organizationId: jobDraft.organizationId.trim() })
+    setJobPage(0)
+    setJobCursors([null])
+  }
+  function clearJobFilters() {
+    setJobDraft({ ...emptyFilters })
+    setJobFilters({ ...emptyFilters })
+    setJobPage(0)
+    setJobCursors([null])
+    setJobsRevision(v => v + 1)
+  }
+  function nextJobPage() {
+    if (!jobNextCursor || jobsLoading || !jobs) return
+    setJobCursors(prev => [...prev.slice(0, jobPage + 1), jobNextCursor])
+    setJobPage(prev => prev + 1)
+  }
+  function previousJobPage() {
+    if (!jobPage || jobsLoading) return
+    setJobPage(prev => prev - 1)
+  }
 
   // Support Sessions State (P1 Master Read-Only Support Sessions)
   const [supportOrgId, setSupportOrgId] = useState('')
@@ -318,90 +345,79 @@ export function MasterOperations({ client, initialTicketOrganizationId = '' }: {
       {/* Tab 1: Chamados (MasterSupportQueue - Operação Funcional e Escrita Autorizada) */}
       {activeTab === 'tickets' && <MasterSupportQueue client={client} initialOrganizationId={initialTicketOrganizationId} />}
 
-      {/* Tab 2: Saúde / Jobs (Consulta pontual sob demanda à tabela saas_jobs) */}
+      {/* Tab 2: Saúde / Jobs — keyset-paginated read-only history. */}
       {activeTab === 'health' && (
         <section className="panel space-y-4">
           <div className="section-title">
-            <h3 className="flex items-center gap-2">
-              <Activity size={18} aria-hidden="true" />
-              Fila de Tarefas Assíncronas (Consulta pontual sob demanda)
-            </h3>
-            <button
-              type="button"
-              className="secondary inline-flex items-center gap-1.5 px-3 py-1.5 text-xs"
-              onClick={() => setJobsRevision(v => v + 1)}
-            >
-              <RefreshCw size={14} aria-hidden="true" />
-              Atualizar lista de jobs
+            <h3 className="flex items-center gap-2"><Activity size={18} aria-hidden="true" /> Fila de Tarefas Assíncronas</h3>
+            <button type="button" className="secondary inline-flex items-center gap-1.5 px-3 py-1.5 text-xs"
+              disabled={jobsLoading} onClick={() => setJobsRevision(v => v + 1)}>
+              <RefreshCw size={14} aria-hidden="true" /> Atualizar consulta
             </button>
           </div>
           <p className="subtle text-xs">
-            Esta visualização realiza <strong>consultas pontuais sob demanda</strong> à tabela <code>saas_jobs</code> no
-            banco de dados. Não constitui monitoramento contínuo em tempo real via streaming/WebSocket.
+            Histórico de jobs em consulta sob demanda, sem monitoramento contínuo nem reprocessamento.
+            Paginação por data e identificador, em ordem estável para novos registros.
+            Dados internos e payloads dos jobs não são exibidos.
           </p>
-
-          {jobsError && (
-            <p role="alert" className="message error">
-              {jobsError}
-            </p>
-          )}
-
-          {jobsLoading ? (
-            <p role="status" className="py-6 text-center text-slate-500 text-sm">
-              Consultando tarefas assíncronas registradas no servidor…
-            </p>
-          ) : !jobs || jobs.length === 0 ? (
-            <p className="text-sm text-slate-500 py-4">Nenhum job pendente ou executado recentemente.</p>
-          ) : (
+          <form aria-label="Filtrar jobs" className="flex flex-wrap items-end gap-3" onSubmit={applyJobFilters}>
+            <label className="flex flex-col text-xs gap-1">Status
+              <select aria-label="Filtrar status" value={jobDraft.status}
+                onChange={e => setJobDraft(v => ({...v,status:e.target.value as PlatformJobFilters['status']}))}>
+                <option value="">Todos</option>
+                {platformJobStatuses.map(status => <option key={status} value={status}>{status}</option>)}
+              </select>
+            </label>
+            <label className="flex flex-col text-xs gap-1">Tipo
+              <select aria-label="Filtrar tipo de job" value={jobDraft.jobType}
+                onChange={e => setJobDraft(v => ({...v,jobType:e.target.value as PlatformJobFilters['jobType']}))}>
+                <option value="">Todos</option>
+                {platformJobTypes.map(type => <option key={type} value={type}>{type}</option>)}
+              </select>
+            </label>
+            <label className="flex flex-col text-xs gap-1">Loja (UUID)
+              <input aria-label="Filtrar Loja por UUID" type="text" placeholder="UUID da Loja" maxLength={36}
+                value={jobDraft.organizationId}
+                onChange={e => setJobDraft(v => ({...v,organizationId:e.target.value}))}/>
+            </label>
+            <button type="submit" className="primary">Aplicar filtros</button>
+            <button type="button" className="secondary" onClick={clearJobFilters}>Limpar filtros</button>
+          </form>
+          {jobsError && <p role="alert" className="message error">{jobsError}</p>}
+          {jobsLoading ? <p role="status" className="py-6 text-center text-slate-500 text-sm">
+            Consultando histórico de jobs no servidor…
+          </p> : jobs && !jobs.length ? (
+            <p className="text-sm text-slate-500 py-4">Nenhum job encontrado para os filtros desta página.</p>
+          ) : jobs ? (
             <div className="overflow-x-auto border rounded-md">
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-50 border-b text-slate-600 font-semibold text-xs uppercase tracking-wider">
                   <tr>
-                    <th className="py-3 px-3">Tipo de Tarefa</th>
-                    <th className="py-3 px-3">Status</th>
-                    <th className="py-3 px-3">Tentativas</th>
-                    <th className="py-3 px-3">Chave de Idempotência</th>
-                    <th className="py-3 px-3">Último Erro</th>
-                    <th className="py-3 px-3">Data de Criação</th>
+                    <th className="py-3 px-3">Tipo</th><th className="py-3 px-3">Status</th>
+                    <th className="py-3 px-3">Loja</th><th className="py-3 px-3">Tentativas</th>
+                    <th className="py-3 px-3">Último erro</th><th className="py-3 px-3">Criado em</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y text-slate-700">
-                  {jobs.map(job => (
-                    <tr key={job.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="py-3 px-3 font-medium text-slate-900">{job.job_type}</td>
-                      <td className="py-3 px-3">
-                        <span
-                          className={`inline-block px-2 py-0.5 text-xs rounded-full font-medium ${
-                            job.status === 'completed'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : job.status === 'failed'
-                              ? 'bg-red-100 text-red-800'
-                              : job.status === 'locked'
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-slate-100 text-slate-700'
-                          }`}
-                        >
-                          {job.status}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3">
-                        {job.attempts} / {job.max_attempts}
-                      </td>
-                      <td className="py-3 px-3 font-mono text-xs max-w-xs truncate">
-                        {job.idempotency_key}
-                      </td>
-                      <td className="py-3 px-3 text-red-600 font-mono text-xs">
-                        {job.last_error_code || '—'}
-                      </td>
-                      <td className="py-3 px-3 text-slate-500 whitespace-nowrap">
-                        {new Date(job.created_at).toLocaleString('pt-BR')}
-                      </td>
-                    </tr>
-                  ))}
+                  {jobs.map(job => <tr key={job.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="py-3 px-3 font-medium text-slate-900">{job.job_type}</td>
+                    <td className="py-3 px-3">{job.status}</td>
+                    <td className="py-3 px-3 font-mono text-xs">{job.organization_id?.slice(0,8) ?? 'Plataforma'}</td>
+                    <td className="py-3 px-3">{job.attempts} / {job.max_attempts}</td>
+                    <td className="py-3 px-3 font-mono text-xs">{job.last_error_code || '—'}</td>
+                    <td className="py-3 px-3 whitespace-nowrap">{new Date(job.created_at).toLocaleString('pt-BR')}</td>
+                  </tr>)}
                 </tbody>
               </table>
             </div>
-          )}
+          ) : null}
+          {jobs && <div className="flex flex-wrap items-center gap-3">
+            <button type="button" className="secondary" disabled={jobPage === 0 || jobsLoading}
+              onClick={previousJobPage}>Anterior</button>
+            <span role="status">Página {jobPage + 1} — {jobs.length} registros exibidos</span>
+            <button type="button" className="secondary" disabled={!jobNextCursor || jobsLoading}
+              onClick={nextJobPage}>Próxima</button>
+          </div>}
         </section>
       )}
 
