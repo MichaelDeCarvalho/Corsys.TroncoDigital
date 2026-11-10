@@ -1,3 +1,11 @@
+## Marco 10/11/2026 — M03.03 rubricas integradas e M04.01 reconciliada parcialmente
+
+- PR #42, HEAD `dd975efc0beb1ba2934b254aa4927e11ef736510`, CI #463 static/frontend/onboarding **3/3 PASS**, integrado em `b9b0fb542d31eeef20879586e25cf5a981372e8d`. DRE, comparativo e Relatórios apresentam receita registrada, custo, despesa, resultado operacional antes do financeiro e resultado financeiro, usando `read_tenant_dre`/naturezas históricas e soma por competência em centavos.
+- **M03.03 PARCIAL INTEGRADA:** sem Receita Bruta/Deduções/Receita Líquida segregadas; competência, cancelamentos e reclassificação histórica dependem de matriz contábil validada. **M03.04 BLOQUEADA PARA LIVRO INTEGRAL:** projeções da DRE e tesouraria não substituem partidas dobradas e contrapartidas. Decisões rastreadas na [issue #43](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/issues/43). Não criar lançamentos ou classificação arbitrária.
+- **M04.01:** já existem `MasterBilling`, preview/emissão manual idempotente no código e as duas RPCs `preview_saas_manual_invoice` e `issue_saas_manual_invoice` no DEV. Read-back somente leitura em 10/11/2026 confirmou ambas como `SECURITY DEFINER` sem EXECUTE de anon; execução autenticada autorizada dentro do servidor por Master/AAL2 conforme migration. JWT real, contratos/ciclos/termos comerciais e fatura real **não homologados**. [Reconciliação e gates](docs/V35_M0401_MANUAL_BILLING_RECONCILIATION.md). Nenhuma escrita no Supabase DEV nem PROD.
+
+---
+
 ## V35 M03.03 — rubricas com classificação demonstrável
 
 M03.03 sobre main 19bae9c: as telas DRE, comparativo e relatórios distinguem receitas registradas, custos, despesas e resultado financeiro pela natureza histórica retornada por read_tenant_dre. O demonstrativo separa resultado antes do financeiro e resultado total; a soma por competência conserva sinais e centavos. M03.01 permanece integrada com gates DEV já registrados.
