@@ -51,6 +51,8 @@ export type CashFlowMovement = {
   label: string
   account: string
   sourceId: string
+  description?: string | null
+  category?: string | null
   incoming: number
   outgoing: number
 }
