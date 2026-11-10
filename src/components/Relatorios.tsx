@@ -879,7 +879,7 @@ function TenantReports({ client, organizationId }: { client: SupabaseClient; org
                           <tr>
                             <th>Competência</th>
                             <th>Receitas</th>
-                            <th>Custos / Despesas</th>
+                            <th>Custos</th><th>Despesas</th><th>Resultado financeiro</th>
                             <th>Resultado Contábil</th>
                           </tr>
                         </thead>
@@ -888,7 +888,7 @@ function TenantReports({ client, organizationId }: { client: SupabaseClient; org
                             <tr key={m.month}>
                               <td>{formatCompetence(m.month)}</td>
                               <td>{formatMoney(m.revenue)}</td>
-                              <td>{formatMoney(m.expenses)}</td>
+                              <td>{formatMoney(m.cost)}</td><td>{formatMoney(m.expenses)}</td><td>{formatMoney(m.financialResult)}</td>
                               <td><strong>{formatMoney(m.result)}</strong></td>
                             </tr>
                           ))}

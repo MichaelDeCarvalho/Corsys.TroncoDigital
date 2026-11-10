@@ -1,3 +1,9 @@
+## V35 M03.03 — rubricas com classificação demonstrável
+
+M03.03 sobre main 19bae9c: as telas DRE, comparativo e relatórios distinguem receitas registradas, custos, despesas e resultado financeiro pela natureza histórica retornada por read_tenant_dre. O demonstrativo separa resultado antes do financeiro e resultado total; a soma por competência conserva sinais e centavos. M03.01 permanece integrada com gates DEV já registrados.
+
+Para completar Receita Bruta, Deduções e Receita Líquida, o contador deve definir quais contas/eventos reduzem a receita e como versionar essa classificação por plano/competência, inclusive cancelamentos e correções. Natureza revenue e a classificação recorrente/avulsa não distinguem dedução de ajuste. M03.04 integral exige eventos contábeis balanceados: v_dre_entries expõe somente a perna de resultado e o ledger de tesouraria expõe movimentos de caixa. Faltam regras explícitas para contrapartidas de recebíveis, obrigações, adiantamentos e saldos iniciais, além de como registrar liquidações e reversões. Não publicar esses recortes como Diário ou Razão integral.
+
 ## Marco 10/11/2026 — M02.02-D integrada; M02.03 aguarda autorização DEV
 
 - PR #40, HEAD `746bd5819d04c4eb91f276c1d1434d4e6309af27`, revisão do contrato SQL e testes registrada no PR; CI #459 static/onboarding/frontend **3/3 PASS**. Integrado à `main` no squash `86f1c62634d4e2dc0a5ad1fbac1cd49218517907`.
