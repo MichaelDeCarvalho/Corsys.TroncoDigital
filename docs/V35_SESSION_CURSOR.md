@@ -1,3 +1,13 @@
+## M02.02-B/C integradas; próximo contrato M02.02-D (10/11/2026)
+
+- PR #37, detalhamento operacional paginado de movimentos por conta, integrado à `main` em `66db9bf751093b46e5d4df23e57437df0c7200d5`, CI static/frontend/onboarding 3/3 PASS.
+- PR #38, aba Saldo usando `TreasuryBalances` e os valores derivados por conta (não conciliados), integrado em `b13aa26d0f1ac5d4cf833820f418fd8ce4cd181e`, CI 3/3 PASS. Não há saldo histórico inicial por competência nesse incremento.
+- Supabase DEV **somente leitura**: `security_invoker=true` confirmado para as duas views utilizadas; contas financeiras têm RLS SELECT para `finance.read`, e a leitura de pagamentos inclui essa permissão. **Nenhum deploy ou migration** dos PRs B/C, nenhum JWT/QA DEV específico realizado.
+- Próximo passo M02.02-D documentado em `docs/V35_M0202D_CASH_FLOW_CONTRACT.md`: categoria e descrição real de origem, ranking de maiores despesas e saldo inicial/evolução, com semântica de liquidação/estorno e classificação histórica validada. Sem soma de página nem categorias presumidas.
+- M02.02-A (conciliação) continua integrada sem gate DEV, e `repasse neutro` segue excluído por decisão expressa. Preservar source HTML e homologações financeiras anteriores.
+
+---
+
 ## M02.02-C — saldo contábil por conta no Fluxo de Caixa (10/11/2026)
 
 - PR #37 M02.02-B integrado na `main=66db9bf751093b46e5d4df23e57437df0c7200d5`, CI static/frontend/onboarding 3/3 PASS. Detalhamento paginado operacional em código; nenhuma publicação DEV ou alteração em produção.
