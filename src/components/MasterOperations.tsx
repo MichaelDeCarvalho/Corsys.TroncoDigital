@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import {
   LifeBuoy,
@@ -17,6 +17,7 @@ import { MasterAudit } from './MasterAudit'
 import { loadPlatformJobs, type PlatformJob } from '../lib/master-config'
 import { loadMasterTenants, type MasterTenant } from '../lib/master-console'
 import {
+  generateSupportIdempotencyKey,
   getActiveMasterSupportSession,
   startMasterSupportSession,
   endMasterSupportSession,
@@ -71,6 +72,19 @@ export function MasterOperations({ client, initialTicketOrganizationId = '' }: {
   const [sessionPending, setSessionPending] = useState(false)
   const [remainingSeconds, setRemainingSeconds] = useState(0)
 
+  const [verifiedOrg, setVerifiedOrg] = useState('')
+  const [sessionRevision, setSessionRevision] = useState(0)
+  const pendingCommand = useRef<{ payload: string; key: string } | null>(null)
+  const commandBusy = useRef(false)
+  const sessionVerified = Boolean(supportOrgId.trim() && verifiedOrg === supportOrgId.trim())
+
+  function commandKey(payload: string) {
+    if (pendingCommand.current?.payload !== payload) {
+      pendingCommand.current = { payload, key: generateSupportIdempotencyKey() }
+    }
+    return pendingCommand.current.key
+  }
+
   // Load tenants for selection in support tab
   useEffect(() => {
     if (activeTab !== 'support') return
@@ -94,6 +108,10 @@ export function MasterOperations({ client, initialTicketOrganizationId = '' }: {
 
   // Query active session when organization changes
   useEffect(() => {
+    setActiveSession(null)
+    setRemainingSeconds(0)
+    setVerifiedOrg('')
+    setSessionLoading(false)
     if (activeTab !== 'support' || !supportOrgId.trim()) return
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
     if (!uuidRegex.test(supportOrgId.trim())) return
@@ -105,6 +123,7 @@ export function MasterOperations({ client, initialTicketOrganizationId = '' }: {
     getActiveMasterSupportSession(client, supportOrgId.trim())
       .then(session => {
         if (!live) return
+        setVerifiedOrg(supportOrgId.trim())
         setActiveSession(session)
         if (session && session.seconds_remaining > 0) {
           setRemainingSeconds(session.seconds_remaining)
@@ -122,27 +141,27 @@ export function MasterOperations({ client, initialTicketOrganizationId = '' }: {
     return () => {
       live = false
     }
-  }, [client, activeTab, supportOrgId])
+  }, [client, activeTab, supportOrgId, sessionRevision])
 
-  // Countdown timer for active session
+  // The server authorizes access. A monotonic deadline keeps the visual timer
+  // from extending when the tab is suspended or its interval is throttled.
   useEffect(() => {
-    if (!activeSession || remainingSeconds <= 0) return
+    if (!activeSession) return
+    const deadline = performance.now() + activeSession.seconds_remaining * 1000
     const timer = setInterval(() => {
-      setRemainingSeconds(prev => {
-        if (prev <= 1) {
-          clearInterval(timer)
-          setActiveSession(null)
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-
+      const seconds = Math.max(0, Math.ceil((deadline - performance.now()) / 1000))
+      setRemainingSeconds(seconds)
+      if (seconds === 0) {
+        clearInterval(timer)
+        setActiveSession(null)
+      }
+    }, 250)
     return () => clearInterval(timer)
-  }, [activeSession, remainingSeconds])
+  }, [activeSession])
 
   async function handleStartSession(e: React.FormEvent) {
     e.preventDefault()
+    if (commandBusy.current || !sessionVerified || sessionLoading || activeSession) return
     setSessionError('')
     setSessionSuccess('')
     if (!supportOrgId.trim()) {
@@ -154,16 +173,21 @@ export function MasterOperations({ client, initialTicketOrganizationId = '' }: {
       return
     }
 
+    commandBusy.current = true
     setSessionPending(true)
     try {
       await startMasterSupportSession(client, {
         organizationId: supportOrgId.trim(),
         reason: sessionReason.trim(),
+        idempotencyKey: commandKey(JSON.stringify(['start', supportOrgId.trim(), sessionReason.trim()])),
       })
       setSessionSuccess('Sessão de suporte iniciada com sucesso. Prazo fixo de 15 minutos (somente leitura).')
+      pendingCommand.current = null
+      setVerifiedOrg('')
       setSessionReason('')
       // Refresh active session
       const freshSession = await getActiveMasterSupportSession(client, supportOrgId.trim())
+      setVerifiedOrg(supportOrgId.trim())
       setActiveSession(freshSession)
       if (freshSession) {
         setRemainingSeconds(freshSession.seconds_remaining)
@@ -171,26 +195,31 @@ export function MasterOperations({ client, initialTicketOrganizationId = '' }: {
     } catch (err: any) {
       setSessionError(err?.message || 'Falha ao iniciar sessão de suporte Master.')
     } finally {
+      commandBusy.current = false
       setSessionPending(false)
     }
   }
 
   async function handleEndSession() {
-    if (!activeSession) return
+    if (!activeSession || !sessionVerified || commandBusy.current || remainingSeconds <= 0) return
     setSessionError('')
     setSessionSuccess('')
+    commandBusy.current = true
     setSessionPending(true)
     try {
       await endMasterSupportSession(client, {
         organizationId: activeSession.organization_id,
         sessionId: activeSession.id,
+        idempotencyKey: commandKey(JSON.stringify(['end', activeSession.organization_id, activeSession.id])),
       })
       setActiveSession(null)
       setRemainingSeconds(0)
+      pendingCommand.current = null
       setSessionSuccess('Sessão de suporte encerrada com sucesso sob auditoria.')
     } catch (err: any) {
       setSessionError(err?.message || 'Falha ao encerrar sessão de suporte Master.')
     } finally {
+      commandBusy.current = false
       setSessionPending(false)
     }
   }
@@ -460,7 +489,9 @@ export function MasterOperations({ client, initialTicketOrganizationId = '' }: {
             )}
 
             {/* Active Session Card */}
-            {activeSession ? (
+            {!sessionLoading && !sessionVerified && supportOrgId.trim() &&
+              <button type="button" onClick={() => setSessionRevision(n => n + 1)}>Consultar sessão novamente</button>}
+            {sessionVerified && activeSession ? (
               <div className="border border-emerald-300 bg-emerald-50/50 rounded-md p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
@@ -542,7 +573,7 @@ export function MasterOperations({ client, initialTicketOrganizationId = '' }: {
 
                 <button
                   type="submit"
-                  disabled={sessionPending || sessionReason.trim().length < 5 || !supportOrgId.trim()}
+                  disabled={sessionPending || sessionLoading || !sessionVerified || sessionReason.trim().length < 5 || !supportOrgId.trim()}
                   className="px-4 py-2 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed rounded-md transition-colors"
                 >
                   {sessionPending ? 'Iniciando sessão…' : 'Iniciar Sessão Temporária (15 min)'}
