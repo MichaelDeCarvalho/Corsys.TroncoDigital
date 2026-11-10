@@ -3,7 +3,9 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { vi } from 'vitest'
 import { FluxoCaixa } from './FluxoCaixa'
 
-function mockClient() {
+const org='f2d9a9c9-e2c4-4ff3-9589-93f91fdde05b'
+const account='a7618966-ad8e-466b-b11d-2ca52ce6372d'
+function mockClient(foreignAccount=false) {
   const rpc = vi.fn().mockResolvedValue({
     data: [
       {
@@ -19,29 +21,46 @@ function mockClient() {
     ],
     error: null,
   })
-  return { client: { rpc } as unknown as SupabaseClient }
+  const from=vi.fn((name:string)=>{
+    const data=name==='financial_accounts'
+      ? [{id:account,organization_id:foreignAccount?'foreign':org,name:'Caixa da Loja',account_type:'cash',active:true}]
+      : name==='v_financial_account_balances'
+        ? [{organization_id:org,financial_account_id:account,balance:'125.27'}]
+        : []
+    const q={select:()=>q,eq:()=>q,order:()=>q,limit:()=>q,range:()=>q,
+      abortSignal:()=>Promise.resolve({data,error:null})}
+    return q
+  })
+  return { client: { rpc, from } as unknown as SupabaseClient,from }
 }
 
 describe('FluxoCaixa view', () => {
-  it('renders cash flow view and handles view mode switches with distinct representations', async () => {
-    const { client } = mockClient()
-    render(<FluxoCaixa client={client} organizationId="org-1" />)
+  it('renders existing modes and reuses validated tenant balances in the Saldo mode', async () => {
+    const { client,from } = mockClient()
+    render(<FluxoCaixa client={client} organizationId={org} />)
 
     expect(screen.getByText('Fluxo de Caixa — Entradas e Saídas Efetivas')).toBeInTheDocument()
 
-    // Switch to Projetado mode
     const projectedBtn = screen.getByRole('button', { name: 'Projetado' })
     fireEvent.click(projectedBtn)
-
     expect(projectedBtn).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByText(/A visão projetada considera exclusivamente obrigações efetivas/)).toBeInTheDocument()
 
-    // Switch to Saldo mode
     const saldoBtn = screen.getByRole('button', { name: 'Saldo' })
     fireEvent.click(saldoBtn)
-
     expect(saldoBtn).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByText(/Visualização de saldos indisponível neste relatório/)).toBeInTheDocument()
-    expect(screen.getByText(/Os saldos acumulados de caixa dependem dos registros de conciliação/)).toBeInTheDocument()
+    expect(screen.getByText('Saldos contábeis de caixa e bancos')).toBeInTheDocument()
+    expect(screen.getByText(/Não representam saldo bancário conciliado/)).toBeInTheDocument()
+    expect(await screen.findByText(/R\$\s?125,27/)).toBeInTheDocument()
+    expect(from).toHaveBeenCalledWith('v_financial_account_balances')
+    expect(from).toHaveBeenCalledWith('financial_accounts')
+  })
+
+  it('does not disclose balances from a foreign organization', async () => {
+    const { client } = mockClient(true)
+    render(<FluxoCaixa client={client} organizationId={org} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Saldo' }))
+    expect(await screen.findByText('Não foi possível consultar os saldos de caixa e banco com segurança.')).toBeInTheDocument()
+    expect(screen.queryByText(/R\$\s?125,27/)).not.toBeInTheDocument()
   })
 })
