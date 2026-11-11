@@ -22,7 +22,6 @@ export type PlatformJob = {
   status: typeof platformJobStatuses[number]
   attempts: number
   max_attempts: number
-  correlation_id: string | null
   last_error_code: string | null
   created_at: string
   locked_at: string | null
@@ -45,8 +44,7 @@ function validTimestamp(value: unknown): value is string {
  * UUID: ordering by created_at DESC, id DESC avoids offset drift on new inserts.
  * No payloads, job secrets, raw idempotency keys or mutation commands are read.
  *
- * IMPORTANT: existing saas_jobs RLS permits platform MASTER, not AAL2 by itself.
- * JWT AAL2 hardening requires a separate server-side security decision/gate.
+ * The diagnostic policy requires MASTER and JWT AAL2 after M04.03-B is applied.
  */
 export async function loadPlatformJobPage(
   client: SupabaseClient,
@@ -64,7 +62,7 @@ export async function loadPlatformJobPage(
     throw Error('Invalid job cursor')
 
   let query=client.from('saas_jobs')
-    .select('id,organization_id,job_type,status,attempts,max_attempts,correlation_id,last_error_code,created_at,locked_at,completed_at')
+    .select('id,organization_id,job_type,status,attempts,max_attempts,last_error_code,created_at,locked_at,completed_at')
   if (filters.organizationId) query=query.eq('organization_id',filters.organizationId)
   if (filters.status) query=query.eq('status',filters.status)
   if (filters.jobType) query=query.eq('job_type',filters.jobType)
@@ -96,7 +94,6 @@ export async function loadPlatformJobPage(
       !Number.isSafeInteger(item.max_attempts)||Number(item.max_attempts)<1||
       !validTimestamp(item.created_at)||
       (item.last_error_code!==null&&(typeof item.last_error_code!=='string'||!errorCode.test(item.last_error_code)))||
-      (item.correlation_id!==null&&typeof item.correlation_id!=='string')||
       (item.locked_at!==null&&!validTimestamp(item.locked_at))||
       (item.completed_at!==null&&!validTimestamp(item.completed_at)))
       throw Error('Invalid or unauthorized platform job record')

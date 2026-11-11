@@ -1,3 +1,9 @@
+## V35 M04.03-B — autorização de leitura dos Jobs
+
+M04.03-B sobre main fefd376. A política anterior delega a is_platform_staff, cujo código versionado já verifica AAL2; a nova política exige o claim explicitamente. SELECT autenticado passa a usar lista de colunas diagnósticas, excluindo payload, idempotency_key e correlation_id. O histórico A mantém filtros e cursor; removido o leitor antigo sem consumidores. O PR preserva as permissões de service_role e as RPCs internas de onboarding. Gate PostgreSQL descartável com claims simuladas e testes de cursor; JWT real no DEV pendente.
+
+M04.03-C proposta: expor trilha cronológica de eventos do chamado no detalhe Master. Hoje a fila mostra tempos de primeira resposta/resolução e conversa, mas a interface não consulta saas_support_ticket_events. Reutilizar eventos existentes com escopo do chamado, autorização e campos sanitizados. Metas de SLA dependem de política explícita.
+
 ## V35 M04.03-A — histórico filtrável/paginado de jobs (10/11/2026)
 
 - PR #45 / merge `e997634226c37bd607a57bfffd80c14882143687`: M04.02 integrada em código, testes CI #467 static/frontend/onboarding 3/3 PASS. RPCs de suporte MASTER/AAL2 já presentes no DEV; **ciclo JWT real não homologado**, nenhuma sessão aberta.

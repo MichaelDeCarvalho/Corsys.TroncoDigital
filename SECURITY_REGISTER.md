@@ -548,3 +548,9 @@ M01.03 preparada sobre main 625a516a (PR #30). O Auth fornece o UUID ao finaliza
 ## V35 M02.02-D — Fluxo de Caixa
 
 M02.02-D sobre main 698dd1b. read_tenant_cash_flow_detail exige finance.read e produz uma fotografia por chamada: detalhe de 25 linhas, ranking líquido das 10 categorias positivas e saldos históricos completos. Saldo inclui abertura, transferências e estornos; conciliação e DRE seguem contratos próprios. Ranking usa alocações existentes no registro do pagamento e correções anteriores àquele registro; o estorno abate a mesma composição na data efetiva. Resíduo fica sem categoria. Consultas posteriores podem observar commits novos. PostgreSQL 17 descartável no CI, sem ativação DEV.
+
+## V35 M04.03-B — autorização de leitura dos Jobs
+
+M04.03-B sobre main fefd376. A política anterior delega a is_platform_staff, cujo código versionado já verifica AAL2; a nova política exige o claim explicitamente. SELECT autenticado passa a usar lista de colunas diagnósticas, excluindo payload, idempotency_key e correlation_id. O histórico A mantém filtros e cursor; removido o leitor antigo sem consumidores. O PR preserva as permissões de service_role e as RPCs internas de onboarding. Gate PostgreSQL descartável com claims simuladas e testes de cursor; JWT real no DEV pendente.
+
+M04.03-C proposta: expor trilha cronológica de eventos do chamado no detalhe Master. Hoje a fila mostra tempos de primeira resposta/resolução e conversa, mas a interface não consulta saas_support_ticket_events. Reutilizar eventos existentes com escopo do chamado, autorização e campos sanitizados. Metas de SLA dependem de política explícita.

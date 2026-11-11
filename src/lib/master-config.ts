@@ -34,20 +34,6 @@ export type PlatformTermVersion = {
   valid_to: string | null
 }
 
-export type PlatformJob = {
-  id: string
-  job_type: string
-  status: string
-  attempts: number
-  max_attempts: number
-  idempotency_key: string
-  correlation_id: string | null
-  last_error_code: string | null
-  created_at: string
-  locked_at: string | null
-  completed_at: string | null
-}
-
 export type PlatformStaff = {
   id: string
   user_id: string
@@ -85,19 +71,4 @@ export async function loadPlatformTerms(
 
   if (error) throw error
   return (data ?? []) as PlatformTermVersion[]
-}
-
-export async function loadPlatformJobs(
-  client: SupabaseClient,
-  signal: AbortSignal
-): Promise<PlatformJob[]> {
-  const { data, error } = await client
-    .from('saas_jobs')
-    .select('id,job_type,status,attempts,max_attempts,idempotency_key,correlation_id,last_error_code,created_at,locked_at,completed_at')
-    .order('created_at', { ascending: false })
-    .limit(25)
-    .abortSignal(signal)
-
-  if (error) throw error
-  return (data ?? []) as PlatformJob[]
 }

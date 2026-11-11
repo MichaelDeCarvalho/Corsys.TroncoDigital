@@ -257,3 +257,6 @@ print("PASS immutable sanitized observations, idempotency, no recipient disclosu
 
 from check_onboarding_acceptance_pg import check as check_acceptance
 check_acceptance(sql, source, table, extract, caller, uid)
+
+from check_job_read_pg import check as check_job_read
+check_job_read(sql, source, extract, uid, caller, master, support, orgs)
