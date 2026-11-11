@@ -16,11 +16,11 @@ def check(sql, source, extract, uid, caller, master, support, orgs):
     grant select, insert, update on public.saas_jobs to service_role;
     insert into auth.users values ('{tenant}', 'tenant-jobs@example.test');
     insert into public.saas_jobs(id,organization_id,job_type,idempotency_key,created_at,status)
-    select ('00000000-0000-4000-8000-' || lpad((900+n)::text,12,'0'))::uuid,
+    select ('00000000-0000-4000-8000-' || lpad((1900+n)::text,12,'0'))::uuid,
       '{org_a}', 'generate_invoice', 'job-gate-' || n, '2030-01-01', 'failed'
     from generate_series(1,27) n;
     insert into public.saas_jobs(id,organization_id,job_type,idempotency_key,created_at,status)
-    values ('{uid(999)}','{org_b}','generate_invoice','job-gate-b','2030-01-01','failed');
+    values ('{uid(1999)}','{org_b}','generate_invoice','job-gate-b','2030-01-01','failed');
     """ + "\n".join(migration[1:-1]) + "\n"
     def run(query, expected=None, code=None):
         out = sql(prefix + query + "\nrollback;", succeeds=code is None, error_code=code or "42501")
@@ -37,9 +37,9 @@ def check(sql, source, extract, uid, caller, master, support, orgs):
     scoped = f"from {table} where organization_id='{org_a}' and status='failed' and job_type='generate_invoice'"
     order = "order by created_at desc,id desc"
     run(master_aal2+f"select count(id) from (select {fields} {scoped} {order} limit 26) page;", "26")
-    run(master_aal2+f"select id {scoped} and (created_at,id)<('2030-01-01','{uid(903)}') {order} limit 26;",
-        uid(902)+"\n"+uid(901))
-    run(master_aal2+f"select id from {table} where organization_id='{org_b}' and id='{uid(999)}';", uid(999))
+    run(master_aal2+f"select id {scoped} and (created_at,id)<('2030-01-01','{uid(1903)}') {order} limit 26;",
+        uid(1902)+"\n"+uid(1901))
+    run(master_aal2+f"select id from {table} where organization_id='{org_b}' and id='{uid(1999)}';", uid(1999))
     for column in ("sanitized_payload","idempotency_key","correlation_id","*"):
         run(master_aal2+f"select {column} from {table};", code="42501")
     run(master_aal2+f"update {table} set status='running';", code="42501")
@@ -49,5 +49,5 @@ def check(sql, source, extract, uid, caller, master, support, orgs):
     update {table} set status='running' where id='{uid(881)}';
     select status || ':' || (sanitized_payload->>'marker') from {table} where id='{uid(881)}';
     """, "running:true")
-    assert sql(f"select count(id) from {table} where id='{uid(999)}';") == "0"
+    assert sql(f"select count(id) from {table} where id='{uid(1999)}';") == "0"
     print("PASS job policy AAL2, cursor ties, tenant filter, sensitive columns, internal worker and rollback")
