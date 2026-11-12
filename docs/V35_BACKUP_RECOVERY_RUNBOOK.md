@@ -1,7 +1,7 @@
 # V35 — Ensaio de Backup e Restauração (Runbook M05.02)
 
-> **Status:** PREPARADO (Scripts executáveis de bootstrap, carga, ensaio e asserções entregues)  
-> **Homologação:** PENDENTE_EVIDENCIA_EXECUCAO_OBSERVADA (A ser verificado após execução do restore)  
+> **Status:** ENSAIO_SINTETICO_VERIFICADO_POR_REGISTRO (PR #50 / PostgreSQL 17.11; integração pendente)  
+> **Homologação:** ensaio descartável relatado e registrado no PR; fechamento operacional BLOQUEADO por hardening do runner e autorização de merge  
 > **Ambiente:** PostgreSQL 17 descartável isolado / Cluster CI
 
 ---
@@ -44,11 +44,19 @@ A infraestrutura executável da M05.02 é composta pelos seguintes arquivos:
 
 ## 3. Roteiro Passo a Passo de Execução
 
-### Opção A: Execução Automatizada via Script Runner
+### Opção A: Execução Automatizada via Script Runner (Endurecido)
 ```bash
-# Executa todo o fluxo (origem -> migrations -> fixture -> dump -> restore no destino vazio -> checks -> diff)
+# Executa todo o fluxo com validações fail-closed, higienização de credenciais e isolamento de artefatos
 chmod +x scripts/run_v35_m05_backup_restore_trial.sh
+
+# Exemplo padrão (usando conexões nomeadas/pg_service):
 ./scripts/run_v35_m05_backup_restore_trial.sh "service=v35-fixture-source" "service=v35-fixture-restore"
+
+# Exemplo com DSN explícita e diretório seguro fora do repositório:
+OUTPUT_DIR="/tmp/corsys_trial_m05" CONFIRM_DISPOSABLE_TARGET=true \
+  ./scripts/run_v35_m05_backup_restore_trial.sh \
+  "postgres://user:pwd@127.0.0.1:5432/v35_source" \
+  "postgres://user:pwd@127.0.0.1:5432/v35_restore_trial"
 ```
 
 ### Opção B: Sequência Manual Reproduzível
@@ -133,5 +141,18 @@ A comparação entre `source_checks.log` e `restore_checks.log` deve atender aos
 
 ## 5. Critérios de Homologação
 
-- O ensaio permanece classificado como `PENDENTE_EVIDENCIA_EXECUCAO_OBSERVADA`.
+- O ensaio sintético foi relatado como aprovado no PostgreSQL 17.11 (evidência escrita no PR #50), sem logs brutos anexados no GitHub na revisão `b14a8c7`.
 - A microentrega M05.02 transiciona para o estado `VERIFICADO` somente após a execução efetivamente observada em ambiente descartável PostgreSQL 17 real, acompanhada do registro de horários, comandos executados e hashes dos artefatos produzidos.
+
+
+## 6. Revisão de evidências e controle de integração — 12/11/2026
+
+- **Revisão:** PR #50, código `b14a8c7e09db68b56e3bff6efd7d8b8f28771724`, CI #481 / run `43147222442`, jobs `static`, `frontend`, `onboarding` 3/3 PASS.
+- **Resultado informado e registrado no PR:** 77 migrations em PostgreSQL 17.11 descartável, restauração concluída, cinco checks em origem/destino, `V35_M0502_VERIFICATION_PASS` nas duas bases, `diff -u` sem diferenças, runner exit 0. Dump sintético SHA-256 `91fd875c39a06253e307f989d1d118d14531dcb5c7bb52b5331599d0770970ed`. Os logs brutos não estavam anexados ao PR; não alegar auditoria independente dos bytes ou restaurabilidade de backup do Supabase real.
+- **Hardening concluído e verificado:**
+  1. Proteção de credenciais: strings de conexão e erros ofuscam senhas (`password=***` e `postgres://user:***@host`).
+  2. Isolamento de artefatos: criação de pasta segura com `umask 077` e `chmod 700` (`/tmp` ou `.tmp/`), dumps/logs com `chmod 600`, preservados para auditoria; `.gitignore` atualizado para exclusão automática de `.tmp/`, `*.dump`, `*source_checks.log`, `*restore_checks.log`, `*checks_diff.log` e `dump_toc.txt`.
+  3. Preflight fail-closed: bloqueia destinos com palavras-chave de produção/DEV gerenciado (`prod`, `production`, `live`, `szqkdekwhzxsoxorgvaz`, `supabase.co`); exige indicador descartável ou `CONFIRM_DISPOSABLE_TARGET=true`; impede conexões que apontem para a mesma base; e rejeita destinos com objetos preexistentes (`count > 0`).
+  4. Testes de segurança: suíte `scripts/test_v35_m05_runner_hardening.sh` com 9 asserções cobrindo todas as guardas (9 PASS / 0 FAIL). Suíte de testes da aplicação com 537/537 testes aprovados.
+- **Publicação:** PR #50 continua draft, não integrado, sem nova publicação DEV/PROD. Merge na main aciona build DEV e requer aprovação expressa do proprietário. Após autorização e integração, AI Studio executa Pull; atualizar cursor/handoff com commit, CI, estado do build DEV e próxima microentrega.
+- **Limites de escopo:** este teste é restauração de fixture em banco descartável, não prova rotinas operacionais automáticas de backup, retenção, RPO/RTO, recuperação do banco gerenciado ou restauração seletiva por organização.

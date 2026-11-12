@@ -122,6 +122,46 @@ ON CONFLICT (id) DO NOTHING;
 -- Loja A: R$ 500,00 + R$ 300,00 = R$ 800,00 (80.000 centavos)
 -- Loja B: R$ 400,00 + R$ 200,00 = R$ 600,00 (60.000 centavos)
 -- -----------------------------------------------------------------------------
+-- Prepare both plans as drafts so the normal accounting guards remain active.
+DO $$
+DECLARE
+  v_org uuid;
+  v_plan uuid;
+  v_account uuid;
+  v_category record;
+BEGIN
+  FOREACH v_org IN ARRAY ARRAY[
+    '00000000-0000-4000-8000-000000000001'::uuid,
+    '00000000-0000-4000-8000-000000000002'::uuid
+  ] LOOP
+    INSERT INTO public.accounting_plans (organization_id, name, valid_from, valid_to)
+    VALUES (v_org, 'M05.02 — plano sintético', DATE '2026-11-01', DATE '2026-11-30')
+    RETURNING id INTO v_plan;
+
+    FOR v_category IN
+      SELECT id, name, domain FROM public.financial_categories
+      WHERE organization_id = v_org AND active
+    LOOP
+      INSERT INTO public.accounting_accounts
+        (organization_id, accounting_plan_id, code, description, row_type, nature, operational_classification)
+      VALUES (
+        v_org, v_plan, v_category.id::text, v_category.name, 'analytic',
+        CASE WHEN v_category.domain = 'institutional_expense' THEN 'expense' ELSE 'revenue' END,
+        CASE WHEN v_category.domain = 'institutional_expense' THEN 'variable' ELSE 'recurring' END
+      )
+      RETURNING id INTO v_account;
+
+      INSERT INTO public.financial_category_account_mappings
+        (organization_id, accounting_plan_id, category_id, accounting_account_id)
+      VALUES (v_org, v_plan, v_category.id, v_account);
+    END LOOP;
+
+    UPDATE public.accounting_plans
+    SET status = 'published', published_at = now()
+    WHERE organization_id = v_org AND id = v_plan;
+  END LOOP;
+END $$;
+
 INSERT INTO public.charges (
   id, organization_id, member_id, category_id, source_kind, description, competence, issue_date, due_date, accounting_period, quantity, unit_amount, original_amount, created_by
 )

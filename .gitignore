@@ -16,3 +16,12 @@ supabase/.branches/
 
 # Local TOTP enrollment QR (private, ephemeral)
 .mfa-local/
+
+# M05 backup & restore trial artifacts (dumps, logs, temp)
+.tmp/
+*.dump
+*.dump.*
+source_checks.log
+restore_checks.log
+checks_diff.log
+dump_toc.txt

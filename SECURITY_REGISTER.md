@@ -1,3 +1,21 @@
+## SEC-M0502-01 — runner de restauração: secrets em logs e seleção insegura do destino (12/11/2026)
+
+- **Escopo:** `scripts/run_v35_m05_backup_restore_trial.sh` e `.gitignore`, identificados na revisão do PR #50 (código `b14a8c7`).
+- **Severidade:** ALTA antes de uso com credenciais/dados reais; mitigado antes de qualquer execução externa.
+- **Evidência do achado:** runner original realizava `log "Origem  : $SOURCE_CONN"` e `log "Destino : $RESTORE_CONN"` (podendo expor senhas); gravava dumps e logs no diretório do repositório sem exclusões completas no `.gitignore`; não impedia coincidência de origem/destino nem comprovava que a base de destino estava limpa e vazia.
+- **Mitigações implementadas:**
+  1. *Proteção de credenciais:* função `sanitize_conn` ofusca senhas tanto em DSNs estilo URL (`postgres[ql]://user:***@host...`) quanto em strings chave-valor (`password=***`). Logs e mensagens de erro exibem exclusivamente conexões higienizadas.
+  2. *Proteção e isolamento de artefatos:* política restritiva com `umask 077` e criação de diretório seguro com `chmod 700` (`/tmp/corsys_v35_m05_trial_*` ou `.tmp/`), dumps e logs gravados com permissão estrita `0600`; artefatos preservados para auditoria (sem deleção automática); `.gitignore` atualizado para ignorar `.tmp/`, `*.dump`, `*.dump.*`, `source_checks.log`, `restore_checks.log`, `checks_diff.log` e `dump_toc.txt`.
+  3. *Proteção fail-closed contra restauração indevida:*
+     - Bloqueio imediato caso a string de conexão de destino contenha termos proibidos de produção ou instâncias gerenciadas (`prod`, `production`, `live`, `szqkdekwhzxsoxorgvaz`, `supabase.co`).
+     - Exigência de nome com identificador descartável (`trial`, `restore`, `fixture`, `test`, `temp`) ou confirmação explícita via variável `CONFIRM_DISPOSABLE_TARGET=true`.
+     - Consulta e comparação da identidade de conexão de origem e destino (`inet_server_addr`, `inet_server_port`, `current_database`), bloqueando a execução caso origem e destino coincidam.
+     - Inspeção de objetos de usuário (`pg_class`) na base de destino antes de qualquer modificação, abortando com erro crítico caso o destino contenha objetos preexistentes (`count > 0`).
+- **Verificação:** suíte automatizada `scripts/test_v35_m05_runner_hardening.sh` com 9 asserções cobrindo higienização de senhas, rejeição de destinos de produção, rejeição de destinos não confirmados, rejeição de origem/destino idênticos, rejeição de destino não vazio e permissões restritas do diretório de saída: **9 PASS / 0 FAIL**.
+- **Status:** MITIGADO_E_VERIFICADO_EM_TESTES. Libera o fechamento seguro da M05.02 mediante autorização formal de merge do PR #50.
+
+---
+
 ## V35 M04.03-C — trilha de chamados preparada localmente
 
 Base GitHub main 97f67281c9e55ac6d58271386c65f1dd690703f1, com a mesma árvore da cópia local antes das alterações. M04.03-B integrada pelo PR #48. O port local reaproveita a interface do AI Studio, limita campos em ambas as consultas e exige eventos de cliente na leitura da Loja. Gate local PostgreSQL 17.5 em memória PASS com a migration proposta, políticas versionadas e dados sintéticos. Master/SUPPORT AAL2, isolamento Loja A/B, negativos AAL1 e anônimo, projeção, ordem e escrita interna verificados. Gateway/JWT real e restauração permanecem pendentes. ADR 0047 registra o contrato. O runbook M05 descreve restauração em base descartável com dados sintéticos e aguarda evidência de execução. Sem integração ou publicação da M04.03-C.
