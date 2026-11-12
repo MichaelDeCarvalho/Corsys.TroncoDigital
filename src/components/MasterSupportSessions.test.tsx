@@ -295,9 +295,12 @@ describe('MasterOperations UI — Tab 3: Sessões de Suporte', () => {
       target: { value: 'Tentativa de abertura de sessão de suporte' },
     })
 
-    fireEvent.click(
-      screen.getByRole('button', { name: /Iniciar Sessão Temporária \(15 min\)/i })
-    )
+    const submitBtn = screen.getByRole('button', {
+      name: /Iniciar Sessão Temporária \(15 min\)/i,
+    })
+    await waitFor(() => expect(submitBtn).toBeEnabled())
+
+    fireEvent.click(submitBtn)
 
     await waitFor(() => {
       expect(screen.getByRole('alert')).toHaveTextContent(

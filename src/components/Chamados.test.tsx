@@ -13,6 +13,7 @@ describe('Chamados (view-chamados)', () => {
       id: validTicketId,
       ticket_seq: 101,
       organization_id: validOrgId,
+      ticket_scope: 'tenant',
       subject: 'Dúvida sobre fechamento contábil',
       category: 'finance',
       priority: 'high',
@@ -21,11 +22,14 @@ describe('Chamados (view-chamados)', () => {
       updated_at: '2026-09-02T14:30:00Z',
       resolved_at: null,
       closed_at: null,
+      first_response_seconds: 3600,
+      resolution_seconds: null,
     },
     {
       id: 'b0000000-0000-0000-0000-000000000002',
       ticket_seq: 102,
       organization_id: validOrgId,
+      ticket_scope: 'tenant',
       subject: 'Ajuste de permissão de tesoureiro',
       category: 'access',
       priority: 'urgent',
@@ -34,11 +38,14 @@ describe('Chamados (view-chamados)', () => {
       updated_at: '2026-09-03T11:30:00Z',
       resolved_at: null,
       closed_at: null,
+      first_response_seconds: null,
+      resolution_seconds: null,
     },
     {
       id: 'b0000000-0000-0000-0000-000000000003',
       ticket_seq: 103,
       organization_id: validOrgId,
+      ticket_scope: 'tenant',
       subject: 'Solicitação de novo plano contábil',
       category: 'configuration',
       priority: 'low',
@@ -47,6 +54,8 @@ describe('Chamados (view-chamados)', () => {
       updated_at: '2026-08-20T16:00:00Z',
       resolved_at: '2026-08-20T16:00:00Z',
       closed_at: '2026-08-20T16:00:00Z',
+      first_response_seconds: 1800,
+      resolution_seconds: 36000,
     },
   ]
 
@@ -71,43 +80,42 @@ describe('Chamados (view-chamados)', () => {
     },
   ]
 
+  function createQueryBuilder(resultData: any) {
+    const builder: any = {
+      eq: vi.fn(() => builder),
+      in: vi.fn(() => builder),
+      ilike: vi.fn(() => builder),
+      or: vi.fn(() => builder),
+      order: vi.fn(() => builder),
+      range: vi.fn(() => builder),
+      limit: vi.fn(() => builder),
+      abortSignal: vi.fn().mockResolvedValue({ data: resultData, error: null }),
+    }
+    return builder
+  }
+
   beforeEach(() => {
     sessionStorage.clear()
     mockClient = {
       from: vi.fn((table: string) => {
-        if (table === 'saas_support_tickets') {
+        if (table === 'v_saas_support_ticket_metrics' || table === 'saas_support_tickets') {
           return {
-            select: vi.fn(() => ({
-              eq: vi.fn(() => ({
-                in: vi.fn().mockReturnThis(),
-                ilike: vi.fn().mockReturnThis(),
-                or: vi.fn().mockReturnThis(),
-                order: vi.fn().mockReturnThis(),
-                range: vi.fn().mockReturnThis(),
-                abortSignal: vi.fn().mockResolvedValue({ data: mockTickets, error: null }),
-              })),
-            })),
+            select: vi.fn(() => createQueryBuilder(mockTickets)),
           }
         }
         if (table === 'saas_support_ticket_messages') {
           return {
-            select: vi.fn(() => ({
-              eq: vi.fn(() => ({
-                eq: vi.fn(() => ({
-                  order: vi.fn(function () {
-                    return {
-                      order: vi.fn().mockReturnThis(),
-                      limit: vi.fn(() => ({
-                        abortSignal: vi.fn().mockResolvedValue({ data: mockMessages, error: null }),
-                      })),
-                    }
-                  }),
-                })),
-              })),
-            })),
+            select: vi.fn(() => createQueryBuilder(mockMessages)),
           }
         }
-        return {}
+        if (table === 'saas_support_ticket_events') {
+          return {
+            select: vi.fn(() => createQueryBuilder([])),
+          }
+        }
+        return {
+          select: vi.fn(() => createQueryBuilder([])),
+        }
       }),
       rpc: vi.fn((rpcName: string, args: any) => {
         if (rpcName === 'create_saas_support_ticket') {

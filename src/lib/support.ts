@@ -22,6 +22,7 @@ export type TenantSupportTicket = {
   id: string
   ticket_seq: number
   organization_id: string
+  ticket_scope: 'tenant'
   subject: string
   category: SupportTicketCategory
   priority: SupportTicketPriority
@@ -30,8 +31,8 @@ export type TenantSupportTicket = {
   updated_at: string
   resolved_at: string | null
   closed_at: string | null
-  first_response_seconds: number | string | null
-  resolution_seconds: number | string | null
+  first_response_seconds: number | null
+  resolution_seconds: number | null
 }
 
 export type TenantTicketMessage = {
@@ -59,6 +60,27 @@ export type TenantTicketMessagesResult = {
   isTruncated: boolean
 }
 
+/**
+ * Sanitiza valores de duração em segundos retornados da view.
+ * Garante que valores nulos, ausentes ou inválidos (NaN, negativos, não numéricos)
+ * sejam convertidos para null, prevenindo a renderização de NaN na interface.
+ */
+export function sanitizeDurationSeconds(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null
+  const num = typeof value === 'number' ? value : Number(String(value).trim())
+  if (!Number.isFinite(num) || num < 0) return null
+  return Math.floor(num)
+}
+
+/**
+ * Formata duração em minutos para exibição amigável sem risco de NaN.
+ */
+export function formatDurationMinutes(seconds: number | string | null | undefined): string | null {
+  const sanitized = sanitizeDurationSeconds(seconds)
+  if (sanitized === null) return null
+  return `${Math.floor(sanitized / 60)} min`
+}
+
 export const SUPPORT_PAGE_SIZE = 15
 
 export type SupportFilters = {
@@ -81,11 +103,12 @@ export async function loadTenantTickets(
   }
 
   let query = client
-    .from('saas_support_tickets')
+    .from('v_saas_support_ticket_metrics')
     .select(
-      'id,ticket_seq,organization_id,subject,category,priority,status,opened_at,updated_at,resolved_at,closed_at,first_response_seconds,resolution_seconds'
+      'id,ticket_seq,organization_id,ticket_scope,subject,category,priority,status,opened_at,updated_at,resolved_at,closed_at,first_response_seconds,resolution_seconds'
     )
     .eq('organization_id', organizationId)
+    .eq('ticket_scope', 'tenant')
 
   // Status filter
   if (filters.statusFilter === 'open') {
@@ -121,15 +144,39 @@ export async function loadTenantTickets(
     throw new Error('Resposta de chamados inválida.')
   }
 
-  // Tenant isolation validation
+  // Tenant isolation and scope validation
+  const sanitizedRows: TenantSupportTicket[] = []
   for (const item of data) {
+    if (!item || typeof item !== 'object') {
+      throw new Error('Registro de chamado inválido.')
+    }
     if (item.organization_id !== organizationId) {
       throw new Error('Violação de isolamento de Loja nos chamados.')
     }
+    if (item.ticket_scope !== 'tenant') {
+      throw new Error('Violação de escopo: chamados internos não permitidos para a Loja.')
+    }
+
+    sanitizedRows.push({
+      id: String(item.id),
+      ticket_seq: Number(item.ticket_seq),
+      organization_id: String(item.organization_id),
+      ticket_scope: 'tenant',
+      subject: String(item.subject ?? ''),
+      category: item.category as SupportTicketCategory,
+      priority: item.priority as SupportTicketPriority,
+      status: item.status as SupportTicketStatus,
+      opened_at: String(item.opened_at ?? ''),
+      updated_at: String(item.updated_at ?? ''),
+      resolved_at: item.resolved_at ? String(item.resolved_at) : null,
+      closed_at: item.closed_at ? String(item.closed_at) : null,
+      first_response_seconds: sanitizeDurationSeconds(item.first_response_seconds),
+      resolution_seconds: sanitizeDurationSeconds(item.resolution_seconds),
+    })
   }
 
-  const hasNext = data.length > SUPPORT_PAGE_SIZE
-  const rows = (hasNext ? data.slice(0, SUPPORT_PAGE_SIZE) : data) as TenantSupportTicket[]
+  const hasNext = sanitizedRows.length > SUPPORT_PAGE_SIZE
+  const rows = hasNext ? sanitizedRows.slice(0, SUPPORT_PAGE_SIZE) : sanitizedRows
 
   return { rows, hasNext }
 }
