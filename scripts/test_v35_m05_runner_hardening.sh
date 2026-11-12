@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # CorSys Tronco Digital V35 — Teste de Validação de Hardening do Runner M05.02
-# Testa guardas de segurança, higienização de credenciais e fail-closed
+# Testa guardas de segurança para origem e destino, higienização e fail-closed
 # ==============================================================================
 
 set -euo pipefail
@@ -40,7 +40,6 @@ TEST_DSN_1="postgres://postgres:SuperSecretPassword123@127.0.0.1:5432/my_restore
 TEST_DSN_2="postgresql://app_user:AnotherSecret@db.example.com:5432/test_db?sslmode=require"
 TEST_DSN_3="host=localhost port=5432 dbname=v35_restore_trial user=postgres password=MyP@ssw0rd! connect_timeout=10"
 
-# Executar a função sanitize_conn extraída do runner
 OUTPUT_1="$(bash -c "source <(sed -n '/sanitize_conn() {/,/^}/p' '$RUNNER'); sanitize_conn '$TEST_DSN_1'")"
 OUTPUT_2="$(bash -c "source <(sed -n '/sanitize_conn() {/,/^}/p' '$RUNNER'); sanitize_conn '$TEST_DSN_2'")"
 OUTPUT_3="$(bash -c "source <(sed -n '/sanitize_conn() {/,/^}/p' '$RUNNER'); sanitize_conn '$TEST_DSN_3'")"
@@ -54,9 +53,9 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-# TESTE 2: Rejeição de Destino com Identificadores Proibidos (Produção / Supabase)
+# TESTE 2: Rejeição de Origem ou Destino com Identificadores Proibidos (Produção)
 # ------------------------------------------------------------------------------
-echo "--- TESTE 2: Rejeição de Destino com Palavras Proibidas ---"
+echo "--- TESTE 2: Rejeição de Origem/Destino com Palavras Proibidas ---"
 
 PROD_TARGETS=(
   "postgres://user:pwd@db.szqkdekwhzxsoxorgvaz.supabase.co:5432/postgres"
@@ -66,33 +65,42 @@ PROD_TARGETS=(
 )
 
 for target in "${PROD_TARGETS[@]}"; do
+  # Testar como destino
   set +e
-  OUT="$("$RUNNER" "service=v35-fixture-source" "$target" 2>&1)"
-  EXIT_CODE=$?
+  OUT_DST="$("$RUNNER" "service=v35-fixture-source" "$target" 2>&1)"
+  EXIT_DST=$?
+  # Testar como origem
+  OUT_SRC="$("$RUNNER" "$target" "service=v35-fixture-restore" 2>&1)"
+  EXIT_SRC=$?
   set -e
-  if [[ $EXIT_CODE -ne 0 ]] && echo "$OUT" | grep -q "ERRO DE SEGURANÇA CRÍTICO: Destino contém identificadores de produção"; then
-    assert_pass "Destino proibido rejeitado com sucesso: $target"
+
+  if [[ $EXIT_DST -ne 0 ]] && echo "$OUT_DST" | grep -q "ERRO DE SEGURANÇA CRÍTICO: Destino contém identificadores de produção" && \
+     [[ $EXIT_SRC -ne 0 ]] && echo "$OUT_SRC" | grep -q "ERRO DE SEGURANÇA CRÍTICO: Origem contém identificadores de produção"; then
+    assert_pass "Origem e Destino proibidos rejeitados com sucesso: $target"
   else
-    assert_fail "Destino proibido não foi rejeitado devidamente" "Target: $target, Exit: $EXIT_CODE, Out: $OUT"
+    assert_fail "Alvo proibido não foi rejeitado devidamente" "Target: $target, ExitDst: $EXIT_DST, ExitSrc: $EXIT_SRC"
   fi
 done
 
 # ------------------------------------------------------------------------------
-# TESTE 3: Rejeição de Destino Não Autorizado (Sem flag e sem sufixo descartável)
+# TESTE 3: Rejeição de Origem e Destino Sem Indicador Descartável Sem Confirmação
 # ------------------------------------------------------------------------------
-echo "--- TESTE 3: Rejeição de Destino Sem Indicador Descartável Sem Confirmação ---"
+echo "--- TESTE 3: Rejeição de Alvos Sem Indicador Descartável Sem Confirmação ---"
 
-UNCONFIRMED_TARGET="postgres://user:pwd@127.0.0.1:5432/regular_database"
+REGULAR_TARGET="postgres://user:pwd@127.0.0.1:5432/regular_database"
 
 set +e
-OUT="$(CONFIRM_DISPOSABLE_TARGET=false "$RUNNER" "service=v35-fixture-source" "$UNCONFIRMED_TARGET" 2>&1)"
-EXIT_CODE=$?
+OUT_SRC_UN="$(CONFIRM_DISPOSABLE_SOURCE=false CONFIRM_DISPOSABLE_TARGET=true "$RUNNER" "$REGULAR_TARGET" "service=v35-fixture-restore" 2>&1)"
+EXIT_SRC_UN=$?
+OUT_DST_UN="$(CONFIRM_DISPOSABLE_SOURCE=true CONFIRM_DISPOSABLE_TARGET=false "$RUNNER" "service=v35-fixture-source" "$REGULAR_TARGET" 2>&1)"
+EXIT_DST_UN=$?
 set -e
 
-if [[ $EXIT_CODE -ne 0 ]] && echo "$OUT" | grep -q "ERRO DE SEGURANÇA: Destino .* não possui identificador padrão de ambiente descartável"; then
-  assert_pass "Destino não descartável rejeitado quando CONFIRM_DISPOSABLE_TARGET=false"
+if [[ $EXIT_SRC_UN -ne 0 ]] && echo "$OUT_SRC_UN" | grep -q "ERRO DE SEGURANÇA: Origem .* não possui identificador padrão" && \
+   [[ $EXIT_DST_UN -ne 0 ]] && echo "$OUT_DST_UN" | grep -q "ERRO DE SEGURANÇA: Destino .* não possui identificador padrão"; then
+  assert_pass "Origem e Destino não descartáveis rejeitados quando flags de confirmação são false"
 else
-  assert_fail "Destino não descartável deveria ter sido rejeitado" "Exit: $EXIT_CODE, Out: $OUT"
+  assert_fail "Alvo não descartável deveria ter sido rejeitado" "SrcExit: $EXIT_SRC_UN, DstExit: $EXIT_DST_UN"
 fi
 
 # ------------------------------------------------------------------------------
@@ -103,7 +111,6 @@ echo "--- TESTE 4: Rejeição de Origem e Destino Idênticos (Simulação via Mo
 MOCK_BIN_DIR="$TEST_TMP_DIR/bin"
 mkdir -p "$MOCK_BIN_DIR"
 
-# Criar mock do psql que retorna a mesma identidade para ambas as conexões
 cat << 'MOCK_EOF' > "$MOCK_BIN_DIR/psql"
 #!/usr/bin/env bash
 if [[ "$*" == *"SELECT coalesce(inet_server_addr()::text"* ]]; then
@@ -115,7 +122,7 @@ MOCK_EOF
 chmod +x "$MOCK_BIN_DIR/psql"
 
 set +e
-OUT="$(PATH="$MOCK_BIN_DIR:$PATH" CONFIRM_DISPOSABLE_TARGET=true "$RUNNER" "postgres://user:pwd@127.0.0.1:5432/same_db" "postgres://user:pwd@127.0.0.1:5432/same_db" 2>&1)"
+OUT="$(PATH="$MOCK_BIN_DIR:$PATH" CONFIRM_DISPOSABLE_SOURCE=true CONFIRM_DISPOSABLE_TARGET=true "$RUNNER" "postgres://user:pwd@127.0.0.1:5432/same_db" "postgres://user:pwd@127.0.0.1:5432/same_db" 2>&1)"
 EXIT_CODE=$?
 set -e
 
@@ -141,7 +148,6 @@ if [[ "$*" == *"SELECT coalesce(inet_server_addr()::text"* ]]; then
   exit 0
 fi
 if [[ "$*" == *"SELECT count(*)"* && "$*" == *"pg_class"* ]]; then
-  # Simula 42 tabelas preexistentes no destino
   echo "42"
   exit 0
 fi
@@ -149,7 +155,7 @@ exit 0
 MOCK_EOF
 
 set +e
-OUT="$(PATH="$MOCK_BIN_DIR:$PATH" "$RUNNER" "postgres://user:pwd@127.0.0.1:5432/v35_source" "postgres://user:pwd@127.0.0.1:5432/v35_restore_trial" 2>&1)"
+OUT="$(PATH="$MOCK_BIN_DIR:$PATH" CONFIRM_DISPOSABLE_SOURCE=true CONFIRM_DISPOSABLE_TARGET=true "$RUNNER" "postgres://user:pwd@127.0.0.1:5432/v35_source" "postgres://user:pwd@127.0.0.1:5432/v35_restore_trial" 2>&1)"
 EXIT_CODE=$?
 set -e
 
@@ -167,9 +173,8 @@ echo "--- TESTE 6: Permissões do Diretório de Artefatos (umask 077 / chmod 700
 MOCK_OUT_DIR="$TEST_TMP_DIR/artifacts_test"
 export OUTPUT_DIR="$MOCK_OUT_DIR"
 
-# Executar apenas até o preflight falhar intencionalmente para conferir a criação do diretório
 set +e
-CONFIRM_DISPOSABLE_TARGET=false "$RUNNER" "postgres://u:p@127.0.0.1:5432/src" "postgres://u:p@127.0.0.1:5432/invalid" >/dev/null 2>&1 || true
+CONFIRM_DISPOSABLE_SOURCE=false CONFIRM_DISPOSABLE_TARGET=false "$RUNNER" "postgres://u:p@127.0.0.1:5432/src" "postgres://u:p@127.0.0.1:5432/invalid" >/dev/null 2>&1 || true
 set -e
 
 if [[ -d "$MOCK_OUT_DIR" ]]; then
@@ -192,7 +197,7 @@ echo "Total de Asserções Aprovadas : $PASS_COUNT"
 echo "Total de Falhas              : $FAIL_COUNT"
 
 if [[ $FAIL_COUNT -eq 0 ]]; then
-  echo "SUCESSO: Todas as guardas de segurança e proteções fail-closed foram validadas!"
+  echo "SUCESSO: Todas as guardas de segurança e proteções fail-closed para origem e destino foram validadas!"
   exit 0
 else
   echo "ERRO: Ocorreram falhas nos testes de segurança!"

@@ -1,18 +1,22 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # CorSys Tronco Digital V35 — M05.02: Sequência Reproduzível do Ensaio de Backup & Restore
-# PostgreSQL 17 Descartável — Runner Endurecido (Hardening de Segurança)
+# PostgreSQL 17 Descartável — Runner Endurecido (Hardening de Segurança Rigoroso)
 #
 # Uso:
 #   ./scripts/run_v35_m05_backup_restore_trial.sh [SOURCE_CONN] [RESTORE_CONN] [DUMP_FILE]
 #
 # Variáveis de controle operacional e segurança:
-#   CONFIRM_DISPOSABLE_TARGET=true   Confirmação explícita para destinos que não contenham sufixo padrão
+#   CONFIRM_DISPOSABLE_SOURCE=true   Confirmação explícita para origem sem sufixo padrão
+#   CONFIRM_DISPOSABLE_TARGET=true   Confirmação explícita para destino sem sufixo padrão
 #   OUTPUT_DIR="/caminho/seguro"     Diretório seguro fora do repositório para dumps e logs (padrão: /tmp ou .tmp/)
 #
 # Exemplos:
 #   ./scripts/run_v35_m05_backup_restore_trial.sh "service=v35-fixture-source" "service=v35-fixture-restore"
-#   CONFIRM_DISPOSABLE_TARGET=true ./scripts/run_v35_m05_backup_restore_trial.sh "postgres://user:pwd@127.0.0.1:5432/source_db" "postgres://user:pwd@127.0.0.1:5432/restore_trial_db"
+#   CONFIRM_DISPOSABLE_SOURCE=true CONFIRM_DISPOSABLE_TARGET=true \
+#     ./scripts/run_v35_m05_backup_restore_trial.sh \
+#     "postgres://user:pwd@127.0.0.1:5432/my_source" \
+#     "postgres://user:pwd@127.0.0.1:5432/my_restore"
 # ==============================================================================
 
 set -euo pipefail
@@ -28,8 +32,6 @@ cd "$ROOT_DIR"
 # ------------------------------------------------------------------------------
 sanitize_conn() {
   local conn="$1"
-  # URL style: postgres[ql]://user:password@host[:port]/db... -> postgresql://user:***@host...
-  # Key-value DSN style: password=secret -> password=***
   echo "$conn" \
     | sed -E 's#(postgres(ql)?://[^:]+:)[^@]+@#\1***@#g' \
     | sed -E "s#(password=)[^ ']+#\1***#g"
@@ -69,24 +71,41 @@ log "Artefato: $DUMP_FILE"
 log "Logs em : $TRIAL_OUTPUT_DIR"
 
 # ------------------------------------------------------------------------------
-# ETAPA 1: Pré-validações de Segurança e Sanidade das Conexões (Fail-Closed)
+# ETAPA 1: Pré-validações de Segurança Rigorosas (Fail-Closed) para Origem e Destino
 # ------------------------------------------------------------------------------
-log "[1/7] Executando verificações de segurança prévias (fail-closed)..."
+log "[1/7] Executando verificações prévias de segurança fail-closed (origem e destino)..."
 
-# 1.1 Proibição de identificadores conhecidos de Produção ou DEV gerenciado
 FORBIDDEN_KEYWORDS="prod|production|live|szqkdekwhzxsoxorgvaz|supabase\.co"
+DISPOSABLE_KEYWORDS="trial|restore|test|temp|fixture|disposable|source|dev|local"
+
+SANITIZED_SOURCE="$(sanitize_conn "$SOURCE_CONN")"
 SANITIZED_RESTORE="$(sanitize_conn "$RESTORE_CONN")"
+
+# 1.1 Validação de Origem (Bloqueio de produção e exigência de ambiente descartável)
+if echo "$SANITIZED_SOURCE" | grep -Eiq "($FORBIDDEN_KEYWORDS)"; then
+  echo "ERRO DE SEGURANÇA CRÍTICO: Origem contém identificadores de produção ou projeto remoto gerenciado!" >&2
+  echo "String sanitizada: $SANITIZED_SOURCE" >&2
+  exit 1
+fi
+
+if ! echo "$SANITIZED_SOURCE" | grep -Eiq "($DISPOSABLE_KEYWORDS)"; then
+  if [[ "${CONFIRM_DISPOSABLE_SOURCE:-false}" != "true" ]]; then
+    echo "ERRO DE SEGURANÇA: Origem '$SANITIZED_SOURCE' não possui identificador padrão de ambiente descartável ('trial', 'source', 'fixture', 'test', 'temp', 'dev', 'local')." >&2
+    echo "Para confirmar conscientemente esta origem de ensaio, defina a variável CONFIRM_DISPOSABLE_SOURCE=true." >&2
+    exit 1
+  fi
+fi
+
+# 1.2 Validação de Destino (Bloqueio de produção e exigência de ambiente descartável)
 if echo "$SANITIZED_RESTORE" | grep -Eiq "($FORBIDDEN_KEYWORDS)"; then
   echo "ERRO DE SEGURANÇA CRÍTICO: Destino contém identificadores de produção ou projeto remoto gerenciado!" >&2
   echo "String sanitizada: $SANITIZED_RESTORE" >&2
   exit 1
 fi
 
-# 1.2 Exigência de identificação explícita de ambiente descartável
-DISPOSABLE_KEYWORDS="trial|restore|test|temp|fixture|disposable"
 if ! echo "$SANITIZED_RESTORE" | grep -Eiq "($DISPOSABLE_KEYWORDS)"; then
   if [[ "${CONFIRM_DISPOSABLE_TARGET:-false}" != "true" ]]; then
-    echo "ERRO DE SEGURANÇA: Destino '$SANITIZED_RESTORE' não possui identificador padrão de ambiente descartável ('trial', 'restore', 'fixture', 'test', 'temp')." >&2
+    echo "ERRO DE SEGURANÇA: Destino '$SANITIZED_RESTORE' não possui identificador padrão de ambiente descartável ('trial', 'restore', 'fixture', 'test', 'temp', 'dev', 'local')." >&2
     echo "Para confirmar conscientemente este destino descartável de ensaio, defina a variável CONFIRM_DISPOSABLE_TARGET=true." >&2
     exit 1
   fi
@@ -106,10 +125,10 @@ RESTORE_IDENTITY="$(psql "$RESTORE_CONN" -X -v ON_ERROR_STOP=1 -At -c "SELECT co
 IFS='|' read -r SRC_ADDR SRC_PORT SRC_DB SRC_USER <<< "$SOURCE_IDENTITY"
 IFS='|' read -r DST_ADDR DST_PORT DST_DB DST_USER <<< "$RESTORE_IDENTITY"
 
-log "  -> Identidade Origem: host=$SRC_ADDR, port=$SRC_PORT, db=$SRC_DB, user=$SRC_USER"
+log "  -> Identidade Origem : host=$SRC_ADDR, port=$SRC_PORT, db=$SRC_DB, user=$SRC_USER"
 log "  -> Identidade Destino: host=$DST_ADDR, port=$DST_PORT, db=$DST_DB, user=$DST_USER"
 
-# 1.4 Bloqueio contra Origem e Destino coincidentes
+# 1.4 Bloqueio absoluto contra Origem e Destino coincidentes
 if [[ "$SRC_ADDR" == "$DST_ADDR" && "$SRC_PORT" == "$DST_PORT" && "$SRC_DB" == "$DST_DB" ]]; then
   echo "ERRO DE SEGURANÇA CRÍTICO: Origem e Destino apontam para a mesma base de dados ($SRC_DB no host $SRC_ADDR:$SRC_PORT)!" >&2
   echo "Operação abortada para evitar corrupção ou sobrescrita acidental da base de origem." >&2
@@ -191,8 +210,6 @@ log "  -> Dump gerado: $DUMP_FILE (Tamanho: $DUMP_SIZE, SHA-256: $DUMP_SHA256)"
 # ETAPA 6: Preparação dos Papéis do Servidor no Destino e Restauração Completa
 # ------------------------------------------------------------------------------
 log "[6/7] Garantindo papéis de cluster no destino e restaurando dump..."
-# O destino deve ser vazio com os papéis do servidor disponíveis.
-# O dump recria os schemas (public, private, auth, extensions), tabelas, policies e dados.
 psql "$RESTORE_CONN" -X -v ON_ERROR_STOP=1 << 'EOF' > /dev/null
 DO $$
 BEGIN
