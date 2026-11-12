@@ -1,18 +1,11 @@
-## V35 M05.02 — Hardening de segurança concluído no PR #50 (12/11/2026)
+## V35 M06.01 — Matriz de Paridade V35 e início das correções funcionais (12/11/2026)
 
-- **Situação:** PR #50 em draft, branch `fix/v35-m0502-backup-fixture-lockfile`, base `main=a8275b285a68078b4c724d3b6a97a2458f355593`. Sem merge ou nova publicação DEV/PROD; integrar na main somente com autorização expressa do proprietário (merge dispara build DEV).
-- **Hardening implementado no AI Studio:**
-  1. *Proteção de credenciais:* função `sanitize_conn` ofusca senhas em URLs e DSNs chave-valor (`password=***`); logs operacionais e mensagens de erro não expõem senhas.
-  2. *Proteção de artefatos:* diretório isolado com `umask 077` e `chmod 700` (`/tmp` ou `.tmp/`), dumps e logs gravados com permissão estrita `0600`; artefatos preservados para auditoria; `.gitignore` atualizado para ignorar `.tmp/`, `*.dump`, `*source_checks.log`, `*restore_checks.log`, `*checks_diff.log` e `dump_toc.txt`.
-  3. *Proteção fail-closed contra restauração indevida:* preflight rejeita destinos com palavras de produção/Supabase gerenciado (`prod`, `production`, `live`, `szqkdekwhzxsoxorgvaz`, `supabase.co`); exige confirmação explícita de ambiente descartável (`trial`, `restore`, `fixture`, `test`, `temp` ou `CONFIRM_DISPOSABLE_TARGET=true`); extrai identidades efetivas de conexão e rejeita origem/destino idênticos; e confere se a base de destino está vazia antes de qualquer comando (`count(*) == 0`), abortando imediatamente diante de objetos de usuário preexistentes.
-- **Validação de testes:**
-  - `scripts/test_v35_m05_runner_hardening.sh`: 9 asserções cobrindo todas as guardas de segurança: **9 PASS / 0 FAIL**.
-  - Suíte completa do frontend (Vitest): 81 arquivos, **537/537 testes PASS**.
-  - Typecheck (`bun run typecheck`) e build (`compile_applet`): **0 erros**.
-- **Evidências do ensaio anterior preservadas:** 77 migrations, fixture sintética de 2 Lojas, 5 checks em ambas as bases e marcador `V35_M0502_VERIFICATION_PASS` com diff zero relatados em PostgreSQL 17.11 descartável; dump SHA-256 `91fd875c39a06253e307f989d1d118d14531dcb5c7bb52b5331599d0770970ed`. CI #481 3/3 PASS.
-- **Classificação:** `PR_ABERTO` / `HARDENING_CONCLUIDO_E_VALIDADO` / `AGUARDA_AUTORIZACAO_INTEGRACAO`.
-- **M04.03-C:** homologada em DEV sob release Cloudflare `e6cea23a`; conciliação do ID de migration `20261111223000` vs `20261112015957` pendente de revisão futura.
-- **Próxima ação única:** Apresentar relatório de conclusão do hardening e solicitar autorização do proprietário para merge do PR #50. Após autorização e integração, AI Studio executa Pull da main.
+- **Situação:** M05.02 (Hardening de segurança) concluída e validada localmente no PR #50.
+- **Microentrega ativa (M06.01):** Matriz de paridade das 21 telas V35 criada (`docs/V35_SCREEN_PARITY_MATRIX.md`).
+- **Próxima ação única:** Executar identificação de lacunas funcionais prioritárias da matriz e iniciar implementação corretiva em PRs independentes.
+- **Hardening M05.02:** Runner de restauração endurecido com validações fail-closed (origem/destino, vazios, identificação de ambiente, permissões, sanitização). Testes validados (9/9 PASS). Aguarda autorização de merge do PR #50.
+- **Publicação:** Nenhuma. M04.03-C permanece homologada DEV sob release Cloudflare `e6cea23a`.
+- **Compromisso:** Prosseguir com as prioridades 2, 3, 4 e 5 (Paridade, Mobile/UX, Regressão, M05/M01/etc) conforme `V35_EXECUTION_BOARD.md`. Não encerrar a sessão sem progresso funcional rastreável.
 
 ---
 
