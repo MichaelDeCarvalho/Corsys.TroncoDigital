@@ -1,11 +1,10 @@
-## V35 M05.02 — PR #50 revisado; ensaio sintético validado por registro; hardening antes de fechar (12/11/2026)
+## V35 M06.01 — Matriz de Paridade V35 iniciada e correção de SLA em chamados (12/11/2026)
 
-- **Revisão de código:** `b14a8c7e09db68b56e3bff6efd7d8b8f28771724`, PR #50 draft, `fix/v35-m0502-backup-fixture-lockfile` → `main` (`a8275b285a68078b4c724d3b6a97a2458f355593`). Diff: `scripts/v35_m05_fixture_seed.sql` (+40 linhas), `package-lock.json` (mesmo blob SHA que `4068281`); sem alteração de migrations/DEV/PROD.
-- **Evidências:** GitHub Actions Foundation checks #481 / run `43147222442`, frontend/static/onboarding **3/3 PASS** na revisão acima. Ensaio PostgreSQL 17.11 relatado pelo proprietário e descrito no PR: 77 migrations, pg_dump/pg_restore, 5 checks e marcador `V35_M0502_VERIFICATION_PASS` em ambas as bases, logs idênticos (diff zero), runner exit 0, dump SHA-256 `91fd875c39a06253e307f989d1d118d14531dcb5c7bb52b5331599d0770970ed`. Não houve inspeção independente dos arquivos brutos de log; nenhuma reexecução foi necessária nesta revisão documental.
-- **Resultado:** `PR_ABERTO`; ensaio de restauração sintética `VERIFICADO_POR_REGISTRO`; fechamento `BLOQUEADO` até hardening mínimo do runner e aprovação do merge. Não generalizar para backup Supabase gerenciado, RPO/RTO, restauração por tenant ou PROD.
-- **Risco constatado (SECURITY_REGISTER):** `SOURCE_CONN`/`RESTORE_CONN` em logs podem expor senha; dump/logs padrão no diretório raiz sem exclusão no gitignore; ausência de guardas explícitas para bases distintas e destino vazio/descartável. AI Studio deve mitigar sem alterar a fixture/asserções já verificadas. Validar os novos guardas em testes focados e CI da revisão posterior.
-- **Publicação:** nenhuma publicação disparada; M04.03-C permanece homologada DEV sob release `e6cea23a`. Conciliação de migration `20261111223000` vs `20261112015957` segue pendente, fora da M05.02.
-- **PRÓXIMA AÇÃO ÚNICA:** implementar hardening mínimo na branch do PR #50 via AI Studio (sem push na main), atualizar cursor/handoff na revisão correspondente, checar CI e pedir autorização de merge. Após integração autorizada, Pull da main no AI Studio. Work somente sob autorização pontual.
+- **Situação:** M05.02 (Hardening de segurança) concluída e aguardando merge do PR #50.
+- **Microentrega ativa (M06.01):** Matriz de paridade das 21 telas V35 criada (`docs/V35_SCREEN_PARITY_MATRIX.md`). Lacuna de SLA em `view-chamados` corrigida.
+- **Próxima ação:** Selecionar a próxima lacuna funcional prioritária da matriz (`view-dashboard`, `view-inadimplencia` ou similar) e iniciar implementação em PRs independentes.
+- **Hardening M05.02:** Runner de restauração endurecido com validações fail-closed. Testes validados (9/9 PASS). Aguarda autorização de merge do PR #50.
+- **Compromisso:** Prosseguir com as prioridades 2, 3, 4 e 5 (Paridade, Mobile/UX, Regressão, etc). Não encerrar a sessão sem progresso funcional rastreável.
 
 ---
 

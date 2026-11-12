@@ -641,6 +641,15 @@ export function Chamados({
                                             {new Date(ticket.opened_at).toLocaleString('pt-BR')}
                                           </div>
                                         </li>
+                                        {ticket.first_response_seconds !== null && (
+                                          <li className="flex items-start gap-2">
+                                            <span className="w-2 h-2 rounded-full bg-indigo-500 mt-1 shrink-0" />
+                                            <div>
+                                              <strong>Primeira Resposta:</strong>{' '}
+                                              {Math.floor(Number(ticket.first_response_seconds) / 60)} min
+                                            </div>
+                                          </li>
+                                        )}
                                         <li className="flex items-start gap-2">
                                           <span className="w-2 h-2 rounded-full bg-amber-500 mt-1 shrink-0" />
                                           <div>
@@ -654,6 +663,11 @@ export function Chamados({
                                             <div>
                                               <strong>Resolução Concluída:</strong>{' '}
                                               {new Date(ticket.resolved_at).toLocaleString('pt-BR')}
+                                              {ticket.resolution_seconds !== null && (
+                                                <span className="ml-1 text-slate-500 italic">
+                                                  ({Math.floor(Number(ticket.resolution_seconds) / 60)} min)
+                                                </span>
+                                              )}
                                             </div>
                                           </li>
                                         )}

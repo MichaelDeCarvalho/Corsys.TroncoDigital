@@ -30,6 +30,8 @@ export type TenantSupportTicket = {
   updated_at: string
   resolved_at: string | null
   closed_at: string | null
+  first_response_seconds: number | string | null
+  resolution_seconds: number | string | null
 }
 
 export type TenantTicketMessage = {
@@ -81,7 +83,7 @@ export async function loadTenantTickets(
   let query = client
     .from('saas_support_tickets')
     .select(
-      'id,ticket_seq,organization_id,subject,category,priority,status,opened_at,updated_at,resolved_at,closed_at'
+      'id,ticket_seq,organization_id,subject,category,priority,status,opened_at,updated_at,resolved_at,closed_at,first_response_seconds,resolution_seconds'
     )
     .eq('organization_id', organizationId)
 

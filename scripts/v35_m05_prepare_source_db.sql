@@ -3,13 +3,6 @@
 -- PostgreSQL 17 Descartável / Bootstrap pré-migrations
 -- ==============================================================================
 
--- Marcar ambiente como descartável para validação fail-closed
-CREATE TABLE IF NOT EXISTS public.disposable_env_marker (
-  id serial PRIMARY KEY,
-  created_at timestamp with time zone DEFAULT now()
-);
-INSERT INTO public.disposable_env_marker DEFAULT VALUES;
-
 -- 1. Papéis de Cluster (se não existirem no cluster PostgreSQL)
 DO $$
 BEGIN

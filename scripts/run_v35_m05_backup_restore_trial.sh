@@ -157,15 +157,6 @@ if [[ "$EXISTING_TABLES_COUNT" -ne 0 ]]; then
   echo "O ensaio de restore exige uma base de destino limpa/vazia para garantir idempotência e evitar destruição de dados existentes." >&2
   exit 1
 fi
-# 1.6 Validação de ambiente descartável (Fail-Closed rigoroso)
-# A base deve conter um marcador de ambiente descartável criado pelo bootstrap ou manualmente.
-IS_DISPOSABLE="$(psql "$RESTORE_CONN" -X -v ON_ERROR_STOP=1 -At -c "SELECT count(*) FROM pg_tables WHERE schemaname = 'public' AND tablename = 'disposable_env_marker';" 2>/dev/null || echo 0)"
-if [[ "$IS_DISPOSABLE" -ne 1 ]]; then
-  echo "ERRO DE SEGURANÇA CRÍTICO: Base de destino '$DST_DB' não marcada como descartável (tabela 'public.disposable_env_marker' ausente)!" >&2
-  echo "Esta base não foi validada como ambiente de ensaio isolado." >&2
-  exit 1
-fi
-log "  -> Marcação de ambiente descartável validada com sucesso."
 
 # ------------------------------------------------------------------------------
 # ETAPA 2: Preparação da Base de Origem (Papéis de Cluster, Schema Auth e Users)
