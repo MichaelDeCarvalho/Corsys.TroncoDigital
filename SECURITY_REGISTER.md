@@ -1,3 +1,14 @@
+## SEC-M0502-01 — runner de restauração: secrets em logs e seleção insegura do destino (12/11/2026)
+
+- **Escopo:** `scripts/run_v35_m05_backup_restore_trial.sh` e `.gitignore`, identificados na revisão do PR #50 (código `b14a8c7`).
+- **Severidade:** ALTA antes de uso com credenciais/dados reais; nenhuma exposição real confirmada.
+- **Evidência:** runner faz `log "Origem  : $SOURCE_CONN"` e `log "Destino : $RESTORE_CONN"` (podem conter senha); grava `v35_m05_trial.dump`, `source_checks.log`, `restore_checks.log`, `dump_toc.txt` e `checks_diff.log` no diretório do repositório, sem exclusões específicas em `.gitignore`; não comprova que destino seja descartável/vazio, nem rejeita a coincidência origem/destino antes do restore.
+- **Impacto:** vazamento acidental de credenciais ou de dumps se reutilizado fora do ensaio; risco de alterações em banco indevido.
+- **Mitigação pendente (AI Studio):** não ecoar DSN/segredos; produzir dumps/logs em local seguro fora do repositório, com permissões restritas, e adicionar exclusões adequadas; preflight fail-closed garantindo bancos distintos e alvo explicitamente descartável e vazio antes de `pg_restore`. Verificar guardas com testes direcionados, mantendo SQL e fixture já validados sem refazer gates não impactados.
+- **Status:** ABERTO / bloqueia fechamento da M05.02; sem merge, DEV novo ou PROD até revisão e autorização específica de integração.
+
+---
+
 ## V35 M04.03-C — trilha de chamados preparada localmente
 
 Base GitHub main 97f67281c9e55ac6d58271386c65f1dd690703f1, com a mesma árvore da cópia local antes das alterações. M04.03-B integrada pelo PR #48. O port local reaproveita a interface do AI Studio, limita campos em ambas as consultas e exige eventos de cliente na leitura da Loja. Gate local PostgreSQL 17.5 em memória PASS com a migration proposta, políticas versionadas e dados sintéticos. Master/SUPPORT AAL2, isolamento Loja A/B, negativos AAL1 e anônimo, projeção, ordem e escrita interna verificados. Gateway/JWT real e restauração permanecem pendentes. ADR 0047 registra o contrato. O runbook M05 descreve restauração em base descartável com dados sintéticos e aguarda evidência de execução. Sem integração ou publicação da M04.03-C.

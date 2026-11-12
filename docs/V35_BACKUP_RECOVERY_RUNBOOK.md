@@ -1,7 +1,7 @@
 # V35 — Ensaio de Backup e Restauração (Runbook M05.02)
 
-> **Status:** PREPARADO (Scripts executáveis de bootstrap, carga, ensaio e asserções entregues)  
-> **Homologação:** PENDENTE_EVIDENCIA_EXECUCAO_OBSERVADA (A ser verificado após execução do restore)  
+> **Status:** ENSAIO_SINTETICO_VERIFICADO_POR_REGISTRO (PR #50 / PostgreSQL 17.11; integração pendente)  
+> **Homologação:** ensaio descartável relatado e registrado no PR; fechamento operacional BLOQUEADO por hardening do runner e autorização de merge  
 > **Ambiente:** PostgreSQL 17 descartável isolado / Cluster CI
 
 ---
@@ -133,5 +133,14 @@ A comparação entre `source_checks.log` e `restore_checks.log` deve atender aos
 
 ## 5. Critérios de Homologação
 
-- O ensaio permanece classificado como `PENDENTE_EVIDENCIA_EXECUCAO_OBSERVADA`.
+- O ensaio sintético foi relatado como aprovado no PostgreSQL 17.11 (evidência escrita no PR #50), sem logs brutos anexados no GitHub na revisão `b14a8c7`.
 - A microentrega M05.02 transiciona para o estado `VERIFICADO` somente após a execução efetivamente observada em ambiente descartável PostgreSQL 17 real, acompanhada do registro de horários, comandos executados e hashes dos artefatos produzidos.
+
+
+## 6. Revisão de evidências e controle de integração — 12/11/2026
+
+- **Revisão:** PR #50, código `b14a8c7e09db68b56e3bff6efd7d8b8f28771724`, CI #481 / run `43147222442`, jobs `static`, `frontend`, `onboarding` 3/3 PASS.
+- **Resultado informado e registrado no PR:** 77 migrations em PostgreSQL 17.11 descartável, restauração concluída, cinco checks em origem/destino, `V35_M0502_VERIFICATION_PASS` nas duas bases, `diff -u` sem diferenças, runner exit 0. Dump sintético SHA-256 `91fd875c39a06253e307f989d1d118d14531dcb5c7bb52b5331599d0770970ed`. Os logs brutos não estavam anexados ao PR; não alegar auditoria independente dos bytes ou restaurabilidade de backup do Supabase real.
+- **Hardening pendente:** não imprimir DSNs contendo secrets; impedir escrita de dumps e logs sensíveis em diretório versionado (usar pasta segura fora do Git e exclusões adequadas); negar origem/destino iguais e destino não vazio/não descartável. Corrigir no AI Studio e executar testes focados no comportamento alterado. Reaproveitar as verificações da fixture/SQL enquanto suas versões forem idênticas.
+- **Publicação:** PR continua draft, não integrado, sem nova publicação DEV/PROD. Merge na main aciona build DEV e requer aprovação expressa. Após autorização e integração, AI Studio executa Pull; atualizar cursor/handoff com commit, CI, estado do build DEV e próxima microentrega.
+- **Limites de escopo:** este teste é restauração de fixture em banco descartável, não prova rotinas operacionais automáticas de backup, retenção, RPO/RTO, recuperação do banco gerenciado ou restauração seletiva por organização.

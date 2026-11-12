@@ -1,3 +1,16 @@
+## V35 M05.02 — revisão do PR #50 e gate de segurança (12/11/2026)
+
+- **Situação:** PR #50 em draft, HEAD de código `b14a8c7e09db68b56e3bff6efd7d8b8f28771724`, branch `fix/v35-m0502-backup-fixture-lockfile`, base `main=a8275b285a68078b4c724d3b6a97a2458f355593`. Sem merge ou nova publicação DEV/PROD; integrar na main somente com autorização expressa do proprietário (merge dispara build DEV).
+- **Revisão de diff:** 2 arquivos de código alterados: `scripts/v35_m05_fixture_seed.sql` (+40 linhas; planos contábeis sintéticos A/B para cumprir guardas antes de cobranças) e `package-lock.json` (blob SHA `f4324debe47fdfa161a707ad487179835d022f6c`, idêntico ao commit histórico `4068281`). `package.json`, migrations e scripts de verificação permanecem inalterados neste PR.
+- **CI observada no GitHub:** workflow Foundation checks #481, run `43147222442`, `frontend`, `static` e `onboarding` PASS (3/3), revisão `b14a8c7e09db68b56e3bff6efd7d8b8f28771724`.
+- **Ensaio PostgreSQL 17.11:** conforme evidências relatadas pelo proprietário e registradas na descrição do PR #50, 77 migrations aplicadas, fixture e `pg_restore` concluídos, cinco checks e `V35_M0502_VERIFICATION_PASS` nas bases de origem/destino, diff de logs vazio e runner exit 0; SHA-256 do dump sintético `91fd875c39a06253e307f989d1d118d14531dcb5c7bb52b5331599d0770970ed`. Logs brutos não anexados ao PR na revisão; **não repetir** o ensaio por simples retomada, mas não afirmar verificação independente dos logs.
+- **Achado de segurança antes do fechamento:** runner atual imprime `SOURCE_CONN` e `RESTORE_CONN` completos (podem conter senha); gera dump e logs na raiz sem exclusões correspondentes no `.gitignore`; e não valida deterministicamente origem/destino distintos nem destino descartável/vazio. Corrigir no AI Studio antes de liberar integração; testar guardas diretamente impactadas. Preservar provas da fixture e do SQL quando o diff relevante permanecer idêntico.
+- **Classificação:** `PR_ABERTO` / `ENSAIO_SINTETICO_VERIFICADO_POR_REGISTRO` / `FECHAMENTO_BLOQUEADO_HARDENING_E_AUTORIZACAO`. Um ensaio sintético não homologa recuperação gerenciada do Supabase nem publicação DEV/PROD.
+- **M04.03-C:** homologação DEV previamente registrada sob release Cloudflare `e6cea23a`; conciliação do identificador da migration GitHub `20261111223000` vs Supabase DEV `20261112015957` permanece pendente, separada desta correção.
+- **Próxima ação única:** AI Studio implementar hardening mínimo do runner e higiene de artefatos na branch do PR #50, sem push na main; conferir CI/escopo dos testes impactados e revisão Git atualizada; solicitar autorização específica de merge. Após integração autorizada, AI Studio deve fazer Pull da main. Não usar Work sem autorização pontual.
+
+---
+
 ## V35 M05.02 — Fixture sintética e checks de restauração preparados (11/11/2026)
 
 - **M05.02 PREPARADA (Ensaio local: NÃO TESTADO; aguarda execução observada em PostgreSQL 17):**
