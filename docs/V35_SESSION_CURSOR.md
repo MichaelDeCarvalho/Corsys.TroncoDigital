@@ -1,3 +1,11 @@
+## V35 M06.01 — Finalização e alinhamento estrito do Dashboard (`view-dashboard`) (12/11/2026)
+
+- **Situação:** Removidas do `FinancialDashboard.tsx` as métricas e razões não aprovadas (comparação entre períodos distintos de `received_this_month` e `payables_open`, bem como estimativa de posição líquida de patrimônio). Preservados integralmente os 6 KPIs financeiros canônicos calculados pelo backend (`read_tenant_financial_dashboard`), com isolamento por `organization_id` e tratamento fail-closed.
+- **Verificação:** Suíte `FinancialDashboard.test.tsx` (5/5 PASS) e `DelinquencyReport.test.tsx` (8/8 PASS) executadas e aprovadas com sucesso.
+- **Próxima ação única:** Avançar para a próxima microentrega funcional da matriz de paridade (`view-inadimplencia` ou `view-financeiro`).
+
+---
+
 ## V35 M06.01 — Correção de SLA de chamados, robustez de durações e testes de CI (12/11/2026)
 
 - **Situação:** Correção de SLA de chamados (`loadTenantTickets` usando o read-model `v_saas_support_ticket_metrics` e escopo `ticket_scope = 'tenant'`), sanitização estrita de durações (sem `NaN`), suíte dedicada de testes `src/lib/support.test.ts` (8/8 PASS) e correção de sincronização assíncrona no teste `MasterSupportSessions.test.tsx` concluídas com sucesso.
