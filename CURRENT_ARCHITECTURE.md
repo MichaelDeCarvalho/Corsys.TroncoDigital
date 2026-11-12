@@ -1,3 +1,7 @@
+## V35 M04.03-C — trilha de chamados preparada localmente
+
+Base GitHub main 97f67281c9e55ac6d58271386c65f1dd690703f1, com a mesma árvore da cópia local antes das alterações. M04.03-B integrada pelo PR #48. O port local reaproveita a interface do AI Studio, limita campos em ambas as consultas e exige eventos de cliente na leitura da Loja. Gate local PostgreSQL 17.5 em memória PASS com a migration proposta, políticas versionadas e dados sintéticos. Master/SUPPORT AAL2, isolamento Loja A/B, negativos AAL1 e anônimo, projeção, ordem e escrita interna verificados. Gateway/JWT real e restauração permanecem pendentes. ADR 0047 registra o contrato. O runbook M05 descreve restauração em base descartável com dados sintéticos e aguarda evidência de execução. Sem integração ou publicação da M04.03-C.
+
 ## V35 M01.02 — RPCs de reconciliação no DEV (09/11/2026)
 
 No projeto `szqkdekwhzxsoxorgvaz`, migration `v35_onboarding_invite_reconciliation` registrada na versão `20261109190747` ativou 3 RPCs de consulta/expiração/observação, restritas à verificação Master+AAL2 no servidor, além de EXECUTE restrito a authenticated. A expiração marca `failed/invite_outcome_unknown` sem zerar tentativas ou liberar destinatário. Observações não acionam retry/Auth. SQL rollback DEV PASS para autorização, expiração e idempotência; nenhuma mudança de estado persistente fora da implantação. JWT HTTP real e entrega não homologados. Ver ADR-0044, cursor e handoff.

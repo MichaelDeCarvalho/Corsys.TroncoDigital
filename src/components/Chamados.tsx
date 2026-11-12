@@ -22,10 +22,12 @@ import {
 import {
   loadTenantTickets,
   loadTenantTicketMessages,
+  loadTenantTicketEvents,
   createTenantSupportTicket,
   replyTenantSupportTicket,
   type TenantSupportTicket,
   type TenantTicketMessage,
+  type TenantTicketEvent,
   type SupportTicketCategory,
   type SupportTicketPriority,
   type SupportTicketStatus,
@@ -379,6 +381,7 @@ export function Chamados({
       {/* Ticket Details View (when a ticket is clicked) */}
       {selectedTicket ? (
         <TicketDetails
+          key={`${organizationId}:${selectedTicket.id}`}
           client={client}
           organizationId={organizationId}
           ticket={selectedTicket}
@@ -921,9 +924,12 @@ function TicketDetails({
   onUpdated: () => void
 }) {
   const [messages, setMessages] = useState<TenantTicketMessage[] | null>(null)
+  const [events, setEvents] = useState<TenantTicketEvent[] | null>(null)
   const [isTruncated, setIsTruncated] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [eventsLoading, setEventsLoading] = useState(true)
   const [error, setError] = useState('')
+  const [eventsError, setEventsError] = useState('')
   const [replyText, setReplyText] = useState('')
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState('')
@@ -933,14 +939,21 @@ function TicketDetails({
   const replyIdempotencyKeyRef = useRef<string>(crypto.randomUUID())
   const replyGuard = useRef(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const detailRequest = useRef<AbortController | null>(null)
 
   function loadMessages() {
+    detailRequest.current?.abort()
     const controller = new AbortController()
+    detailRequest.current = controller
     setLoading(true)
     setError('')
+    setEvents(null)
+    setEventsLoading(true)
+    setEventsError('')
 
     loadTenantTicketMessages(client, organizationId, ticket.id, controller.signal)
       .then(res => {
+        if (controller.signal.aborted) return
         setMessages(res.messages)
         setIsTruncated(res.isTruncated)
         setLoading(false)
@@ -952,13 +965,25 @@ function TicketDetails({
         }
       })
 
-    return controller
+    loadTenantTicketEvents(client, organizationId, ticket.id, controller.signal)
+      .then(res => {
+        if (controller.signal.aborted) return
+        setEvents(res)
+        setEventsLoading(false)
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setEventsError('Não foi possível carregar a trilha de eventos deste chamado.')
+          setEventsLoading(false)
+        }
+      })
+
   }
 
   useEffect(() => {
-    const controller = loadMessages()
+    loadMessages()
     return () => {
-      controller.abort()
+      detailRequest.current?.abort()
     }
   }, [client, organizationId, ticket.id])
 
@@ -1169,6 +1194,44 @@ function TicketDetails({
           </div>
         )}
       </div>
+
+      {/* Trilha do Chamado (saas_support_ticket_events) */}
+      <div className="space-y-3 pt-3 border-t">
+        <h4 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+          <History size={16} aria-hidden="true" />
+          Trilha do chamado (eventos de estado)
+        </h4>
+
+        {eventsError && (
+          <p role="alert" className="message error">
+            {eventsError}
+          </p>
+        )}
+
+        {eventsLoading ? (
+          <p role="status" className="text-xs text-slate-500">
+            Carregando eventos do chamado…
+          </p>
+        ) : eventsError ? null : !events || events.length === 0 ? (
+          <p className="text-xs text-slate-500">Nenhum evento registrado nesta trilha.</p>
+        ) : (
+          <div className="space-y-2 max-h-48 overflow-y-auto p-3 bg-slate-50 rounded-lg border text-xs text-slate-700">
+            {events.map(ev => (
+              <div key={String(ev.id)} className="flex items-center justify-between p-2 bg-white rounded border">
+                <div>
+                  <span className="font-semibold text-slate-900">
+                    {ev.from_status ? `${statusLabels[ev.from_status as SupportTicketStatus] || ev.from_status} → ${statusLabels[ev.to_status as SupportTicketStatus] || ev.to_status}` : `Criado (${statusLabels[ev.to_status as SupportTicketStatus] || ev.to_status})`}
+                  </span>
+               </div>
+                <span className="text-slate-400 font-mono text-[11px] whitespace-nowrap">
+                  {new Date(ev.created_at).toLocaleString('pt-BR')}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+     </div>
 
       {/* Reply Form */}
       <form onSubmit={handleReplySubmit} className="space-y-3 pt-2" aria-label="Responder chamado">

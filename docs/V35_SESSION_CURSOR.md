@@ -1,3 +1,7 @@
+## V35 M04.03-C — trilha de chamados preparada localmente
+
+Base GitHub main 97f67281c9e55ac6d58271386c65f1dd690703f1, com a mesma árvore da cópia local antes das alterações. M04.03-B integrada pelo PR #48. O port local reaproveita a interface do AI Studio, limita campos em ambas as consultas e exige eventos de cliente na leitura da Loja. Gate local PostgreSQL 17.5 em memória PASS com a migration proposta, políticas versionadas e dados sintéticos. Master/SUPPORT AAL2, isolamento Loja A/B, negativos AAL1 e anônimo, projeção, ordem e escrita interna verificados. Gateway/JWT real e restauração permanecem pendentes. ADR 0047 registra o contrato. O runbook M05 descreve restauração em base descartável com dados sintéticos e aguarda evidência de execução. Sem integração ou publicação da M04.03-C.
+
 ## V35 M04.03-B — autorização de leitura dos Jobs
 
 M04.03-B sobre main fefd376. A política anterior delega a is_platform_staff, cujo código versionado já verifica AAL2; a nova política exige o claim explicitamente. SELECT autenticado passa a usar lista de colunas diagnósticas, excluindo payload, idempotency_key e correlation_id. O histórico A mantém filtros e cursor; removido o leitor antigo sem consumidores. O PR preserva as permissões de service_role e as RPCs internas de onboarding. Gate PostgreSQL descartável com claims simuladas e testes de cursor; JWT real no DEV pendente.

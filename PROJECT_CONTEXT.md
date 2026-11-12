@@ -1,3 +1,7 @@
+## V35 M04.03-C — trilha de chamados preparada localmente
+
+Base GitHub main 97f67281c9e55ac6d58271386c65f1dd690703f1, com a mesma árvore da cópia local antes das alterações. M04.03-B integrada pelo PR #48. O port local reaproveita a interface do AI Studio, limita campos em ambas as consultas e exige eventos de cliente na leitura da Loja. Gate local PostgreSQL 17.5 em memória PASS com a migration proposta, políticas versionadas e dados sintéticos. Master/SUPPORT AAL2, isolamento Loja A/B, negativos AAL1 e anônimo, projeção, ordem e escrita interna verificados. Gateway/JWT real e restauração permanecem pendentes. ADR 0047 registra o contrato. O runbook M05 descreve restauração em base descartável com dados sintéticos e aguarda evidência de execução. Sem integração ou publicação da M04.03-C.
+
 ## M01.02 — migration ativada só em DEV (09/11/2026)
 
 Autorização específica cumprida: migration `v35_onboarding_invite_reconciliation` aplicada no Supabase DEV `szqkdekwhzxsoxorgvaz`, versão real `20261109190747`, e SQL read-back/rollback PASS; sem envio de convites, Edge redeploy ou PROD. M01.02 preserva fail-closed para resultado externo incerto, sem retry automático. A M01.03 é o próximo trabalho de código. M01.04 requer autorização para teste HTTP/JWT real e convite com destinatário controlado. Ver cursor vigente.

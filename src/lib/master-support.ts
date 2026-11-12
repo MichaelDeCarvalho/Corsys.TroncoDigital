@@ -10,6 +10,11 @@ export type MasterTicketMessage={
  id:string;ticket_id:string;organization_id:string|null;
  sender_kind:string;visibility:string;body:string;created_at:string
 }
+export type MasterTicketEvent={
+ id:number|string;organization_id:string|null;ticket_id:string;
+ from_status:string|null;to_status:string;visibility:string;
+ created_at:string
+}
 export const MASTER_SUPPORT_PAGE=25
 const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i
 function seconds(value:unknown){
@@ -63,4 +68,22 @@ export async function loadMasterTicketMessages(
   ids.add(row.id)
  }
  return data as MasterTicketMessage[]
+}
+export async function loadMasterTicketEvents(
+ client:SupabaseClient,ticket:MasterTicket,signal:AbortSignal
+){
+ const {data,error}=await client.from('saas_support_ticket_events')
+  .select('id,organization_id,ticket_id,from_status,to_status,visibility,created_at')
+  .eq('ticket_id',ticket.id).order('created_at',{ascending:true}).order('id',{ascending:true}).limit(201).abortSignal(signal)
+ if(error)throw error
+ if(!Array.isArray(data)||data.length>200)throw Error('Support events list exceeds verified limit')
+ for(const row of data as MasterTicketEvent[]){
+  if(!row||row.ticket_id!==ticket.id||
+   typeof row.to_status!=='string'||
+   !['customer','internal'].includes(row.visibility)||
+   !Number.isFinite(Date.parse(row.created_at))||
+   row.organization_id!==ticket.organization_id)
+   throw Error('Unexpected support ticket event data')
+ }
+ return data as MasterTicketEvent[]
 }

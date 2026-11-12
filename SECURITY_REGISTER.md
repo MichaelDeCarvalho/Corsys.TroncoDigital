@@ -1,3 +1,7 @@
+## V35 M04.03-C — trilha de chamados preparada localmente
+
+Base GitHub main 97f67281c9e55ac6d58271386c65f1dd690703f1, com a mesma árvore da cópia local antes das alterações. M04.03-B integrada pelo PR #48. O port local reaproveita a interface do AI Studio, limita campos em ambas as consultas e exige eventos de cliente na leitura da Loja. Gate local PostgreSQL 17.5 em memória PASS com a migration proposta, políticas versionadas e dados sintéticos. Master/SUPPORT AAL2, isolamento Loja A/B, negativos AAL1 e anônimo, projeção, ordem e escrita interna verificados. Gateway/JWT real e restauração permanecem pendentes. ADR 0047 registra o contrato. O runbook M05 descreve restauração em base descartável com dados sintéticos e aguarda evidência de execução. Sem integração ou publicação da M04.03-C.
+
 **Advisory Supabase (09/11/2026):** o lint `authenticated_security_definer_function_executable` sinaliza as três RPCs de M01.02 porque são `SECURITY DEFINER` em `public` com EXECUTE para `authenticated` — exposição **intencional para operação Master** e não autorização ampla. O controle interno `private.require_platform_staff('MASTER')` com AAL2 foi exercitado no PostgreSQL DEV com negações AAL1/não-Master, mas um gate HTTP/JWT real permanece pendente. Não eliminar indiscriminadamente os grants sem revisar o contrato da interface. Referência: https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable
 
 ## M01.02 — segurança verificada em DEV (09/11/2026)
