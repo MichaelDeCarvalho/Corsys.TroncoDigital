@@ -1,3 +1,22 @@
+## V35 M05.02 — Fixture sintética e checks de restauração preparados (11/11/2026)
+
+- **M05.02 PREPARADA (Pendente de verificação pós-restore):**
+  - Entregues os arquivos executáveis `scripts/v35_m05_fixture_seed.sql` (carga determinística de 2 Lojas, identidades, vínculos, contas a pagar e cobranças com valores em centavos, chamados e eventos M04.03-C, auditoria imutável) e `scripts/v35_m05_backup_verify_checks.sql` (5 blocos de testes determinísticos com `RAISE EXCEPTION` sob divergência).
+  - Pré-requisitos de restore documentados em `docs/V35_BACKUP_RECOVERY_RUNBOOK.md`: roles (`anon`, `authenticated`, `service_role`, `authenticator`), schemas (`public`, `private`, `auth`, `extensions`), extensões (`pgcrypto`, `btree_gist`) e funções mínimas `auth.jwt()`, `auth.uid()`, `auth.role()`.
+  - M05.02 registrada como `PREPARADO`; será registrada como `VERIFICADO` somente após a execução observada do restore em PostgreSQL 17 descartável.
+
+- **M05.01 PENDENTE (Fluxos e decisões/contratos faltantes):**
+  - *Exportação integral / Portabilidade*: PENDENTE de contrato server-side com RPC exportadora delimitada por `organization_id`, projeção mínima e sanitização de dados pessoais.
+  - *Anonimização e Exclusão (Esquecimento)*: PENDENTE de definição jurídica/contábil de prazos de retenção legal do ledger financeiro (mínimo 5 anos conforme legislação) e contrato de ofuscação de PII nos cadastros de integrantes.
+  - *Restauração pontual por tenant*: PENDENTE de protocolo de isolamento transacional por organização (o `pg_dump --table` não filtra por tenant; exige restore lógico seletivo ou replicação controlada).
+
+- **M04.03-C Trilha do Chamado (Verificações e Conciliação):**
+  - Bloqueio de projeção das colunas `reason` e `actor_user_id` verificado e confirmado para Master (authenticated) e Loja B (authenticated) via erro `42501` (`insufficient_privilege`).
+  - Negativa de Master/AAL1 validada com claims simuladas (retorno de 0 eventos na ausência de MFA).
+  - A conciliação do histórico da migration (`20261111223000_v35_support_event_read_projection.sql` no GitHub vs `20261112015957` no Supabase DEV) continua pendente de revisão.
+
+---
+
 ## V35 M04.03-C — trilha de chamados preparada localmente
 
 Base GitHub main 97f67281c9e55ac6d58271386c65f1dd690703f1, com a mesma árvore da cópia local antes das alterações. M04.03-B integrada pelo PR #48. O port local reaproveita a interface do AI Studio, limita campos em ambas as consultas e exige eventos de cliente na leitura da Loja. Gate local PostgreSQL 17.5 em memória PASS com a migration proposta, políticas versionadas e dados sintéticos. Master/SUPPORT AAL2, isolamento Loja A/B, negativos AAL1 e anônimo, projeção, ordem e escrita interna verificados. Gateway/JWT real e restauração permanecem pendentes. ADR 0047 registra o contrato. O runbook M05 descreve restauração em base descartável com dados sintéticos e aguarda evidência de execução. Sem integração ou publicação da M04.03-C.
