@@ -1,11 +1,9 @@
-## V35 M06.01 — Matriz de Paridade V35 e início das correções funcionais (12/11/2026)
+## V35 M06.01 — Correção de SLA de chamados, robustez de durações e testes de CI (12/11/2026)
 
-- **Situação:** M05.02 (Hardening de segurança) concluída e aguardando merge do PR #50.
-- **Microentrega ativa (M06.01):** Matriz de paridade das 21 telas V35 criada (`docs/V35_SCREEN_PARITY_MATRIX.md`). Lacuna de SLA em `view-chamados` corrigida.
-- **Próxima ação única:** Executar identificação de lacunas funcionais prioritárias adicionais da matriz e iniciar implementação corretiva em PRs independentes.
-- **Hardening M05.02:** Runner de restauração endurecido com validações fail-closed (origem/destino, vazios, identificação de ambiente, permissões, sanitização). Testes validados (9/9 PASS). Aguarda autorização de merge do PR #50.
-- **Publicação:** Nenhuma. M04.03-C permanece homologada DEV sob release Cloudflare `e6cea23a`.
-- **Compromisso:** Prosseguir com as prioridades 2, 3, 4 e 5 (Paridade, Mobile/UX, Regressão, M05/M01/etc) conforme `V35_EXECUTION_BOARD.md`. Não encerrar a sessão sem progresso funcional rastreável.
+- **Situação:** Correção de SLA de chamados (`loadTenantTickets` usando o read-model `v_saas_support_ticket_metrics` e escopo `ticket_scope = 'tenant'`), sanitização estrita de durações (sem `NaN`), suíte dedicada de testes `src/lib/support.test.ts` (8/8 PASS) e correção de sincronização assíncrona no teste `MasterSupportSessions.test.tsx` concluídas com sucesso.
+- **Microentrega ativa (M06.01):** Correções funcionais e paridade da tela de chamados (SLA e métricas) 100% verificadas.
+- **Próxima ação única:** Avançar para a próxima microentrega funcional prioritária da matriz de paridade (`view-dashboard` ou `view-inadimplencia`).
+- **Verificação:** `compile_applet` PASS, `lint_applet` / typecheck PASS, testes unitários PASS.
 
 ---
 
