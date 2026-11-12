@@ -42,6 +42,16 @@ export type TenantTicketMessage = {
   created_at: string
 }
 
+export type TenantTicketEvent = {
+  id: number | string
+  organization_id: string
+  ticket_id: string
+  from_status: string | null
+  to_status: string
+  visibility: 'customer'
+  created_at: string
+}
+
 export type TenantTicketMessagesResult = {
   messages: TenantTicketMessage[]
   isTruncated: boolean
@@ -234,4 +244,42 @@ export async function replyTenantSupportTicket(
   }
 
   return data
+}
+
+/**
+ * Consulta a trilha de eventos do chamado da Loja (transições públicas de estado).
+ */
+export async function loadTenantTicketEvents(
+  client: SupabaseClient,
+  organizationId: string,
+  ticketId: string,
+  signal: AbortSignal
+): Promise<TenantTicketEvent[]> {
+  if (!organizationId || !ticketId || typeof organizationId !== 'string' || typeof ticketId !== 'string') {
+    throw new Error('Parâmetros de consulta de eventos inválidos.')
+  }
+
+  const { data, error } = await client
+    .from('saas_support_ticket_events')
+    .select('id,organization_id,ticket_id,from_status,to_status,visibility,created_at')
+    .eq('organization_id', organizationId)
+    .eq('ticket_id', ticketId)
+    .eq('visibility', 'customer')
+    .order('created_at', { ascending: true })
+    .order('id', { ascending: true })
+    .limit(201)
+    .abortSignal(signal)
+
+  if (error) throw error
+  if (!Array.isArray(data) || data.length > 200) throw new Error('Trilha de eventos indisponível ou incompleta.')
+
+  for (const ev of data as TenantTicketEvent[]) {
+    if (!ev || ev.organization_id !== organizationId || ev.ticket_id !== ticketId ||
+      ev.visibility !== 'customer' || typeof ev.to_status !== 'string' ||
+      !Number.isFinite(Date.parse(ev.created_at))) {
+      throw new Error('Violação de isolamento na trilha de eventos do chamado.')
+    }
+  }
+
+  return data as TenantTicketEvent[]
 }

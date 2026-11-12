@@ -1,7 +1,7 @@
 import {useEffect,useRef,useState,useMemo,Fragment,type FormEvent} from 'react'
 import type {SupabaseClient} from '@supabase/supabase-js'
-import {loadMasterTickets,loadMasterTicketMessages,type MasterTicket,
- type MasterTicketMessage} from '../lib/master-support'
+import {loadMasterTickets,loadMasterTicketMessages,loadMasterTicketEvents,type MasterTicket,
+ type MasterTicketMessage,type MasterTicketEvent} from '../lib/master-support'
 
 export function MasterSupportQueue({client,initialOrganizationId=''}:{client:SupabaseClient;initialOrganizationId?:string}){
  const masterStorageKey = 'v35_master_ticket_search'
@@ -20,7 +20,9 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
  const [selected,setSelected]=useState<MasterTicket|null>(null)
  const [expandedId,setExpandedId]=useState<string|null>(null)
  const [messages,setMessages]=useState<MasterTicketMessage[]|null>(null)
+ const [events,setEvents]=useState<MasterTicketEvent[]|null>(null)
  const [threadError,setThreadError]=useState('')
+ const [eventsError,setEventsError]=useState('')
  const [threadRevision,setThreadRevision]=useState(0)
  const [replyText,setReplyText]=useState(''),[nextStatus,setNextStatus]=useState('')
  const [replyError,setReplyError]=useState(''),[replySuccess,setReplySuccess]=useState(false)
@@ -60,7 +62,7 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false}},[])
  useEffect(()=>{
   let live=true;const controller=new AbortController()
-  setTickets(null);setTicketError('');setSelected(null);setMessages(null)
+  setTickets(null);setTicketError('');setSelected(null);setMessages(null);setEvents(null)
   loadMasterTickets(client,page,controller.signal,organizationFilter)
    .then(t=>{if(live)setTickets(t)})
    .catch(()=>{if(live)setTicketError('Fila de suporte indisponível ou incompleta para esta autenticação.')})
@@ -68,10 +70,15 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
  },[client,page,revision,organizationFilter])
  useEffect(()=>{
   let live=true;const controller=new AbortController()
-  setMessages(null);setThreadError('')
-  if(selected)loadMasterTicketMessages(client,selected,controller.signal)
-   .then(rows=>{if(live)setMessages(rows)})
-   .catch(()=>{if(live)setThreadError('Não foi possível validar o histórico desta conversa.')})
+  setMessages(null);setEvents(null);setThreadError('');setEventsError('')
+  if(selected){
+   loadMasterTicketMessages(client,selected,controller.signal)
+    .then(rows=>{if(live)setMessages(rows)})
+    .catch(()=>{if(live)setThreadError('Não foi possível validar o histórico desta conversa.')})
+   loadMasterTicketEvents(client,selected,controller.signal)
+    .then(rows=>{if(live)setEvents(rows)})
+    .catch(()=>{if(live)setEventsError('Não foi possível carregar a trilha de eventos deste chamado.')})
+  }
   return()=>{live=false;controller.abort()}
  },[client,selected,threadRevision])
  async function run(next:{args:Record<string,unknown>}){
@@ -212,6 +219,7 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
              {isExpanded ? 'Ocultar' : 'Detalhes'}
             </button>
             <button className="secondary text-xs px-2 py-1" disabled={pending||uncertain} onClick={()=>{
+              if(selected!==ticket){setEvents(null);setEventsError('')}
               setSelected(ticket);setReplyText('');setNextStatus('');setReplyError('');setReplySuccess(false)
              }} type="button">
              Ver conversa
@@ -245,6 +253,7 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
              <div className="flex justify-end gap-2 pt-1 border-t">
               <button type="button" className="secondary text-xs px-2.5 py-1" onClick={()=>setExpandedId(null)}>Recolher</button>
               <button type="button" className="primary text-xs px-2.5 py-1" onClick={()=>{
+                if(selected!==ticket){setEvents(null);setEventsError('')}
                 setSelected(ticket);setReplyText('');setNextStatus('');setReplyError('');setReplySuccess(false)
                }}>Abrir conversa completa</button>
              </div>
@@ -274,6 +283,30 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
        <p>{message.body}</p>
       </li>)}
      </ol>:<p>Sem mensagens registradas neste chamado.</p>)}
+
+     {/* Trilha do chamado (saas_support_ticket_events) */}
+     <div style={{marginTop:'1.25rem',paddingTop:'1rem',borderTop:'1px solid var(--border-soft, rgba(148,163,184,.12))'}}>
+      <h4 style={{fontSize:'0.95rem',fontWeight:600,marginBottom:'0.5rem'}}>Trilha do chamado (eventos de estado)</h4>
+      {eventsError&&<p role="alert" className="message error">{eventsError}</p>}
+      {!events&&!eventsError&&<p role="status">Consultando eventos do chamado…</p>}
+      {events&&(events.length? (
+       <ol className="support-events" style={{listStyle:'none',padding:0,margin:0,display:'flex',flexDirection:'column',gap:'0.5rem'}}>
+        {events.map(ev=>(
+         <li key={String(ev.id)} className="panel" style={{padding:'0.65rem 0.85rem',background:'var(--surface-2,#1C2028)',fontSize:'0.82rem'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+           <span>
+            <strong>{ev.from_status ? `${ev.from_status} → ${ev.to_status}` : `Criado (${ev.to_status})`}</strong>
+            {' · '}
+            <span className="pill" style={{fontSize:'0.7rem',padding:'2px 6px'}}>{ev.visibility==='internal'?'Evento interno':'Visível ao cliente'}</span>
+           </span>
+           <span className="subtle" style={{fontSize:'0.75rem'}}>{new Date(ev.created_at).toLocaleString('pt-BR')}</span>
+          </div>
+        </li>
+        ))}
+       </ol>
+      ) : <p className="subtle">Nenhum evento registrado nesta trilha.</p>)}
+    </div>
+
      {selected.ticket_scope==='tenant'&&<form aria-label="Responder chamado Master" onSubmit={submit}>
       <fieldset disabled={pending||uncertain}>
        <legend>Responder chamado de Loja</legend>
