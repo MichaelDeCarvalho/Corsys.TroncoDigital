@@ -1,15 +1,15 @@
-## V35 M05.02 — Fixture sintética e checks de restauração preparados (11/11/2026)
+## V35 M05.02 — Correções de CI e preparação do PostgreSQL descartável (11/11/2026)
 
-- **M05.02 PREPARADA (Pendente de verificação pós-restore):**
-  - Entregues os arquivos executáveis `scripts/v35_m05_fixture_seed.sql` (carga determinística de 2 Lojas, identidades, vínculos, contas a pagar e cobranças com valores em centavos, chamados e eventos M04.03-C, auditoria imutável) e `scripts/v35_m05_backup_verify_checks.sql` (5 blocos de testes determinísticos com `RAISE EXCEPTION` sob divergência).
-  - Pré-requisitos de restore documentados em `docs/V35_BACKUP_RECOVERY_RUNBOOK.md`: roles (`anon`, `authenticated`, `service_role`, `authenticator`), schemas (`public`, `private`, `auth`, `extensions`), extensões (`pgcrypto`, `btree_gist`) e funções mínimas `auth.jwt()`, `auth.uid()`, `auth.role()`.
-  - M05.02 registrada como `PREPARADO`; será registrada como `VERIFICADO` somente após a execução observada do restore em PostgreSQL 17 descartável.
-
+- **Correções de CI e Executáveis M05.02:**
+  1. *Dependências Frontend:* `package-lock.json` regenerado preservando estritamente o `package.json` e validado via `npm ci --ignore-scripts` (0 vulnerabilidades, 217 pacotes instalados com sucesso).
+  2. *Validação SQL:* Metainstrução `\set ON_ERROR_STOP on` removida de `scripts/v35_m05_backup_verify_checks.sql` para evitar rejeição por parsers SQL estritos; flag `-v ON_ERROR_STOP=1` mantida em todas as chamadas `psql` no runner e runbook. Cinco assertivas determinísticas e sentinela `V35_M0502_VERIFICATION_PASS` preservadas.
+  3. *Preparação PostgreSQL 17 descartável:* Adicionada a definição autêntica da função de plataforma Supabase `public.rls_auto_enable()` e event trigger `ensure_rls` em `scripts/v35_m05_prepare_source_db.sql`, suprindo o requisito de `20261002202518_harden_anonymous_rpc_permissions.sql:17` sem bypass vazio.
+  4. *Scripts e Higiene:* Script orquestrador automatizado `scripts/run_v35_m05_backup_restore_trial.sh` criado; arquivo ZIP redundante interno removido do repositório.
+- **Status do Ensaio M05.02:** `PREPARADO` / `NÃO TESTADO` (a execução real do backup e restauração permanece pendente de cluster PostgreSQL 17 descartável disponível no ambiente).
 - **M05.01 PENDENTE (Fluxos e decisões/contratos faltantes):**
   - *Exportação integral / Portabilidade*: PENDENTE de contrato server-side com RPC exportadora delimitada por `organization_id`, projeção mínima e sanitização de dados pessoais.
   - *Anonimização e Exclusão (Esquecimento)*: PENDENTE de definição jurídica/contábil de prazos de retenção legal do ledger financeiro (mínimo 5 anos conforme legislação) e contrato de ofuscação de PII nos cadastros de integrantes.
   - *Restauração pontual por tenant*: PENDENTE de protocolo de isolamento transacional por organização (o `pg_dump --table` não filtra por tenant; exige restore lógico seletivo ou replicação controlada).
-
 - **M04.03-C Trilha do Chamado (Verificações e Conciliação):**
   - Bloqueio de projeção das colunas `reason` e `actor_user_id` verificado e confirmado para Master (authenticated) e Loja B (authenticated) via erro `42501` (`insufficient_privilege`).
   - Negativa de Master/AAL1 validada com claims simuladas (retorno de 0 eventos na ausência de MFA).

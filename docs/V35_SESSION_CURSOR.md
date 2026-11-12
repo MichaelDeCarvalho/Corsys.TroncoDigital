@@ -1,9 +1,11 @@
 ## V35 M05.02 — Fixture sintética e checks de restauração preparados (11/11/2026)
 
-- **M05.02 PREPARADA (Pendente de verificação pós-restore):**
-  - Entregues os arquivos executáveis `scripts/v35_m05_fixture_seed.sql` (carga determinística de 2 Lojas, identidades, vínculos, contas a pagar e cobranças com valores em centavos, chamados e eventos M04.03-C, auditoria imutável) e `scripts/v35_m05_backup_verify_checks.sql` (5 blocos de testes determinísticos com `RAISE EXCEPTION` sob divergência).
-  - Pré-requisitos de restore documentados em `docs/V35_BACKUP_RECOVERY_RUNBOOK.md`: roles (`anon`, `authenticated`, `service_role`, `authenticator`), schemas (`public`, `private`, `auth`, `extensions`), extensões (`pgcrypto`, `btree_gist`) e funções mínimas `auth.jwt()`, `auth.uid()`, `auth.role()`.
-  - M05.02 registrada como `PREPARADO`; será registrada como `VERIFICADO` somente após a execução observada do restore em PostgreSQL 17 descartável.
+- **M05.02 PREPARADA (Ensaio local: NÃO TESTADO; aguarda execução observada em PostgreSQL 17):**
+  - Entregues os artefatos executáveis: runner `scripts/run_v35_m05_backup_restore_trial.sh`, bootstrap `scripts/v35_m05_prepare_source_db.sql`, carga `scripts/v35_m05_fixture_seed.sql` e asserções `scripts/v35_m05_backup_verify_checks.sql`.
+  - **Correção da dependência rls_auto_enable**: Identificada a origem como função de event trigger da plataforma Supabase (`ensure_rls` / `ALTER TABLE ... ENABLE ROW LEVEL SECURITY`). Incluída a definição completa em `scripts/v35_m05_prepare_source_db.sql` antes da aplicação das migrations, desbloqueando a linha 17 de `20261002202518_harden_anonymous_rpc_permissions.sql` sem alterar a migration histórica.
+  - **Correção da validação SQL**: Removida a metainstrução `\set ON_ERROR_STOP on` de `scripts/v35_m05_backup_verify_checks.sql`, preservando a flag `-v ON_ERROR_STOP=1` nas invocações psql do runner e do runbook. As 5 assertivas e o marcador `V35_M0502_VERIFICATION_PASS` foram preservados integralmente.
+  - **Correção de dependências frontend**: Lockfile regenerado e validado com sucesso via `npm ci --ignore-scripts` (218 pacotes auditados, 0 vulnerabilidades).
+  - Estado da restauração: **NÃO TESTADO** no container local do AI Studio por ausência de cluster PostgreSQL local; M05.02 transiciona para `VERIFICADO` somente quando o restore real em PostgreSQL 17.11 for executado, os 5 checks e o marcador forem observados em ambas as bases e o diff de logs for zero.
 
 - **M05.01 PENDENTE (Fluxos e decisões/contratos faltantes):**
   - *Exportação integral / Portabilidade*: PENDENTE de contrato server-side com RPC exportadora delimitada por `organization_id`, projeção mínima e sanitização de dados pessoais.

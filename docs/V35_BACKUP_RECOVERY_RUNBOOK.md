@@ -11,10 +11,10 @@
 O ensaio reproduzível de backup e restauração opera entre dois bancos de dados descartáveis em um cluster PostgreSQL 17:
 
 1. **Base de Origem (`v35-fixture-source`)**:
-   - É preparada a partir do script `scripts/v35_m05_prepare_source_db.sql` (criação dos papéis de cluster, schema `auth`, tabela `auth.users` e funções mínimas).
+   - É preparada a partir do script `scripts/v35_m05_prepare_source_db.sql` (criação dos papéis de cluster, schema `auth`, tabela `auth.users`, funções mínimas de autenticação e a função de plataforma `public.rls_auto_enable()` com o event trigger `ensure_rls`, necessária para satisfazer a migration `20261002202518_harden_anonymous_rpc_permissions.sql:17`).
    - Recebe a aplicação de todas as migrations do repositório (`supabase/migrations/*.sql`) em ordem cronológica.
    - Recebe a carga da fixture sintética de 2 Lojas via `scripts/v35_m05_fixture_seed.sql`.
-   - Executa a suíte de asserções `scripts/v35_m05_backup_verify_checks.sql`, gerando o log de baseline (`source_checks.log`).
+   - Executa a suíte de asserções `scripts/v35_m05_backup_verify_checks.sql` (SQL puro, sem metacommands `\set`, com `-v ON_ERROR_STOP=1` na chamada psql), gerando o log de baseline (`source_checks.log`).
    - É exportada integralmente com `pg_dump --format=custom`.
 
 2. **Base de Destino (`v35-fixture-restore`)**:
@@ -34,11 +34,11 @@ A infraestrutura executável da M05.02 é composta pelos seguintes arquivos:
 1. **`scripts/run_v35_m05_backup_restore_trial.sh`**:  
    Runner automatizado que orquestra todo o ensaio (conexões, bootstrap da origem, migrations, fixture, checks pré-dump, pg_dump, restauração no destino vazio, checks pós-restore e comparação diff).
 2. **`scripts/v35_m05_prepare_source_db.sql`**:  
-   Bootstrap de papéis e schema `auth` / `auth.users` na base de origem antes da aplicação das migrations.
+   Bootstrap de papéis, schema `auth` / `auth.users` e função de plataforma `public.rls_auto_enable()` na base de origem antes da aplicação das migrations.
 3. **`scripts/v35_m05_fixture_seed.sql`**:  
    Carga determinística de 2 Lojas (Loja A: `00000000-0000-4000-8000-000000000001`, Loja B: `00000000-0000-4000-8000-000000000002`), com identidades, vínculos, contas a pagar em centavos exatos, cobranças, chamados, eventos de trilha (M04.03-C) e logs de auditoria imutáveis.
 4. **`scripts/v35_m05_backup_verify_checks.sql`**:  
-   Script de 5 blocos com asserções estritas que falham com `RAISE EXCEPTION` sob qualquer divergência de contagem, centavos, integridade referencial ou violação de RLS/projeção.
+   Script SQL puro (sem metacommands psql) de 5 blocos com asserções estritas que falham com `RAISE EXCEPTION` sob qualquer divergência de contagem, centavos, integridade referencial ou violação de RLS/projeção. Mantém o marcador final `V35_M0502_VERIFICATION_PASS`.
 
 ---
 
