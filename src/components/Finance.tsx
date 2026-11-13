@@ -51,8 +51,13 @@ function toIsoDate(d: Date) {
   return `${y}-${m}-${day}`
 }
 
-export function Finance({ client, organizationId }: { client: SupabaseClient; organizationId: string }) {
-  const [kind, setKind] = useState<FinanceKind | 'mutuals' | 'agapes' | 'agreements' | 'memberPayments' | 'dre' | 'institutional' | 'institutionalMonthly' | 'approvals' | 'monthly' | 'manual' | 'periods' | 'treasury' | 'budget' | 'budgetManagement' | 'delinquency' | 'approvalPolicies' | 'transfers' | 'cashflow' | 'reconciliation'>('charges')
+export type FinanceSection = FinanceKind | 'mutuals' | 'agapes' | 'agreements' | 'memberPayments' | 'dre' | 'institutional' | 'institutionalMonthly' | 'approvals' | 'monthly' | 'manual' | 'periods' | 'treasury' | 'budget' | 'budgetManagement' | 'delinquency' | 'approvalPolicies' | 'transfers' | 'cashflow' | 'reconciliation'
+
+export function Finance({ client, organizationId, initialSection }: { client: SupabaseClient; organizationId: string; initialSection?: FinanceSection }) {
+  const [kind, setKind] = useState<FinanceSection>(initialSection ?? 'charges')
+  useEffect(() => {
+    if (initialSection) setKind(initialSection)
+  }, [initialSection])
   return <>
     <div className="finance-sections" role="group" aria-label="Consultas financeiras">
       {(Object.keys(financeSources) as FinanceKind[]).map(id => <button className="secondary" key={id} aria-pressed={kind === id} onClick={() => setKind(id)}>{financeSources[id].label}</button>)}

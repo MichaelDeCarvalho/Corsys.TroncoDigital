@@ -1,3 +1,7 @@
+## V35 Fechamento Local e Matriz das 21 Telas (13/11/2026)
+
+Ciclo **Master Execution Controller V2** concluiu no repositório local a correção de regressão em `loadDelinquencyPage`, endurecimento da Inadimplência Global (`20261113123000_v35_tenant_delinquency_buckets.sql` + UI fail-closed + exportação XLSX/PDF), integração real de `v_member_communication_status` em `Members.tsx`, modos e atalhos do Dashboard em `Workspace.tsx`/`Finance.tsx`, aba de Inadimplência em `Relatorios.tsx` e reconciliação objetiva das 21 telas em `docs/V35_SCREEN_PARITY_MATRIX.md`. Nenhuma migration remota aplicada neste ciclo; permanecem bloqueios externos na issue `#43` (M03.02–M03.04), termos oficiais (M01.03/M01.04) e regras jurídicas de retenção LGPD (M05.01).
+
 ## V35 M04.03-C — trilha de chamados preparada localmente
 
 Base GitHub main 97f67281c9e55ac6d58271386c65f1dd690703f1, com a mesma árvore da cópia local antes das alterações. M04.03-B integrada pelo PR #48. O port local reaproveita a interface do AI Studio, limita campos em ambas as consultas e exige eventos de cliente na leitura da Loja. Gate local PostgreSQL 17.5 em memória PASS com a migration proposta, políticas versionadas e dados sintéticos. Master/SUPPORT AAL2, isolamento Loja A/B, negativos AAL1 e anônimo, projeção, ordem e escrita interna verificados. Gateway/JWT real e restauração permanecem pendentes. ADR 0047 registra o contrato. O runbook M05 descreve restauração em base descartável com dados sintéticos e aguarda evidência de execução. Sem integração ou publicação da M04.03-C.

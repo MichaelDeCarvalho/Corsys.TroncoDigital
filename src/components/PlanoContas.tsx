@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { AccountingPlans } from './AccountingPlans'
-import { AccountingPrepublication } from './AccountingPrepublication'
 import { FinancialStructure } from './FinancialStructure'
 import { TreasuryCatalogs } from './TreasuryCatalogs'
 

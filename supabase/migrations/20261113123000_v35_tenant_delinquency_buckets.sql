@@ -15,10 +15,19 @@ begin
  end if;
  if exists(select 1 from public.v_charge_balances c
   where c.organization_id=p_organization_id and c.integrity_ok is not true)
+ or exists(select 1 from public.v_member_financial_position pos
+  where pos.organization_id=p_organization_id and pos.integrity_ok is not true)
  then raise exception 'delinquency financial integrity mismatch' using errcode='23514';end if;
 
  return query
- with overdue as (
+ with canonical_buckets(bucket_id, sort_order) as (
+  values
+   ('up30'::text, 1),
+   ('31-60'::text, 2),
+   ('61-90'::text, 3),
+   ('over90'::text, 4)
+ ),
+ overdue as (
   select c.member_id,
    count(*)::bigint as count_items,
    sum(c.open_amount)::numeric(14,2) as amount,
@@ -38,15 +47,25 @@ begin
     else 'over90'
    end as b_id
   from overdue d
+ ),
+ grouped as (
+  select
+   b.b_id::text as bucket_id,
+   count(*)::bigint as member_count,
+   sum(b.count_items)::bigint as overdue_items,
+   sum(b.amount)::numeric(14,2) as overdue_amount
+  from member_buckets b
+  group by b.b_id
  )
  select
-  b.b_id::text,
-  count(*)::bigint,
-  sum(b.count_items)::bigint,
-  sum(b.amount)::numeric(14,2),
+  cb.bucket_id,
+  coalesce(g.member_count, 0)::bigint,
+  coalesce(g.overdue_items, 0)::bigint,
+  coalesce(g.overdue_amount, 0)::numeric(14,2),
   current_date
- from member_buckets b
- group by b.b_id;
+ from canonical_buckets cb
+ left join grouped g on g.bucket_id = cb.bucket_id
+ order by cb.sort_order;
 end $$;
 
 create or replace function public.read_tenant_delinquency_filtered(

@@ -1,27 +1,34 @@
 # V35 — Matriz de Paridade de Telas (Oficial 21 IDs)
 
-Esta matriz mapeia as 21 telas originais do inventário V35 aos componentes React e backend.
+Atualização consolidada após o ciclo **Master Execution Controller V2** (13/11/2026).
 
-| ID | Tela (Pilot V35) | Componente / Backend | Status | Lacunas/Pendências |
-|---|---|---|---|---|
-| 1 | view-master | MasterConsole.tsx | INTEGRADO | - |
-| 2 | view-master-clientes | Members.tsx | INTEGRADO | - |
-| 3 | view-master-cobranca | MasterBilling.tsx | INTEGRADO | - |
-| 4 | view-master-planos | MasterCommercialCatalog.tsx | INTEGRADO | - |
-| 5 | view-master-operacao | MasterOperations.tsx | INTEGRADO | - |
-| 6 | view-master-config | MasterPlatformConfig.tsx | INTEGRADO | - |
-| 7 | view-chamados | Chamados.tsx | INTEGRADO | - |
-| 8 | view-dashboard | FinancialDashboard.tsx | INTEGRADO | Gráficos séries temporais |
-| 9 | view-integrantes | Members.tsx | INTEGRADO | - |
-| 10 | view-financeiro | Finance.tsx | INTEGRADO | - |
-| 11 | view-inadimplencia | DelinquencyReport.tsx | INTEGRADO | Exportação PDF/XLSX |
-| 12 | view-tesouraria | Tesouraria.tsx | INTEGRADO | Conciliação |
-| 13 | view-fluxo-caixa | FluxoCaixa.tsx | INTEGRADO | Projeções e categorias |
-| 14 | view-contas-pagar | ContasPagar.tsx | INTEGRADO | - |
-| 15 | view-contas-receber | ContasReceber.tsx | INTEGRADO | - |
-| 16 | view-dre | DreView.tsx | INTEGRADO | Classificação de contas |
-| 17 | view-plano-contas | PlanoContas.tsx | INTEGRADO | - |
-| 18 | view-config-dre | DreConfig.tsx | INTEGRADO | - |
-| 19 | view-relatorios | Relatorios.tsx | INTEGRADO | Exportação PDF/XLSX |
-| 20 | view-cadastros | Cadastros.tsx | INTEGRADO | - |
-| 21 | view-configuracoes | Configuracoes.tsx | INTEGRADO | - |
+## Legenda canônica de status
+- `HOMOLOGADO_DEV`: fluxo principal validado em Supabase DEV (`szqkdekwhzxsoxorgvaz`) com evidência registrada.
+- `IMPLEMENTADO_E_TESTADO`: UI, serviços e testes unitários/integração Vitest aprovados localmente sobre contratos já existentes no DEV (sem repetir aceite HTTP/UI quando não alterado, ou aguardando smoke visual no DEV).
+- `IMPLEMENTADO_PENDENTE_DEV`: UI, serviços e testes locais aprovados, mas dependente de migration e/ou Edge Function ainda **não aplicadas** no DEV.
+- `BLOQUEADO_DECISAO`: fluxo entregue em recorte seguro, mas completude integral depende de definição de negócio/contábil/jurídica externa.
+- `BLOQUEADO_INFRAESTRUTURA`: depende de ambiente PROD, secrets, cluster PostgreSQL dedicado ou ativação fora deste workspace.
+
+| # | ID (Pilot V35) | Tela | Componente(s) / Backend | Status | Evidência Real / Limite Explícito |
+|---|---|---|---|---|---|
+| 1 | `view-master` | Painel Master SaaS | `MasterConsole.tsx` (`read_master_saas_overview`) | `IMPLEMENTADO_E_TESTADO` | Vitest PASS (`MasterConsole.test.tsx`); bloco de atenção operacional e RPCs DEV |
+| 2 | `view-master-clientes` | Clientes SaaS | `MasterConsole.tsx`, `MasterClient360.tsx`, `MasterOnboarding.tsx` | `IMPLEMENTADO_PENDENTE_DEV` | Vitest PASS; M01.01/M01.02 no DEV, mas **M01.03 (`20261109233000`) e aceite jurídico pendentes** (M01.04 bloqueada para convite real) |
+| 3 | `view-master-cobranca` | Assinaturas e Cobrança | `MasterBilling.tsx` (`preview/issue_saas_manual_invoice`) | `IMPLEMENTADO_E_TESTADO` | Vitest PASS (`MasterBilling.test.tsx`); RPCs presentes no DEV; JWT Master/AAL2 real e faturas/ciclos reais pendentes |
+| 4 | `view-master-planos` | Planos SaaS | `MasterCommercialCatalog.tsx`, `MasterPlanLifecycle.tsx`, `MasterPromotions.tsx` | `IMPLEMENTADO_E_TESTADO` | Vitest PASS (`MasterCommercialCatalog`, `MasterPlanLifecycle`, `MasterPromotions`); versionamento/rascunho/sucessor |
+| 5 | `view-master-operacao` | Operação / Suporte | `MasterOperations.tsx`, `MasterSupportQueue.tsx`, `MasterAudit.tsx`, `MasterSupportSessions` | `HOMOLOGADO_DEV` | M04.03-C (`20261112015957`), Auditoria Master (`20261102000933`) e P0 Suporte homologados DEV; **jobs (`20261111220000`) pendente leitura DEV**, retry bloqueado |
+| 6 | `view-master-config` | Configurações da Plataforma | `MasterPlatformConfig.tsx` | `IMPLEMENTADO_E_TESTADO` | Vitest PASS (`MasterPlatformConfig.test.tsx`); parâmetros globais protegidos por Master/AAL2 |
+| 7 | `view-chamados` | Chamados | `Chamados.tsx` (`src/lib/support.ts`, `v_saas_support_ticket_metrics`) | `HOMOLOGADO_DEV` | M04.03-C homologada DEV + correção SLA e escopo tenant (`support.test.ts`, `Chamados.test.tsx` PASS) |
+| 8 | `view-dashboard` | Painel Geral da Tesouraria | `Workspace.tsx`, `FinancialDashboard.tsx`, `DailyCashFlow.tsx` | `IMPLEMENTADO_E_TESTADO` | Vitest PASS (`FinancialDashboard.test.tsx`, `WorkspaceDashboard.test.tsx`): 6 KPIs, 3 modos (`aria-pressed`), expandir fluxo (`aria-expanded`) e atalhos reais; RPCs existentes no DEV |
+| 9 | `view-integrantes` | Integrantes | `Members.tsx`, `MemberForm.tsx`, `MemberConfiguration.tsx` (`v_member_communication_status`) | `IMPLEMENTADO_E_TESTADO` | Vitest PASS (`Members.test.tsx`); removida lista fictícia de comunicações e período fixo 09/2026; log vivo via `v_member_communication_status` |
+| 10 | `view-financeiro` | Financeiro dos Integrantes | `Finance.tsx`, `MemberPayments.tsx`, `ManualCharges.tsx`, `MonthlyChargeGeneration.tsx`, `MemberAgreements.tsx`, `AgapeEvents.tsx`, `MutualBatches.tsx` | `IMPLEMENTADO_E_TESTADO` | Vitest PASS (`Finance`, `MemberPayments`, `ManualCharges`, `MonthlyChargeGeneration`, `MemberAgreements`, `AgapeEvents`, `MutualBatches`); `initialSection` integrado aos atalhos do Dashboard |
+| 11 | `view-inadimplencia` | Inadimplência | `DelinquencyReport.tsx`, `delinquency-report.ts`, `delinquency-export.ts` | `IMPLEMENTADO_PENDENTE_DEV` | Vitest PASS (10 UI + 7 serviço + 6 export); faixas globais SQL + CSV/XLSX/PDF prontos localmente, **aguarda aplicar `20261113123000_v35_tenant_delinquency_buckets.sql` no DEV** |
+| 12 | `view-tesouraria` | Caixa e Bancos | `Tesouraria.tsx`, `TreasuryBalances.tsx`, `AccountTransfers.tsx`, `BankReconciliation.tsx` | `IMPLEMENTADO_E_TESTADO` | Vitest PASS; M02.02-A (conciliação por lotes + integridade) integrada em código, aguarda gate DEV M02.03 |
+| 13 | `view-fluxo-caixa` | Fluxo de Caixa | `FluxoCaixa.tsx`, `DailyCashFlow.tsx`, `CashFlowMovementDetail.tsx` | `IMPLEMENTADO_PENDENTE_DEV` | Vitest PASS (`FluxoCaixa.test.tsx`, `CashFlowSnapshot.test.tsx`); M02.02-D pronta em código, **aguarda aplicar `20261110220000_v35_cash_flow_detail.sql` no DEV** (gate M02.03) |
+| 14 | `view-contas-pagar` | Contas a Pagar | `ContasPagar.tsx`, `PayableApprovals.tsx`, `ApprovalHistory.tsx`, `InstitutionalMonthly.tsx`, `InstitutionalReversals.tsx` | `IMPLEMENTADO_E_TESTADO` | Vitest PASS; fluxos HTTP A/B mensal/estorno/aprovação validados previamente no DEV |
+| 15 | `view-contas-receber` | Contas a Receber | `ContasReceber.tsx`, `InstitutionalOperations.tsx` | `IMPLEMENTADO_E_TESTADO` | Vitest PASS; operações institucionais mensais/anuais/reversões com testes SQL/HTTP prévios |
+| 16 | `view-dre` | DRE — Demonstração do Resultado | `DreView.tsx`, `DreReport.tsx` (`read_tenant_dre`) | `BLOQUEADO_DECISAO` | Vitest PASS (`DreView.test.tsx`, `DreReport.test.tsx`); recorte atual preservado; **Receita Bruta/Deduções/Receita Líquida aguardam definição contábil ([issue #43](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/issues/43))** |
+| 17 | `view-plano-contas` | Plano de Contas e Estrutura | `PlanoContas.tsx`, `AccountingPlans.tsx`, `AccountingPrepublication.tsx`, `FinancialStructure.tsx`, `TreasuryCatalogs.tsx` | `IMPLEMENTADO_E_TESTADO` | Vitest PASS (`AccountingPlans`, `AccountingPrepublication`, `FinancialStructure`, `TreasuryCatalogs`); publicação validada já existe no DEV; import morto removido |
+| 18 | `view-config-dre` | Configurações DRE | `DreConfig.tsx`, `FinancialPeriods.tsx`, `ApprovalPolicies.tsx`, `BudgetManagement.tsx` | `IMPLEMENTADO_E_TESTADO` | Vitest PASS (`DreConfig.test.tsx`, `FinancialPeriods.test.tsx`, `ApprovalPolicies.test.tsx`, `BudgetManagement.test.tsx`) |
+| 19 | `view-relatorios` | Relatórios Gerenciais | `Relatorios.tsx`, `DreReport.tsx`, `BudgetReport.tsx`, `DelinquencyReport.tsx`, `report-export.ts` | `BLOQUEADO_DECISAO` | Vitest PASS (`Relatorios.test.tsx`): aba **Inadimplência** ativada e XLSX/PDF locais nos recortes; **Diário/Razão integral bloqueados por definição contábil ([issue #43](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/issues/43))** |
+| 20 | `view-cadastros` | Cadastros Administrativos | `Cadastros.tsx` (`assign_tenant_user_role`, `revoke_tenant_user_role`) | `HOMOLOGADO_DEV` | RBAC migration `20261101181945` aplicada e homologada via HTTP/UI DEV; Vitest PASS (`Cadastros.test.tsx`) |
+| 21 | `view-configuracoes` | Configurações da Loja | `Configuracoes.tsx`, `TenantIdentity.tsx` | `BLOQUEADO_DECISAO` | Vitest PASS (`Configuracoes.test.tsx`, `TenantIdentity.test.tsx`); assinatura, governança e auditoria reais; **LGPD (portabilidade, retenção ≥5 anos e exclusão/anonimização) bloqueada por M05.01** |

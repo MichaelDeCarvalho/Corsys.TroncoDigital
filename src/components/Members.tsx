@@ -43,6 +43,37 @@ type StatementEntry = {
   balance: number
 }
 
+type CommunicationLogItem = {
+  id: string
+  channel: string
+  purpose: string
+  latestStatus: string
+  createdAt: string
+}
+
+const communicationChannels: Record<string, string> = {
+  whatsapp: 'WhatsApp',
+  email: 'E-mail',
+  system: 'Sistema',
+}
+
+const communicationStatuses: Record<string, string> = {
+  queued: 'Na fila',
+  sent: 'Enviado',
+  delivered: 'Entregue',
+  failed: 'Falhou',
+  bounced: 'Devolvido',
+  read: 'Lido',
+}
+
+function defaultMonthBounds() {
+  const now = new Date()
+  const y = now.getFullYear()
+  const m = String(now.getMonth() + 1).padStart(2, '0')
+  const d = String(now.getDate()).padStart(2, '0')
+  return { start: `${y}-${m}-01`, end: `${y}-${m}-${d}` }
+}
+
 function computeStatus(open: number, credit: number, lastPay?: string | null): string {
   if (open === 0 && credit === 0 && !lastPay) return 'Sem movimento'
   if (open > 0 && credit > 0) return 'Parcial'
@@ -88,8 +119,8 @@ export function Members({
   const [query, setQuery] = useState('')
   const [situation, setSituation] = useState('all')
   const [financialStatus, setFinancialStatus] = useState('all')
-  const [startDate, setStartDate] = useState('2026-09-01')
-  const [endDate, setEndDate] = useState('2026-09-30')
+  const [startDate, setStartDate] = useState(() => defaultMonthBounds().start)
+  const [endDate, setEndDate] = useState(() => defaultMonthBounds().end)
 
   const [editing, setEditing] = useState<Member | null | undefined>(undefined)
   const [configuration, setConfiguration] = useState<Member | null>(null)
@@ -105,6 +136,9 @@ export function Members({
   const [statement, setStatement] = useState<StatementEntry[]>([])
   const [statementLoading, setStatementLoading] = useState(false)
   const [statementError, setStatementError] = useState<string | null>(null)
+  const [communications, setCommunications] = useState<CommunicationLogItem[]>([])
+  const [communicationsLoading, setCommunicationsLoading] = useState(false)
+  const [communicationsError, setCommunicationsError] = useState<string | null>(null)
   const [toast, setToast] = useState('')
 
   // Clear financial state on organization switch
@@ -113,9 +147,11 @@ export function Members({
     setTermMap({})
     setPaymentMap({})
     setStatement([])
+    setCommunications([])
     setFinancialError(null)
     setIntegrityMismatch(false)
     setStatementError(null)
+    setCommunicationsError(null)
     setDrawerMember(null)
   }, [organizationId])
 
@@ -271,6 +307,44 @@ export function Members({
     }
 
     void loadStatement()
+
+    setCommunicationsLoading(true)
+    setCommunicationsError(null)
+    setCommunications([])
+    supabaseClient
+      .from('v_member_communication_status')
+      .select('id,channel,purpose,latest_status,created_at')
+      .eq('organization_id', targetOrgId)
+      .eq('member_id', targetMember.id)
+      .order('created_at', { ascending: false })
+      .limit(20)
+      .abortSignal(controller.signal)
+      .then(commRes => {
+        if (!active) return
+        setCommunicationsLoading(false)
+        if (commRes.error) {
+          const code = (commRes.error as { code?: string }).code
+          if (code === '42501' || code === '28000') {
+            setCommunicationsError('Seu perfil não possui permissão para consultar o histórico de comunicações.')
+          } else {
+            setCommunicationsError('Não foi possível consultar o histórico de comunicações.')
+          }
+          return
+        }
+        setCommunications((commRes.data ?? []).map(item => ({
+          id: String(item.id),
+          channel: String(item.channel || 'system'),
+          purpose: String(item.purpose || 'Comunicação'),
+          latestStatus: String(item.latest_status || 'queued'),
+          createdAt: typeof item.created_at === 'string' ? item.created_at.slice(0, 10) : '',
+        })))
+      }, err => {
+        if (!active) return
+        setCommunicationsLoading(false)
+        if ((err as Error)?.name !== 'AbortError') {
+          setCommunicationsError('Não foi possível consultar o histórico de comunicações.')
+        }
+      })
 
     return () => {
       active = false
@@ -782,21 +856,21 @@ export function Members({
               </div>
 
               <div className="communication-log">
-                <div className="communication-item">
-                  <span>05/09/2026</span>
-                  <b>WhatsApp — lembrete de vencimento</b>
-                  <span className="pill">Entregue</span>
-                </div>
-                <div className="communication-item">
-                  <span>01/09/2026</span>
-                  <b>E-mail — extrato mensal</b>
-                  <span className="pill">Entregue</span>
-                </div>
-                <div className="communication-item">
-                  <span>18/08/2026</span>
-                  <b>WhatsApp — confirmação de pagamento</b>
-                  <span className="pill">Entregue</span>
-                </div>
+                {communicationsLoading ? (
+                  <p role="status" className="subtle">Consultando histórico de comunicações…</p>
+                ) : communicationsError ? (
+                  <p className="subtle">{communicationsError}</p>
+                ) : !communications.length ? (
+                  <p className="subtle">Nenhuma comunicação registrada para este integrante no backend.</p>
+                ) : (
+                  communications.map(item => (
+                    <div key={item.id} className="communication-item">
+                      <span>{item.createdAt ? formatDate(item.createdAt) : '—'}</span>
+                      <b>{communicationChannels[item.channel] ?? item.channel} — {item.purpose}</b>
+                      <span className="pill">{communicationStatuses[item.latestStatus] ?? item.latestStatus}</span>
+                    </div>
+                  ))
+                )}
               </div>
             </>
           )

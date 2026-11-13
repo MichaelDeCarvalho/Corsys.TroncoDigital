@@ -92,5 +92,43 @@ describe('Member consultation', () => {
     const warning = await screen.findByText(/Alerta de Integridade/i)
     expect(warning).toBeInTheDocument()
   })
+
+  it('loads real communication history from v_member_communication_status without hardcoded sample items', async () => {
+    const mockClient = {
+      from: vi.fn().mockImplementation((table: string) => {
+        const builder: any = {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          limit: vi.fn().mockReturnThis(),
+          abortSignal: vi.fn().mockImplementation(() => {
+            if (table === 'v_member_communication_status') {
+              return Promise.resolve({
+                data: [
+                  {
+                    id: 'comm-1',
+                    channel: 'email',
+                    purpose: 'Cobrança mensal emitida',
+                    latest_status: 'sent',
+                    created_at: '2026-10-12T10:00:00Z',
+                  },
+                ],
+                error: null,
+              })
+            }
+            return Promise.resolve({ data: [], error: null })
+          }),
+        }
+        return builder
+      }),
+    } as any
+
+    render(<Members members={members} client={mockClient} organizationId="org-1" />)
+    fireEvent.click(screen.getAllByRole('button', { name: 'Composição financeira' })[0])
+
+    expect(await screen.findByText(/E-mail — Cobrança mensal emitida/)).toBeInTheDocument()
+    expect(screen.getByText('Enviado')).toBeInTheDocument()
+    expect(screen.queryByText(/WhatsApp — lembrete de vencimento/)).not.toBeInTheDocument()
+  })
 })
 

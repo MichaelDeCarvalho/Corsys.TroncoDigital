@@ -179,6 +179,34 @@ function mockSupabaseClient(overrides?: {
         error: null,
       })
     }
+    if (fnName === 'read_tenant_delinquency_bucket_summary') {
+      return Promise.resolve({
+        data: [
+          { bucket_id: 'up30', member_count: 1, overdue_items: 1, overdue_amount: 150, server_date: '2026-10-25' },
+          { bucket_id: '31-60', member_count: 0, overdue_items: 0, overdue_amount: 0, server_date: '2026-10-25' },
+          { bucket_id: '61-90', member_count: 0, overdue_items: 0, overdue_amount: 0, server_date: '2026-10-25' },
+          { bucket_id: 'over90', member_count: 0, overdue_items: 0, overdue_amount: 0, server_date: '2026-10-25' },
+        ],
+        error: null,
+      })
+    }
+    if (fnName === 'read_tenant_delinquency_filtered') {
+      return Promise.resolve({
+        data: [
+          {
+            member_id: 'm-1',
+            full_name: 'Integrante Inadimplente',
+            member_status: 'active',
+            overdue_items: 1,
+            overdue_amount: '150.00',
+            available_credit: '0.00',
+            oldest_due: '2026-10-10',
+            net_position: '150.00',
+          },
+        ],
+        error: null,
+      })
+    }
     return Promise.resolve({ data: [], error: null })
   })
 
@@ -298,5 +326,16 @@ describe('Relatorios component — Integridade Financeira (Comando 08-A)', () =>
     // Rerender with different tenant
     update(<Relatorios client={client} organizationId="org-2" />)
     expect(screen.getByText('Consultando indicadores globais…')).toBeInTheDocument()
+  })
+
+  it('renders DelinquencyReport inside the Inadimplência tab', async () => {
+    const { client } = mockSupabaseClient()
+    render(<Relatorios client={client} organizationId="org-1" />)
+
+    const tab = screen.getByRole('button', { name: 'Inadimplência' })
+    fireEvent.click(tab)
+
+    expect(await screen.findByText('Inadimplência por integrante')).toBeInTheDocument()
+    expect(await screen.findByText('Integrante Inadimplente')).toBeInTheDocument()
   })
 })

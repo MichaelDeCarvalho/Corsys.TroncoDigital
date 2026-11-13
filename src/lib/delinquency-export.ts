@@ -1,16 +1,29 @@
 import type {SupabaseClient} from '@supabase/supabase-js'
-import {loadDelinquencyPage,DELINQUENCY_PAGE,type DelinquencyRow} from './delinquency-report'
+import {
+ loadDelinquencyPage,
+ loadFilteredDelinquencyPage,
+ DELINQUENCY_PAGE,
+ type DelinquencyBucketId,
+ type DelinquencyRow,
+} from './delinquency-report'
 import {checkedSigned} from './treasury-balances'
 
 export const MAX_DELINQUENCY_EXPORT=1000
 
-export async function loadDelinquencyExport(client:SupabaseClient,org:string,isActive:()=>boolean=()=>true){
+export async function loadDelinquencyExport(
+ client:SupabaseClient,
+ org:string,
+ isActive:()=>boolean=()=>true,
+ bucket:DelinquencyBucketId|null=null,
+){
  const result:DelinquencyRow[]=[]
  const members=new Set<string>()
  const pages=Math.ceil(MAX_DELINQUENCY_EXPORT/DELINQUENCY_PAGE)+1
  for(let page=0;page<pages;page++){
   if(!isActive())throw Error('Exportação cancelada porque a Loja mudou.')
-  const response=await loadDelinquencyPage(client,org,page)
+  const response=bucket
+   ?await loadFilteredDelinquencyPage(client,org,bucket,page)
+   :await loadDelinquencyPage(client,org,page)
   if(!isActive())throw Error('Exportação cancelada porque a Loja mudou.')
   for(const row of response.rows){
    if(members.has(row.member_id))throw Error('Exportação interrompida: posição duplicada entre páginas.')

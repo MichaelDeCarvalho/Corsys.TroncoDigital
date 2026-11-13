@@ -1,3 +1,18 @@
+## V35 Master Execution Controller V2 — Correções Críticas e Paridade V35 (13/11/2026)
+
+- **Regressão CI e Inadimplência Global (`view-inadimplencia`):**
+  - Restaurado `loadDelinquencyPage` para invocar `read_tenant_delinquency` (corrige contrato de `delinquency-export.test.ts` e adiciona parâmetro opcional `bucket` em `loadDelinquencyExport`).
+  - Corrigidos os 4 defeitos de `20261113123000_v35_tenant_delinquency_buckets.sql`, `delinquency-report.ts` e `DelinquencyReport.tsx`: detecção estrita de `42883`/`PGRST202` como `migrationPending`, remoção do fallback `p_limit: 1000` em cliente e de `.catch(() => [])`, eliminação do fallback de data local do navegador, `<button aria-pressed>` semântico nos cards, validação de `v_member_financial_position.integrity_ok` no resumo SQL, retorno determinístico das 4 faixas canônicas e exportação XLSX + Imprimir/PDF.
+- **Paridade e Higiene V35 em Telas:**
+  - `Workspace.tsx` + `Finance.tsx`: modos `Consolidado`, `Receitas x Desp.` e `Saldo` em `role="group"` com `aria-pressed`, alternador expandir fluxo com `aria-expanded`, e atalhos operacionais ligando diretamente às seções de `Finance`.
+  - `Relatorios.tsx`: ativada a aba `'inadimplencia'` (com `DelinquencyReport`).
+  - `Members.tsx`: período inicial dinâmico (`defaultMonthBounds`) e seção de comunicações conectada via RLS a `public.v_member_communication_status` (sem registros sintéticos).
+  - `PlanoContas.tsx`: removido import não utilizado de `AccountingPrepublication`.
+  - `docs/V35_SCREEN_PARITY_MATRIX.md`: reconciliada para os 21 IDs canônicos distinguindo claramente código/testes locais, pendências de migration DEV e bloqueios de decisão externa (#43, M05.01, M01.03).
+- **Verificação:** `npm run check` (`typecheck` + suíte completa Vitest + `build`), `check_v35_preservation.py`, `compile_applet` e `lint_applet` executados ao término deste ciclo; runtime PostgreSQL 17 não executado localmente por ausência dos binários `psql`/`postgres` no container.
+
+---
+
 ## V35 M06.01 — Matriz de Paridade V35 iniciada e correção de SLA em chamados (12/11/2026)
 
 - **Situação:** M05.02 (Hardening de segurança) concluída e aguardando merge do PR #50.

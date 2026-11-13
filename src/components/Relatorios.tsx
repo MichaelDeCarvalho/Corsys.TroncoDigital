@@ -7,6 +7,7 @@ import { loadDreReport, summarizeDre, safeDreValue, type DreEntry } from '../lib
 import { loadAccountingCatalog, loadAccountingDetail, type Catalog, type Detail } from '../lib/accounting-plans'
 import { formatDate, formatMoney, formatCompetence, statusLabels } from '../lib/finance-data'
 import { createReportWorkbook, downloadReport, printReport, type ReportSnapshot } from '../lib/report-export'
+import { DelinquencyReport } from './DelinquencyReport'
 
 type ReportTab = 'posicao' | 'recebimentos' | 'inadimplencia' | 'fechamento' | 'contabil'
 
@@ -609,6 +610,14 @@ function TenantReports({ client, organizationId }: { client: SupabaseClient; org
           </button>
           <button
             type="button"
+            className={activeTab === 'inadimplencia' ? 'primary' : 'secondary'}
+            aria-pressed={activeTab === 'inadimplencia'}
+            onClick={() => setActiveTab('inadimplencia')}
+          >
+            Inadimplência
+          </button>
+          <button
+            type="button"
             className={activeTab === 'fechamento' ? 'primary' : 'secondary'}
             aria-pressed={activeTab === 'fechamento'}
             onClick={() => setActiveTab('fechamento')}
@@ -827,7 +836,14 @@ function TenantReports({ client, organizationId }: { client: SupabaseClient; org
           </div>
         )}
 
-        {/* TAB 3: Fechamento & DRE */}
+        {/* TAB 3: Inadimplência */}
+        {activeTab === 'inadimplencia' && (
+          <div className="report-subview">
+            <DelinquencyReport client={client} organizationId={organizationId} />
+          </div>
+        )}
+
+        {/* TAB 4: Fechamento & DRE */}
         {activeTab === 'fechamento' && (
           <div className="report-subview">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>

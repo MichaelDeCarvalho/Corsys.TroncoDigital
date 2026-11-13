@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Users, MessagesSquare, Building2, ArrowUpRight, RefreshCw, Wallet, FileText, AlertTriangle, TrendingUp } from 'lucide-react'
 import type { SupabaseClient, User } from '@supabase/supabase-js'
 import { AppShell, type Page } from './AppShell'
-import { Finance } from './Finance'
+import { Finance, type FinanceSection } from './Finance'
 import { FinancialDashboard } from './FinancialDashboard'
 import { MasterConsole } from './MasterConsole'
 import { loadMasterOverview } from '../lib/master-console'
@@ -28,6 +28,7 @@ export function Workspace({ client, user, onSignOut }: { client: SupabaseClient;
   const [page, setPage] = useState<Page>('home')
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [selected, setSelected] = useState('')
+  const [financeSection, setFinanceSection] = useState<FinanceSection | undefined>(undefined)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [retry, setRetry] = useState(0)
@@ -53,19 +54,23 @@ export function Workspace({ client, user, onSignOut }: { client: SupabaseClient;
     }).catch(() => { if (active) setError('Não foi possível carregar suas Lojas.') }).finally(() => { if (active) {setLoading(false);setScopeChecking(false)} })
     return () => { active = false; controller.abort() }
   }, [client, user, retry])
+  function handleNavigate(nextPage: Page, nextFinanceSection?: FinanceSection) {
+    setFinanceSection(nextPage === 'finance' ? nextFinanceSection : undefined)
+    setPage(nextPage)
+  }
   const organization = organizations.find(row => row.id === selected)
-  return <div inert={scopeChecking||undefined} aria-busy={scopeChecking||undefined}><AppShell page={page} showMaster={masterAvailable} onNavigate={setPage} onSignOut={onSignOut} email={user.email ?? 'Minha conta'}>
+  return <div inert={scopeChecking||undefined} aria-busy={scopeChecking||undefined}><AppShell page={page} showMaster={masterAvailable} onNavigate={p => handleNavigate(p)} onSignOut={onSignOut} email={user.email ?? 'Minha conta'}>
     <section className="workspace-heading"><div><p className="eyebrow">Área da Loja</p><h1>{page === 'home' ? 'Visão geral' : page === 'members' ? 'Integrantes' : page === 'cadastros' ? 'Cadastros' : page === 'finance' ? 'Financeiro' : page === 'structure' ? 'Plano de Contas' : page === 'dre-config' ? 'Configurações DRE' : page === 'configuracoes' ? 'Configurações' : page === 'relatorios' ? 'Relatórios Gerenciais' : page === 'master' ? 'Master SaaS' : 'Atendimento'}</h1><p className="subtle">Acompanhe as informações da sua organização.</p></div>
       {page !== 'master' && !!organizations.length && <div className="org-selector"><label htmlFor="organization">Loja</label><select id="organization" value={selected} onChange={e => setSelected(e.target.value)}>{organizations.map(row => <option key={row.id} value={row.id}>{row.name}</option>)}</select></div>}
     </section>
     {page === 'master' ? (
       masterAvailable ? <MasterConsole key={user.id} client={client} />
       : <p role="alert" className="message error">O acesso ao Master SaaS requer perfil da plataforma e MFA ativo.</p>
-    ) : loading ? <p role="status" className="message">Carregando suas Lojas…</p> : error ? <div className="panel"><p role="alert" className="message error">{error}</p><button className="secondary" onClick={() => setRetry(value => value + 1)}>Tentar novamente</button></div> : !organization ? <div className="empty panel"><Building2 size={32} aria-hidden="true" /><h2>Nenhuma Loja vinculada</h2><p>Solicite ao administrador o vínculo da sua conta a uma Loja.</p></div> : <TenantPanel key={organization.id} client={client} organization={organization} page={page} onNavigate={setPage} />}
+    ) : loading ? <p role="status" className="message">Carregando suas Lojas…</p> : error ? <div className="panel"><p role="alert" className="message error">{error}</p><button className="secondary" onClick={() => setRetry(value => value + 1)}>Tentar novamente</button></div> : !organization ? <div className="empty panel"><Building2 size={32} aria-hidden="true" /><h2>Nenhuma Loja vinculada</h2><p>Solicite ao administrador o vínculo da sua conta a uma Loja.</p></div> : <TenantPanel key={organization.id} client={client} organization={organization} page={page} financeSection={financeSection} onNavigate={handleNavigate} />}
   </AppShell></div>
 }
 
-function TenantPanel({ client, organization, page, onNavigate }: { client: SupabaseClient; organization: Organization; page: Page; onNavigate: (page: Page) => void }) {
+function TenantPanel({ client, organization, page, financeSection, onNavigate }: { client: SupabaseClient; organization: Organization; page: Page; financeSection?: FinanceSection; onNavigate: (page: Page, section?: FinanceSection) => void }) {
   const [data, setData] = useState<TenantData | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -73,6 +78,7 @@ function TenantPanel({ client, organization, page, onNavigate }: { client: Supab
   const [sent, setSent] = useState(false)
   const [memberSaved, setMemberSaved] = useState(false)
   const [dashboardMode, setDashboardMode] = useState<'consolidado' | 'movimentos' | 'saldo'>('consolidado')
+  const [chartExpanded, setChartExpanded] = useState(false)
   useEffect(() => {
     const controller = new AbortController()
     let active = true
@@ -91,7 +97,7 @@ function TenantPanel({ client, organization, page, onNavigate }: { client: Supab
     {page === 'tesouraria' && <Tesouraria key={organization.id} client={client} organizationId={organization.id} />}
     {page === 'fluxo-caixa' && <FluxoCaixa key={organization.id} client={client} organizationId={organization.id} />}
     {page === 'dre' && <DreView key={organization.id} client={client} organizationId={organization.id} />}
-    {page === 'finance' && <Finance key={organization.id} client={client} organizationId={organization.id} />}
+    {page === 'finance' && <Finance key={organization.id} client={client} organizationId={organization.id} initialSection={financeSection} />}
     {page === 'inadimplencia' && <DelinquencyReport key={organization.id} client={client} organizationId={organization.id} />}
     {page === 'relatorios' && <Relatorios key={organization.id} client={client} organizationId={organization.id} />}
     {page === 'cadastros' && <Cadastros members={data.members} client={client} organizationId={organization.id} onSaved={() => setRevision(v => v + 1)} onReload={() => setRevision(v => v + 1)} />}
@@ -109,6 +115,31 @@ function TenantPanel({ client, organization, page, onNavigate }: { client: Supab
           <h2>Atalhos e Ações Rápidas</h2>
         </div>
         <div className="metric-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
+          <button type="button" className="panel metric" style={{ textAlign: 'left', cursor: 'pointer' }} onClick={() => onNavigate('finance', 'memberPayments')}>
+            <Wallet size={20} aria-hidden="true" style={{ color: 'var(--primary-color, #1e3a8a)' }} />
+            <strong style={{ fontSize: '0.95rem', marginTop: '0.25rem', display: 'block' }}>Registrar pagamento</strong>
+            <span className="subtle">Baixar recebimento de integrante</span>
+          </button>
+          <button type="button" className="panel metric" style={{ textAlign: 'left', cursor: 'pointer' }} onClick={() => onNavigate('finance', 'manual')}>
+            <Wallet size={20} aria-hidden="true" style={{ color: 'var(--primary-color, #1e3a8a)' }} />
+            <strong style={{ fontSize: '0.95rem', marginTop: '0.25rem', display: 'block' }}>Criar cobrança avulsa</strong>
+            <span className="subtle">Lançar cobrança para integrante</span>
+          </button>
+          <button type="button" className="panel metric" style={{ textAlign: 'left', cursor: 'pointer' }} onClick={() => onNavigate('finance', 'agapes')}>
+            <Users size={20} aria-hidden="true" style={{ color: 'var(--primary-color, #1e3a8a)' }} />
+            <strong style={{ fontSize: '0.95rem', marginTop: '0.25rem', display: 'block' }}>Novo Ágape</strong>
+            <span className="subtle">Rateio de eventos e participantes</span>
+          </button>
+          <button type="button" className="panel metric" style={{ textAlign: 'left', cursor: 'pointer' }} onClick={() => onNavigate('finance', 'monthly')}>
+            <RefreshCw size={20} aria-hidden="true" style={{ color: 'var(--primary-color, #1e3a8a)' }} />
+            <strong style={{ fontSize: '0.95rem', marginTop: '0.25rem', display: 'block' }}>Gerar mensalidades</strong>
+            <span className="subtle">Emissão de lote mensal</span>
+          </button>
+          <button type="button" className="panel metric" style={{ textAlign: 'left', cursor: 'pointer' }} onClick={() => onNavigate('finance', 'agreements')}>
+            <FileText size={20} aria-hidden="true" style={{ color: 'var(--primary-color, #1e3a8a)' }} />
+            <strong style={{ fontSize: '0.95rem', marginTop: '0.25rem', display: 'block' }}>Negociar dívida</strong>
+            <span className="subtle">Acordos e parcelamentos</span>
+          </button>
           <button type="button" className="panel metric" style={{ textAlign: 'left', cursor: 'pointer' }} onClick={() => onNavigate('contas-pagar')}>
             <Wallet size={20} aria-hidden="true" style={{ color: 'var(--primary-color, #1e3a8a)' }} />
             <strong style={{ fontSize: '0.95rem', marginTop: '0.25rem', display: 'block' }}>Contas a Pagar</strong>
@@ -124,11 +155,6 @@ function TenantPanel({ client, organization, page, onNavigate }: { client: Supab
             <strong style={{ fontSize: '0.95rem', marginTop: '0.25rem', display: 'block' }}>Tesouraria & Bancos</strong>
             <span className="subtle">Saldos e conciliação</span>
           </button>
-          <button type="button" className="panel metric" style={{ textAlign: 'left', cursor: 'pointer' }} onClick={() => onNavigate('fluxo-caixa')}>
-            <TrendingUp size={20} aria-hidden="true" style={{ color: 'var(--primary-color, #1e3a8a)' }} />
-            <strong style={{ fontSize: '0.95rem', marginTop: '0.25rem', display: 'block' }}>Fluxo de Caixa</strong>
-            <span className="subtle">Movimentações diárias</span>
-          </button>
           <button type="button" className="panel metric" style={{ textAlign: 'left', cursor: 'pointer' }} onClick={() => onNavigate('inadimplencia')}>
             <AlertTriangle size={20} aria-hidden="true" style={{ color: 'var(--primary-color, #1e3a8a)' }} />
             <strong style={{ fontSize: '0.95rem', marginTop: '0.25rem', display: 'block' }}>Inadimplência</strong>
@@ -142,47 +168,56 @@ function TenantPanel({ client, organization, page, onNavigate }: { client: Supab
         </div>
       </section>
 
-      {/* Dashboard View Modes Toolbar (A007, A008, A009) */}
+      {/* Dashboard View Modes Toolbar (A006, A007, A008, A009) */}
       <section className="panel" aria-label="Modos do Dashboard de Tesouraria">
         <div className="section-title">
           <h2>Fluxo de Caixa e Tesouraria</h2>
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }} role="tablist" aria-label="Modos do Dashboard">
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }} role="group" aria-label="Modos do Dashboard">
+              <button
+                type="button"
+                aria-pressed={dashboardMode === 'consolidado'}
+                className={dashboardMode === 'consolidado' ? 'primary' : 'secondary'}
+                data-mode="consolidado"
+                onClick={() => setDashboardMode('consolidado')}
+              >
+                Consolidado
+              </button>
+              <button
+                type="button"
+                aria-pressed={dashboardMode === 'movimentos'}
+                className={dashboardMode === 'movimentos' ? 'primary' : 'secondary'}
+                data-mode="movimentos"
+                onClick={() => setDashboardMode('movimentos')}
+              >
+                Receitas x Desp.
+              </button>
+              <button
+                type="button"
+                aria-pressed={dashboardMode === 'saldo'}
+                className={dashboardMode === 'saldo' ? 'primary' : 'secondary'}
+                data-mode="saldo"
+                onClick={() => setDashboardMode('saldo')}
+              >
+                Saldo
+              </button>
+            </div>
             <button
               type="button"
-              role="tab"
-              aria-selected={dashboardMode === 'consolidado'}
-              className={dashboardMode === 'consolidado' ? 'primary' : 'secondary'}
-              data-mode="consolidado"
-              onClick={() => setDashboardMode('consolidado')}
+              className="quiet"
+              aria-expanded={chartExpanded}
+              onClick={() => setChartExpanded(v => !v)}
             >
-              Consolidado
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={dashboardMode === 'movimentos'}
-              className={dashboardMode === 'movimentos' ? 'primary' : 'secondary'}
-              data-mode="movimentos"
-              onClick={() => setDashboardMode('movimentos')}
-            >
-              Receitas x Desp.
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={dashboardMode === 'saldo'}
-              className={dashboardMode === 'saldo' ? 'primary' : 'secondary'}
-              data-mode="saldo"
-              onClick={() => setDashboardMode('saldo')}
-            >
-              Saldo
+              {chartExpanded ? 'Recolher visão do fluxo' : 'Expandir visão do fluxo'}
             </button>
           </div>
         </div>
       </section>
 
       {/* Daily Cash Flow Section with selected mode */}
-      <DailyCashFlow client={client} organizationId={organization.id} viewMode={dashboardMode} defaultLookbackDays={30} />
+      <div style={chartExpanded ? { padding: '0.25rem', border: '1px solid var(--border-color, #e5e7eb)', borderRadius: '8px' } : undefined}>
+        <DailyCashFlow client={client} organizationId={organization.id} viewMode={dashboardMode} defaultLookbackDays={30} />
+      </div>
 
       <div className="metric-grid"><article className="panel metric"><Users size={23} aria-hidden="true" /><p>Integrantes carregados</p><strong>{data.members.length}</strong><button className="text-button" onClick={() => onNavigate('members')}>Ver integrantes <ArrowUpRight size={16} aria-hidden="true" /></button></article><article className="panel metric"><MessagesSquare size={23} aria-hidden="true" /><p>Chamados abertos carregados</p><strong>{open.length}</strong><button className="text-button" onClick={() => onNavigate('support')}>Acompanhar chamados <ArrowUpRight size={16} aria-hidden="true" /></button></article><article className="panel info-card"><p className="eyebrow">Atendimento</p><h3>Precisa de ajuda?</h3><p>Abra um chamado para acompanhar sua solicitação junto ao suporte.</p><button className="secondary" onClick={() => onNavigate('support')}>Ir para atendimento</button></article></div>
       <section className="panel"><div className="section-title"><h2>Integrantes da Loja</h2><button className="text-button" onClick={() => onNavigate('members')}>Ver lista</button></div><MemberList members={data.members.slice(0, 5)} /></section>

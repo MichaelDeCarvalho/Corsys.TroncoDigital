@@ -1,3 +1,12 @@
+## V35 Master Execution Controller V2 — Correções P0, Paridade V35 e Fechamento Local (13/11/2026)
+
+- **Situação:** Corrigida a regressão P0 em `loadDelinquencyPage` (`read_tenant_delinquency` restaurada para `delinquency-export.ts`) e os 4 defeitos críticos da inadimplência global (`20261113123000_v35_tenant_delinquency_buckets.sql`, `delinquency-report.ts`, `DelinquencyReport.tsx`): `42883`/`PGRST202` isolados como `migrationPending`, remoção de `p_limit: 1000` client-side, eliminação de `.catch(() => [])` e de fallback para relógio local do navegador, cards com `<button aria-pressed>`, checagem de `integrity_ok` e retorno determinístico das 4 faixas no SQL, além de exportação `XLSX` e `Imprimir / PDF`.
+- **Paridade V35 avançada no código:** `Workspace.tsx` com `role="group"`/`aria-pressed`, botão expandir fluxo (`aria-expanded`) e atalhos operacionais ligados a `Finance.tsx` (`initialSection`); `Relatorios.tsx` com aba `'inadimplencia'` ativa; `Members.tsx` sem datas fixas de 09/2026 e usando leitura real via `public.v_member_communication_status`; limpeza de import morto em `PlanoContas.tsx`; atualização da matriz das 21 telas em `docs/V35_SCREEN_PARITY_MATRIX.md`.
+- **Ambiente DEV/PostgreSQL local:** Nenhuma migration ou comando remoto executado; `psql`/`postgres` ausentes no container local, portanto execução runtime em PG17 descartável permanece pendente para o fluxo de DEV/CI.
+- **Próxima ação única:** Aplicar no Supabase DEV, em ordem controlada pelos runbooks, `20261110220000_v35_cash_flow_detail.sql` (M02.03), `20261113123000_v35_tenant_delinquency_buckets.sql` (M06.01 Inadimplência Global) e `20261111220000_v35_jobs_read_aal2.sql` (M04.03-B), mantendo `20261109233000` (M01.03) dependente dos termos jurídicos e mantendo M03.02–M03.04 (`#43`) e M05.01 aguardando decisão humana.
+
+---
+
 ## V35 M06.01 — Conclusão da Inadimplência Global (`view-inadimplencia`) com RPCs no PostgreSQL (13/11/2026)
 
 - **Situação:** Criada a migration versionada `supabase/migrations/20261113123000_v35_tenant_delinquency_buckets.sql` implementando as funções de banco `read_tenant_delinquency_bucket_summary` (totais globais autoritativos por faixa de atraso) e `read_tenant_delinquency_filtered` (paginação server-side com filtro opcional de faixa e data de referência determinística). Atualizado o serviço frontend (`delinquency-report.ts`) e o componente (`DelinquencyReport.tsx`) para consumir as novas RPCs com graceful fallback para DEV.
