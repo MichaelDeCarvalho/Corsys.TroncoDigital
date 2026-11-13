@@ -72,6 +72,7 @@ function TenantPanel({ client, organization, page, onNavigate }: { client: Supab
   const [revision, setRevision] = useState(0)
   const [sent, setSent] = useState(false)
   const [memberSaved, setMemberSaved] = useState(false)
+  const [dashboardMode, setDashboardMode] = useState<'consolidado' | 'movimentos' | 'saldo'>('consolidado')
   useEffect(() => {
     const controller = new AbortController()
     let active = true
@@ -99,8 +100,8 @@ function TenantPanel({ client, organization, page, onNavigate }: { client: Supab
     {page === 'home' && <>
       <section className="hero-card"><div><span className="pill">{organization.status === 'active' ? 'Loja ativa' : 'Loja inativa'}</span><h2>{organization.name}</h2><p>Painel Gerencial de Tesouraria e Acompanhamento Integrado.</p></div><Building2 size={58} strokeWidth={1.2} aria-hidden="true" /></section>
       
-      {/* 6 Financial KPIs from RPC */}
-      <FinancialDashboard client={client} organizationId={organization.id} />
+      {/* 6 Financial KPIs from RPC with A001-A005 navigation */}
+      <FinancialDashboard client={client} organizationId={organization.id} onNavigate={onNavigate} />
 
       {/* Quick Action Shortcuts */}
       <section className="panel" aria-label="Ações rápidas da Tesouraria">
@@ -141,8 +142,47 @@ function TenantPanel({ client, organization, page, onNavigate }: { client: Supab
         </div>
       </section>
 
-      {/* Daily Cash Flow Section */}
-      <DailyCashFlow client={client} organizationId={organization.id} defaultLookbackDays={30} />
+      {/* Dashboard View Modes Toolbar (A007, A008, A009) */}
+      <section className="panel" aria-label="Modos do Dashboard de Tesouraria">
+        <div className="section-title">
+          <h2>Fluxo de Caixa e Tesouraria</h2>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }} role="tablist" aria-label="Modos do Dashboard">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={dashboardMode === 'consolidado'}
+              className={dashboardMode === 'consolidado' ? 'primary' : 'secondary'}
+              data-mode="consolidado"
+              onClick={() => setDashboardMode('consolidado')}
+            >
+              Consolidado
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={dashboardMode === 'movimentos'}
+              className={dashboardMode === 'movimentos' ? 'primary' : 'secondary'}
+              data-mode="movimentos"
+              onClick={() => setDashboardMode('movimentos')}
+            >
+              Receitas x Desp.
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={dashboardMode === 'saldo'}
+              className={dashboardMode === 'saldo' ? 'primary' : 'secondary'}
+              data-mode="saldo"
+              onClick={() => setDashboardMode('saldo')}
+            >
+              Saldo
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Daily Cash Flow Section with selected mode */}
+      <DailyCashFlow client={client} organizationId={organization.id} viewMode={dashboardMode} defaultLookbackDays={30} />
 
       <div className="metric-grid"><article className="panel metric"><Users size={23} aria-hidden="true" /><p>Integrantes carregados</p><strong>{data.members.length}</strong><button className="text-button" onClick={() => onNavigate('members')}>Ver integrantes <ArrowUpRight size={16} aria-hidden="true" /></button></article><article className="panel metric"><MessagesSquare size={23} aria-hidden="true" /><p>Chamados abertos carregados</p><strong>{open.length}</strong><button className="text-button" onClick={() => onNavigate('support')}>Acompanhar chamados <ArrowUpRight size={16} aria-hidden="true" /></button></article><article className="panel info-card"><p className="eyebrow">Atendimento</p><h3>Precisa de ajuda?</h3><p>Abra um chamado para acompanhar sua solicitação junto ao suporte.</p><button className="secondary" onClick={() => onNavigate('support')}>Ir para atendimento</button></article></div>
       <section className="panel"><div className="section-title"><h2>Integrantes da Loja</h2><button className="text-button" onClick={() => onNavigate('members')}>Ver lista</button></div><MemberList members={data.members.slice(0, 5)} /></section>

@@ -1,3 +1,11 @@
+## V35 M06.01 — Integração dos modos do Dashboard e navegação dos indicadores (`view-dashboard` A001–A009) (13/11/2026)
+
+- **Situação:** Integrados na página `home` (`Workspace.tsx`) os três modos originais da V35 do Dashboard (`consolidado`, `movimentos` / Receitas x Desp., e `saldo` — requisitos `view-dashboard-A007`, `A008`, `A009`), controlando dinamicamente a exibição em `DailyCashFlow`. Implementada também a navegação funcional a partir dos 6 KPIs financeiros canônicos (`FinancialDashboard.tsx` — requisitos `view-dashboard-A001` a `A005`) direcionando para as páginas de destino correspondentes (`contas-receber`, `inadimplencia`, `fluxo-caixa`, `tesouraria`, `contas-pagar`).
+- **Verificação:** `compile_applet` PASS, `lint_applet` / typecheck PASS, testes unitários `FinancialDashboard.test.tsx` (5/5 PASS) e suíte geral PASS.
+- **Próxima ação única:** Avançar para a próxima microentrega funcional da matriz de paridade (`view-inadimplencia` ou `view-financeiro`).
+
+---
+
 ## V35 M06.01 — Finalização e alinhamento estrito do Dashboard (`view-dashboard`) (12/11/2026)
 
 - **Situação:** Removidas do `FinancialDashboard.tsx` as métricas e razões não aprovadas (comparação entre períodos distintos de `received_this_month` e `payables_open`, bem como estimativa de posição líquida de patrimônio). Preservados integralmente os 6 KPIs financeiros canônicos calculados pelo backend (`read_tenant_financial_dashboard`), com isolamento por `organization_id` e tratamento fail-closed.
