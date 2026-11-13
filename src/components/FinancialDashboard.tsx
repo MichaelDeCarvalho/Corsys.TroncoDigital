@@ -37,9 +37,9 @@ export function FinancialDashboard({
   }, [client, organizationId, revision])
 
   const metrics = values ? [
-    ['Total a receber', values.receivables_open, 'Cobranças de integrantes e recebíveis institucionais em aberto', 'contas-receber' as Page, 'view-dashboard-A001'],
+    ['Total a receber', values.receivables_open, 'Cobranças de integrantes e recebíveis institucionais em aberto', 'members' as Page, 'view-dashboard-A001'],
     ['A receber vencido', values.receivables_overdue, 'Somente vencimentos anteriores à data da consulta', 'inadimplencia' as Page, 'view-dashboard-A002'],
-    ['Recebido no mês', values.received_this_month, 'Entradas operacionais menos estornos no mês corrente', 'fluxo-caixa' as Page, 'view-dashboard-A003'],
+    ['Recebido no mês', values.received_this_month, 'Entradas operacionais menos estornos no mês corrente', 'fluxo-caixa' as Page, 'view-dashboard-A003-received'],
     ['Saldo das contas', values.cash_bank_balance, 'Caixa e bancos, sem implicar conciliação bancária', 'tesouraria' as Page, 'view-dashboard-A003'],
     ['Contas a pagar', values.payables_open, 'Obrigações institucionais em aberto', 'contas-pagar' as Page, 'view-dashboard-A004'],
     ['Contas a pagar vencidas', values.payables_overdue, 'Despesas vencidas ainda não liquidadas', 'contas-pagar' as Page, 'view-dashboard-A005'],
@@ -66,17 +66,24 @@ export function FinancialDashboard({
               const handleClick = () => {
                 if (onNavigate) onNavigate(targetPage)
               }
+              if (onNavigate) {
+                return (
+                  <button
+                    key={title}
+                    type="button"
+                    className="panel metric"
+                    onClick={handleClick}
+                    style={{ cursor: 'pointer', textAlign: 'left', background: 'var(--panel-bg, inherit)', border: '1px solid var(--border-color, #e5e7eb)', width: '100%', borderRadius: '6px' }}
+                    title={`Ir para ${targetPage}`}
+                  >
+                    <p>{title}</p>
+                    <strong>{formatMoney(Number(amount))}</strong>
+                    <p className="subtle">{description}</p>
+                  </button>
+                )
+              }
               return (
-                <article
-                  key={title}
-                  className="panel metric"
-                  role={onNavigate ? 'button' : undefined}
-                  tabIndex={onNavigate ? 0 : undefined}
-                  onClick={handleClick}
-                  onKeyDown={e => { if (onNavigate && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); handleClick() } }}
-                  style={{ cursor: onNavigate ? 'pointer' : 'default', textAlign: 'left' }}
-                  title={onNavigate ? `Ir para ${targetPage}` : undefined}
-                >
+                <article key={title} className="panel metric">
                   <p>{title}</p>
                   <strong>{formatMoney(Number(amount))}</strong>
                   <p className="subtle">{description}</p>

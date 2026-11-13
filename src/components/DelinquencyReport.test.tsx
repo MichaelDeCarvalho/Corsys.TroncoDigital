@@ -30,7 +30,7 @@ describe('Member overdue report',()=>{
   const {client,rpc}=fixture(one)
   rpc.mockResolvedValueOnce({data:one,error:null}).mockResolvedValueOnce({data:[{...base,full_name:'Última página'}],error:null})
   render(<DelinquencyReport client={client} organizationId="org-a"/>)
-  await screen.findByText('Página 1 — 25 integrantes')
+  await screen.findByText(/Página 1 — 25 integrantes exibidos/)
   fireEvent.click(screen.getByRole('button',{name:'Próxima'}))
   await screen.findByText('Última página')
   expect(rpc).toHaveBeenLastCalledWith('read_tenant_delinquency',{
@@ -86,7 +86,7 @@ describe('Member overdue report',()=>{
   expect(unavailableNotices).toHaveLength(4)
  })
 
- it('calculates days overdue and bucket per member and shows notice on bucket selection',async()=>{
+ it('calculates days overdue and bucket per member and filters on bucket selection',async()=>{
   const {client}=fixture()
   const {container}=render(<DelinquencyReport client={client} organizationId="org-a"/>)
   await screen.findByText('Integrante DEV')
@@ -102,6 +102,7 @@ describe('Member overdue report',()=>{
   const up30Card=container.querySelector('[data-delinquency-bucket="up30"]')!
   fireEvent.click(up30Card)
 
-  await screen.findByText(/O filtro por faixa no servidor depende de extensão na RPC/)
+  await screen.findByText(/Faixa selecionada:/)
+  expect(screen.getByRole('button',{name:'Limpar filtro'})).toBeInTheDocument()
  })
 })

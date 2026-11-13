@@ -1,3 +1,11 @@
+## V35 M06.01 — Ajustes finais do Dashboard e implementação de Inadimplência por faixas (`view-inadimplencia`) (13/11/2026)
+
+- **Situação:** Ajustes de acessibilidade no Dashboard (`FinancialDashboard.tsx` utilizando botões semânticos reais e rotas de navegação alinhadas aos requisitos `view-dashboard-A001` a `A005`). Implementada na tela de Inadimplência (`DelinquencyReport.tsx`) a filtragem interativa por faixas de atraso (Até 30 dias, 31–60, 61–90, Acima de 90) com banner indicativo e botão para limpar filtro.
+- **Verificação:** `compile_applet` PASS, `lint_applet` / typecheck PASS, `FinancialDashboard.test.tsx` (5/5 PASS) e `DelinquencyReport.test.tsx` (8/8 PASS) executados com sucesso.
+- **Próxima ação única:** Avançar para a próxima microentrega funcional da matriz de paridade (`view-financeiro`).
+
+---
+
 ## V35 M06.01 — Integração dos modos do Dashboard e navegação dos indicadores (`view-dashboard` A001–A009) (13/11/2026)
 
 - **Situação:** Integrados na página `home` (`Workspace.tsx`) os três modos originais da V35 do Dashboard (`consolidado`, `movimentos` / Receitas x Desp., e `saldo` — requisitos `view-dashboard-A007`, `A008`, `A009`), controlando dinamicamente a exibição em `DailyCashFlow`. Implementada também a navegação funcional a partir dos 6 KPIs financeiros canônicos (`FinancialDashboard.tsx` — requisitos `view-dashboard-A001` a `A005`) direcionando para as páginas de destino correspondentes (`contas-receber`, `inadimplencia`, `fluxo-caixa`, `tesouraria`, `contas-pagar`).

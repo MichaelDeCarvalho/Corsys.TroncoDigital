@@ -132,6 +132,12 @@ export function DelinquencyReport({ client, organizationId }: { client: Supabase
     return { count: rowCount, items: itemsSum, amount: amountSum, valid }
   })
 
+  const displayedRows = result?.rows ? result.rows.filter(m => {
+    if (!selectedBucket) return true
+    const days = calculateDaysOverdue(m.oldest_due, referenceDate)
+    return classifyMemberBucket(days) === selectedBucket
+  }) : []
+
   return (
     <section className="panel" aria-label="Relatório de inadimplência" id="delinquency-report-container">
       <div className="section-title">
@@ -173,6 +179,7 @@ export function DelinquencyReport({ client, organizationId }: { client: Supabase
               tabIndex={0}
               aria-pressed={selectedBucket === b.id}
               onClick={() => setSelectedBucket(curr => curr === b.id ? null : b.id)}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedBucket(curr => curr === b.id ? null : b.id) } }}
               style={{
                 padding: '0.75rem',
                 border: selectedBucket === b.id ? '2px solid var(--primary, #0284c7)' : '1px solid var(--border-color, #e5e7eb)',
@@ -206,9 +213,14 @@ export function DelinquencyReport({ client, organizationId }: { client: Supabase
       </div>
 
       {selectedBucket && (
-        <p className="subtle" style={{ margin: '0.5rem 0 1rem', padding: '0.5rem', background: 'var(--highlight, #f3f4f6)', borderRadius: '4px' }}>
-          Faixa selecionada: <strong>{AGING_BUCKETS.find(b => b.id === selectedBucket)?.label} ({AGING_BUCKETS.find(b => b.id === selectedBucket)?.rangeLabel})</strong>. O filtro por faixa no servidor depende de extensão na RPC <code>read_tenant_delinquency</code>; para evitar distorção estatística na página de 25 registros, a listagem geral ordenada por saldo devedor é exibida.
-        </p>
+        <div style={{ margin: '0.5rem 0 1rem', padding: '0.75rem', background: 'var(--highlight, #f3f4f6)', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <p className="subtle" style={{ margin: 0 }}>
+            Faixa selecionada: <strong>{AGING_BUCKETS.find(b => b.id === selectedBucket)?.label} ({AGING_BUCKETS.find(b => b.id === selectedBucket)?.rangeLabel})</strong>. Exibindo integrantes da página atual correspondentes a esta faixa.
+          </p>
+          <button className="secondary" type="button" onClick={() => setSelectedBucket(null)}>
+            Limpar filtro
+          </button>
+        </div>
       )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0.75rem 0', flexWrap: 'wrap' }}>
@@ -234,8 +246,8 @@ export function DelinquencyReport({ client, organizationId }: { client: Supabase
 
       {result && (
         <>
-          {!result.rows.length ? (
-            <p>Nenhum integrante com cobrança vencida nesta página.</p>
+          {!displayedRows.length ? (
+            <p>Nenhum integrante com cobrança vencida nesta página para a faixa selecionada.</p>
           ) : (
             <div className="finance-table" role="region" tabIndex={0} aria-label="Inadimplência consultada">
               <table>
@@ -252,7 +264,7 @@ export function DelinquencyReport({ client, organizationId }: { client: Supabase
                   </tr>
                 </thead>
                 <tbody>
-                  {result.rows.map(m => {
+                  {displayedRows.map(m => {
                     const days = calculateDaysOverdue(m.oldest_due, referenceDate)
                     const bucket = classifyMemberBucket(days)
                     return (
@@ -275,7 +287,7 @@ export function DelinquencyReport({ client, organizationId }: { client: Supabase
 
           <div className="finance-pagination">
             <button className="secondary" disabled={page === 0} onClick={() => setPage(v => v - 1)}>Anterior</button>
-            <span role="status">Página {page + 1} — {result.rows.length} integrantes</span>
+            <span role="status">Página {page + 1} — {displayedRows.length} integrantes exibidos (de {result.rows.length} na página)</span>
             <button className="secondary" disabled={!result.hasNext} onClick={() => setPage(v => v + 1)}>Próxima</button>
           </div>
 
