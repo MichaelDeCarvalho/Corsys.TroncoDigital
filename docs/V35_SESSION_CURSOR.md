@@ -1,3 +1,11 @@
+## V35 M06.01 — Conclusão da Inadimplência Global (`view-inadimplencia`) com RPCs no PostgreSQL (13/11/2026)
+
+- **Situação:** Criada a migration versionada `supabase/migrations/20261113123000_v35_tenant_delinquency_buckets.sql` implementando as funções de banco `read_tenant_delinquency_bucket_summary` (totais globais autoritativos por faixa de atraso) e `read_tenant_delinquency_filtered` (paginação server-side com filtro opcional de faixa e data de referência determinística). Atualizado o serviço frontend (`delinquency-report.ts`) e o componente (`DelinquencyReport.tsx`) para consumir as novas RPCs com graceful fallback para DEV.
+- **Verificação:** `compile_applet` PASS, `lint_applet` / typecheck PASS, `FinancialDashboard.test.tsx` (5/5 PASS) e `DelinquencyReport.test.tsx` (7/7 PASS) executados com sucesso.
+- **Próxima ação única:** Avançar para a próxima microentrega funcional da matriz de paridade (`view-financeiro`).
+
+---
+
 ## V35 M06.01 — Ajustes finais do Dashboard e implementação de Inadimplência por faixas (`view-inadimplencia`) (13/11/2026)
 
 - **Situação:** Ajustes de acessibilidade no Dashboard (`FinancialDashboard.tsx` utilizando botões semânticos reais e rotas de navegação alinhadas aos requisitos `view-dashboard-A001` a `A005`). Implementada na tela de Inadimplência (`DelinquencyReport.tsx`) a filtragem interativa por faixas de atraso (Até 30 dias, 31–60, 61–90, Acima de 90) com banner indicativo e botão para limpar filtro.

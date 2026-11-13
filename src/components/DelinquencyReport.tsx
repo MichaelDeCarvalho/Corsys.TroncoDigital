@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { formatDate, formatMoney } from '../lib/finance-data'
 import {
-  loadDelinquencyPage,
+  loadFilteredDelinquencyPage,
+  loadDelinquencyBucketSummary,
   type DelinquencyRow,
+  type DelinquencyBucketSummary,
   AGING_BUCKETS,
   calculateDaysOverdue,
   classifyMemberBucket,
   formatBucketLabel,
-  formatBucketRangeLabel,
   type DelinquencyBucketId,
 } from '../lib/delinquency-report'
 import { createDelinquencyCsv, loadDelinquencyExport } from '../lib/delinquency-export'
@@ -27,6 +28,7 @@ export function DelinquencyReport({ client, organizationId }: { client: Supabase
   const [referenceDate, setReferenceDate] = useState(getTodayIsoDate)
   const [selectedBucket, setSelectedBucket] = useState<DelinquencyBucketId | null>(null)
   const [result, setResult] = useState<{ rows: DelinquencyRow[]; hasNext: boolean } | null>(null)
+  const [bucketSummaries, setBucketSummaries] = useState<DelinquencyBucketSummary[]>([])
   const [error, setError] = useState('')
   const [denied, setDenied] = useState(false)
   const [exporting, setExporting] = useState(false)
@@ -48,16 +50,23 @@ export function DelinquencyReport({ client, organizationId }: { client: Supabase
     exportGuard.current = false
     setExporting(false)
     setExportError('')
+    setPage(0)
     return () => { exportEpoch.current += 1 }
-  }, [organizationId])
+  }, [organizationId, selectedBucket])
 
   useEffect(() => {
     let live = true
     setResult(null)
     setError('')
     setDenied(false)
-    loadDelinquencyPage(client, organizationId, page).then(data => {
-      if (live) setResult(data)
+    
+    Promise.all([
+      loadFilteredDelinquencyPage(client, organizationId, selectedBucket, page),
+      loadDelinquencyBucketSummary(client, organizationId).catch(() => [])
+    ]).then(([pageData, summaries]) => {
+      if (!live) return
+      setResult(pageData)
+      setBucketSummaries(summaries)
     }).catch(cause => {
       if (!live) return
       const code = (cause as { code?: string } | null)?.code
@@ -65,7 +74,7 @@ export function DelinquencyReport({ client, organizationId }: { client: Supabase
       else setError('O relatório de inadimplência não pôde ser validado; nenhum valor parcial é apresentado.')
     })
     return () => { live = false }
-  }, [client, organizationId, page, revision])
+  }, [client, organizationId, selectedBucket, page, revision])
 
   async function exportCsv() {
     if (exportGuard.current || !result || denied || error) return
@@ -106,38 +115,6 @@ export function DelinquencyReport({ client, organizationId }: { client: Supabase
     }
   }
 
-  const pageBucketStats = AGING_BUCKETS.map(b => {
-    if (!result?.rows) return { count: 0, items: 0, amount: 0, valid: false }
-    let itemsSum = 0
-    let amountSum = 0
-    let rowCount = 0
-    let valid = true
-
-    for (const m of result.rows) {
-      const days = calculateDaysOverdue(m.oldest_due, referenceDate)
-      const bucketId = classifyMemberBucket(days)
-      if (bucketId === b.id) {
-        rowCount++
-        const items = Number(m.overdue_items)
-        const amt = Number(m.overdue_amount)
-        if (!Number.isInteger(items) || items < 1 || isNaN(amt) || amt <= 0) {
-          valid = false
-        } else {
-          itemsSum += items
-          amountSum += amt
-        }
-      }
-    }
-
-    return { count: rowCount, items: itemsSum, amount: amountSum, valid }
-  })
-
-  const displayedRows = result?.rows ? result.rows.filter(m => {
-    if (!selectedBucket) return true
-    const days = calculateDaysOverdue(m.oldest_due, referenceDate)
-    return classifyMemberBucket(days) === selectedBucket
-  }) : []
-
   return (
     <section className="panel" aria-label="Relatório de inadimplência" id="delinquency-report-container">
       <div className="section-title">
@@ -168,8 +145,8 @@ export function DelinquencyReport({ client, organizationId }: { client: Supabase
         aria-label="Faixas de atraso"
         style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', margin: '1rem 0' }}
       >
-        {AGING_BUCKETS.map((b, idx) => {
-          const stats = pageBucketStats[idx]
+        {AGING_BUCKETS.map(b => {
+          const summary = bucketSummaries.find(s => s.bucket_id === b.id)
           return (
             <div
               key={b.id}
@@ -178,8 +155,8 @@ export function DelinquencyReport({ client, organizationId }: { client: Supabase
               role="button"
               tabIndex={0}
               aria-pressed={selectedBucket === b.id}
-              onClick={() => setSelectedBucket(curr => curr === b.id ? null : b.id)}
-              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedBucket(curr => curr === b.id ? null : b.id) } }}
+              onClick={() => { setSelectedBucket(curr => curr === b.id ? null : b.id); setPage(0) }}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedBucket(curr => curr === b.id ? null : b.id); setPage(0) } }}
               style={{
                 padding: '0.75rem',
                 border: selectedBucket === b.id ? '2px solid var(--primary, #0284c7)' : '1px solid var(--border-color, #e5e7eb)',
@@ -193,19 +170,18 @@ export function DelinquencyReport({ client, organizationId }: { client: Supabase
                 <span className="pill" style={{ fontSize: '0.72rem', padding: '0.1rem 0.35rem' }}>{b.rangeLabel}</span>
               </div>
               
-              {result?.rows && stats.valid && stats.count > 0 ? (
+              {summary ? (
                 <div style={{ fontSize: '0.75rem', color: 'var(--muted, #4b5563)', margin: '0.2rem 0' }}>
-                  Somente página atual: {stats.count} integrante(s) • {stats.items} cobr.
+                  {summary.member_count} integrante(s) • {summary.overdue_items} cobr.
                 </div>
-              ) : result?.rows && !stats.valid ? (
-                <div style={{ fontSize: '0.75rem', color: '#dc2626', margin: '0.2rem 0' }}>
-                  Somente página atual: Indisponível
+              ) : (
+                <div style={{ fontSize: '0.75rem', color: 'var(--muted, #666)', margin: '0.2rem 0' }}>
+                  Total da faixa:
                 </div>
-              ) : null}
+              )}
 
-              <div style={{ fontSize: '0.78rem', color: 'var(--muted, #666)' }}>Total da faixa:</div>
-              <div style={{ fontSize: '0.82rem', fontWeight: 500, color: '#dc2626', marginTop: '0.15rem' }}>
-                Indisponível (depende de RPC de agregação global no backend)
+              <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#dc2626', marginTop: '0.2rem' }}>
+                {summary ? formatMoney(summary.overdue_amount) : 'Indisponível (migração pendente)'}
               </div>
             </div>
           )
@@ -215,7 +191,7 @@ export function DelinquencyReport({ client, organizationId }: { client: Supabase
       {selectedBucket && (
         <div style={{ margin: '0.5rem 0 1rem', padding: '0.75rem', background: 'var(--highlight, #f3f4f6)', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
           <p className="subtle" style={{ margin: 0 }}>
-            Faixa selecionada: <strong>{AGING_BUCKETS.find(b => b.id === selectedBucket)?.label} ({AGING_BUCKETS.find(b => b.id === selectedBucket)?.rangeLabel})</strong>. Exibindo integrantes da página atual correspondentes a esta faixa.
+            Faixa selecionada: <strong>{AGING_BUCKETS.find(b => b.id === selectedBucket)?.label} ({AGING_BUCKETS.find(b => b.id === selectedBucket)?.rangeLabel})</strong>. Exibindo integrantes filtrados no servidor.
           </p>
           <button className="secondary" type="button" onClick={() => setSelectedBucket(null)}>
             Limpar filtro
@@ -224,20 +200,16 @@ export function DelinquencyReport({ client, organizationId }: { client: Supabase
       )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0.75rem 0', flexWrap: 'wrap' }}>
-        <label htmlFor="delinquency-ref-date" style={{ fontSize: '0.85rem' }}>Data de referência para cálculo dos dias em atraso:</label>
+        <label htmlFor="delinquency-ref-date" style={{ fontSize: '0.85rem' }}>Data de referência (banco):</label>
         <input
           id="delinquency-ref-date"
           type="date"
-          value={referenceDate}
-          onChange={e => setReferenceDate(e.target.value || getTodayIsoDate())}
-          style={{ padding: '0.25rem 0.5rem' }}
+          value={bucketSummaries[0]?.server_date || referenceDate}
+          disabled
+          style={{ padding: '0.25rem 0.5rem', background: 'rgba(0,0,0,0.04)' }}
         />
-        <span className="subtle" style={{ fontSize: '0.85rem' }}>({formatDate(referenceDate)})</span>
+        <span className="subtle" style={{ fontSize: '0.85rem' }}>(Fotografia determinística calculada no servidor)</span>
       </div>
-
-      <p className="subtle" style={{ fontSize: '0.85rem', marginBottom: '1rem' }}>
-        A classificação por faixa é baseada no vencimento mais antigo (<code>oldest_due</code>) de cada integrante. A consulta <code>read_tenant_delinquency</code> utiliza a data atual do banco (<code>current_date</code>); a alteração da data de referência recalcula os dias em atraso na exibição local sem simular fotografias históricas passadas/futuras do banco.
-      </p>
 
       {denied && <p className="subtle">Seu perfil não possui permissão para consultar a inadimplência da Loja.</p>}
       {error && <p role="alert" className="message error">{error}</p>}
@@ -246,8 +218,8 @@ export function DelinquencyReport({ client, organizationId }: { client: Supabase
 
       {result && (
         <>
-          {!displayedRows.length ? (
-            <p>Nenhum integrante com cobrança vencida nesta página para a faixa selecionada.</p>
+          {!result.rows.length ? (
+            <p>Nenhum integrante com cobrança vencida nesta faixa ou página.</p>
           ) : (
             <div className="finance-table" role="region" tabIndex={0} aria-label="Inadimplência consultada">
               <table>
@@ -264,8 +236,8 @@ export function DelinquencyReport({ client, organizationId }: { client: Supabase
                   </tr>
                 </thead>
                 <tbody>
-                  {displayedRows.map(m => {
-                    const days = calculateDaysOverdue(m.oldest_due, referenceDate)
+                  {result.rows.map(m => {
+                    const days = calculateDaysOverdue(m.oldest_due, bucketSummaries[0]?.server_date || referenceDate)
                     const bucket = classifyMemberBucket(days)
                     return (
                       <tr key={m.member_id}>
@@ -287,12 +259,12 @@ export function DelinquencyReport({ client, organizationId }: { client: Supabase
 
           <div className="finance-pagination">
             <button className="secondary" disabled={page === 0} onClick={() => setPage(v => v - 1)}>Anterior</button>
-            <span role="status">Página {page + 1} — {displayedRows.length} integrantes exibidos (de {result.rows.length} na página)</span>
+            <span role="status">Página {page + 1} — {result.rows.length} integrantes nesta página</span>
             <button className="secondary" disabled={!result.hasNext} onClick={() => setPage(v => v + 1)}>Próxima</button>
           </div>
 
           <p className="subtle">
-            Dados paginados por integrante. Não some esta página como inadimplência total da Loja; o Painel financeiro fornece o consolidado. A exportação consulta todas as páginas até 1.000 integrantes, sem salvar informações no servidor; se a lista mudar durante a consulta, o CSV pode não representar uma fotografia transacional. CSV compatível com Excel não é arquivo XLSX nem PDF.
+            Dados paginados por integrante. O painel financeiro fornece o consolidado global. A exportação consulta todas as páginas até 1.000 integrantes.
           </p>
         </>
       )}
