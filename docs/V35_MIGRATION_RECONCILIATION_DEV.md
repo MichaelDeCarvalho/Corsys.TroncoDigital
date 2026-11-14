@@ -30,7 +30,7 @@ Todas as 7 divergências correspondem a migrations V35 aplicadas manualmente/via
 |---|---|---|---|---|
 | 1 | `20261028000000_v35_support_idempotency.sql` | `20261029003946` | M04.03 P0 — Idempotência em criação/resposta de chamados SaaS | `docs/V35_P0_SUPPORT_20261028.md` |
 | 2 | `20261029000000_v35_master_readonly_support_sessions.sql` | `20261029021140` | M04.02 — Sessões temporárias Master somente leitura | `SESSION_HANDOFF.md` / `ADR-0038` |
-| 3 | `20261029030000_v35_master_manual_invoice.sql` | *(Timestamp DEV aplicado a confirmar em `schema_migrations`)* | M04.01 — Emissão manual de fatura SaaS (`preview_saas_manual_invoice` / `issue_saas_manual_invoice`) | `docs/V35_M0401_MANUAL_BILLING_RECONCILIATION.md` (RPCs confirmadas presentes no catálogo DEV em 10/11/2026) |
+| 3 | `20261029030000_v35_master_manual_invoice.sql` | `20261029204044` | M04.01 — Emissão manual de fatura SaaS (`preview_saas_manual_invoice` / `issue_saas_manual_invoice`) | `docs/V35_M0401_MANUAL_BILLING_RECONCILIATION.md` (RPCs confirmadas presentes no catálogo DEV) |
 | 4 | `20261110220000_v35_cash_flow_detail.sql` | `20261113230306` | M02.02-D — `read_tenant_cash_flow_detail` (histórico diário e ranking de despesas) | Homologação ChatGPT Work (`2026-11-13`) |
 | 5 | `20261111220000_v35_jobs_read_aal2.sql` | `20261113230344` | M04.03-B — Leitura auditada de jobs com `MASTER` + `AAL2` | Homologação ChatGPT Work (`2026-11-13`) |
 | 6 | `20261111223000_v35_support_event_read_projection.sql` | `20261112015957` | M04.03-C — Projeção de leitura de eventos/SLA de suporte | `SESSION_HANDOFF.md` / `V35_EXECUTION_BOARD.md` |

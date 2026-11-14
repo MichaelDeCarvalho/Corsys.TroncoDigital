@@ -1,3 +1,4 @@
+import stylesCss from '../styles.css?raw'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { describe, expect, it, vi } from 'vitest'
@@ -49,17 +50,18 @@ describe('Responsive layout & mobile navigation invariants (320px / 390px / 768p
   })
 
   it('enforces safe CSS breakpoints without blanket html/body overflow-x: hidden', async () => {
-    const fs = await vi.importActual<{ readFileSync: (fileUrl: URL, encoding: 'utf8') => string }>('node:fs')
-    const stylesCss = fs.readFileSync(new URL('../styles.css', import.meta.url), 'utf8')
+    const fs = await vi.importActual<{ readFileSync: (filePath: string, encoding: 'utf8') => string }>('node:fs')
+    const path = await vi.importActual<{ resolve: (...paths: string[]) => string }>('node:path')
+    const stylesCss = fs.readFileSync(path.resolve('src/styles.css'), 'utf8')
 
     // Must never blindly hide horizontal overflow on html/body
     expect(stylesCss).not.toMatch(/html,\s*body\s*\{[^}]*overflow-x\s*:\s*hidden/i)
 
     // Tablet 768px must collapse fixed 260px sidebar into drawer (max-width: 960px)
-    expect(stylesCss).toMatch(/@media\s*\(max-width:\s*960px\)\s*\{[^}]*\.sidebar\s*\{[^}]*position:\s*fixed/s)
+    expect(stylesCss).toMatch(/@media\s*\(max-width:\s*960px\)\s*\{[\s\S]*\.sidebar\s*\{[\s\S]*position:\s*fixed/s)
 
     // Smartphone <= 640px must collapse .metric-grid to 1 column
-    expect(stylesCss).toMatch(/@media\s*\(max-width:\s*640px\)\s*\{[^}]*\.metric-grid\s*\{\s*grid-template-columns:\s*minmax\(0,\s*1fr\)/s)
+    expect(stylesCss).toMatch(/@media\s*\(max-width:\s*640px\)\s*\{[\s\S]*\.metric-grid\s*\{[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)/s)
 
     // Scroll wrappers must stay constrained and scrollable
     expect(stylesCss).toMatch(/\.table-wrap\s*\{[^}]*overflow-x:\s*auto;\s*max-width:\s*100%;\s*min-width:\s*0/s)

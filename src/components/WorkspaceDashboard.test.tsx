@@ -206,7 +206,7 @@ describe('Workspace V35 dashboard modes, shortcuts and KPI navigation', () => {
     expect(alert).toHaveTextContent(/Não foi possível carregar os dados desta Loja/)
 
     fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }))
-    expect(await screen.findByText('Carlos Silva')).toBeInTheDocument()
+    expect(await screen.findByText('Atalhos e Ações Rápidas')).toBeInTheDocument()
     await waitFor(() => {
       expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     })

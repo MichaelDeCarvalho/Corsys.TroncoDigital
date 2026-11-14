@@ -117,8 +117,8 @@ async function assertCrossTenantDenied(client, ownOrgId, foreignOrgId, label) {
   assertPermissionDenied(
     await client.rpc('read_tenant_daily_cash_flow', {
       p_organization_id: foreignOrgId,
-      p_from: todayIso,
-      p_to: todayIso,
+      p_from_date: todayIso,
+      p_to_date: todayIso,
     }),
     `${label} cross read_tenant_daily_cash_flow`,
   )
@@ -281,8 +281,10 @@ try {
     await masterClient.rpc('save_member_profile', {
       p_organization_id: fixture.tenant_a.organization_id,
       p_member_id: randomUUID(),
-      p_full_name: 'WRITE INSIDE READONLY SUPPORT',
-      p_status: 'active',
+      p_expected_updated_at: new Date().toISOString(),
+      p_profile: { full_name: 'WRITE INSIDE READONLY SUPPORT' },
+      p_reason: 'Readonly session write probe',
+      p_idempotency_key: `neg-profile-${randomUUID()}`,
     }),
     'Write save_member_profile during read-only Master support session',
   )
@@ -293,6 +295,7 @@ try {
       p_category: 'other',
       p_priority: 'low',
       p_message: 'Must be rejected for Master read-only support session.',
+      p_idempotency_key: `neg-ticket-${randomUUID()}`,
     }),
     'Write create_saas_support_ticket during read-only Master support session',
   )
