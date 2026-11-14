@@ -142,6 +142,8 @@ export function AppShell({
               type="button"
               className="ghost mobile-menu"
               id="mobileMenu"
+              aria-expanded={mobileMenuOpen}
+              aria-controls="sidebar"
               aria-label={mobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
@@ -171,17 +173,32 @@ export function AppShell({
       </div>
 
       <nav className={showMaster ? 'mobile-nav has-master' : 'mobile-nav'} aria-label="Navegação móvel">
-        {allItems.map(({ id, label, Icon }) => (
-          <button
-            key={id}
-            type="button"
-            aria-current={page === id ? 'page' : undefined}
-            onClick={() => handleNavigate(id)}
-          >
-            <Icon size={18} aria-hidden="true" />
-            <span>{label}</span>
-          </button>
-        ))}
+        {allItems
+          .filter(item =>
+            showMaster
+              ? item.id === 'home' || item.id === 'members' || item.id === 'finance' || item.id === 'master'
+              : item.id === 'home' || item.id === 'members' || item.id === 'finance' || item.id === 'inadimplencia',
+          )
+          .map(({ id, label, Icon }) => (
+            <button
+              key={id}
+              type="button"
+              aria-current={page === id ? 'page' : undefined}
+              onClick={() => handleNavigate(id)}
+            >
+              <Icon size={18} aria-hidden="true" />
+              <span>{id === 'master' ? 'Master' : label}</span>
+            </button>
+          ))}
+        <button
+          type="button"
+          aria-expanded={mobileMenuOpen}
+          aria-controls="sidebar"
+          onClick={() => setMobileMenuOpen(v => !v)}
+        >
+          {mobileMenuOpen ? <X size={18} aria-hidden="true" /> : <Menu size={18} aria-hidden="true" />}
+          <span>Menu</span>
+        </button>
       </nav>
     </div>
   )

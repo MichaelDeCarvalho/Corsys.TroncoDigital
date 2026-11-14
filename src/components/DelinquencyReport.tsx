@@ -230,7 +230,7 @@ export function DelinquencyReport({ client, organizationId }: { client: Supabase
             className="aging-buckets-grid"
             role="group"
             aria-label="Faixas de atraso"
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', margin: '1rem 0' }}
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '0.75rem', margin: '1rem 0' }}
           >
             {AGING_BUCKETS.map(b => {
               const summary = bucketSummaries.find(s => s.bucket_id === b.id)
@@ -257,7 +257,7 @@ export function DelinquencyReport({ client, organizationId }: { client: Supabase
                     opacity: migrationPending ? 0.72 : 1,
                   }}
                 >
-                  <span style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
                     <span>{b.label}</span>
                     <span style={{ fontSize: '0.72rem', opacity: 0.8 }}>{b.rangeLabel}</span>
                   </span>
@@ -298,7 +298,7 @@ export function DelinquencyReport({ client, organizationId }: { client: Supabase
                   type="date"
                   value={serverDate}
                   disabled
-                  style={{ padding: '0.25rem 0.5rem', background: 'rgba(0,0,0,0.04)' }}
+                  style={{ padding: '0.25rem 0.5rem', background: 'rgba(0,0,0,0.04)', width: 'auto', maxWidth: '100%' }}
                 />
                 <span className="subtle" style={{ fontSize: '0.85rem' }}>(Fotografia determinística calculada no servidor)</span>
               </>

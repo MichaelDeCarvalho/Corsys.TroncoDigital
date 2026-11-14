@@ -502,7 +502,7 @@ export function Chamados({
                 </button>
               </div>
             ) : (
-              <div className="overflow-x-auto border rounded-md" id="v34TenantTicketsTable">
+              <div className="overflow-x-auto max-w-full min-w-0 border rounded-md" id="v34TenantTicketsTable">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-slate-50 border-b text-slate-600 font-semibold text-xs uppercase tracking-wider">
                     <tr>

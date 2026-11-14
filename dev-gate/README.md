@@ -75,3 +75,13 @@ coordenação SQL por fase e restauração de ADMIN mesmo em erro/cancelamento.
 `npm run test:master-mfa`: conta dedicada/UUID conferido, TOTP local mascarado e Master
 positivo AAL2. QR temporário .mfa-local nunca deve ser enviado; ver pré-requisitos no relatório.
 Nenhum desses comandos isoladamente representa PASS da etapa inteira.
+
+## Testes HTTP negativos e fronteiras de autorização (preparado)
+`npm run test:negative-auth`: executa em ambiente DEV com `.env.dev` e TTY local (`tests/negative-http-authorization.mjs`):
+1. Loja A consultando `organization_id` da Loja B (RPCs/views financeiras e de inadimplência).
+2. Loja B consultando `organization_id` da Loja A.
+3. Usuário autenticado sem `finance.read` (`TEST_NO_FINANCE_*` em `.env.dev`).
+4. Master AAL1 bloqueado (`42501`) em RPCs restritas.
+5. Master AAL2 autorizado em consultas somente leitura e sessão de suporte temporária.
+6. Tentativa de escrita financeira/cadastral dentro de sessão de suporte somente leitura bloqueada (`42501`).
+

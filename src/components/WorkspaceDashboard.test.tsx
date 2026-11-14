@@ -164,4 +164,51 @@ describe('Workspace V35 dashboard modes, shortcuts and KPI navigation', () => {
       expect(screen.getByRole('button', { name: 'Pagamentos de integrantes' })).toHaveAttribute('aria-pressed', 'true')
     })
   })
+
+  it.each([
+    ['Criar cobrança avulsa', 'Financeiro', 'Cobranças avulsas'],
+    ['Novo Ágape', 'Financeiro', 'Ágapes e participantes'],
+    ['Gerar mensalidades', 'Financeiro', 'Gerar mensalidades'],
+    ['Negociar dívida', 'Financeiro', 'Negociar dívida'],
+  ])('navigates from Dashboard quick action "%s" to %s (%s)', async (buttonLabel, expectedH1, expectedPressedTab) => {
+    const { client } = createWorkspaceClient()
+    render(<Workspace client={client} user={user} onSignOut={vi.fn()} />)
+
+    const shortcut = await screen.findByRole('button', { name: new RegExp(buttonLabel, 'i') })
+    fireEvent.click(shortcut)
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: expectedH1 })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: expectedPressedTab })).toHaveAttribute('aria-pressed', 'true')
+    })
+  })
+
+  it('recovers cleanly from transient tenant load failure via Tentar novamente', async () => {
+    const { client } = createWorkspaceClient()
+    let failMembersOnce = true
+    const origFrom = client.from
+    ;(client as unknown as { from: ReturnType<typeof vi.fn> }).from = vi.fn().mockImplementation((table: string) => {
+      if (table === 'members' && failMembersOnce) {
+        failMembersOnce = false
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          limit: vi.fn().mockReturnThis(),
+          abortSignal: vi.fn().mockResolvedValue({ data: null, error: { message: 'temporary failure' } }),
+        }
+      }
+      return origFrom(table)
+    })
+
+    render(<Workspace client={client} user={user} onSignOut={vi.fn()} />)
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent(/Não foi possível carregar os dados desta Loja/)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }))
+    expect(await screen.findByText('Carlos Silva')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    })
+  })
 })

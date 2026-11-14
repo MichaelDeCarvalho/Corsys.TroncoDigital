@@ -444,7 +444,7 @@ export function Configuracoes({
             <div
               className="metric-grid"
               style={{
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
                 gap: '14px',
                 marginBottom: '16px',
               }}

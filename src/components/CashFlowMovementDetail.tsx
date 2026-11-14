@@ -54,7 +54,7 @@ export function CashFlowMovementDetail({
       <h3>Evolução do saldo contábil</h3>
       <p>Saldo inicial: {formatMoney(detail.opening)} · Saldo final: {formatMoney(detail.closing)}</p>
       <p className="subtle">Saldo derivado dos lançamentos. A conciliação bancária é uma consulta separada.</p>
-      {balanceOnly && <div className="finance-table"><table>
+      {balanceOnly && <div className="finance-table" role="region" tabIndex={0} aria-label="Evolução do saldo contábil"><table>
         <thead><tr><th>Data</th><th>Saldo no fim do dia</th></tr></thead>
         <tbody>{detail.history.map(row => <tr key={row.day}><td>{formatDate(row.day)}</td><td>{formatMoney(row.balance)}</td></tr>)}</tbody>
       </table></div>}

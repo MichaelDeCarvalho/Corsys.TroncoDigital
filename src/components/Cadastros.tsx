@@ -299,7 +299,7 @@ export function Cadastros({
                   <div
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))',
                       gap: '1rem'
                     }}
                   >
@@ -318,8 +318,10 @@ export function Cadastros({
                           <div
                             style={{
                               display: 'flex',
+                              flexWrap: 'wrap',
                               justifyContent: 'space-between',
                               alignItems: 'center',
+                              gap: '0.5rem',
                               marginBottom: '0.5rem'
                             }}
                           >

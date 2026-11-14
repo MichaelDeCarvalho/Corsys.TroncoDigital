@@ -22,15 +22,35 @@ const baseRow = {
 }
 
 describe('delinquency-report data loaders & aging boundaries', () => {
-  it('classifies aging boundaries deterministically across 30/31, 60/61, and 90/91 days', () => {
+  it('classifies aging boundaries deterministically across 0/1, 30/31, 60/61, and 90/91 days', () => {
+    expect(calculateDaysOverdue('2026-10-10', '2026-10-10')).toBe(0)
+    expect(classifyMemberBucket(0)).toBe('up30')
+    expect(calculateDaysOverdue('2026-10-09', '2026-10-10')).toBe(1)
+    expect(classifyMemberBucket(1)).toBe('up30')
     expect(calculateDaysOverdue('2026-09-10', '2026-10-10')).toBe(30)
     expect(classifyMemberBucket(30)).toBe('up30')
+    expect(calculateDaysOverdue('2026-09-09', '2026-10-10')).toBe(31)
     expect(classifyMemberBucket(31)).toBe('31-60')
     expect(classifyMemberBucket(60)).toBe('31-60')
+    expect(calculateDaysOverdue('2026-08-11', '2026-10-10')).toBe(60)
     expect(classifyMemberBucket(61)).toBe('61-90')
+    expect(calculateDaysOverdue('2026-08-10', '2026-10-10')).toBe(61)
     expect(classifyMemberBucket(90)).toBe('61-90')
+    expect(calculateDaysOverdue('2026-07-12', '2026-10-10')).toBe(90)
     expect(classifyMemberBucket(91)).toBe('over90')
+    expect(calculateDaysOverdue('2026-07-11', '2026-10-10')).toBe(91)
     expect(classifyMemberBucket(-1)).toBeNull()
+  })
+
+  it('demonstrates UTC vs BRT day-boundary bucket sensitivity when serverDate advances at 21:00 BRT', () => {
+    const oldestDue = '2026-10-14'
+    const brtDays = calculateDaysOverdue(oldestDue, '2026-11-13')
+    const utcDays = calculateDaysOverdue(oldestDue, '2026-11-14')
+
+    expect(brtDays).toBe(30)
+    expect(classifyMemberBucket(brtDays)).toBe('up30')
+    expect(utcDays).toBe(31)
+    expect(classifyMemberBucket(utcDays)).toBe('31-60')
   })
 
   it('detects both PostgreSQL 42883 and PostgREST PGRST202 missing RPC errors', () => {

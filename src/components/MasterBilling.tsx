@@ -190,7 +190,7 @@ export function MasterBilling({client,tenants,initialOrganizationId=''}:{client:
 
    {!org?<p role="alert" className="message error">Selecione uma Loja cliente acima para prosseguir com a emissão.</p>:
    <div style={{display:'flex',flexDirection:'column',gap:'0.75rem'}}>
-    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))',gap:'1rem'}}>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',gap:'1rem'}}>
      <div>
       <label htmlFor="manual-invoice-month">Competência (mês/ano)</label>
       <input
@@ -247,16 +247,18 @@ export function MasterBilling({client,tenants,initialOrganizationId=''}:{client:
 
     {preview&&<div className="panel" aria-label="Prévia da fatura contratual" style={{marginTop:'0.5rem',backgroundColor:'var(--bg-subtle, rgba(0,0,0,0.02))'}}>
      <h4>Pré-visualização contratual — {preview.organization_name}</h4>
-     <table>
-      <tbody>
-       <tr><th>Plano contratado</th><td>{preview.plan_name}</td></tr>
-       <tr><th>Competência</th><td>{preview.competence.slice(0,7)}</td></tr>
-       <tr><th>Período do serviço</th><td>{formatDate(preview.service_period_start)} a {formatDate(preview.service_period_end)}</td></tr>
-       <tr><th>Vencimento determinado</th><td>{formatDate(preview.due_date)}</td></tr>
-       <tr><th>Preço contratual (banco)</th><td><strong>{formatMoney(preview.unit_price)}</strong></td></tr>
-       <tr><th>Valor total da fatura</th><td><strong>{formatMoney(preview.total_amount)}</strong></td></tr>
-      </tbody>
-     </table>
+     <div className="finance-table" role="region" aria-label="Pré-visualização contratual" tabIndex={0}>
+      <table>
+       <tbody>
+        <tr><th>Plano contratado</th><td>{preview.plan_name}</td></tr>
+        <tr><th>Competência</th><td>{preview.competence.slice(0,7)}</td></tr>
+        <tr><th>Período do serviço</th><td>{formatDate(preview.service_period_start)} a {formatDate(preview.service_period_end)}</td></tr>
+        <tr><th>Vencimento determinado</th><td>{formatDate(preview.due_date)}</td></tr>
+        <tr><th>Preço contratual (banco)</th><td><strong>{formatMoney(preview.unit_price)}</strong></td></tr>
+        <tr><th>Valor total da fatura</th><td><strong>{formatMoney(preview.total_amount)}</strong></td></tr>
+       </tbody>
+      </table>
+     </div>
 
      <div style={{marginTop:'0.5rem'}}>
       <h5>Discriminação de itens</h5>
@@ -328,14 +330,14 @@ export function MasterBilling({client,tenants,initialOrganizationId=''}:{client:
     <h3>Composição — {selected.invoice_number}</h3>
     {breakdownError&&<p role="alert" className="message error">{breakdownError}</p>}
     {!breakdown&&!breakdownError&&<p role="status">Conciliando composição do documento…</p>}
-    {breakdown&&<table><tbody>
+    {breakdown&&<div className="finance-table" role="region" aria-label="Composição da fatura" tabIndex={0}><table><tbody>
      <tr><th>Base contratual</th><td>{formatMoney(checkedSigned(breakdown.base_amount))}</td></tr>
      <tr><th>Multa</th><td>{formatMoney(checkedSigned(breakdown.late_fee_amount))}</td></tr>
      <tr><th>Juros</th><td>{formatMoney(checkedSigned(breakdown.interest_amount))}</td></tr>
      <tr><th>Descontos e créditos</th><td>{formatMoney(checkedSigned(breakdown.discount_credit_amount))}</td></tr>
      <tr><th>Outros ajustes</th><td>{formatMoney(checkedSigned(breakdown.other_increase_amount))}</td></tr>
      <tr><th>Total atualizado</th><td>{formatMoney(checkedSigned(breakdown.updated_total))}</td></tr>
-    </tbody></table>}
+    </tbody></table></div>}
    </section>}
   </>}
   <p className="subtle">Paginação de 25 documentos. Emissão, recebimentos, reversões, acordos e notificações comerciais ainda exigem fluxos de autorização e auditoria próprios.</p>

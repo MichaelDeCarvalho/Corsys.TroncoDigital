@@ -190,4 +190,174 @@ describe('Member overdue report',()=>{
   expect(container.querySelector('[data-delinquency-bucket="up30"]')).not.toBeInTheDocument()
   expect(screen.queryByRole('table')).not.toBeInTheDocument()
  })
+
+ it('paginates > 25 members while preserving selected aging bucket across pages', async () => {
+  const bucketRows = Array.from({ length: 26 }, (_, i) => ({
+   ...base,
+   member_id: `bucket-m-${i}`,
+   full_name: `Vencido Faixa ${i}`,
+   oldest_due: '2026-08-10',
+  }))
+  const rpc = vi.fn().mockImplementation((name: string, args?: Record<string, unknown>) => {
+   if (name === 'read_tenant_delinquency_bucket_summary') {
+    return Promise.resolve({
+     data: [
+      { bucket_id: 'up30', member_count: 0, overdue_items: 0, overdue_amount: 0, server_date: '2026-09-20' },
+      { bucket_id: '31-60', member_count: 27, overdue_items: 30, overdue_amount: 4050, server_date: '2026-09-20' },
+      { bucket_id: '61-90', member_count: 0, overdue_items: 0, overdue_amount: 0, server_date: '2026-09-20' },
+      { bucket_id: 'over90', member_count: 0, overdue_items: 0, overdue_amount: 0, server_date: '2026-09-20' },
+     ],
+     error: null,
+    })
+   }
+   if (args?.p_bucket === '31-60' && args?.p_offset === 25) {
+    return Promise.resolve({ data: [{ ...base, member_id: 'bucket-m-26', full_name: 'Vencido Faixa 26', oldest_due: '2026-08-10' }], error: null })
+   }
+   return Promise.resolve({ data: bucketRows, error: null })
+  })
+
+  const { container } = render(<DelinquencyReport client={{ rpc } as unknown as SupabaseClient} organizationId="org-a" />)
+  await screen.findByText('Vencido Faixa 0')
+
+  fireEvent.click(container.querySelector('[data-delinquency-bucket="31-60"]')!)
+  await screen.findByText(/Página 1 — 25 integrantes nesta página/)
+  fireEvent.click(screen.getByRole('button', { name: 'Próxima' }))
+  await screen.findByText('Vencido Faixa 26')
+
+  expect(rpc).toHaveBeenCalledWith('read_tenant_delinquency_filtered', {
+   p_organization_id: 'org-a',
+   p_bucket: '31-60',
+   p_limit: 26,
+   p_offset: 25,
+  })
+ })
+
+ it('renders clean empty state when all 4 aging buckets and rows are empty', async () => {
+  const emptyBuckets = [
+   { bucket_id: 'up30', member_count: 0, overdue_items: 0, overdue_amount: 0, server_date: '2026-09-20' },
+   { bucket_id: '31-60', member_count: 0, overdue_items: 0, overdue_amount: 0, server_date: '2026-09-20' },
+   { bucket_id: '61-90', member_count: 0, overdue_items: 0, overdue_amount: 0, server_date: '2026-09-20' },
+   { bucket_id: 'over90', member_count: 0, overdue_items: 0, overdue_amount: 0, server_date: '2026-09-20' },
+  ]
+  const { client } = fixture([], emptyBuckets)
+  render(<DelinquencyReport client={client} organizationId="org-a" />)
+
+  await screen.findByText('Nenhum integrante com cobrança vencida nesta faixa ou página.')
+  expect(screen.getAllByText('0 integrante(s) • 0 cobr.')).toHaveLength(4)
+  expect(screen.queryByRole('table')).not.toBeInTheDocument()
+ })
+
+ it('completes multi-page CSV and XLSX exports and blocks downloads on 42501 during export', async () => {
+  const origCreate = URL.createObjectURL
+  const origRevoke = URL.revokeObjectURL
+  const createSpy = vi.fn().mockReturnValue('blob:delinquency-export')
+  const revokeSpy = vi.fn()
+  Object.defineProperty(URL, 'createObjectURL', { value: createSpy, configurable: true, writable: true })
+  Object.defineProperty(URL, 'revokeObjectURL', { value: revokeSpy, configurable: true, writable: true })
+  const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+
+  try {
+   const page1 = Array.from({ length: 26 }, (_, i) => ({
+    ...base,
+    member_id: `exp-m-${i}`,
+    full_name: `Exportado ${i}`,
+   }))
+   let exportPhase: 'ok' | 'deny' = 'ok'
+   const rpc = vi.fn().mockImplementation((name: string, args?: Record<string, unknown>) => {
+    if (name === 'read_tenant_delinquency_bucket_summary') {
+     return Promise.resolve({ data: summaryFixture, error: null })
+    }
+    if (name === 'read_tenant_delinquency') {
+     if (exportPhase === 'deny') {
+      return Promise.resolve({ data: null, error: { code: '42501', message: 'permission denied' } })
+     }
+     if (args?.p_offset === 25) {
+      return Promise.resolve({ data: [{ ...base, member_id: 'exp-m-26', full_name: 'Exportado 26' }], error: null })
+     }
+     return Promise.resolve({ data: page1, error: null })
+    }
+    return Promise.resolve({ data: page1, error: null })
+   })
+
+   render(<DelinquencyReport client={{ rpc } as unknown as SupabaseClient} organizationId="org-a" />)
+   await screen.findByText('Exportado 0')
+
+   // 1. Full multi-page CSV export
+   fireEvent.click(screen.getByRole('button', { name: 'Exportar CSV completo' }))
+   await waitFor(() => expect(createSpy).toHaveBeenCalledTimes(1))
+   const csvBlob = createSpy.mock.calls[0][0] as Blob
+   expect(csvBlob.type).toContain('text/csv')
+   const csvText = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result))
+    reader.onerror = () => reject(reader.error)
+    reader.readAsText(csvBlob)
+   })
+   expect(csvText).toContain('Exportado 0')
+   expect(csvText).toContain('Exportado 26')
+
+   // 2. Complete XLSX export
+   fireEvent.click(screen.getByRole('button', { name: 'Exportar XLSX' }))
+   await waitFor(() => expect(createSpy).toHaveBeenCalledTimes(2))
+   const xlsxBlob = createSpy.mock.calls[1][0] as Blob
+   expect(xlsxBlob.size).toBeGreaterThan(0)
+
+   // 3. Authorization error (42501) mid-export blocks file creation & shows alert
+   exportPhase = 'deny'
+   fireEvent.click(screen.getByRole('button', { name: 'Exportar CSV completo' }))
+   await screen.findByText(/A exportação não pôde ser concluída/)
+   expect(createSpy).toHaveBeenCalledTimes(2)
+  } finally {
+   clickSpy.mockRestore()
+   Object.defineProperty(URL, 'createObjectURL', { value: origCreate, configurable: true, writable: true })
+   Object.defineProperty(URL, 'revokeObjectURL', { value: origRevoke, configurable: true, writable: true })
+  }
+ })
+
+ it('discards stale responses when switching tenants mid-flight and recovers from transient errors', async () => {
+  let resolveOrgA!: (value: { data: unknown; error: null }) => void
+  const orgAPromise = new Promise<{ data: unknown; error: null }>(res => { resolveOrgA = res })
+  let failOnce = true
+
+  const rpc = vi.fn().mockImplementation((name: string, args?: Record<string, unknown>) => {
+   if (args?.p_organization_id === 'org-a') {
+    if (name === 'read_tenant_delinquency_bucket_summary') {
+     return Promise.resolve({ data: summaryFixture, error: null })
+    }
+    return orgAPromise
+   }
+   if (args?.p_organization_id === 'org-b') {
+    if (failOnce) {
+     failOnce = false
+     return Promise.resolve({ data: null, error: { code: '500', message: 'transient' } })
+    }
+    if (name === 'read_tenant_delinquency_bucket_summary') {
+     return Promise.resolve({ data: summaryFixture, error: null })
+    }
+    return Promise.resolve({
+     data: [{ ...base, member_id: 'm-b', full_name: 'Integrante Loja B' }],
+     error: null,
+    })
+   }
+   return Promise.resolve({ data: [], error: null })
+  })
+
+  const client = { rpc } as unknown as SupabaseClient
+  const { rerender } = render(<DelinquencyReport client={client} organizationId="org-a" />)
+
+  // Switch tenant mid-flight before org-a finishes
+  rerender(<DelinquencyReport client={client} organizationId="org-b" />)
+  await screen.findByRole('alert')
+
+  // Resolve delayed org-a response after switch — must be ignored
+  resolveOrgA({ data: [{ ...base, member_id: 'm-a-late', full_name: 'Resposta Atrasada A' }], error: null })
+  await waitFor(() => {
+   expect(screen.queryByText('Resposta Atrasada A')).not.toBeInTheDocument()
+  })
+
+  // Recover on org-b via Atualizar posições
+  fireEvent.click(screen.getByRole('button', { name: 'Atualizar posições' }))
+  await screen.findByText('Integrante Loja B')
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+ })
 })

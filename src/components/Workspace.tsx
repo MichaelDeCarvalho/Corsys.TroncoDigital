@@ -114,7 +114,7 @@ function TenantPanel({ client, organization, page, financeSection, onNavigate }:
         <div className="section-title">
           <h2>Atalhos e Ações Rápidas</h2>
         </div>
-        <div className="metric-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
+        <div className="metric-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '0.75rem' }}>
           <button type="button" className="panel metric" style={{ textAlign: 'left', cursor: 'pointer' }} onClick={() => onNavigate('finance', 'memberPayments')}>
             <Wallet size={20} aria-hidden="true" style={{ color: 'var(--primary-color, #1e3a8a)' }} />
             <strong style={{ fontSize: '0.95rem', marginTop: '0.25rem', display: 'block' }}>Registrar pagamento</strong>

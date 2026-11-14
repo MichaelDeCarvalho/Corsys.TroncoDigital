@@ -77,9 +77,11 @@ export function DailyCashFlow({
       </p>
       <TreasuryBalances client={client} organizationId={organizationId} />
       <form onSubmit={search} aria-label="Período do saldo contábil">
-        <label>De <input type="date" required value={from} onChange={event => setFrom(event.target.value)} /></label>
-        <label>Até <input type="date" required value={to} onChange={event => setTo(event.target.value)} /></label>
-        <button type="submit">Aplicar</button>
+        <div className="member-form-grid">
+          <label>De <input type="date" required value={from} onChange={event => setFrom(event.target.value)} /></label>
+          <label>Até <input type="date" required value={to} onChange={event => setTo(event.target.value)} /></label>
+        </div>
+        <button className="secondary" type="submit">Aplicar</button>
       </form>
       {error && <p role="alert">{error}</p>}
       <CashFlowMovementDetail key={`${organizationId}:${period.from}:${period.to}:${revision}`}
@@ -177,7 +179,7 @@ export function DailyCashFlow({
                           ['Entradas', bucket.received, '#16a34a'],
                           ['Saídas', bucket.paid, '#dc2626'],
                         ] as const).map(([label, value, color]) => (
-                          <div key={label} style={{ display: 'grid', gridTemplateColumns: '5rem minmax(0,1fr) 7rem', alignItems: 'center', gap: '0.5rem' }}>
+                          <div key={label} style={{ display: 'grid', gridTemplateColumns: '4.25rem minmax(0, 1fr) auto', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
                             <span style={{ fontSize: '0.82rem' }}>{label}</span>
                             <div style={{ height: '0.7rem', borderRadius: '0.25rem', background: 'rgba(148,163,184,0.12)', overflow: 'hidden' }} aria-hidden="true">
                               <div style={{ width: barWidth(value), height: '100%', background: color, borderRadius: '0.25rem' }} />

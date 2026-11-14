@@ -400,7 +400,7 @@ export function DreConfig({ client, organizationId, onNavigate }: DreConfigProps
               Para garantir que todos os lançamentos financeiros gerem impacto correto na DRE, categorias e contas financeiras ativas devem estar associadas a contas contábeis analíticas.
             </p>
 
-            <div className="metric-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+            <div className="metric-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '1rem' }}>
               <div className="panel metric" style={{ margin: 0 }}>
                 <p>Cobertura de Categorias</p>
                 <strong style={{ color: categoryCoveragePercent === 100 ? '#15803d' : '#b45309' }}>
@@ -611,7 +611,7 @@ export function DreConfig({ client, organizationId, onNavigate }: DreConfigProps
                 ) : (
                   <>
                     {/* Consolidate KPI Cards */}
-                    <div className="metric-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+                    <div className="metric-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
                       <div className="panel metric" style={{ margin: 0 }}>
                         <p>Total de Receitas</p>
                         <strong style={{ color: '#15803d' }}>{formatMoney(totalRevenue)}</strong>

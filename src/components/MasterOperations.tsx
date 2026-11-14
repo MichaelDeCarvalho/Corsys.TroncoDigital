@@ -389,7 +389,7 @@ export function MasterOperations({ client, initialTicketOrganizationId = '' }: {
           </p> : jobs && !jobs.length ? (
             <p className="text-sm text-slate-500 py-4">Nenhum job encontrado para os filtros desta página.</p>
           ) : jobs ? (
-            <div className="overflow-x-auto border rounded-md">
+            <div className="overflow-x-auto max-w-full min-w-0 border rounded-md">
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-50 border-b text-slate-600 font-semibold text-xs uppercase tracking-wider">
                   <tr>
