@@ -31,6 +31,8 @@ import {
 } from '../tools/isolation-assertions.mjs'
 
 const args = new Set(process.argv.slice(2))
+const auditTo = new Date().toISOString().slice(0, 10)
+const auditFrom = new Date(Date.now() - 90 * 86400000).toISOString().slice(0, 10)
 const includePersistent =
   args.has('--include-persistent') && process.env.ALLOW_DEV_PERSISTENT_AUTH_TESTS === 'true'
 
@@ -132,14 +134,19 @@ async function assertPositiveOwnFinancialReads(client, ownOrg, label) {
     `${label} own read_tenant_daily_cash_flow`,
   )
 
-  requireRows(
+  const detail = assertAuthorizedRpcSuccess(
     await client.rpc('read_tenant_cash_flow_detail', {
       p_organization_id: ownOrg,
       p_from_date: '2026-10-01',
       p_to_date: '2026-10-31',
+      p_page: 0,
     }),
     `${label} own read_tenant_cash_flow_detail`,
   )
+  assert.equal(detail.organization_id, ownOrg, `${label} cash-flow detail tenant mismatch`)
+  assert.ok(Array.isArray(detail.rows), `${label} cash-flow detail rows must be an array`)
+  assert.ok(Array.isArray(detail.history), `${label} cash-flow detail history must be an array`)
+  assert.ok(Array.isArray(detail.expenses), `${label} cash-flow detail expenses must be an array`)
 }
 
 async function assertCrossTenantReadDenials(client, targetOrg, label) {
@@ -181,6 +188,7 @@ async function assertCrossTenantReadDenials(client, targetOrg, label) {
       p_organization_id: targetOrg,
       p_from_date: '2026-10-01',
       p_to_date: '2026-10-31',
+      p_page: 0,
     }),
     `${label} cross-tenant read_tenant_cash_flow_detail`,
   )
@@ -308,11 +316,11 @@ async function runReadOnlyAuthorizationSuite() {
       'Master AAL1 read_platform_master_overview',
     )
     assertPermissionDenied(
-      await masterAal1Client.rpc('list_platform_master_tenants'),
+      await masterAal1Client.rpc('list_platform_master_tenants', { p_limit: 25, p_offset: 0 }),
       'Master AAL1 list_platform_master_tenants',
     )
     assertPermissionDenied(
-      await masterAal1Client.rpc('list_master_audit_events', { p_limit: 10 }),
+      await masterAal1Client.rpc('list_master_audit_events', { p_from: auditFrom, p_to: auditTo, p_limit: 10 }),
       'Master AAL1 list_master_audit_events',
     )
     assertHidden(
@@ -348,16 +356,18 @@ async function runReadOnlyAuthorizationSuite() {
       await masterAal2Client.rpc('read_platform_master_overview'),
       'Master AAL2 read_platform_master_overview',
     )
-    assert.equal(overview.integrity_ok, true, 'Master AAL2 overview integrity_ok must be true')
+    assert.equal(overview.access, 'MASTER', 'Master AAL2 overview access must be MASTER')
+    assert.equal(overview.mfa_required, true, 'Master AAL2 overview must require MFA')
+    assert.ok(Number.isInteger(overview.tenants_total), 'Master AAL2 tenants_total must be an integer')
 
     const tenants = requireRows(
-      await masterAal2Client.rpc('list_platform_master_tenants'),
+      await masterAal2Client.rpc('list_platform_master_tenants', { p_limit: 25, p_offset: 0 }),
       'Master AAL2 list_platform_master_tenants',
     )
     assert.ok(tenants.length >= 2, 'Master AAL2 must list at least 2 tenants')
 
     requireRows(
-      await masterAal2Client.rpc('list_master_audit_events', { p_limit: 10 }),
+      await masterAal2Client.rpc('list_master_audit_events', { p_from: auditFrom, p_to: auditTo, p_limit: 10 }),
       'Master AAL2 list_master_audit_events',
     )
 
