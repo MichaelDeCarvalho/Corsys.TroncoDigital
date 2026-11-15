@@ -1403,17 +1403,22 @@ grant execute on function public.preview_agape_event(uuid,uuid,text,date,date,nu
 create or replace function private.validate_mutual_batch_input(
  p_category_id uuid,p_number_start integer,p_number_end integer,p_unit_amount numeric,
  p_competence date,p_issue_date date,p_due_date date,p_assignments jsonb
-) returns void language plpgsql stable set search_path='' as $$
-declare v_brt_today date := (pg_catalog.clock_timestamp() at time zone 'America/Sao_Paulo')::date;
+) returns void language plpgsql stable security definer set search_path='' as $$
+declare v_org_id uuid;v_today date;
 begin
+ if p_category_id is not null then
+  select fc.organization_id into v_org_id from public.financial_categories fc where fc.id=p_category_id;
+ end if;
+ v_today := case when v_org_id is not null then private.tenant_current_date(v_org_id)
+  else (pg_catalog.clock_timestamp() at time zone 'America/Sao_Paulo')::date end;
  if p_category_id is null or p_number_start is null or p_number_end is null
   or p_number_start<1 or p_number_end<p_number_start or p_number_end::bigint-p_number_start::bigint+1>200
   or p_unit_amount is null or p_unit_amount::text in('NaN','Infinity','-Infinity')
   or p_unit_amount<=0 or p_unit_amount>999999999999.99 or p_unit_amount<>round(p_unit_amount,2)
   or p_unit_amount*(p_number_end::bigint-p_number_start::bigint+1)>999999999999.99
   or p_competence is null or not isfinite(p_competence) or extract(day from p_competence)<>1
-  or p_competence<(date_trunc('month',v_brt_today - interval '1 day')-interval '12 months')::date
-  or p_competence>=(date_trunc('month',v_brt_today + interval '1 day')+interval '13 months')::date
+  or p_competence<(date_trunc('month',v_today)-interval '12 months')::date
+  or p_competence>=(date_trunc('month',v_today)+interval '13 months')::date
   or p_issue_date is null or not isfinite(p_issue_date) or date_trunc('month',p_issue_date)::date<>p_competence
   or p_due_date is null or not isfinite(p_due_date) or p_due_date<p_issue_date or p_due_date>(p_issue_date+interval '12 months')::date
   or p_assignments is null or jsonb_typeof(p_assignments)<>'array'
@@ -1438,10 +1443,11 @@ begin
  perform private.require_permission(p_organization_id,'charges.create');
  perform private.require_permission(p_organization_id,'members.read');
  v_today := private.tenant_current_date(p_organization_id);
- perform private.validate_mutual_batch_input(p_category_id,p_number_start,p_number_end,p_unit_amount,p_competence,p_issue_date,p_due_date,p_assignments);
- if p_competence<(date_trunc('month',v_today)-interval '12 months')::date
+ if p_competence is null or not isfinite(p_competence) or extract(day from p_competence)<>1
+  or p_competence<(date_trunc('month',v_today)-interval '12 months')::date
   or p_competence>=(date_trunc('month',v_today)+interval '13 months')::date
  then raise exception 'invalid mutual batch parameters' using errcode='22023';end if;
+ perform private.validate_mutual_batch_input(p_category_id,p_number_start,p_number_end,p_unit_amount,p_competence,p_issue_date,p_due_date,p_assignments);
  perform id from public.financial_categories where organization_id=p_organization_id and id=p_category_id and active and domain='member_receivable';
  if not found then raise exception 'mutual category not eligible in tenant' using errcode='23503';end if;
  select count(*),jsonb_agg(jsonb_build_object('mutual_number',a.mutual_number,'member_id',m.id,'name',m.full_name,'amount',p_unit_amount) order by a.mutual_number)
@@ -1463,3 +1469,254 @@ begin
 end $$;
 revoke all on function public.preview_mutual_batch(uuid,uuid,integer,integer,numeric,date,date,date,jsonb) from public,anon,authenticated;
 grant execute on function public.preview_mutual_batch(uuid,uuid,integer,integer,numeric,date,date,date,jsonb) to authenticated;
+
+create or replace function public.create_mutual_batch(
+ p_organization_id uuid,p_category_id uuid,p_number_start integer,p_number_end integer,p_unit_amount numeric,
+ p_competence date,p_issue_date date,p_due_date date,p_assignments jsonb,
+ p_expected_fingerprint text,p_reason text,p_idempotency_key text
+) returns uuid language plpgsql security definer set search_path='' as $$
+declare v_id uuid;v_preview jsonb;v_row jsonb;v_charge uuid;v_today date;
+begin
+ perform private.require_permission(p_organization_id,'charges.create');
+ perform private.require_permission(p_organization_id,'members.read');
+ v_today := private.tenant_current_date(p_organization_id);
+ if p_assignments is null or jsonb_typeof(p_assignments)<>'array' then raise exception 'invalid mutual assignments' using errcode='22023';end if;
+ if jsonb_array_length(p_assignments) not between 1 and 200
+  or p_expected_fingerprint is null or p_expected_fingerprint!~'^[a-f0-9]{64}$'
+  or p_reason is null or length(btrim(p_reason)) not between 3 and 500
+  or p_idempotency_key is null or length(btrim(p_idempotency_key)) not between 1 and 200
+ then raise exception 'invalid mutual confirmation' using errcode='22023';end if;
+ v_id:=private.idempotency_begin(p_organization_id,'create_mutual_batch',btrim(p_idempotency_key),
+  jsonb_build_object('category',p_category_id,'start',p_number_start,'end',p_number_end,'unit',p_unit_amount,
+   'competence',p_competence,'issue',p_issue_date,'due',p_due_date,'assignments',p_assignments,'fingerprint',p_expected_fingerprint,'reason',btrim(p_reason)));
+ if v_id is not null then return v_id;end if;
+ if p_competence is null or not isfinite(p_competence) or extract(day from p_competence)<>1
+  or p_competence<(date_trunc('month',v_today)-interval '12 months')::date
+  or p_competence>=(date_trunc('month',v_today)+interval '13 months')::date
+ then raise exception 'invalid mutual batch parameters' using errcode='22023';end if;
+ perform private.validate_mutual_batch_input(p_category_id,p_number_start,p_number_end,p_unit_amount,p_competence,p_issue_date,p_due_date,p_assignments);
+ perform id from public.organizations where id=p_organization_id for no key update;
+ insert into public.financial_periods(organization_id,period) values(p_organization_id,p_competence) on conflict(organization_id,period) do nothing;
+ perform id from public.financial_periods where organization_id=p_organization_id and period=p_competence for update;
+ perform id from public.financial_categories where organization_id=p_organization_id and id=p_category_id for share;
+ perform m.id from public.members m where m.organization_id=p_organization_id and m.id in
+  (select a.member_id from jsonb_to_recordset(p_assignments)a(mutual_number integer,member_id uuid)) order by m.id for share;
+ v_preview:=public.preview_mutual_batch(p_organization_id,p_category_id,p_number_start,p_number_end,p_unit_amount,p_competence,p_issue_date,p_due_date,p_assignments);
+ if v_preview->>'fingerprint'<>p_expected_fingerprint then raise exception 'mutual preview changed' using errcode='PT409';end if;
+ if not coalesce((v_preview->>'ready')::boolean,false) then raise exception 'mutual range already issued in competence' using errcode='PT409';end if;
+ insert into public.mutual_batches(organization_id,number_start,number_end,unit_amount,competence,notes,created_by)
+ values(p_organization_id,p_number_start,p_number_end,p_unit_amount,p_competence,btrim(p_reason),auth.uid()) returning id into v_id;
+ for v_row in select value from jsonb_array_elements(v_preview->'assignments') loop
+  insert into public.charges(organization_id,member_id,category_id,source_kind,generation_key,description,reference,
+   competence,issue_date,due_date,accounting_period,unit_amount,original_amount,created_by)
+  values(p_organization_id,(v_row->>'member_id')::uuid,p_category_id,'mutual',
+   'mutual:'||v_id::text||':'||(v_row->>'mutual_number'),'Mútua '||(v_row->>'mutual_number'),v_id::text,
+   p_competence,p_issue_date,p_due_date,p_competence,p_unit_amount,p_unit_amount,auth.uid()) returning id into v_charge;
+  insert into public.mutual_assignments(organization_id,mutual_batch_id,mutual_number,member_id,charge_id)
+  values(p_organization_id,v_id,(v_row->>'mutual_number')::integer,(v_row->>'member_id')::uuid,v_charge);
+ end loop;
+ insert into public.audit_logs(organization_id,actor_user_id,action,entity_type,entity_id,after_data,reason)
+ values(p_organization_id,auth.uid(),'mutual_batch.create','mutual_batch',v_id,v_preview,btrim(p_reason));
+ perform private.idempotency_complete(p_organization_id,btrim(p_idempotency_key),v_id);
+ return v_id;
+end $$;
+revoke all on function public.create_mutual_batch(uuid,uuid,integer,integer,numeric,date,date,date,jsonb,text,text,text) from public,anon,authenticated;
+grant execute on function public.create_mutual_batch(uuid,uuid,integer,integer,numeric,date,date,date,jsonb,text,text,text) to authenticated;
+
+-- 11. Fechamento/Reabertura Idempotentes de Período e Correção de Contas a Pagar por Loja
+create or replace function public.close_financial_period_idempotent(
+ p_organization_id uuid,p_period date,p_reason text,p_idempotency_key text
+) returns uuid language plpgsql security definer set search_path='' as $$
+declare v_id uuid;v_today date;
+begin
+ perform private.require_permission(p_organization_id,'periods.close');
+ v_today := private.tenant_current_date(p_organization_id);
+ if p_period is null or extract(day from p_period)<>1 or p_period>date_trunc('month',v_today)::date
+  or p_reason is null or length(btrim(p_reason)) not between 3 and 500
+  or p_idempotency_key is null or length(btrim(p_idempotency_key)) not between 1 and 200
+ then raise exception 'invalid period closing' using errcode='22023';end if;
+ v_id:=private.idempotency_begin(p_organization_id,'close_financial_period_idempotent',
+  p_idempotency_key,jsonb_build_object('period',p_period,'reason',btrim(p_reason)));
+ if v_id is not null then return v_id;end if;
+ v_id:=public.close_financial_period(p_organization_id,p_period,btrim(p_reason));
+ perform private.idempotency_complete(p_organization_id,p_idempotency_key,v_id);
+ return v_id;
+end $$;
+revoke all on function public.close_financial_period_idempotent(uuid,date,text,text) from PUBLIC,anon,authenticated;
+grant execute on function public.close_financial_period_idempotent(uuid,date,text,text) to authenticated;
+
+create or replace function public.reopen_financial_period_idempotent(
+ p_organization_id uuid,p_period date,p_reason text,p_idempotency_key text
+) returns uuid language plpgsql security definer set search_path='' as $$
+declare v_id uuid;v_today date;
+begin
+ perform private.require_permission(p_organization_id,'periods.reopen');
+ v_today := private.tenant_current_date(p_organization_id);
+ if p_period is null or extract(day from p_period)<>1 or p_period>date_trunc('month',v_today)::date
+  or p_reason is null or length(btrim(p_reason)) not between 3 and 500
+  or p_idempotency_key is null or length(btrim(p_idempotency_key)) not between 1 and 200
+ then raise exception 'invalid period reopening' using errcode='22023';end if;
+ v_id:=private.idempotency_begin(p_organization_id,'reopen_financial_period_idempotent',
+  p_idempotency_key,jsonb_build_object('period',p_period,'reason',btrim(p_reason)));
+ if v_id is not null then return v_id;end if;
+ v_id:=public.reopen_financial_period(p_organization_id,p_period,btrim(p_reason));
+ perform private.idempotency_complete(p_organization_id,p_idempotency_key,v_id);
+ return v_id;
+end $$;
+revoke all on function public.reopen_financial_period_idempotent(uuid,date,text,text) from PUBLIC,anon,authenticated;
+grant execute on function public.reopen_financial_period_idempotent(uuid,date,text,text) to authenticated;
+
+create or replace function public.correct_institutional_payable(
+  p_organization_id uuid,
+  p_payable_id uuid,
+  p_new_category_id uuid,
+  p_new_fund_id uuid,
+  p_new_description text,
+  p_new_competence date,
+  p_new_due_date date,
+  p_new_amount numeric,
+  p_correction_accounting_period date,
+  p_reason text
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_user uuid := (select auth.uid());
+  v_current public.v_institutional_payable_effective%rowtype;
+  v_plan uuid;
+  v_account uuid;
+  v_class text;
+  v_policy uuid;
+  v_mode text;
+  v_threshold numeric;
+  v_min smallint;
+  v_required boolean;
+  v_correction uuid;
+  v_today date;
+begin
+  perform private.require_permission(p_organization_id,'institutional.manage');
+  v_today := private.tenant_current_date(p_organization_id);
+
+  if extract(day from p_new_competence)<>1
+     or extract(day from p_correction_accounting_period)<>1 then
+    raise exception 'competence/accounting_period must be first day of month'
+      using errcode='22023';
+  end if;
+
+  if p_new_amount<=0 or p_new_amount<>round(p_new_amount,2) then
+    raise exception 'new amount must be positive with at most 2 decimals'
+      using errcode='22023';
+  end if;
+
+  perform 1
+  from public.institutional_payables p
+  where p.organization_id=p_organization_id
+    and p.id=p_payable_id
+    and p.posting_status='posted'
+  for update;
+
+  if not found then
+    raise exception 'posted payable not found' using errcode='23503';
+  end if;
+
+  select * into v_current
+  from public.v_institutional_payable_effective v
+  where v.organization_id=p_organization_id and v.payable_id=p_payable_id;
+
+  if v_current.is_canceled then
+    raise exception 'cannot correct canceled payable' using errcode='55000';
+  end if;
+
+  if p_new_amount<v_current.allocated_amount then
+    raise exception 'correction cannot reduce payable below active allocated amount'
+      using errcode='23514';
+  end if;
+
+  if private.is_period_closed(p_organization_id,p_correction_accounting_period) then
+    raise exception 'correction accounting period is closed' using errcode='55000';
+  end if;
+
+  select r.accounting_plan_id,r.accounting_account_id,r.operational_classification
+  into v_plan,v_account,v_class
+  from private.resolve_category_account(
+    p_organization_id,p_new_category_id,p_new_competence
+  ) r;
+
+  if v_plan is null or v_account is null or v_class not in ('fixed','variable') then
+    raise exception 'new payable classification/account mapping is invalid'
+      using errcode='23514';
+  end if;
+
+  select p.policy_id,p.mode,p.threshold_amount,p.minimum_approvers
+  into v_policy,v_mode,v_threshold,v_min
+  from private.current_expense_approval_policy(p_organization_id,v_today) p;
+
+  v_required:=case
+    when v_policy is null or v_mode='off' then false
+    when v_mode='all' then true
+    when v_mode='threshold' then p_new_amount>=v_threshold
+    else false
+  end;
+
+  insert into public.institutional_payable_corrections(
+    organization_id,payable_id,
+    previous_category_id,new_category_id,
+    previous_accounting_plan_id,previous_accounting_account_id,
+    new_accounting_plan_id,new_accounting_account_id,
+    previous_fund_id,new_fund_id,
+    previous_expense_classification,new_expense_classification,
+    previous_description,new_description,
+    previous_competence,new_competence,
+    previous_due_date,new_due_date,
+    previous_amount,new_amount,
+    approval_policy_id,approval_required,
+    approval_threshold_snapshot,approval_min_approvers,
+    accounting_period,reason,created_by
+  ) values (
+    p_organization_id,p_payable_id,
+    v_current.category_id,p_new_category_id,
+    v_current.accounting_plan_id,v_current.accounting_account_id,
+    v_plan,v_account,
+    v_current.fund_id,p_new_fund_id,
+    v_current.expense_classification,v_class,
+    v_current.description,p_new_description,
+    v_current.competence,p_new_competence,
+    v_current.due_date,p_new_due_date,
+    v_current.effective_amount,p_new_amount,
+    v_policy,v_required,v_threshold,
+    case when v_required then coalesce(v_min,1) else 0 end,
+    p_correction_accounting_period,p_reason,v_user
+  )
+  returning id into v_correction;
+
+  if v_required then
+    insert into public.payable_approval_requests(
+      organization_id,payable_id,correction_id,minimum_approvers,
+      threshold_snapshot,amount_snapshot,requested_by
+    ) values (
+      p_organization_id,p_payable_id,v_correction,coalesce(v_min,1),
+      v_threshold,p_new_amount,v_user
+    );
+  end if;
+
+  insert into public.audit_logs(
+    organization_id,actor_user_id,action,entity_type,entity_id,
+    before_data,after_data,reason
+  ) values (
+    p_organization_id,v_user,'institutional_payable.correct',
+    'institutional_payable',p_payable_id,
+    jsonb_build_object('amount',v_current.effective_amount,'due_date',v_current.due_date),
+    jsonb_build_object('amount',p_new_amount,'due_date',p_new_due_date),
+    p_reason
+  );
+
+  return v_correction;
+end;
+$$;
+revoke all on function public.correct_institutional_payable(uuid,uuid,uuid,uuid,text,date,date,numeric,date,text) from PUBLIC,anon,authenticated;
+grant execute on function public.correct_institutional_payable(uuid,uuid,uuid,uuid,text,date,date,numeric,date,text) to authenticated;
+
+
