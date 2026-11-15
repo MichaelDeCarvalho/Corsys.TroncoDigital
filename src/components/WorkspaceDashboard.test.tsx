@@ -58,20 +58,31 @@ function createWorkspaceClient() {
       })
     }
     if (name === 'read_tenant_daily_cash_flow') {
+      const fromDate = typeof params?.p_from_date === 'string' ? params.p_from_date : '2026-10-15'
+      const toDate = typeof params?.p_to_date === 'string' ? params.p_to_date : fromDate
+      const startMs = Date.parse(`${fromDate}T00:00:00.000Z`)
+      const endMs = Date.parse(`${toDate}T00:00:00.000Z`)
+      const dayMs = 86400000
+      const count = Number.isFinite(startMs) && Number.isFinite(endMs) && endMs >= startMs
+        ? Math.floor((endMs - startMs) / dayMs) + 1
+        : 1
+      const rows = Array.from({ length: count }, (_, idx) => {
+        const day = new Date(startMs + idx * dayMs).toISOString().slice(0, 10)
+        const isLast = idx === count - 1
+        return {
+          movement_day: day,
+          received: isLast ? '850.00' : '0.00',
+          paid: isLast ? '200.00' : '0.00',
+          realized_net: isLast ? '650.00' : '0.00',
+          member_receivables_due: isLast ? '400.00' : '0.00',
+          institutional_receivables_due: isLast ? '100.00' : '0.00',
+          institution_payables_due: isLast ? '250.00' : '0.00',
+          projected_net: isLast ? '250.00' : '0.00',
+          integrity_ok: true,
+        }
+      })
       return Promise.resolve({
-        data: [
-          {
-            movement_day: '2026-10-15',
-            received: '850.00',
-            paid: '200.00',
-            realized_net: '650.00',
-            member_receivables_due: '400.00',
-            institutional_receivables_due: '100.00',
-            institution_payables_due: '250.00',
-            projected_net: '250.00',
-            integrity_ok: true,
-          },
-        ],
+        data: rows,
         error: null,
       })
     }
