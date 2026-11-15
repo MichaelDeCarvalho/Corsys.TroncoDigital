@@ -53,6 +53,56 @@ describe('delinquency-report data loaders & aging boundaries', () => {
     expect(classifyMemberBucket(utcDays)).toBe('31-60')
   })
 
+  it('resolves civil dates per tenant IANA timezone across rollover windows and preserves bucket boundaries (0, 1, 30, 31, 60, 61, 90, 91)', () => {
+    const resolveTenantCivilDate = (isoInstantUtc: string, ianaTimeZone: string): string => {
+      const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: ianaTimeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).formatToParts(new Date(isoInstantUtc))
+      const y = parts.find(p => p.type === 'year')?.value
+      const m = parts.find(p => p.type === 'month')?.value
+      const d = parts.find(p => p.type === 'day')?.value
+      return `${y}-${m}-${d}`
+    }
+
+    // 2026-11-14T00:11:00Z = 21:11 BRT (2026-11-13), 20:11 AMT (2026-11-13), 19:11 ACT (2026-11-13)
+    const instant2111Brt = '2026-11-14T00:11:00Z'
+    expect(resolveTenantCivilDate(instant2111Brt, 'America/Sao_Paulo')).toBe('2026-11-13')
+    expect(resolveTenantCivilDate(instant2111Brt, 'America/Manaus')).toBe('2026-11-13')
+    expect(resolveTenantCivilDate(instant2111Brt, 'America/Rio_Branco')).toBe('2026-11-13')
+    expect(resolveTenantCivilDate(instant2111Brt, 'UTC')).toBe('2026-11-14')
+
+    // 2026-11-14T03:30:00Z = 00:30 BRT (2026-11-14), but still 23:30 AMT (2026-11-13) in Manaus
+    const instant0030Brt = '2026-11-14T03:30:00Z'
+    const spDate = resolveTenantCivilDate(instant0030Brt, 'America/Sao_Paulo')
+    const amDate = resolveTenantCivilDate(instant0030Brt, 'America/Manaus')
+    expect(spDate).toBe('2026-11-14')
+    expect(amDate).toBe('2026-11-13')
+
+    // Verify all 8 canonical boundary offsets (0, 1, 30, 31, 60, 61, 90, 91) against the tenant's civil date
+    const boundaryCases: Array<{ dueDate: string; expectedDaysInAm: number; expectedBucketInAm: string | null; expectedDaysInSp: number; expectedBucketInSp: string | null }> = [
+      { dueDate: '2026-11-13', expectedDaysInAm: 0, expectedBucketInAm: 'up30', expectedDaysInSp: 1, expectedBucketInSp: 'up30' },
+      { dueDate: '2026-11-12', expectedDaysInAm: 1, expectedBucketInAm: 'up30', expectedDaysInSp: 2, expectedBucketInSp: 'up30' },
+      { dueDate: '2026-10-14', expectedDaysInAm: 30, expectedBucketInAm: 'up30', expectedDaysInSp: 31, expectedBucketInSp: '31-60' },
+      { dueDate: '2026-10-13', expectedDaysInAm: 31, expectedBucketInAm: '31-60', expectedDaysInSp: 32, expectedBucketInSp: '31-60' },
+      { dueDate: '2026-09-14', expectedDaysInAm: 60, expectedBucketInAm: '31-60', expectedDaysInSp: 61, expectedBucketInSp: '61-90' },
+      { dueDate: '2026-09-13', expectedDaysInAm: 61, expectedBucketInAm: '61-90', expectedDaysInSp: 62, expectedBucketInSp: '61-90' },
+      { dueDate: '2026-08-15', expectedDaysInAm: 90, expectedBucketInAm: '61-90', expectedDaysInSp: 91, expectedBucketInSp: 'over90' },
+      { dueDate: '2026-08-14', expectedDaysInAm: 91, expectedBucketInAm: 'over90', expectedDaysInSp: 92, expectedBucketInSp: 'over90' },
+    ]
+
+    for (const tc of boundaryCases) {
+      const amDays = calculateDaysOverdue(tc.dueDate, amDate)
+      const spDays = calculateDaysOverdue(tc.dueDate, spDate)
+      expect(amDays).toBe(tc.expectedDaysInAm)
+      expect(classifyMemberBucket(amDays)).toBe(tc.expectedBucketInAm)
+      expect(spDays).toBe(tc.expectedDaysInSp)
+      expect(classifyMemberBucket(spDays)).toBe(tc.expectedBucketInSp)
+    }
+  })
+
   it('detects both PostgreSQL 42883 and PostgREST PGRST202 missing RPC errors', () => {
     expect(isMissingRpcError({ code: '42883' })).toBe(true)
     expect(isMissingRpcError({ code: 'PGRST202' })).toBe(true)

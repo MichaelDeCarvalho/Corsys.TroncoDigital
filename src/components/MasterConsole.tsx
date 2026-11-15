@@ -159,6 +159,7 @@ export function MasterConsole({ client }: { client: SupabaseClient }) {
           {/* V35 6 Primary Navigation Views */}
           <div className="finance-sections" role="group" aria-label="Áreas do Master SaaS">
             <button
+              type="button"
               className="secondary"
               aria-pressed={tab === 'overview'}
               onClick={() => setTab('overview')}
@@ -166,6 +167,7 @@ export function MasterConsole({ client }: { client: SupabaseClient }) {
               Visão geral
             </button>
             <button
+              type="button"
               className="secondary"
               aria-pressed={tab === 'clients'}
               onClick={() => setTab('clients')}
@@ -173,6 +175,7 @@ export function MasterConsole({ client }: { client: SupabaseClient }) {
               Clientes SaaS
             </button>
             <button
+              type="button"
               className="secondary"
               aria-pressed={tab === 'commercial'}
               onClick={() => setTab('commercial')}
@@ -180,6 +183,7 @@ export function MasterConsole({ client }: { client: SupabaseClient }) {
               Planos e ofertas
             </button>
             <button
+              type="button"
               className="secondary"
               aria-pressed={tab === 'billing'}
               onClick={() => { setSelectedBillingOrgId(''); setTab('billing') }}
@@ -187,6 +191,7 @@ export function MasterConsole({ client }: { client: SupabaseClient }) {
               Cobrança SaaS
             </button>
             <button
+              type="button"
               className="secondary"
               aria-pressed={tab === 'support'}
               onClick={() => { setSelectedSupportOrgId(''); setTab('support') }}
@@ -194,6 +199,7 @@ export function MasterConsole({ client }: { client: SupabaseClient }) {
               Operação e suporte
             </button>
             <button
+              type="button"
               className="secondary"
               aria-pressed={tab === 'config'}
               onClick={() => setTab('config')}
@@ -203,6 +209,7 @@ export function MasterConsole({ client }: { client: SupabaseClient }) {
 
             {/* Quick access tabs for backward compatibility with existing tests */}
             <button
+              type="button"
               className="secondary"
               aria-pressed={tab === 'onboarding'}
               onClick={() => setTab('onboarding')}
@@ -210,6 +217,7 @@ export function MasterConsole({ client }: { client: SupabaseClient }) {
               Implantação de Lojas
             </button>
             <button
+              type="button"
               className="secondary"
               aria-pressed={tab === 'client360'}
               onClick={() => setTab('client360')}

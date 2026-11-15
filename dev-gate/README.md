@@ -76,12 +76,25 @@ coordenação SQL por fase e restauração de ADMIN mesmo em erro/cancelamento.
 positivo AAL2. QR temporário .mfa-local nunca deve ser enviado; ver pré-requisitos no relatório.
 Nenhum desses comandos isoladamente representa PASS da etapa inteira.
 
-## Testes HTTP negativos e fronteiras de autorização (preparado)
-`npm run test:negative-auth`: executa em ambiente DEV com `.env.dev` e TTY local (`tests/negative-http-authorization.mjs`):
-1. Loja A consultando `organization_id` da Loja B (RPCs/views financeiras e de inadimplência).
-2. Loja B consultando `organization_id` da Loja A.
-3. Usuário autenticado sem `finance.read` (`TEST_NO_FINANCE_*` em `.env.dev`).
-4. Master AAL1 bloqueado (`42501`) em RPCs restritas.
-5. Master AAL2 autorizado em consultas somente leitura e sessão de suporte temporária.
-6. Tentativa de escrita financeira/cadastral dentro de sessão de suporte somente leitura bloqueada (`42501`).
+## Testes HTTP negativos e fronteiras de autorização (`M02.03` / `M04.03` / `M06.03`)
+
+O roteiro `tests/negative-http-authorization.mjs` está dividido em dois grupos independentes:
+
+### Grupo A — Somente leitura (padrão seguro)
+
+```bash
+npm run test:negative-auth:readonly
+```
+
+Executa exclusivamente consultas de leitura com sessões JWT reais do Supabase Auth (`signInWithPassword` + `getUser`), rejeitando falsos positivos como `PGRST202`, `42883` ou `22023`:
+1. Leituras positivas na própria Loja A e Loja B (confirma contrato e integridade antes dos probes negativos).
+2. Loja A consultando `organization_id` da Loja B (`42501` em RPCs e `0` linhas em views/tabelas).
+3. Loja B consultando `organization_id` da Loja A (`42501` em RPCs e `0` linhas em views/tabelas).
+4. Usuário autenticado sem `finance.read` (`TEST_NO_FINANCE_*` em `.env.dev`) bloqueado (`42501`) nas RPCs financeiras.
+5. Master AAL1 bloqueado (`42501` / `0` linhas) em consultas restritas somente leitura (`read_platform_master_overview`, `list_platform_master_tenants`, `list_master_audit_events`, `saas_jobs`).
+6. Master AAL2 autorizado em consultas somente leitura (`read_platform_master_overview`, `list_platform_master_tenants`, `list_master_audit_events`, `saas_jobs`).
+
+### Grupo B — Operações persistentes (bloqueado por padrão)
+
+Mantido separado e desabilitado por padrão. Só executa se invocado com `ALLOW_DEV_PERSISTENT_AUTH_TESTS=true` e `--include-persistent` (`npm run test:negative-auth:persistent`), cobrindo abertura/encerramento de sessão de suporte (`start_master_support_session` / `end_master_support_session`) e bloqueio de escritas durante suporte somente leitura (`create_institutional_payable` com 11 parâmetros canônicos, `save_member_profile`, `create_saas_support_ticket`).
 

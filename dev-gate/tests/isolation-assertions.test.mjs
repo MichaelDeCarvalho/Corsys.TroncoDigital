@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { validateFixture, assertOwnAndOther, assertHidden, assertPermissionDenied } from '../tools/isolation-assertions.mjs'
+import { validateFixture, assertOwnAndOther, assertHidden, assertPermissionDenied, assertAuthorizedRpcSuccess } from '../tools/isolation-assertions.mjs'
 const own = '11111111-1111-4111-8111-111111111111'
 const other = '22222222-2222-4222-8222-222222222222'
 const ok = data => ({ data, error: null })
@@ -18,11 +18,19 @@ test('network, missing relation and permission errors do not count as hidden row
   assert.throws(() => assertHidden(ok([{id:own}]),'hidden'))
   assertHidden(ok([]),'hidden')
 })
-test('failed input validation and transport failure are not authorization proof', () => {
-  for (const code of [undefined,'22023','23503','FETCH_ERROR']) {
+test('failed input validation, PGRST202 signature mismatch and transport failure are not authorization proof', () => {
+  for (const code of [undefined,'22023','23503','PGRST202','42883','FETCH_ERROR']) {
     assert.throws(() => assertPermissionDenied({error:code ? {code}:null},'rpc'))
   }
   assertPermissionDenied({error:{code:'42501'}},'rpc')
+})
+test('authorized RPC success rejects PGRST202, permission errors and empty payloads', () => {
+  for (const code of ['42501','PGRST202','22023','FETCH_ERROR']) {
+    assert.throws(() => assertAuthorizedRpcSuccess({data:null,error:{code}},'rpc-ok'))
+  }
+  assert.throws(() => assertAuthorizedRpcSuccess({data:null,error:null},'rpc-ok'))
+  assert.throws(() => assertAuthorizedRpcSuccess({data:undefined,error:null},'rpc-ok'))
+  assert.deepEqual(assertAuthorizedRpcSuccess(ok({integrity_ok:true}),'rpc-ok'), {integrity_ok:true})
 })
 test('wrong project, duplicate identities and malformed fixture fail closed', () => {
   const fixture = {project_ref:'szqkdekwhzxsoxorgvaz',tenant_a:{organization_id:own,admin_user_id:own},tenant_b:{organization_id:other,admin_user_id:other}}
@@ -31,3 +39,4 @@ test('wrong project, duplicate identities and malformed fixture fail closed', ()
   assert.throws(() => validateFixture({...fixture,tenant_b:fixture.tenant_a},fixture.project_ref))
   assert.throws(() => validateFixture({...fixture,tenant_b:{}},fixture.project_ref))
 })
+

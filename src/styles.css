@@ -258,8 +258,8 @@ p { line-height: 1.6; }
   .login-layout { grid-template-columns: 1fr; }
   .login-story { padding: 28px; gap: 35px; border-right: 0; border-bottom: 1px solid var(--line); }
   .app-layout { display: block; }
-  .sidebar { position: fixed; left: 0; top: 0; width: min(282px, 85vw); height: 100vh; transform: translateX(-100%); transition: transform .22s ease; z-index: 100; box-shadow: 10px 0 30px rgba(0,0,0,.6); display: flex !important; overflow-y: auto; }
-  .sidebar.open { transform: translateX(0); }
+  .sidebar { position: fixed; left: 0; top: 0; width: min(282px, 85vw); height: 100vh; transform: translateX(-100%); transition: transform .22s ease; z-index: 100; box-shadow: none; pointer-events: none; display: flex !important; overflow-y: auto; }
+  .sidebar.open { transform: translateX(0); box-shadow: 10px 0 30px rgba(0,0,0,.6); pointer-events: auto; }
   .mobile-menu { display: inline-flex !important; }
   .support-grid { grid-template-columns: minmax(0, 1fr); }
   .top-user-meta b { max-width: 120px; }

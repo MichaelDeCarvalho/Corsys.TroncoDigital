@@ -26,6 +26,16 @@ export function assertHidden(result, label) {
   assert.equal(requireRows(result, label).length, 0, label + ': private rows exposed')
 }
 export function assertPermissionDenied(result, label) {
-  assert.equal(result.error?.code, '42501', label + ': exact permission denial required')
+  const code = result?.error?.code
+  assert.notEqual(code, 'PGRST202', label + ': missing RPC or invalid signature (PGRST202) is not a valid denial')
+  assert.notEqual(code, '42883', label + ': undefined function (42883) is not a valid denial')
+  assert.notEqual(code, '22023', label + ': invalid parameter (22023) is not a valid denial')
+  assert.equal(code, '42501', label + ': exact permission denial required')
+}
+export function assertAuthorizedRpcSuccess(result, label) {
+  assert.equal(result?.error, null, label + ': authorized RPC failed (' + (result?.error?.code || 'unknown') + ')')
+  assert.notEqual(result?.data, null, label + ': authorized RPC returned null data')
+  assert.notEqual(result?.data, undefined, label + ': authorized RPC returned undefined data')
+  return result.data
 }
 

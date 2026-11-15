@@ -1,9 +1,9 @@
-import stylesCss from '../styles.css?raw'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { describe, expect, it, vi } from 'vitest'
 import { AppShell } from './AppShell'
 import { MasterBilling } from './MasterBilling'
+import { MasterConsole } from './MasterConsole'
 
 const ORG_ID = 'a752dda8-4ef0-4c58-9d3b-b8fee14ec624'
 const INV_ID = '559ba052-c408-4418-b806-0c0c4b8e3603'
@@ -50,15 +50,19 @@ describe('Responsive layout & mobile navigation invariants (320px / 390px / 768p
   })
 
   it('enforces safe CSS breakpoints without blanket html/body overflow-x: hidden', async () => {
-    const fs = await vi.importActual<{ readFileSync: (filePath: string, encoding: 'utf8') => string }>('node:fs')
-    const path = await vi.importActual<{ resolve: (...paths: string[]) => string }>('node:path')
-    const stylesCss = fs.readFileSync(path.resolve('src/styles.css'), 'utf8')
+    const { readFileSync } = await vi.importActual<{ readFileSync: (path: string, encoding: string) => string }>('node:fs')
+    const stylesCss = readFileSync('src/styles.css', 'utf8')
 
     // Must never blindly hide horizontal overflow on html/body
     expect(stylesCss).not.toMatch(/html,\s*body\s*\{[^}]*overflow-x\s*:\s*hidden/i)
 
-    // Tablet 768px must collapse fixed 260px sidebar into drawer (max-width: 960px)
-    expect(stylesCss).toMatch(/@media\s*\(max-width:\s*960px\)\s*\{[\s\S]*\.sidebar\s*\{[\s\S]*position:\s*fixed/s)
+    // Tablet/mobile <= 960px must collapse fixed 260px sidebar into drawer and disable pointer events when closed
+    expect(stylesCss).toMatch(
+      /@media\s*\(max-width:\s*960px\)\s*\{[\s\S]*\.sidebar\s*\{[^}]*position:\s*fixed;[^}]*pointer-events:\s*none;/s,
+    )
+    expect(stylesCss).toMatch(
+      /@media\s*\(max-width:\s*960px\)\s*\{[\s\S]*\.sidebar\.open\s*\{[^}]*transform:\s*translateX\(0\);[^}]*pointer-events:\s*auto;/s,
+    )
 
     // Smartphone <= 640px must collapse .metric-grid to 1 column
     expect(stylesCss).toMatch(/@media\s*\(max-width:\s*640px\)\s*\{[\s\S]*\.metric-grid\s*\{[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)/s)
@@ -117,7 +121,8 @@ describe('Responsive layout & mobile navigation invariants (320px / 390px / 768p
       }
       return chain
     })
-    const rpc = vi.fn().mockImplementation((name: string) => {
+
+    const rpc = vi.fn((name: string) => {
       if (name === 'preview_saas_manual_invoice') {
         const p = Promise.resolve({
           data: {
@@ -126,23 +131,25 @@ describe('Responsive layout & mobile navigation invariants (320px / 390px / 768p
             subscription_id: SUB_ID,
             plan_id: PLAN_ID,
             plan_name: 'Plano Essencial',
-            competence: '2026-10-01',
-            service_period_start: '2026-10-01',
-            service_period_end: '2026-10-31',
-            due_date: '2026-10-10',
-            unit_price: 250,
+            competence: '2026-11-01',
+            service_period_start: '2026-11-01',
+            service_period_end: '2026-11-30',
+            due_date: '2026-11-10',
+            unit_price: 250.0,
             currency: 'BRL',
-            total_amount: 250,
-            already_billed: false,
             line_items: [
               {
                 item_type: 'subscription',
-                description: 'Assinatura Mensal',
+                description: 'Assinatura SaaS — Plano Essencial (11/2026)',
                 quantity: 1,
-                unit_amount: 250,
-                line_amount: 250,
+                unit_amount: 250.0,
+                line_amount: 250.0,
               },
             ],
+            total_amount: 250.0,
+            already_billed: false,
+            existing_invoice_id: null,
+            existing_invoice_number: null,
           },
           error: null,
         })
@@ -172,5 +179,72 @@ describe('Responsive layout & mobile navigation invariants (320px / 390px / 768p
     for (const table of tables) {
       expect(table.closest('.finance-table, .table-wrap')).not.toBeNull()
     }
+  })
+
+  it('activates #view-master-operacao on clicking "Operação e suporte" without triggering sidebar DRE navigation', async () => {
+    const onNavigate = vi.fn()
+    const rpc = vi.fn(async (name: string) => {
+      if (name === 'read_platform_master_overview') {
+        return {
+          data: {
+            as_of: '2026-11-13',
+            tenants_total: 1,
+            tenants_active: 1,
+            tenants_other: 0,
+            subscriptions_active_or_trial: 1,
+            subscriptions_past_due: 0,
+            support_tickets_open: 1,
+            plan_drafts: 0,
+            access: 'MASTER',
+            mfa_required: true,
+          },
+          error: null,
+        }
+      }
+      return {
+        data: [
+          {
+            organization_id: ORG_ID,
+            organization_name: 'Loja Alpha',
+            organization_number: '101',
+            organization_status: 'active',
+            subscription_status: 'active',
+            plan_name: 'Plano Essencial',
+            open_support_tickets: 1,
+          },
+        ],
+        error: null,
+      }
+    })
+    const query = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      abortSignal: vi.fn().mockResolvedValue({ data: [], error: null }),
+    }
+    const from = vi.fn(() => query)
+
+    const { container } = render(
+      <AppShell page="master" showMaster={true} onNavigate={onNavigate} onSignOut={vi.fn()} email="master@corsys.test">
+        <MasterConsole client={{ rpc, from } as unknown as SupabaseClient} />
+      </AppShell>,
+    )
+
+    await screen.findByText('Loja Alpha')
+    const masterSections = screen.getByRole('group', { name: 'Áreas do Master SaaS' })
+    const supportBtn = within(masterSections).getByRole('button', { name: 'Operação e suporte' })
+    expect(supportBtn).toHaveAttribute('type', 'button')
+    expect(supportBtn).toHaveAttribute('aria-pressed', 'false')
+
+    fireEvent.click(supportBtn)
+
+    await waitFor(() => {
+      expect(supportBtn).toHaveAttribute('aria-pressed', 'true')
+      expect(container.querySelector('#view-master-operacao')).not.toBeNull()
+      expect(from).toHaveBeenCalled()
+    })
+    expect(onNavigate).not.toHaveBeenCalledWith('dre')
+    expect(onNavigate).not.toHaveBeenCalled()
   })
 })

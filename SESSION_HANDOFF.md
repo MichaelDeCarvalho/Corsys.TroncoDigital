@@ -1,3 +1,21 @@
+## V35 Fechamento dos Gates M02.03 / M04.03 / M06 — Roteiro HTTP Somente Leitura, Master Mobile 320 px e Data Civil por Fuso da Loja (15/11/2026)
+
+- **Base:** HEAD `02d698b35074902be9291984216e55a6809b2b9e` (CI GitHub Actions 573/573 PASS; responsividade homologada pelo Work em `320, 390, 768 e 1440 px`).
+- **ENTREGA 1 — Roteiro HTTP Real Somente Leitura (`dev-gate/`):**
+  - `dev-gate/tests/negative-http-authorization.mjs` dividido em **Grupo A (Somente Leitura — padrão `--readonly`, `npm run test:negative-auth:readonly --prefix dev-gate`)** e **Grupo B (Operações Persistentes — bloqueado por padrão, exigindo `--include-persistent` + `ALLOW_DEV_PERSISTENT_AUTH_TESTS=true`)**.
+  - `dev-gate/tools/isolation-assertions.mjs` e `dev-gate/tests/isolation-assertions.test.mjs`: `assertPermissionDenied` rejeita explicitamente `PGRST202`, `42883` e `22023` como falso `PASS`; adicionada `assertAuthorizedRpcSuccess` para comprovar leitura positiva autorizada sem erro de função/schema.
+  - Assinatura de `create_institutional_payable` no Grupo B corrigida para os 11 parâmetros reais (`p_organization_id`, `p_category_id`, `p_fund_id`, `p_description`, `p_counterparty_name`, `p_competence`, `p_issue_date`, `p_due_date`, `p_accounting_period`, `p_amount`, `p_idempotency_key`).
+  - Execução no container local registrada como `BLOCKED` por ausência proposital de `.env.dev` com credenciais privadas.
+- **ENTREGA 2 — Navegação Master Mobile em `320 px` (`MasterConsole.tsx` / `styles.css`):**
+  - Causa raiz diagnosticada: em `@media (max-width: 960px)`, `.sidebar` (`position: fixed; z-index: 100; transition: transform .22s ease; display: flex !important`) permanecia sem `pointer-events: none` quando fechado/recolhendo, interceptando cliques por coordenada `(x, y)` sobre a altura vertical do 8º item de `.side-nav` (`DRE Contábil`, `id: 'dre'`), enquanto `Enter` via teclado despachava o evento diretamente para `document.activeElement` (`<button>Operação e suporte</button>`).
+  - Correção cirúrgica aplicada: `pointer-events: none; box-shadow: none;` em `.sidebar` e `pointer-events: auto;` em `.sidebar.open` dentro de `@media (max-width: 960px)` (`src/styles.css`), além de `type="button"` explícito nos 8 botões de `.finance-sections` em `src/components/MasterConsole.tsx` e teste de regressão em `src/components/ResponsiveLayout.test.tsx`.
+- **ENTREGA 4 — Regra de Data Civil Financeira por Fuso Horário da Loja (`ADR-0048`):**
+  - Formalizada em `docs/adr/0048-tenant-timezone-financial-current-date.md` e `docs/V35_DATE_TIMEZONE_DECISION.md`.
+  - Implementada na migration aditiva `supabase/migrations/20261115120000_v35_tenant_timezone_financial_dates.sql`: `private.is_valid_iana_timezone(text)`, constraint/trigger `validate_organization_settings_timezone` (`22023` fail-closed), `private.tenant_current_date_at(uuid, timestamptz)` e `private.tenant_current_date(uuid)` com base em `organization_settings.timezone` (fallback `'America/Sao_Paulo'`), aplicados uniformemente a `read_tenant_financial_dashboard`, `read_tenant_delinquency`, `read_tenant_delinquency_bucket_summary`, `read_tenant_delinquency_filtered` e 16 comandos/consultas financeiras e contábeis por Loja.
+  - Testes adicionados em `supabase/tests/test_tenant_timezone_financial_dates_rollback.sql` e `src/lib/delinquency-report.test.ts` (`America/Sao_Paulo`, `America/Manaus`, `America/Rio_Branco`, `UTC`, virada `21:00–23:59 BRT` e fronteiras `0, 1, 30, 31, 60, 61, 90, 91` dias).
+
+---
+
 ## V35 Master Execution Controller V2 — Correções Críticas e Paridade V35 (13/11/2026)
 
 - **Regressão CI e Inadimplência Global (`view-inadimplencia`):**

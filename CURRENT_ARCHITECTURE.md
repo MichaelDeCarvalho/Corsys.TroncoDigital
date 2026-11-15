@@ -1,3 +1,17 @@
+## V35 Fechamento dos Gates M02.03 / M04.03 / M06 — Roteiro HTTP Read-Only, Master Mobile 320 px e Regra de Data Civil por Fuso da Loja (15/11/2026)
+
+- **ENTREGA 1 — Roteiro HTTP Real Separado em Somente Leitura vs Persistente (`dev-gate/`):**
+  - `dev-gate/tests/negative-http-authorization.mjs` foi dividido em dois grupos independentes:
+    - **Grupo A (Somente Leitura — padrão em `npm run test:negative-auth:readonly --prefix dev-gate` e `npm run test:negative-auth --prefix dev-gate`):** executa apenas leituras e RPCs `READ` com sessões JWT reais do Supabase Auth (`signInWithPassword` + `getUser`): leituras positivas próprias de Loja A e Loja B, bloqueio bidirecional Loja A ↔ Loja B (`42501` em RPCs, `0` linhas em views/tabelas), usuário sem `finance.read` negado (`42501`), Master AAL1 bloqueado em `read_platform_master_overview`, `list_platform_master_tenants`, `list_master_audit_events` e `saas_jobs` (sem chamar RPCs de escrita), e Master AAL2 autorizado nas consultas de leitura.
+    - **Grupo B (Persistente — bloqueado por padrão):** exige simultaneamente `--include-persistent` e `ALLOW_DEV_PERSISTENT_AUTH_TESTS=true`, usando a assinatura canônica de 11 parâmetros de `create_institutional_payable` (`p_accounting_period` incluído).
+  - `dev-gate/tools/isolation-assertions.mjs` endurecido: `assertPermissionDenied` rejeita explicitamente `PGRST202`, `42883` e `22023` para eliminar falsos `PASS` por erro de assinatura ou parâmetro; adicionada `assertAuthorizedRpcSuccess`.
+- **ENTREGA 2 — Correção Cirúrgica da Navegação Master Mobile (`320 px`):**
+  - Diagnóstico da divergência entre clique por coordenada e tecla `Enter` no botão `"Operação e suporte"` em `320 px`: em `@media (max-width: 960px)`, o drawer `.sidebar` (`position: fixed; z-index: 100; transition: transform .22s ease; display: flex !important`) não definia `pointer-events: none` quando fechado/recolhendo, interceptando cliques na coordenada vertical do 8º item de `.side-nav` (`DRE Contábil`, `id: 'dre'`).
+  - Correção aplicada em `src/styles.css` (`pointer-events: none; box-shadow: none;` em `.sidebar` fechado e `pointer-events: auto;` em `.sidebar.open` no media query `<= 960px`) e `type="button"` explícito nos 8 botões de seção de `src/components/MasterConsole.tsx`, com regressão coberta em `src/components/ResponsiveLayout.test.tsx`.
+- **ENTREGA 4 — Data Civil Financeira e de Inadimplência por Fuso Horário da Loja (`ADR-0048`):**
+  - Migration aditiva `supabase/migrations/20261115120000_v35_tenant_timezone_financial_dates.sql` implementa `private.is_valid_iana_timezone(text)`, constraint/trigger `validate_organization_settings_timezone` (`22023`), `private.tenant_current_date_at(uuid, timestamptz)` e `private.tenant_current_date(uuid)` com base em `public.organization_settings.timezone` (default `'America/Sao_Paulo'`).
+  - Aplica `private.tenant_current_date(p_organization_id)` de forma uniforme em `read_tenant_financial_dashboard`, `read_tenant_delinquency`, `read_tenant_delinquency_bucket_summary`, `read_tenant_delinquency_filtered` e 16 funções/triggers financeiras e contábeis por Loja, mantendo auditorias em `timestamptz` (UTC) e preservando intactas todas as migrations históricas do manifesto.
+
 ## V35 Fechamento Pós-Homologação Work — DEV Sync, Responsividade P2 e Análise P1 Timezone (13/11/2026)
 
 - **Convergência de Migrations no Supabase DEV (`szqkdekwhzxsoxorgvaz`):** Em `2026-11-13`, o Supabase DEV recebeu as três migrations que constavam como pendentes na rodada anterior:
