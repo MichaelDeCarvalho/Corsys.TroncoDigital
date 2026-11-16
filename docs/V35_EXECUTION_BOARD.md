@@ -1,5 +1,14 @@
 # V35 — PLANO MESTRE DE EXECUÇÃO (macroetapas e microentregas)
 
+## Atualização operacional — gate HTTP real aprovado em DEV (15/11/2026)
+
+- **Subgate HTTP somente leitura M02.03/M04.03/M06.03:** **5/5 PASS** observado no PowerShell do proprietário após correção de assinatura `p_page: 0`; negativas A↔B e `finance.read`, Master AAL1 negado, Master AAL2/TOTP positivo. [Evidência detalhada](V35_HTTP_READONLY_GATE_20261115.md).
+- **Não promover as microentregas completas a CONCLUIDO:** Grupo B persistente **SKIPPED**, testes de concorrência/recuperação, QA integral das 21 telas e fluxos não incluídos nesse gate. Os estados históricos da tabela abaixo ficam preservados até reconciliação por microentrega.
+- **Microentrega ativa na sequência:** **M06.01/M06.02**, confrontar fonte original e componentes React de cada tela, priorizando diferenças observáveis de ação, responsividade, acessibilidade e estados. Não reconstruir telas já implementadas, nem reduzir a V35.
+- **DEV/PROD:** nenhuma mutation de banco, mudança de RLS/role, deploy ou operação de produção integra este registro.
+
+---
+
 > **Decisão do proprietário — 03/11/2026:** concluir TODO o escopo aprovado da V35 **antes** de disponibilizar Beta para clientes. Este plano é o índice operacional vivo; não substitui código, ADRs nem evidência de testes. Não reduzir o escopo para um MVP sem nova decisão explícita.
 
 ## 1. Como consultar este documento
