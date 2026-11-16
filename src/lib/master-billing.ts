@@ -40,15 +40,7 @@ export async function loadMasterInvoicePage(
   .select('id,organization_id,subscription_id,invoice_number,competence,due_date,original_amount,adjustment_amount,amount_due,amount_paid,amount_open,derived_status,integrity_ok')
   .eq('organization_id',org)
  // Apply filters on the server BEFORE pagination; never show a partial, client-filtered page.
- if(search)query=query.ilike('invoice_number',`%${search.replace(/[\\%_]/g,'\\ client:SupabaseClient,org:string,page:number,signal:AbortSignal
-){
- if(!id.test(org)||!Number.isSafeInteger(page)||page<0||page>800)
-  throw Error('Invalid Master billing scope')
- const {data,error}=await client.from('v_saas_invoice_balances')
-  .select('id,organization_id,subscription_id,invoice_number,competence,due_date,original_amount,adjustment_amount,amount_due,amount_paid,amount_open,derived_status,integrity_ok')
-  .eq('organization_id',org).order('due_date',{ascending:false}).order('id')
-  .range(page*MASTER_BILLING_PAGE,(page+1)*MASTER_BILLING_PAGE).abortSignal(signal)
-')}%`)
+ if(search)query=query.ilike('invoice_number',`%${search.replace(/[\\%_]/g,'\\$&')}%`)
  if(status!=='all')query=query.eq('derived_status',status)
  if(competence)query=query.eq('competence',`${competence}-01`)
  const {data,error}=await query.order('due_date',{ascending:false}).order('id')
