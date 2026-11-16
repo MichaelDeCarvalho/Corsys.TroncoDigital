@@ -1,5 +1,15 @@
 ## V35 Fechamento dos Gates M02.03 / M04.03 / M06 — Roteiro HTTP Read-Only, Master Mobile 320 px e Data Civil por Fuso da Loja (15/11/2026)
 
+## V35 — M06.01/02: filtros reais no Master Cobrança (15/11/2026)
+
+- **Entrega em PR #52:** `view-master-cobranca`: filtros de leitura por número da fatura, status e competência em consulta server-side, sob a Loja selecionada e antes da paginação. Incluídos reset de filtros ao trocar de Loja, validações de valores inválidos e escape de curinga ILIKE.
+- **Evidência técnica:** pipeline GitHub Actions `Foundation checks` 3/3 PASS (static/onboarding/frontend) na revisão `4d033eb78492ad082d68776f5bafc992b7edc9ae` antes das atualizações exclusivamente documentais; testes específicos `MasterBilling.test.tsx` ampliados. Não houve teste browser/HTTP desta nova UI, nem deploy.
+- **Próxima ação:** após integração, homologar filtros de faturas na tela Master usando DEV e continuar M06.01/M06.02 no inventário das 21 telas. Limitações de cobrança automática/registro de pagamento, termos, dados pessoais e contabilidade permanecem.
+- **Preservação:** nenhum dado financeiro alterado, nenhuma migration, role, RLS, segredo ou PROD tocado.
+
+---
+
+
 ## V35 — Retomada após gate HTTP 5/5 (15/11/2026)
 
 - **Entrega confirmada pelo proprietário:** `npm.cmd run test:negative-auth:readonly --prefix dev-gate`, Grupo A **5/5 PASS** com JWT reais, negativa cross-tenant bidirecional, usuário sem `finance.read`, Master AAL1 negado e Master AAL2/TOTP autorizado. **Grupo B persistente SKIPPED** por padrão.
