@@ -1,5 +1,16 @@
 ## V35 Fechamento dos Gates M02.03 / M04.03 / M06 — Roteiro HTTP Somente Leitura, Master Mobile 320 px e Data Civil por Fuso da Loja (15/11/2026)
 
+## V35 — Acessibilidade do drawer mobile e preparação QA Cloudflare DEV (15/11/2026)
+
+- **Base GitHub:** `main` `6481fa0e657011034bc42d451dd39cfd8accecb2`, PR #54 integrado e CI 3/3 PASS.
+- **Alteração nesta branch:** `AppShell.tsx` gerencia foco do drawer mobile, retorno de foco ao botão que abriu, Escape e ciclo de Tab nos itens; `src/styles.css` oculta o drawer fora da tela para teclado apenas em viewport <=960 px. Sem modificação de navegação desktop, 21 rotas, autorização ou dados.
+- **Testes:** cenários novos em `ResponsiveLayout.test.tsx` para Escape/Tab/restauração/backdrop/navegação e CSS `visibility` sob media query. CI ainda a verificar; QA browser de 320/390/768/1440 px pendente.
+- **Deploy:** `wrangler.dev.jsonc` aponta somente para `corsys-tronco-digital-dev`; `npm run deploy:dev` é script existente; CI faz dry-run, não publica. Sem credenciais/sessão autorizada para publicar a partir do ChatGPT nesta entrega. `Cloudflare PROD` inalterado.
+- **Próximo passo:** PR/CI, depois publicação DEV controlada e auditoria mobile contra HTML V35 com evidências de screenshots/fluxos sanitizados. Se usar Gemini, fornecer prompt de auditoria restrito à UX, não autorização financeira.
+
+---
+
+
 ## V35 — Paridade funcional: período preservado ao alternar modos do Fluxo de Caixa (15/11/2026)
 
 - **Base:** `main` `38dfe4b9cb108015ed37951e3d532bc7711f806d` (PR #53 integrado).
