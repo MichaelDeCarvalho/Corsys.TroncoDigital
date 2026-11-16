@@ -287,6 +287,7 @@ async function runReadOnlyAuthorizationSuite() {
         p_organization_id: noFinanceOrg,
         p_from_date: '2026-10-01',
         p_to_date: '2026-10-31',
+        p_page: 0,
       }),
       'no-finance read_tenant_cash_flow_detail',
     )
