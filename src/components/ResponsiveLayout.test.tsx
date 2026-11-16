@@ -49,6 +49,46 @@ describe('Responsive layout & mobile navigation invariants (320px / 390px / 768p
     expect(within(screen.getByRole('navigation', { name: 'Navegação principal' })).getAllByRole('button')).toHaveLength(16)
   })
 
+  it('makes the mobile drawer keyboard-operable, restores focus and closes on backdrop', () => {
+    const onNavigate = vi.fn()
+    const { container } = render(
+      <AppShell page="home" showMaster={false} onNavigate={onNavigate} onSignOut={vi.fn()} email="tesoureiro@loja.test">
+        <div>Conteúdo</div>
+      </AppShell>,
+    )
+    const bottom = screen.getByRole('navigation', { name: 'Navegação móvel' })
+    const trigger = within(bottom).getByRole('button', { name: 'Menu' })
+
+    fireEvent.click(trigger)
+    const drawer = document.getElementById('sidebar')!
+    const sideNav = within(drawer).getByRole('navigation', { name: 'Navegação principal' })
+    const navButtons = within(sideNav).getAllByRole('button')
+    expect(navButtons[0]).toHaveFocus()
+    expect(drawer).toHaveClass('open')
+
+    navButtons[navButtons.length - 1].focus()
+    fireEvent.keyDown(document, { key: 'Tab' })
+    expect(navButtons[0]).toHaveFocus()
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
+    expect(navButtons[navButtons.length - 1]).toHaveFocus()
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(drawer).not.toHaveClass('open')
+    expect(trigger).toHaveFocus()
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+
+    fireEvent.click(trigger)
+    fireEvent.click(container.querySelector('.sidebar-backdrop')!)
+    expect(drawer).not.toHaveClass('open')
+    expect(trigger).toHaveFocus()
+
+    fireEvent.click(trigger)
+    fireEvent.click(within(sideNav).getByRole('button', { name: 'Relatórios' }))
+    expect(onNavigate).toHaveBeenCalledWith('relatorios')
+    expect(drawer).not.toHaveClass('open')
+    expect(trigger).toHaveFocus()
+  })
+
   it('enforces safe CSS breakpoints without blanket html/body overflow-x: hidden', async () => {
     const { readFileSync } = await vi.importActual<{ readFileSync: (path: string, encoding: string) => string }>('node:fs')
     const stylesCss = readFileSync('src/styles.css', 'utf8')
@@ -63,6 +103,10 @@ describe('Responsive layout & mobile navigation invariants (320px / 390px / 768p
     expect(stylesCss).toMatch(
       /@media\s*\(max-width:\s*960px\)\s*\{[\s\S]*\.sidebar\.open\s*\{[^}]*transform:\s*translateX\(0\);[^}]*pointer-events:\s*auto;/s,
     )
+
+    // Off-canvas navigation must not remain keyboard-focusable when closed on mobile.
+    expect(stylesCss).toMatch(/@media\s*\(max-width:\s*960px\)\s*\{[\s\S]*\.sidebar\s*\{[^}]*visibility:\s*hidden;/s)
+    expect(stylesCss).toMatch(/@media\s*\(max-width:\s*960px\)\s*\{[\s\S]*\.sidebar\.open\s*\{[^}]*visibility:\s*visible;/s)
 
     // Smartphone <= 640px must collapse .metric-grid to 1 column
     expect(stylesCss).toMatch(/@media\s*\(max-width:\s*640px\)\s*\{[\s\S]*\.metric-grid\s*\{[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)/s)
