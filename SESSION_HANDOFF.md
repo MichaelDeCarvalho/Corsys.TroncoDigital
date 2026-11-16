@@ -1,5 +1,16 @@
 ## V35 Fechamento dos Gates M02.03 / M04.03 / M06 — Roteiro HTTP Somente Leitura, Master Mobile 320 px e Data Civil por Fuso da Loja (15/11/2026)
 
+## V35 — M06.01/02: paridade de filtros em `view-master-cobranca` (15/11/2026)
+
+- **Base:** `main` pós-PR #51 (`91420c7cfd0706167f321973224485325b0813f9`).
+- **Entrega proposta:** PR #52 adiciona filtros de fatura por número/status/competência com busca server-side, `organization_id` obrigatório e paginação posterior; acessibilidade básica por `label` e limpeza/reset dos filtros.
+- **Segurança:** consulta somente leitura; nenhuma mudança de contratos financeiros, autorização, RLS, banco, provedor ou credenciais.
+- **Teste:** Vitest ampliado para filtros, valores inválidos, caracteres curinga e reset; CI Foundation checks static/onboarding/frontend 3/3 PASS na revisão `4d033eb78492ad082d68776f5bafc992b7edc9ae` antes do commit de documentação. QA visual e real DEV ainda NÃO AVALIADOS; não declarar tela homologada.
+- **Próxima ação:** integrar PR após CI final e continuar M06.01/M06.02 por requisitos da V35, sem desbloquear operações comerciais não autorizadas.
+
+---
+
+
 ## V35 — Gate HTTP 5/5 comprovado pelo proprietário; paridade das telas como próximo foco (15/11/2026)
 
 - **Base analisada:** `main` `8461e92760041bb4f76901e714fa6e4d6bbb0f8b`. O proprietário executou `npm.cmd run test:negative-auth:readonly --prefix dev-gate` em PowerShell Windows com fixture privada somente local.
