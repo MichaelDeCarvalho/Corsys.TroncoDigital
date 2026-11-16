@@ -1,17 +1,21 @@
-import {useEffect,useRef,useState} from 'react'
+import {useEffect,useRef,useState,type FormEvent} from 'react'
 import type {SupabaseClient} from '@supabase/supabase-js'
 import {formatDate,formatMoney} from '../lib/finance-data'
 import {
  loadMasterInvoicePage,loadMasterInvoiceBreakdown,loadMasterPaymentPage,
  previewMasterManualInvoice,issueMasterManualInvoice,buildManualInvoiceIdempotencyKey,
  type MasterInvoice,type MasterInvoiceBreakdown,type MasterPayment,
- type MasterManualInvoicePreview
+ type MasterManualInvoicePreview,type MasterInvoiceFilters,type MasterInvoiceStatusFilter
 } from '../lib/master-billing'
 import {checkedSigned} from '../lib/treasury-balances'
 
 export function MasterBilling({client,tenants,initialOrganizationId=''}:{client:SupabaseClient;tenants:Array<{organization_id:string;organization_name:string}>;initialOrganizationId?:string}){
  const [org,setOrg]=useState(()=>tenants.some(t=>t.organization_id===initialOrganizationId)?initialOrganizationId:''),[mode,setMode]=useState<'invoices'|'payments'>('invoices')
  const [page,setPage]=useState(0),[revision,setRevision]=useState(0)
+ const [searchDraft,setSearchDraft]=useState('')
+ const [statusDraft,setStatusDraft]=useState<MasterInvoiceStatusFilter>('all')
+ const [competenceDraft,setCompetenceDraft]=useState('')
+ const [invoiceFilters,setInvoiceFilters]=useState<MasterInvoiceFilters>({})
  const [rows,setRows]=useState<{invoices?:MasterInvoice[];payments?:MasterPayment[];hasNext:boolean}|null>(null)
  const [selected,setSelected]=useState<MasterInvoice|null>(null)
  const [breakdown,setBreakdown]=useState<MasterInvoiceBreakdown|null>(null)
@@ -58,15 +62,17 @@ export function MasterBilling({client,tenants,initialOrganizationId=''}:{client:
   let live=true;const controller=new AbortController()
   setRows(null);setError('');setSelected(null);setBreakdown(null)
   if(org&&tenants.some(t=>t.organization_id===org)){
-   const load=mode==='invoices'?loadMasterInvoicePage:loadMasterPaymentPage
-   load(client,org,page,controller.signal).then(result=>{
+   const load=mode==='invoices'
+    ?loadMasterInvoicePage(client,org,page,controller.signal,invoiceFilters)
+    :loadMasterPaymentPage(client,org,page,controller.signal)
+   load.then(result=>{
     if(live)setRows(mode==='invoices'?
      {invoices:result.rows as MasterInvoice[],hasNext:result.hasNext}:
      {payments:result.rows as MasterPayment[],hasNext:result.hasNext})
    }).catch(()=>{if(live)setError('Não foi possível conferir o histórico de cobranças SaaS desta Loja.')})
   }
   return()=>{live=false;controller.abort()}
- },[client,org,mode,page,revision,tenants])
+ },[client,org,mode,page,revision,tenants,invoiceFilters])
 
  useEffect(()=>{
   let live=true;const controller=new AbortController()
@@ -80,6 +86,20 @@ export function MasterBilling({client,tenants,initialOrganizationId=''}:{client:
  },[client,selected,org,tenants])
 
  function switchMode(next:'invoices'|'payments'){setMode(next);setPage(0)}
+
+ function applyInvoiceFilters(event:FormEvent<HTMLFormElement>){
+  event.preventDefault()
+  setPage(0)
+  setInvoiceFilters({search:searchDraft.trim(),status:statusDraft,competence:competenceDraft})
+ }
+
+ function clearInvoiceFilters(){
+  setSearchDraft('')
+  setStatusDraft('all')
+  setCompetenceDraft('')
+  setPage(0)
+  setInvoiceFilters({})
+ }
 
  async function handlePreview(){
   if(!org)return
@@ -177,12 +197,40 @@ export function MasterBilling({client,tenants,initialOrganizationId=''}:{client:
    onChange={e=>{
     setOrg(e.target.value)
     setPage(0)
+    clearInvoiceFilters()
     invalidatePreview()
    }}
   >
    <option value="">Selecione a Loja</option>
    {tenants.map(t=><option key={t.organization_id} value={t.organization_id}>{t.organization_name}</option>)}
   </select>
+
+
+  {!!org&&mode==='invoices'&&
+   <form aria-label="Filtros de faturas SaaS" onSubmit={applyInvoiceFilters} className="finance-filters" style={{display:'flex',gap:'0.75rem',flexWrap:'wrap',alignItems:'flex-end',marginTop:'1rem'}}>
+    <div style={{flex:'1 1 12rem',minWidth:0}}>
+     <label htmlFor="master-billing-search">Número da fatura</label>
+     <input id="master-billing-search" value={searchDraft} maxLength={80} placeholder="Buscar número da fatura" onChange={e=>setSearchDraft(e.target.value)}/>
+    </div>
+    <div style={{flex:'1 1 10rem',minWidth:0}}>
+     <label htmlFor="master-billing-status">Status da fatura</label>
+     <select id="master-billing-status" value={statusDraft} onChange={e=>setStatusDraft(e.target.value as MasterInvoiceStatusFilter)}>
+      <option value="all">Todos</option>
+      <option value="paid">Pago</option>
+      <option value="partial">Parcial</option>
+      <option value="overdue">Em atraso</option>
+      <option value="open">Em aberto</option>
+      <option value="void">Cancelado</option>
+     </select>
+    </div>
+    <div style={{flex:'1 1 10rem',minWidth:0}}>
+     <label htmlFor="master-billing-competence">Competência da fatura</label>
+     <input id="master-billing-competence" type="month" value={competenceDraft} onChange={e=>setCompetenceDraft(e.target.value)}/>
+    </div>
+    <button type="submit" className="secondary">Aplicar filtros</button>
+    <button type="button" className="secondary" onClick={clearInvoiceFilters}>Limpar filtros</button>
+   </form>
+  }
 
   {showManual&&<section className="panel" aria-label="Emissão manual de fatura SaaS" style={{marginTop:'1rem',borderLeft:'3px solid var(--color-primary, #0284c7)'}}>
    <h3>Emissão manual de fatura SaaS</h3>
@@ -297,7 +345,7 @@ export function MasterBilling({client,tenants,initialOrganizationId=''}:{client:
   {error&&<p role="alert" className="message error">{error}</p>}
   {!!org&&!rows&&!error&&<p role="status">Consultando documentos SaaS…</p>}
   {rows&&<>
-   {mode==='invoices'&&(!rows.invoices?.length?<p>Nenhuma fatura nesta página.</p>:
+   {mode==='invoices'&&(!rows.invoices?.length?<p>Nenhuma fatura corresponde aos filtros selecionados nesta página.</p>:
     <div className="finance-table" role="region" aria-label="Faturas SaaS" tabIndex={0}>
      <table><thead><tr><th>Documento</th><th>Competência</th><th>Vencimento</th><th>Total atualizado</th><th>Pago</th><th>Em aberto</th><th>Status</th><th>Detalhamento</th></tr></thead>
       <tbody>{rows.invoices?.map(i=><tr key={i.id}>
