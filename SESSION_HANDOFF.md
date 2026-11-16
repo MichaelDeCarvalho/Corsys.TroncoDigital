@@ -1,3 +1,12 @@
+## V35 — M06.02: largura mínima da página e recorte do Dashboard (16/11/2026)
+
+- DEV `ac31016b-7ead-4610-9ca8-8b86c0f749ee`, build `0bcf093`, Edge em 320 × 900 px. No painel inicial, `clientWidth=305`, `scrollWidth=320`, e seta direita deslocou a página em aproximadamente 15 px. `html` e `body` tinham `min-width: 320px` computado, somando o espaço da barra vertical à largura mínima do documento.
+- Correção proposta remove apenas a largura mínima global e acrescenta uma asserção no teste responsivo existente. A revisão publicada ainda precisa ser retestada com a barra vertical e as tabelas internas nas quatro larguras.
+- Dashboard comparado com o HTML V35: os cinco atalhos financeiros do protótipo abrem seções do Financeiro na aplicação, onde o protótipo abre modais. Pagamentos, cobrança avulsa, mensalidades e acordos foram observados nos destinos esperados. Novo Ágape abriu a seção correta por teclado; um clique no viewport estreito acionou Inadimplência durante a sequência, pendente reprodução isolada. Nenhum formulário foi enviado.
+- Os três botões de modo do fluxo refletiram a seleção. O atalho de Inadimplência carregou “Inadimplência por integrante”, com “Atendimento” no título principal. O componente Workspace usa esse título como fallback para a rota. Registrar correção desse rótulo em microentrega própria. Paridade integral das 21 telas segue em execução.
+
+---
+
 ## V35 — M06.02: navegação Master no DEV com revisão identificada (15/11/2026)
 
 - Login confirmado pelo proprietário e sessão Master observada no Edge após a recuperação do Cloudflare DEV principal. Worker `325b1f83-3d3f-4230-8e53-3eeafb2768d8`, build da main `9e0ff0a9ac9e2b0511925c7d8e2e82daa7d2a907`, entrada `index-Ca9UP64Z.js` idêntica ao build local. TypeScript, 85 arquivos Vitest, Vite e dry-run aprovados. O Supabase DEV aceitou a chave pública publicada (HTTP 200 na consulta de configuração de Auth). A cópia antiga ainda tem a configuração rejeitada.
