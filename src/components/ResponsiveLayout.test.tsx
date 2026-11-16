@@ -93,6 +93,9 @@ describe('Responsive layout & mobile navigation invariants (320px / 390px / 768p
     const { readFileSync } = await vi.importActual<{ readFileSync: (path: string, encoding: string) => string }>('node:fs')
     const stylesCss = readFileSync('src/styles.css', 'utf8')
 
+    // A vertical scrollbar can leave less than 320px of usable width.
+    expect(stylesCss).not.toMatch(/html,\s*body\s*\{[^}]*min-width\s*:\s*\d/i)
+
     // Must never blindly hide horizontal overflow on html/body
     expect(stylesCss).not.toMatch(/html,\s*body\s*\{[^}]*overflow-x\s*:\s*hidden/i)
 
