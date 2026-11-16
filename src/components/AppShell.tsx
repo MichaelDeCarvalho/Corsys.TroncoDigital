@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { Home, Users, Wallet, MessagesSquare, Settings, ShieldCheck, LogOut, Menu, X, FileText } from 'lucide-react'
 
 export type Page =
@@ -72,9 +72,54 @@ export function AppShell({
   email: string
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const menuTriggerRef = useRef<HTMLButtonElement | null>(null)
+  const firstNavButtonRef = useRef<HTMLButtonElement | null>(null)
+
+  function closeMobileMenu() {
+    setMobileMenuOpen(false)
+    menuTriggerRef.current?.focus()
+  }
+
+  function toggleMobileMenu(event: MouseEvent<HTMLButtonElement>) {
+    if (!mobileMenuOpen) menuTriggerRef.current = event.currentTarget
+    setMobileMenuOpen(open => !open)
+  }
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return
+    firstNavButtonRef.current?.focus()
+
+    function handleDrawerKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        closeMobileMenu()
+        return
+      }
+      if (event.key !== 'Tab') return
+
+      const sidebar = document.getElementById('sidebar')
+      const focusable = sidebar?.querySelectorAll<HTMLButtonElement>('.side-nav button:not(:disabled)')
+      if (!sidebar || !focusable?.length) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      const focusedInside = sidebar.contains(document.activeElement)
+
+      if (event.shiftKey && (document.activeElement === first || !focusedInside)) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && (document.activeElement === last || !focusedInside)) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    document.addEventListener('keydown', handleDrawerKeyDown)
+    return () => document.removeEventListener('keydown', handleDrawerKeyDown)
+  }, [mobileMenuOpen])
 
   function handleNavigate(target: Page) {
     onNavigate(target)
+    if (mobileMenuOpen) menuTriggerRef.current?.focus()
     setMobileMenuOpen(false)
   }
 
@@ -95,7 +140,7 @@ export function AppShell({
       <a className="skip-link" href="#main">Pular para conteúdo</a>
       <div
         className={`sidebar-backdrop ${mobileMenuOpen ? 'open' : ''}`}
-        onClick={() => setMobileMenuOpen(false)}
+        onClick={closeMobileMenu}
         aria-hidden="true"
       />
       <aside className={`sidebar ${mobileMenuOpen ? 'open' : ''}`} id="sidebar">
@@ -115,9 +160,10 @@ export function AppShell({
         </div>
 
         <nav className="side-nav" aria-label="Navegação principal">
-          {allItems.map(({ id, label, Icon }) => (
+          {allItems.map(({ id, label, Icon }, index) => (
             <button
               key={id}
+              ref={index === 0 ? firstNavButtonRef : undefined}
               type="button"
               aria-current={page === id ? 'page' : undefined}
               onClick={() => handleNavigate(id)}
@@ -145,7 +191,7 @@ export function AppShell({
               aria-expanded={mobileMenuOpen}
               aria-controls="sidebar"
               aria-label={mobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              onClick={toggleMobileMenu}
             >
               {mobileMenuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
             </button>
@@ -194,7 +240,7 @@ export function AppShell({
           type="button"
           aria-expanded={mobileMenuOpen}
           aria-controls="sidebar"
-          onClick={() => setMobileMenuOpen(v => !v)}
+          onClick={toggleMobileMenu}
         >
           {mobileMenuOpen ? <X size={18} aria-hidden="true" /> : <Menu size={18} aria-hidden="true" />}
           <span>Menu</span>
