@@ -1,5 +1,15 @@
 ## V35 Fechamento dos Gates M02.03 / M04.03 / M06 — Roteiro HTTP Read-Only, Master Mobile 320 px e Data Civil por Fuso da Loja (15/11/2026)
 
+## V35 — M06.02: continuidade de período no Fluxo de Caixa (15/11/2026)
+
+- **Correção no código:** `FluxoCaixa.tsx` passa a preservar a instância de `DailyCashFlow` quando alterna Consolidado / Projetado / Receitas × Desp. / Saldo. O período selecionado não é descartado por troca de modo; mudança de `organizationId` mantém remount e reinicialização de contexto.
+- **Regressão adicionada:** `FluxoCaixa.test.tsx` valida datas após os quatro modos e confirma reset ao trocar de Loja. Sem mudança de RPCs, valores, RLS, controle financeiro ou banco.
+- **Validação:** CI e QA browser pendentes de execução; não declarar homologação visual somente por teste React.
+- **Próxima ação:** revisar CI/PR e continuar M06.01/M06.02; agrupar implantação dos incrementos em Cloudflare DEV quando especificamente autorizada.
+
+---
+
+
 ## V35 — M06.01/02: histórico de versões de planos (15/11/2026)
 
 - **Escopo pontual em revisão:** `view-master-planos`, histórico de versões, controles V35 `F001–F003` e `A002`. Adicionados filtros por data inicial de vigência, data final para filtrar a vigência **inicial** da versão, situação e botão `Limpar filtros` com total visível, conforme `docs/pilot/v35-planos-ofertas.reference.html` (seção `view-master-planos`, `applyVersionFilters`).
