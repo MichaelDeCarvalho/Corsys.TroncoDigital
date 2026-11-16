@@ -20,11 +20,11 @@ const promo={
  active:true,latest_version_status:'published',valid_from:null,valid_to:null,
  redemption_count:0,can_delete:false,delete_block_reason:'used',
 }
-function fixture(opts:{deny?:boolean;brokenPrice?:boolean;duplicate?:boolean}={}){
+function fixture(opts:{deny?:boolean;brokenPrice?:boolean;duplicate?:boolean;planRows?:Array<typeof plan>}={}){
  const from=vi.fn((table:string)=>{
   const chain={select:()=>chain,order:()=>chain,limit:()=>chain,
    abortSignal:()=>Promise.resolve({data:table==='v_saas_plan_version_admin'?
-     (opts.duplicate?[plan,plan]:[{...plan,price:opts.brokenPrice?'NaN':'125.00'}]):
+     (opts.planRows??(opts.duplicate?[plan,plan]:[{...plan,price:opts.brokenPrice?'NaN':'125.00'}])):
      [promo],error:opts.deny?{code:'42501'}:null})}
   return chain
  })
@@ -39,6 +39,46 @@ describe('Master commercial version history',()=>{
   expect(screen.getByText(/R\$\s?125,00/)).toBeInTheDocument()
   expect(from).toHaveBeenCalledWith('v_saas_plan_version_admin')
   expect(from).toHaveBeenCalledWith('v_saas_promotion_series_admin')
+ })
+
+ it('matches the V35 pilot history filters for starting date, status, count and reset',async()=>{
+  const planRows=[
+   {...plan,plan_version_id:'11111111-1111-4111-8111-111111111111',display_name_snapshot:'Plano Histórico',valid_from:'2026-08-01',admin_status:'historical'},
+   {...plan,plan_version_id:'22222222-2222-4222-8222-222222222222',display_name_snapshot:'Plano Futuro',valid_from:'2026-12-01',admin_status:'future'},
+   {...plan,plan_version_id:'33333333-3333-4333-8333-333333333333',display_name_snapshot:'Plano Desativado',valid_from:'2026-09-01',admin_status:'historical',plan_active:false},
+  ]
+  const {client}=fixture({planRows})
+  render(<MasterCommercialCatalog client={client}/>)
+  await screen.findByText('Plano Futuro')
+  expect(screen.getByText('Exibindo 3 de 3 versão(ões).')).toBeInTheDocument()
+  fireEvent.change(screen.getByLabelText('Vigência a partir de'),{target:{value:'2026-12-01'}})
+  fireEvent.change(screen.getByLabelText('Vigência até'),{target:{value:'2026-12-01'}})
+  fireEvent.change(screen.getByLabelText('Status do plano'),{target:{value:'future'}})
+  expect(screen.getByText('Exibindo 1 de 3 versão(ões).')).toBeInTheDocument()
+  expect(screen.getByText('Plano Futuro')).toBeInTheDocument()
+  expect(screen.queryByText('Plano Histórico')).not.toBeInTheDocument()
+  expect(screen.queryByText('Plano Desativado')).not.toBeInTheDocument()
+  expect(screen.getByText('Oferta TESTE')).toBeInTheDocument()
+  fireEvent.change(screen.getByLabelText('Status do plano'),{target:{value:'inactive'}})
+  expect(screen.getByText('Nenhuma versão corresponde aos filtros selecionados.')).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button',{name:'Limpar filtros'}))
+  expect(screen.getByLabelText('Vigência a partir de')).toHaveValue('')
+  expect(screen.getByLabelText('Vigência até')).toHaveValue('')
+  expect(screen.getByLabelText('Status do plano')).toHaveValue('all')
+  expect(screen.getByText('Exibindo 3 de 3 versão(ões).')).toBeInTheDocument()
+  fireEvent.change(screen.getByLabelText('Status do plano'),{target:{value:'inactive'}})
+  expect(screen.getByText('Plano Desativado')).toBeInTheDocument()
+  expect(screen.queryByText('Plano Futuro')).not.toBeInTheDocument()
+ })
+ it('does not publish plans or access other domains when filtering the read-only catalog',async()=>{
+  const {client,from}=fixture()
+  render(<MasterCommercialCatalog client={client}/>)
+  await screen.findByText('Plano ESSENCIAL')
+  fireEvent.change(screen.getByLabelText('Status do plano'),{target:{value:'draft'}})
+  expect(screen.getByText('Exibindo 0 de 1 versão(ões).')).toBeInTheDocument()
+  expect(from).toHaveBeenCalledWith('v_saas_plan_version_admin')
+  expect(from).toHaveBeenCalledWith('v_saas_promotion_series_admin')
+  expect((client as unknown as {rpc?:unknown}).rpc).toBeUndefined()
  })
  it('shows no Master commercial data if the server denies access',async()=>{
   const {client}=fixture({deny:true})
