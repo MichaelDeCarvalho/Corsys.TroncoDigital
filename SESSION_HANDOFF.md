@@ -1,3 +1,13 @@
+## V35 — M06.01/M06.02: auditoria inicial do Cloudflare DEV no Work (15/11/2026)
+
+- GitHub `main` confirmada em `9e0ff0a9ac9e2b0511925c7d8e2e82daa7d2a907`, merge do PR #56. [Foundation checks #514](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/43787149625) passou nos três jobs no head do PR. O proprietário reportou TypeScript, Vitest 582/582 e Vite build aprovados na cópia local após a atualização do teste.
+- Cloudflare DEV acessível no navegador Work. O HTML servido aponta para `index-BlX9kh_-.js` e `index-DW5QeZdM.css`, compatíveis com o log do proprietário. Worker `080970ed-368b-47f2-a4b6-d06342622917` informado pelo proprietário. A origem em um ZIP com ajuste manual impede atribuir o bundle ao SHA exato da main apenas por esses nomes.
+- Tela pública de login medida em viewports de 320/390/768/1440 × 900 px. Largura do documento de 320/375/753/1440 px, respectivamente, sem overflow horizontal de página. Os campos e botões medidos couberam horizontalmente. Em 320 e 768 px, o botão de recuperação exige rolagem vertical para visualização completa a 900 px de altura. Esse recorte é uma medição do login público.
+- Matriz e HTML de referência têm os mesmos 21 IDs. M06.01/M06.02 seguem pendentes de auditoria autenticada no DEV publicado, incluindo comparação visual/funcional com a referência, menu por clique e teclado, filtros e tabelas. Gate HTTP somente leitura 5/5 informado pelo proprietário, Grupo B persistente pulado.
+- Próxima ação: abrir no navegador Work uma sessão DEV com conta de teste autorizada e concluir MFA quando exigido. Executar o recorte de leitura Master e Loja nas quatro larguras e propor correções localizadas somente quando houver reprodução.
+
+---
+
 ## V35 Fechamento dos Gates M02.03 / M04.03 / M06 — Roteiro HTTP Somente Leitura, Master Mobile 320 px e Data Civil por Fuso da Loja (15/11/2026)
 
 ## V35 — Correção localizada da instabilidade de testes do Dashboard (15/11/2026)
