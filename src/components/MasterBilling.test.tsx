@@ -202,7 +202,7 @@ describe('Master manual SaaS invoice issuance',()=>{
   expect(screen.getByRole('heading',{name:'Emissão manual de fatura SaaS'})).toBeInTheDocument()
 
   // Change competence
-  const monthInput=screen.getByLabelText(/Competência/)
+  const monthInput=screen.getByLabelText('Competência (mês/ano)')
   fireEvent.change(monthInput,{target:{value:'2026-11'}})
 
   // Click preview
@@ -228,7 +228,7 @@ describe('Master manual SaaS invoice issuance',()=>{
   await choose()
 
   fireEvent.click(screen.getByRole('button',{name:'Emitir fatura manual'}))
-  fireEvent.change(screen.getByLabelText(/Competência/),{target:{value:'2026-11'}})
+  fireEvent.change(screen.getByLabelText('Competência (mês/ano)'),{target:{value:'2026-11'}})
   fireEvent.click(screen.getByRole('button',{name:'Consultar contrato e prévia'}))
 
   await screen.findByText('Pré-visualização contratual — Loja DEV')
@@ -257,7 +257,7 @@ describe('Master manual SaaS invoice issuance',()=>{
   await choose()
 
   fireEvent.click(screen.getByRole('button',{name:'Emitir fatura manual'}))
-  fireEvent.change(screen.getByLabelText(/Competência/),{target:{value:'2026-11'}})
+  fireEvent.change(screen.getByLabelText('Competência (mês/ano)'),{target:{value:'2026-11'}})
   fireEvent.click(screen.getByRole('button',{name:'Consultar contrato e prévia'}))
 
   await screen.findByText(/Esta competência já possui uma fatura ativa emitida/)
@@ -310,14 +310,14 @@ describe('Master manual SaaS invoice issuance',()=>{
   await choose()
 
   fireEvent.click(screen.getByRole('button',{name:'Emitir fatura manual'}))
-  fireEvent.change(screen.getByLabelText(/Competência/),{target:{value:'2026-11'}})
+  fireEvent.change(screen.getByLabelText('Competência (mês/ano)'),{target:{value:'2026-11'}})
   fireEvent.click(screen.getByRole('button',{name:'Consultar contrato e prévia'}))
 
   await screen.findByText('Pré-visualização contratual — Loja DEV')
   expect(screen.getByRole('button',{name:'Confirmar e emitir fatura'})).toBeInTheDocument()
 
   // Changing competence must immediately invalidate preview and hide confirm button
-  fireEvent.change(screen.getByLabelText(/Competência/),{target:{value:'2026-12'}})
+  fireEvent.change(screen.getByLabelText('Competência (mês/ano)'),{target:{value:'2026-12'}})
   expect(screen.queryByText('Pré-visualização contratual — Loja DEV')).not.toBeInTheDocument()
   expect(screen.queryByRole('button',{name:'Confirmar e emitir fatura'})).not.toBeInTheDocument()
 
@@ -374,7 +374,7 @@ describe('Master manual SaaS invoice issuance',()=>{
   await choose()
 
   fireEvent.click(screen.getByRole('button',{name:'Emitir fatura manual'}))
-  fireEvent.change(screen.getByLabelText(/Competência/),{target:{value:'2026-11'}})
+  fireEvent.change(screen.getByLabelText('Competência (mês/ano)'),{target:{value:'2026-11'}})
   fireEvent.click(screen.getByRole('button',{name:'Consultar contrato e prévia'}))
   await screen.findByText('Pré-visualização contratual — Loja DEV')
 
