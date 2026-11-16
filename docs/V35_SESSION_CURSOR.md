@@ -1,5 +1,16 @@
 ## V35 Fechamento dos Gates M02.03 / M04.03 / M06 — Roteiro HTTP Read-Only, Master Mobile 320 px e Data Civil por Fuso da Loja (15/11/2026)
 
+## V35 — Testes intermitentes do Dashboard na suíte local completa (15/11/2026)
+
+- **Evidência do proprietário:** Windows PowerShell, Node 24.20.0, cópia atualizada `5c06ecb9`: `npm.cmd run check` interrompido em Vitest com **580 PASS / 2 FAIL** (85 arquivos: 84 PASS, 1 FAIL), ambos em `WorkspaceDashboard.test.tsx`, nos seletores `Consolidado` e `Total a receber`. A execução isolada do mesmo arquivo retornou **7/7 PASS**.
+- **Diagnóstico delimitado:** o dashboard é montado após consultas assíncronas de Loja/dados; o `findByRole` destes dois testes tinha timeout implícito de 1 segundo. Em execução concorrente, os controles não estavam prontos até o limite. A leitura isolada e o CI anterior não reproduziram a falha.
+- **Correção neste PR:** aguardar o título semântico `Atalhos e Ações Rápidas` como sinal real de que `TenantPanel` terminou de carregar, com timeout máximo de 8 segundos; em seguida verificar `Consolidado` imediatamente. O KPI `Total a receber` mantém sua espera individual de até 8 segundos devido à RPC independente. Não alterar implementação, asserções de navegação, dados, timers globais ou regras financeiras.
+- **Evidência pendente:** rerun da suíte completa na cópia Windows e CI do PR; build Cloudflare DEV e publicação **não realizados**. Se a falha persistir, investigar a ordem e integridade das consultas ao invés de simplesmente aumentar timeouts.
+- **Próxima ação:** integrar mediante CI 3/3 PASS; atualizar apenas o arquivo de teste na cópia local ou usar nova `main`, executar `npm.cmd run check`; só então continuar publicação controlada DEV.
+
+---
+
+
 ## V35 — M06.02: acessibilidade do menu mobile (15/11/2026)
 
 - **Defeito em código:** `AppShell.tsx` não fechava o menu lateral com Escape, deixava o foco no elemento anterior ao abrir e não limitava a tabulação à navegação expandida; no CSS, o menu deslocado para fora da tela podia permanecer navegável por teclado.
