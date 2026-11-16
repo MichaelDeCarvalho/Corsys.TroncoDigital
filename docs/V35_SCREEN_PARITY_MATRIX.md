@@ -3,6 +3,8 @@
 **Evidência transversal nova — 15/11/2026:** gate de autorização HTTP **somente leitura** 5/5 PASS reportado pelo proprietário, após correção de `p_page: 0` no teste do usuário sem `finance.read`; Master AAL1/AAL2, Loja A↔B aprovados. [Relatório](V35_HTTP_READONLY_GATE_20261115.md). Isso **remove a pendência deste subgate específico**, mas não comprova paridade visual/funcional das 21 telas nem executa o Grupo B persistente. Os status por tela abaixo permanecem como evidência de escopo próprio, não são promovidos automaticamente.
 
 
+**Acessibilidade mobile transversal, em revisão:** o drawer de navegação passou a tratar foco inicial, Escape, Tab, retorno de foco e visibilidade quando fechado (PR de M06.02); CI e QA físico/browser ainda devem ser confirmados. Não altera status de homologação das telas.
+
 Atualização consolidada após o ciclo **Fechamento dos Gates M02.03 / M04.03 / M06** (15/11/2026).
 
 ## Legenda canônica de status
