@@ -1,5 +1,16 @@
 ## V35 Fechamento dos Gates M02.03 / M04.03 / M06 — Roteiro HTTP Somente Leitura, Master Mobile 320 px e Data Civil por Fuso da Loja (15/11/2026)
 
+## V35 — Correção localizada da instabilidade de testes do Dashboard (15/11/2026)
+
+- **Relatório local recebido:** 2 repetições de `npm.cmd run check` com 2 FAIL/580 PASS (arquivo `src/components/WorkspaceDashboard.test.tsx`), mas `npm.cmd exec -- vitest run src/components/WorkspaceDashboard.test.tsx` isolado **7/7 PASS**. TypeScript da execução completa PASS; build não iniciou porque Vitest encerrou com falha.
+- **Base:** GitHub `main` `5c06ecb9223fab5887d001b4816f6750cd123b28`. CI prévio na mesma revisão PASS (não substituir o resultado local).
+- **Patch mínimo:** só seletor/sincronização dos dois testes do dashboard, aguardando o conteúdo visível carregado antes dos asserts e timeout explicitamente limitado a 8 s para a RPC de KPI. Nenhuma alteração em `Workspace.tsx`, `FinancialDashboard.tsx`, backend, RLS, Auth ou banco.
+- **Pendente:** validar a revisão no CI e repetir `npm.cmd run check` no computador do proprietário; depois build/publicação somente Cloudflare DEV com credenciais locais, sem PROD.
+- **Nota:** avisos `act(...)` em outros arquivos foram observados, mas não equivalem a falhas, e não são incluídos nesta microentrega.
+
+---
+
+
 ## V35 — Acessibilidade do drawer mobile e preparação QA Cloudflare DEV (15/11/2026)
 
 - **Base GitHub:** `main` `6481fa0e657011034bc42d451dd39cfd8accecb2`, PR #54 integrado e CI 3/3 PASS.
