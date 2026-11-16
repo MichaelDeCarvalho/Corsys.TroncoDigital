@@ -1,5 +1,17 @@
 ## V35 Fechamento dos Gates M02.03 / M04.03 / M06 — Roteiro HTTP Read-Only, Master Mobile 320 px e Data Civil por Fuso da Loja (15/11/2026)
 
+## V35 — M06.02: acessibilidade do menu mobile (15/11/2026)
+
+- **Defeito em código:** `AppShell.tsx` não fechava o menu lateral com Escape, deixava o foco no elemento anterior ao abrir e não limitava a tabulação à navegação expandida; no CSS, o menu deslocado para fora da tela podia permanecer navegável por teclado.
+- **Correção mínima em revisão:** foco inicial no primeiro item ao abrir, Escape fecha/restaura o foco ao botão de origem, Tab/Shift+Tab permanecem nos itens do menu, clique no backdrop e seleção de rota restauram o foco. CSS `@media (max-width: 960px)` adiciona `visibility: hidden` ao menu fechado e `visible` ao aberto; desktop permanece inalterado.
+- **Regressão:** `ResponsiveLayout.test.tsx` inclui cliques, Escape, armadilha de Tab, backdrop e regressão de CSS de menu fechado, sem novas dependências.
+- **Evidência:** verificar CI e revisão de diff do PR; QA físico em 320/390/768 px, leitor de tela e publicação Cloudflare DEV **não executados** nesta microentrega.
+- **Deploy:** o projeto possui `npm run deploy:dev` com `wrangler.dev.jsonc`; GitHub CI faz apenas `--dry-run`. Autenticação Wrangler/Cloudflare e smoke test pós-publicação requerem ambiente autorizado, sem usar PROD.
+- **Próxima ação:** integrar o PR caso CI PASS, executar deploy DEV com credenciais no ambiente do proprietário e homologar navegação mobile/desktop contra referência V35 (eventualmente usando Gemini como auditor visual sem compartilhar segredos).
+
+---
+
+
 ## V35 — M06.02: continuidade de período no Fluxo de Caixa (15/11/2026)
 
 - **Correção no código:** `FluxoCaixa.tsx` passa a preservar a instância de `DailyCashFlow` quando alterna Consolidado / Projetado / Receitas × Desp. / Saldo. O período selecionado não é descartado por troca de modo; mudança de `organizationId` mantém remount e reinicialização de contexto.
