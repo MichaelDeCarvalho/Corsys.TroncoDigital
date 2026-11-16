@@ -132,7 +132,10 @@ describe('Workspace V35 dashboard modes, shortcuts and KPI navigation', () => {
     const { client } = createWorkspaceClient()
     render(<Workspace client={client} user={user} onSignOut={vi.fn()} />)
 
-    const consolidadoBtn = await screen.findByRole('button', { name: 'Consolidado' })
+    // The full 85-file suite can delay tenant initialization beyond findByRole's 1s default.
+    // Wait for the user's actual Dashboard to become ready before asserting its controls.
+    await screen.findByRole('heading', { name: 'Atalhos e Ações Rápidas' }, { timeout: 8000 })
+    const consolidadoBtn = screen.getByRole('button', { name: 'Consolidado' })
     const movimentosBtn = screen.getByRole('button', { name: 'Receitas x Desp.' })
     const saldoBtn = screen.getByRole('button', { name: 'Saldo' })
 
@@ -158,7 +161,9 @@ describe('Workspace V35 dashboard modes, shortcuts and KPI navigation', () => {
     const { client } = createWorkspaceClient()
     render(<Workspace client={client} user={user} onSignOut={vi.fn()} />)
 
-    const totalReceberCard = await screen.findByRole('button', { name: /Total a receber/i })
+    await screen.findByRole('heading', { name: 'Atalhos e Ações Rápidas' }, { timeout: 8000 })
+    // KPI values load from an independent read-only RPC after the tenant panel appears.
+    const totalReceberCard = await screen.findByRole('button', { name: /Total a receber/i }, { timeout: 8000 })
     fireEvent.click(totalReceberCard)
 
     await waitFor(() => {
