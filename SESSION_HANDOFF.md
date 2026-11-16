@@ -1,3 +1,31 @@
+## V35 — M06.02: navegação Master no DEV com revisão identificada (15/11/2026)
+
+- Login confirmado pelo proprietário e sessão Master observada no Edge após a recuperação do Cloudflare DEV principal. Worker `325b1f83-3d3f-4230-8e53-3eeafb2768d8`, build da main `9e0ff0a9ac9e2b0511925c7d8e2e82daa7d2a907`, entrada `index-Ca9UP64Z.js` idêntica ao build local. TypeScript, 85 arquivos Vitest, Vite e dry-run aprovados. O Supabase DEV aceitou a chave pública publicada (HTTP 200 na consulta de configuração de Auth). A cópia antiga ainda tem a configuração rejeitada.
+- Abertas as seis telas Master em 320, 390, 768 e 1440 × 900 px (24 navegações). A aba selecionada foi confirmada e não houve overflow horizontal da página nesse recorte. A tabela de Clientes SaaS apresentou rolagem interna a 320 px. Busca sintética sem correspondência removeu as linhas e Limpar filtros restaurou a listagem.
+- Menu a 320 px, com o bundle identificado: foco inicial em Início, Tab/Shift+Tab circularam entre primeiro e último itens, Escape fechou o drawer e restaurou o foco no botão Abrir menu. O comportamento anterior de Escape não foi reproduzido nessa versão.
+- As 21 rotas foram abertas ao menos uma vez nas quatro larguras ao longo dos dois recortes (15 Loja no bundle anterior e seis Master no atual). Isso comprova navegação e medição nos recortes, com paridade visual/funcional integral ainda pendente. Revalidar Cadastros e Plano de Contas com o patch do PR #57 em ambiente publicado. Nenhuma ação persistente foi executada na auditoria Master.
+
+---
+
+## V35 — M06.02: auditoria autenticada da Loja e abas responsivas (15/11/2026)
+
+- O proprietário conseguiu entrar no Edge com a mesma conta que apresentou erro genérico no navegador interno do Work. A causa desse erro permanece indeterminada. A sessão existente do Edge permitiu leitura no DEV.
+- Foram abertas as 15 rotas de Loja nas quatro larguras solicitadas (60 navegações). Este recorte cobre navegação inicial e medição horizontal, com confirmação da causa em duas telas. A verificação detalhada de estados, filtros, tabelas e paridade visual permanece pendente, assim como as seis telas Master, que não estavam acessíveis nessa sessão.
+- Overflow reproduzido no DEV: Cadastros a 320 px (documento de 357 px) e Plano de Contas a 320 e 390 px (434 px). Nas duas telas, a fila de abas estava em flex sem quebra de linha. A correção permite quebra apenas nessas duas filas e aguarda revalidação no navegador com a revisão corrigida.
+- Em 320 px, Escape deixou o drawer aberto no DEV observado. A main `9e0ff0a` já contém o tratamento de Escape em `AppShell.tsx`. Validar com um bundle rastreável dessa revisão ou posterior antes de alterar o menu.
+
+---
+
+## V35 — M06.01/M06.02: auditoria inicial do Cloudflare DEV no Work (15/11/2026)
+
+- GitHub `main` confirmada em `9e0ff0a9ac9e2b0511925c7d8e2e82daa7d2a907`, merge do PR #56. [Foundation checks #514](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/43787149625) passou nos três jobs no head do PR. O proprietário reportou TypeScript, Vitest 582/582 e Vite build aprovados na cópia local após a atualização do teste.
+- Cloudflare DEV acessível no navegador Work. O HTML servido aponta para `index-BlX9kh_-.js` e `index-DW5QeZdM.css`, compatíveis com o log do proprietário. Worker `080970ed-368b-47f2-a4b6-d06342622917` informado pelo proprietário. A origem em um ZIP com ajuste manual impede atribuir o bundle ao SHA exato da main apenas por esses nomes.
+- Tela pública de login medida em viewports de 320/390/768/1440 × 900 px. Largura do documento de 320/375/753/1440 px, respectivamente, sem overflow horizontal de página. Os campos e botões medidos couberam horizontalmente. Em 320 e 768 px, o botão de recuperação exige rolagem vertical para visualização completa a 900 px de altura. Esse recorte é uma medição do login público.
+- Matriz e HTML de referência têm os mesmos 21 IDs. M06.01/M06.02 seguem pendentes de auditoria autenticada no DEV publicado, incluindo comparação visual/funcional com a referência, menu por clique e teclado, filtros e tabelas. Gate HTTP somente leitura 5/5 informado pelo proprietário, Grupo B persistente pulado.
+- Próxima ação: abrir no navegador Work uma sessão DEV com conta de teste autorizada e concluir MFA quando exigido. Executar o recorte de leitura Master e Loja nas quatro larguras e propor correções localizadas somente quando houver reprodução.
+
+---
+
 ## V35 Fechamento dos Gates M02.03 / M04.03 / M06 — Roteiro HTTP Somente Leitura, Master Mobile 320 px e Data Civil por Fuso da Loja (15/11/2026)
 
 ## V35 — Correção localizada da instabilidade de testes do Dashboard (15/11/2026)
