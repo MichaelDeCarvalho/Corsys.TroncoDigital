@@ -1,5 +1,17 @@
 ## V35 Fechamento dos Gates M02.03 / M04.03 / M06 — Roteiro HTTP Somente Leitura, Master Mobile 320 px e Data Civil por Fuso da Loja (15/11/2026)
 
+## V35 — Gate HTTP 5/5 comprovado pelo proprietário; paridade das telas como próximo foco (15/11/2026)
+
+- **Base analisada:** `main` `8461e92760041bb4f76901e714fa6e4d6bbb0f8b`. O proprietário executou `npm.cmd run test:negative-auth:readonly --prefix dev-gate` em PowerShell Windows com fixture privada somente local.
+- **Evidência reportada:** Grupo A **1/5 A→B PASS**, **2/5 B→A PASS**, **3/5 sem `finance.read` PASS**, **4/5 Master AAL1 bloqueado PASS**, **5/5 Master AAL2/TOTP leitura autorizada PASS**; `PASS: negative HTTP authorization suite completed successfully.`
+- **Defeito e solução rastreáveis:** `PGRST202` na chamada negativa de `read_tenant_cash_flow_detail` porque o argumento obrigatório `p_page` foi omitido apenas no cenário `noFinanceClient`; acrescentado `p_page: 0` e a suíte completa passou. Nenhuma asserção foi afrouxada; o usuário corrigiu credenciais locais separadamente.
+- **Limites:** Grupo B persistente **SKIPPED** por padrão; nenhuma mutação de DEV pelo gate; CI não reproduziu JWT/TOTP do proprietário; nenhuma evidência de publicação DEV/PROD ou homologação visual nova.
+- **Fonte:** `docs/V35_HTTP_READONLY_GATE_20261115.md`.
+- **Próxima ação objetiva:** M06.01/M06.02 — paridade funcional/visual das 21 telas React contra HTML V35 e inventário; lacunas M01.03/04, M03 #43, M05 e testes de recuperação seguem independentes.
+
+---
+
+
 - **Base:** HEAD `02d698b35074902be9291984216e55a6809b2b9e` (CI GitHub Actions 573/573 PASS; responsividade homologada pelo Work em `320, 390, 768 e 1440 px`).
 - **ENTREGA 1 — Roteiro HTTP Real Somente Leitura (`dev-gate/`):**
   - `dev-gate/tests/negative-http-authorization.mjs` dividido em **Grupo A (Somente Leitura — padrão `--readonly`, `npm run test:negative-auth:readonly --prefix dev-gate`)** e **Grupo B (Operações Persistentes — bloqueado por padrão, exigindo `--include-persistent` + `ALLOW_DEV_PERSISTENT_AUTH_TESTS=true`)**.

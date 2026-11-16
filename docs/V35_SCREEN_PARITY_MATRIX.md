@@ -1,5 +1,8 @@
 # V35 — Matriz de Paridade de Telas (Oficial 21 IDs)
 
+**Evidência transversal nova — 15/11/2026:** gate de autorização HTTP **somente leitura** 5/5 PASS reportado pelo proprietário, após correção de `p_page: 0` no teste do usuário sem `finance.read`; Master AAL1/AAL2, Loja A↔B aprovados. [Relatório](V35_HTTP_READONLY_GATE_20261115.md). Isso **remove a pendência deste subgate específico**, mas não comprova paridade visual/funcional das 21 telas nem executa o Grupo B persistente. Os status por tela abaixo permanecem como evidência de escopo próprio, não são promovidos automaticamente.
+
+
 Atualização consolidada após o ciclo **Fechamento dos Gates M02.03 / M04.03 / M06** (15/11/2026).
 
 ## Legenda canônica de status
