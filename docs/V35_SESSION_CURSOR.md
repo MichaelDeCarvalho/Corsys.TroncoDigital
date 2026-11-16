@@ -1,5 +1,15 @@
 ## V35 Fechamento dos Gates M02.03 / M04.03 / M06 — Roteiro HTTP Read-Only, Master Mobile 320 px e Data Civil por Fuso da Loja (15/11/2026)
 
+## V35 — M06.01/02: histórico de versões de planos (15/11/2026)
+
+- **Escopo pontual em revisão:** `view-master-planos`, histórico de versões, controles V35 `F001–F003` e `A002`. Adicionados filtros por data inicial de vigência, data final para filtrar a vigência **inicial** da versão, situação e botão `Limpar filtros` com total visível, conforme `docs/pilot/v35-planos-ofertas.reference.html` (seção `view-master-planos`, `applyVersionFilters`).
+- **Fonte da consulta:** `loadPlatformCommercialCatalog` continua recuperando catálogo completo em modo somente leitura, com bloqueio de catálogo incompleto (>200 itens) e validações já existentes. Filtragem aplicada localmente ao conjunto **completo validado**, sem consulta paginada parcial, alteração de RLS, preço, assinatura, faturamento, publicação ou banco.
+- **Evidência de desenvolvimento:** testes de componentes em `MasterCommercialCatalog.test.tsx` cobrem limites inclusivos, situações `future`/`inactive`, limpeza, ausência de resultados e isolamento de consulta; CI/QA visual devem ser registrados após execução (não declarar homologado DEV por código integrado).
+- **Próxima ação:** CI e revisão do PR, depois QA real desktop/mobile dos filtros no Worker DEV somente mediante publicação especificamente autorizada; continuar M06.01/02 em lacunas comprovadas do inventário das 21 telas.
+
+---
+
+
 ## V35 — M06.01/02: filtros reais no Master Cobrança (15/11/2026)
 
 - **Entrega em PR #52:** `view-master-cobranca`: filtros de leitura por número da fatura, status e competência em consulta server-side, sob a Loja selecionada e antes da paginação. Incluídos reset de filtros ao trocar de Loja, validações de valores inválidos e escape de curinga ILIKE.
