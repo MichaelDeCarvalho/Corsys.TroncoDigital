@@ -1,3 +1,12 @@
+## V35 — M06.02: navegação Master no DEV com revisão identificada (15/11/2026)
+
+- Login confirmado pelo proprietário e sessão Master observada no Edge após a recuperação do Cloudflare DEV principal. Worker `325b1f83-3d3f-4230-8e53-3eeafb2768d8`, build da main `9e0ff0a9ac9e2b0511925c7d8e2e82daa7d2a907`, entrada `index-Ca9UP64Z.js` idêntica ao build local. TypeScript, 85 arquivos Vitest, Vite e dry-run aprovados. O Supabase DEV aceitou a chave pública publicada (HTTP 200 na consulta de configuração de Auth). A cópia antiga ainda tem a configuração rejeitada.
+- Abertas as seis telas Master em 320, 390, 768 e 1440 × 900 px (24 navegações). A aba selecionada foi confirmada e não houve overflow horizontal da página nesse recorte. A tabela de Clientes SaaS apresentou rolagem interna a 320 px. Busca sintética sem correspondência removeu as linhas e Limpar filtros restaurou a listagem.
+- Menu a 320 px, com o bundle identificado: foco inicial em Início, Tab/Shift+Tab circularam entre primeiro e último itens, Escape fechou o drawer e restaurou o foco no botão Abrir menu. O comportamento anterior de Escape não foi reproduzido nessa versão.
+- As 21 rotas foram abertas ao menos uma vez nas quatro larguras ao longo dos dois recortes (15 Loja no bundle anterior e seis Master no atual). Isso comprova navegação e medição nos recortes, com paridade visual/funcional integral ainda pendente. Revalidar Cadastros e Plano de Contas com o patch do PR #57 em ambiente publicado. Nenhuma ação persistente foi executada na auditoria Master.
+
+---
+
 ## V35 — M06.02: auditoria autenticada da Loja e abas responsivas (15/11/2026)
 
 - O proprietário conseguiu entrar no Edge com a mesma conta que apresentou erro genérico no navegador interno do Work. A causa desse erro permanece indeterminada. A sessão existente do Edge permitiu leitura no DEV.
