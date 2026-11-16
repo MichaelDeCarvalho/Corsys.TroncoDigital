@@ -16,7 +16,7 @@ export function PlanoContas({ client, organizationId }: { client: SupabaseClient
         </div>
       </div>
 
-      <div className="tab-buttons" style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+      <div className="tab-buttons" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px' }}>
         <button type="button" className={tab === 'plano' ? 'primary' : 'secondary'} onClick={() => setTab('plano')}>Plano de Contas</button>
         <button type="button" className={tab === 'categorias' ? 'primary' : 'secondary'} onClick={() => setTab('categorias')}>Categorias e Regras</button>
         <button type="button" className={tab === 'contas' ? 'primary' : 'secondary'} onClick={() => setTab('contas')}>Contas e Fundos</button>
