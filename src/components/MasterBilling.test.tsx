@@ -67,7 +67,7 @@ function fixture(opts:{foreign?:boolean;integrity?:boolean;badBreakdown?:boolean
   v_saas_payment_balances:[payment],
  }
  const from=vi.fn((name:string)=>{
-  const chain={select:()=>chain,eq:()=>chain,order:()=>chain,range:()=>chain,limit:()=>chain,
+  const chain={select:()=>chain,eq:vi.fn(()=>chain),ilike:vi.fn(()=>chain),order:()=>chain,range:()=>chain,limit:()=>chain,
    abortSignal:()=>Promise.resolve({data:rows[name],error:null})}
   return chain
  })
@@ -132,6 +132,45 @@ describe('Master billing read model',()=>{
   await screen.findByText(/R\$\s?10,00/)
   expect(from).toHaveBeenCalledWith('v_saas_payment_balances')
  })
+
+ it('filters SaaS invoices by number, status and month on the server before pagination',async()=>{
+  const {client,from}=fixture()
+  render(<MasterBilling client={client} tenants={tenants} initialOrganizationId={org}/>)
+  await screen.findByText('DEV-0001')
+  fireEvent.change(screen.getByLabelText('Número da fatura'),{target:{value:'DEV-0001'}})
+  fireEvent.change(screen.getByLabelText('Status da fatura'),{target:{value:'partial'}})
+  fireEvent.change(screen.getByLabelText('Competência da fatura'),{target:{value:'2026-10'}})
+  fireEvent.click(screen.getByRole('button',{name:'Aplicar filtros'}))
+  await waitFor(()=>{
+   const calls=from.mock.results
+   const query=calls[calls.length-1]?.value
+   expect(query?.ilike).toHaveBeenCalledWith('invoice_number','%DEV-0001%')
+   expect(query?.eq).toHaveBeenCalledWith('organization_id',org)
+   expect(query?.eq).toHaveBeenCalledWith('derived_status','partial')
+   expect(query?.eq).toHaveBeenCalledWith('competence','2026-10-01')
+  })
+  fireEvent.click(screen.getByRole('button',{name:'Limpar filtros'}))
+  await waitFor(()=>{
+   const calls=from.mock.results
+   const query=calls[calls.length-1]?.value
+   expect(query?.ilike).not.toHaveBeenCalled()
+   expect(query?.eq).toHaveBeenCalledWith('organization_id',org)
+   expect(query?.eq).not.toHaveBeenCalledWith('derived_status','partial')
+  })
+ })
+ it('rejects malformed Master invoice filter values without querying the backend',async()=>{
+  const {client,from}=fixture()
+  const signal=new AbortController().signal
+  await expect(loadMasterInvoicePage(client,org,0,signal,{competence:'2026-13'})).rejects.toThrow('Invalid Master invoice filters')
+  await expect(loadMasterInvoicePage(client,org,0,signal,{status:'invalid' as 'paid'})).rejects.toThrow('Invalid Master invoice filters')
+  expect(from).not.toHaveBeenCalled()
+ })
+ it('escapes LIKE wildcards in a user-provided invoice number search',async()=>{
+  const {client,from}=fixture()
+  await loadMasterInvoicePage(client,org,0,new AbortController().signal,{search:'A%_B'})
+  const query=from.mock.results[0]?.value
+  expect(query?.ilike).toHaveBeenCalledWith('invoice_number','%A\\%\\_B%')
+ })
  it('fails closed when a different tenant or inconsistent invoice is returned',async()=>{
   const bad=fixture({foreign:true})
   await expect(loadMasterInvoicePage(bad.client,org,0,new AbortController().signal)).rejects.toThrow()
@@ -163,7 +202,7 @@ describe('Master manual SaaS invoice issuance',()=>{
   expect(screen.getByRole('heading',{name:'Emissão manual de fatura SaaS'})).toBeInTheDocument()
 
   // Change competence
-  const monthInput=screen.getByLabelText(/Competência/)
+  const monthInput=screen.getByLabelText('Competência (mês/ano)')
   fireEvent.change(monthInput,{target:{value:'2026-11'}})
 
   // Click preview
@@ -189,7 +228,7 @@ describe('Master manual SaaS invoice issuance',()=>{
   await choose()
 
   fireEvent.click(screen.getByRole('button',{name:'Emitir fatura manual'}))
-  fireEvent.change(screen.getByLabelText(/Competência/),{target:{value:'2026-11'}})
+  fireEvent.change(screen.getByLabelText('Competência (mês/ano)'),{target:{value:'2026-11'}})
   fireEvent.click(screen.getByRole('button',{name:'Consultar contrato e prévia'}))
 
   await screen.findByText('Pré-visualização contratual — Loja DEV')
@@ -218,7 +257,7 @@ describe('Master manual SaaS invoice issuance',()=>{
   await choose()
 
   fireEvent.click(screen.getByRole('button',{name:'Emitir fatura manual'}))
-  fireEvent.change(screen.getByLabelText(/Competência/),{target:{value:'2026-11'}})
+  fireEvent.change(screen.getByLabelText('Competência (mês/ano)'),{target:{value:'2026-11'}})
   fireEvent.click(screen.getByRole('button',{name:'Consultar contrato e prévia'}))
 
   await screen.findByText(/Esta competência já possui uma fatura ativa emitida/)
@@ -271,14 +310,14 @@ describe('Master manual SaaS invoice issuance',()=>{
   await choose()
 
   fireEvent.click(screen.getByRole('button',{name:'Emitir fatura manual'}))
-  fireEvent.change(screen.getByLabelText(/Competência/),{target:{value:'2026-11'}})
+  fireEvent.change(screen.getByLabelText('Competência (mês/ano)'),{target:{value:'2026-11'}})
   fireEvent.click(screen.getByRole('button',{name:'Consultar contrato e prévia'}))
 
   await screen.findByText('Pré-visualização contratual — Loja DEV')
   expect(screen.getByRole('button',{name:'Confirmar e emitir fatura'})).toBeInTheDocument()
 
   // Changing competence must immediately invalidate preview and hide confirm button
-  fireEvent.change(screen.getByLabelText(/Competência/),{target:{value:'2026-12'}})
+  fireEvent.change(screen.getByLabelText('Competência (mês/ano)'),{target:{value:'2026-12'}})
   expect(screen.queryByText('Pré-visualização contratual — Loja DEV')).not.toBeInTheDocument()
   expect(screen.queryByRole('button',{name:'Confirmar e emitir fatura'})).not.toBeInTheDocument()
 
@@ -335,7 +374,7 @@ describe('Master manual SaaS invoice issuance',()=>{
   await choose()
 
   fireEvent.click(screen.getByRole('button',{name:'Emitir fatura manual'}))
-  fireEvent.change(screen.getByLabelText(/Competência/),{target:{value:'2026-11'}})
+  fireEvent.change(screen.getByLabelText('Competência (mês/ano)'),{target:{value:'2026-11'}})
   fireEvent.click(screen.getByRole('button',{name:'Consultar contrato e prévia'}))
   await screen.findByText('Pré-visualização contratual — Loja DEV')
 
