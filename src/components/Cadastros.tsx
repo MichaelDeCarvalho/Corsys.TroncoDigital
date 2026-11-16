@@ -165,7 +165,7 @@ export function Cadastros({
           <h2>Cadastros Administrativos</h2>
           <p>Gestão centralizada de integrantes, cargos e permissões da Loja.</p>
         </div>
-        <div className="tab-buttons" style={{ display: 'flex', gap: '8px' }}>
+        <div className="tab-buttons" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
           <button
             type="button"
             className={tab === 'integrantes' ? 'primary' : 'secondary'}
