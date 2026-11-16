@@ -1,5 +1,15 @@
 # RELEASE CHECKLIST — V35
 
+## Atualização de homologação — 15/11/2026
+
+- [x] **Gate de autorização HTTP somente leitura em DEV — 5/5 PASS**, evidência de terminal fornecida pelo proprietário ([relatório](docs/V35_HTTP_READONLY_GATE_20261115.md)): Loja A↔B, usuário sem `finance.read`, Master AAL1 negado, Master AAL2/TOTP positivo.
+- [ ] **Grupo B de operações persistentes** — não executado; demanda autorização específica e ambiente de recuperação apropriado.
+- [ ] **Paridade integral funcional/visual das 21 telas V35** — implementação existente precisa de aceites por requisito e QA de fluxos.
+- [ ] **Onboarding/termos, decisões contábeis, LGPD, restauração, PROD/Beta** — permanecem bloqueados/pendentes segundo quadro mestre.
+- Nenhum secret/TOTP/credencial versionado; aprovação HTTP de leitura **não é** aprovação de release.
+
+---
+
 ## Estado atual — 2026-10-08 Brasil
 
 Etapa 1 CONCLUÍDA no DEV; etapa 2 EM EXECUÇÃO, começando pela conciliação de integrantes, parâmetros e estrutura financeira com o piloto V35. Evidência consolidada e limites: [V35_STAGE_1_CLOSURE_REPORT.md](docs/V35_STAGE_1_CLOSURE_REPORT.md).
