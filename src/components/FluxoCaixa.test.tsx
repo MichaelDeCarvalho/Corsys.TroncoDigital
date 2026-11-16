@@ -56,6 +56,35 @@ describe('FluxoCaixa view', () => {
     expect(from).toHaveBeenCalledWith('financial_accounts')
   })
 
+  it('preserves the chosen date range when switching V35 modes, but resets it for a different Loja', () => {
+    const { client } = mockClient()
+    const { rerender } = render(<FluxoCaixa client={client} organizationId={org} />)
+
+    fireEvent.change(screen.getByLabelText('Data inicial'), { target: { value: '2026-05-03' } })
+    fireEvent.change(screen.getByLabelText('Data final'), { target: { value: '2026-05-10' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Consultar período' }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Projetado' }))
+    expect(screen.getByLabelText('Data inicial')).toHaveValue('2026-05-03')
+    expect(screen.getByLabelText('Data final')).toHaveValue('2026-05-10')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Receitas × Desp.' }))
+    expect(screen.getByLabelText('Data inicial')).toHaveValue('2026-05-03')
+    expect(screen.getByLabelText('Data final')).toHaveValue('2026-05-10')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Saldo' }))
+    expect(screen.getByLabelText('De')).toHaveValue('2026-05-03')
+    expect(screen.getByLabelText('Até')).toHaveValue('2026-05-10')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Consolidado' }))
+    expect(screen.getByLabelText('Data inicial')).toHaveValue('2026-05-03')
+    expect(screen.getByLabelText('Data final')).toHaveValue('2026-05-10')
+
+    rerender(<FluxoCaixa client={client} organizationId="b112d600-bf1a-4bfd-bc1c-e9e9b749b539" />)
+    expect(screen.getByLabelText('Data inicial')).not.toHaveValue('2026-05-03')
+    expect(screen.getByLabelText('Data final')).not.toHaveValue('2026-05-10')
+  })
+
   it('does not disclose balances from a foreign organization', async () => {
     const { client } = mockClient(true)
     render(<FluxoCaixa client={client} organizationId={org} />)
