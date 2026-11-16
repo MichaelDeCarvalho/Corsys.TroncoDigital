@@ -1,5 +1,17 @@
 ## V35 Fechamento dos Gates M02.03 / M04.03 / M06 — Roteiro HTTP Somente Leitura, Master Mobile 320 px e Data Civil por Fuso da Loja (15/11/2026)
 
+## V35 — M06.01/02: filtros do histórico de planos Master (15/11/2026)
+
+- **Base:** `main` `cab162f012880053b2cf4036e8e2afd6590280b9` (PR #52 integrado).
+- **Entrega proposta:** `MasterCommercialCatalog.tsx` passa a renderizar e aplicar os filtros oficiais `view-master-planos-F001,F002,F003,A002`: intervalo inclusivo da data de início da versão, estados `all/draft/current/future/historical/inactive`, limpeza e contagem. O método reproduz a semântica do `applyVersionFilters` do HTML V35; plano desativado prevalece sobre o status da versão.
+- **Testes adicionados:** histórico de três versões com data/status distintos, bordas inclusivas, vazio, limpa, exclusão de planos ativos por status desativado e preservação de promoções; consulta somente leitura sem nova RPC.
+- **Segurança/preservação:** catálogo já recuperado e validado até o limite de 200; nenhuma operação de publicação, preço, gravação, migração, Auth, RLS, segredo, Worker ou PROD alterada.
+- **Evidência:** CI/PR a confirmar; comportamento de navegação em browser e QA DEV **não avaliados** nesta entrega.
+- **Próxima ação:** integração condicional ao CI, homologação visual específica quando houver deploy DEV autorizado e continuidade da matriz 21 telas.
+
+---
+
+
 ## V35 — M06.01/02: paridade de filtros em `view-master-cobranca` (15/11/2026)
 
 - **Base:** `main` pós-PR #51 (`91420c7cfd0706167f321973224485325b0813f9`).
