@@ -63,7 +63,8 @@ export function FluxoCaixa({ client, organizationId }: { client: SupabaseClient;
       </section>
 
       {/* Embed DailyCashFlow */}
-      <DailyCashFlow key={`${organizationId}:${mode}`} client={client} organizationId={organizationId} viewMode={mode} historical />
+      {/* Keep date range across mode changes; remount only when tenant context changes. */}
+      <DailyCashFlow key={organizationId} client={client} organizationId={organizationId} viewMode={mode} historical />
     </div>
   )
 }
