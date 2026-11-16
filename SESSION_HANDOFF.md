@@ -1,5 +1,17 @@
 ## V35 Fechamento dos Gates M02.03 / M04.03 / M06 — Roteiro HTTP Somente Leitura, Master Mobile 320 px e Data Civil por Fuso da Loja (15/11/2026)
 
+## V35 — Paridade funcional: período preservado ao alternar modos do Fluxo de Caixa (15/11/2026)
+
+- **Base:** `main` `38dfe4b9cb108015ed37951e3d532bc7711f806d` (PR #53 integrado).
+- **Defeito comprovado em código:** `FluxoCaixa` montava `DailyCashFlow` com uma chave React composta por `organizationId` e `mode`, forçando reset de período a cada troca entre Consolidado, Projetado, Movimentos e Saldo.
+- **Correção reversível:** `key={organizationId}`, preservando período por Loja e reinicializando o estado na troca de organização. Adicionado teste de continuidade entre modos e reset no isolamento de contexto entre Lojas.
+- **Sem alterações:** Supabase, schema, migrations, grants, contas, políticas, produtos financeiros, Cloudflare ou PROD.
+- **Evidência pendente:** pipeline CI desta revisão e QA visual no DEV; subgate HTTP read-only 5/5 previamente aprovado permanece válido, sem repetição desnecessária.
+- **Próxima ação:** revisar e integrar PR após checks, continuar lacunas da referência V35.
+
+---
+
+
 ## V35 — M06.01/02: filtros do histórico de planos Master (15/11/2026)
 
 - **Base:** `main` `cab162f012880053b2cf4036e8e2afd6590280b9` (PR #52 integrado).
