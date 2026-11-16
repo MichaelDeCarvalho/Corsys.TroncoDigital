@@ -1,5 +1,17 @@
 ## V35 Fechamento dos Gates M02.03 / M04.03 / M06 — Roteiro HTTP Read-Only, Master Mobile 320 px e Data Civil por Fuso da Loja (15/11/2026)
 
+## V35 — Retomada após gate HTTP 5/5 (15/11/2026)
+
+- **Entrega confirmada pelo proprietário:** `npm.cmd run test:negative-auth:readonly --prefix dev-gate`, Grupo A **5/5 PASS** com JWT reais, negativa cross-tenant bidirecional, usuário sem `finance.read`, Master AAL1 negado e Master AAL2/TOTP autorizado. **Grupo B persistente SKIPPED** por padrão.
+- **Correção incorporada neste PR:** adicionar `p_page: 0` à RPC `read_tenant_cash_flow_detail` no cenário `noFinanceClient`, mantendo `PGRST202` como falha (nunca negativa válida).
+- **Evidência delimitada:** [V35_HTTP_READONLY_GATE_20261115.md](V35_HTTP_READONLY_GATE_20261115.md). Não equivale a homologação das operações persistentes, dos 21 fluxos visuais, de recuperação nem de PROD.
+- **Próxima microentrega ativa:** **M06.01/M06.02 — reconciliação e conclusão funcional/visual da paridade V35**, a partir da referência imutável `docs/pilot/v35-planos-ofertas.reference.html`, inventário e matriz de 21 telas. Priorizar lacuna comprovada e testar isoladamente, sem recriar telas existentes.
+- **Continuam bloqueadas:** M01.03/04 (termos e convites), M03.02–04 (contabilidade, issue #43), M05.01 (LGPD), M05.02/Grupo B conforme autorização separada, M07 (PROD).
+- **Base do registro:** GitHub `main` `8461e92760041bb4f76901e714fa6e4d6bbb0f8b` + correção de teste neste PR; homologação HTTP realizada na cópia Windows do proprietário.
+
+---
+
+
 - **Situação (sobre HEAD `02d698b35074902be9291984216e55a6809b2b9e`):**
   1. **ENTREGA 1 (Roteiro HTTP Somente Leitura — `dev-gate/`):** `dev-gate/tests/negative-http-authorization.mjs` separado em **Grupo A (Somente Leitura — padrão `--readonly`)** e **Grupo B (Persistente — bloqueado sem `--include-persistent` + `ALLOW_DEV_PERSISTENT_AUTH_TESTS=true`)**. Asserções em `dev-gate/tools/isolation-assertions.mjs` endurecidas para rejeitar falsos `PASS` (`PGRST202`, `42883`, `22023`) e validar sucesso de RPC autorizada (`assertAuthorizedRpcSuccess`). Assinatura de `create_institutional_payable` no Grupo B alinhada aos 11 parâmetros reais (`p_accounting_period`).
   2. **ENTREGA 2 (Master Mobile `320 px`):** Identificada e corrigida a interceptação de ponteiro do drawer `.sidebar` em `@media (max-width: 960px)` (`pointer-events: none` quando fechado e `pointer-events: auto` quando `.sidebar.open` em `src/styles.css`, mais `type="button"` nos 8 botões de `.finance-sections` em `src/components/MasterConsole.tsx`), que fazia o clique por coordenada em `"Operação e suporte"` atingir o 8º botão do menu lateral (`DRE Contábil`) na mesma altura vertical. Teste de regressão adicionado em `src/components/ResponsiveLayout.test.tsx`.
