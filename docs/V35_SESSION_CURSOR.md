@@ -1,3 +1,12 @@
+## V35 — M06.02: auditoria autenticada da Loja e abas responsivas (15/11/2026)
+
+- O proprietário conseguiu entrar no Edge com a mesma conta que apresentou erro genérico no navegador interno do Work. A causa desse erro permanece indeterminada. A sessão existente do Edge permitiu leitura no DEV.
+- Foram abertas as 15 rotas de Loja nas quatro larguras solicitadas (60 navegações). Este recorte cobre navegação inicial e medição horizontal, com confirmação da causa em duas telas. A verificação detalhada de estados, filtros, tabelas e paridade visual permanece pendente, assim como as seis telas Master, que não estavam acessíveis nessa sessão.
+- Overflow reproduzido no DEV: Cadastros a 320 px (documento de 357 px) e Plano de Contas a 320 e 390 px (434 px). Nas duas telas, a fila de abas estava em flex sem quebra de linha. A correção permite quebra apenas nessas duas filas e aguarda revalidação no navegador com a revisão corrigida.
+- Em 320 px, Escape deixou o drawer aberto no DEV observado. A main `9e0ff0a` já contém o tratamento de Escape em `AppShell.tsx`. Validar com um bundle rastreável dessa revisão ou posterior antes de alterar o menu.
+
+---
+
 ## V35 — M06.01/M06.02: auditoria inicial do Cloudflare DEV no Work (15/11/2026)
 
 - GitHub `main` confirmada em `9e0ff0a9ac9e2b0511925c7d8e2e82daa7d2a907`, merge do PR #56. [Foundation checks #514](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/43787149625) passou nos três jobs no head do PR. O proprietário reportou TypeScript, Vitest 582/582 e Vite build aprovados na cópia local após a atualização do teste.
