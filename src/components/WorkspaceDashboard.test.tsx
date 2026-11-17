@@ -227,4 +227,35 @@ describe('Workspace V35 dashboard modes, shortcuts and KPI navigation', () => {
       expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     })
   })
+
+  it('renders the expected main h1 heading for all six dedicated financial routes and preserves Atendimento on support', async () => {
+    const { client } = createWorkspaceClient()
+    render(<Workspace client={client} user={user} onSignOut={vi.fn()} />)
+
+    await screen.findByRole('heading', { name: 'Atalhos e Ações Rápidas' }, { timeout: 8000 })
+
+    const routeExpectations: Array<[string, string]> = [
+      ['Inadimplência', 'Inadimplência'],
+      ['Contas a Pagar', 'Contas a Pagar'],
+      ['Contas a Receber', 'Contas a Receber'],
+      ['Tesouraria', 'Tesouraria'],
+      ['Fluxo de Caixa', 'Fluxo de Caixa'],
+      ['DRE Contábil', 'DRE Contábil'],
+      ['Chamados', 'Atendimento'],
+    ]
+
+    const sideNav = screen.getByRole('navigation', { name: 'Navegação principal' })
+    for (const [navLabel, expectedHeading] of routeExpectations) {
+      const navButton = Array.from(sideNav.querySelectorAll('button')).find(
+        btn => btn.textContent?.trim() === navLabel,
+      )
+      expect(navButton).toBeTruthy()
+      fireEvent.click(navButton!)
+
+      await waitFor(() => {
+        const mainHeading = document.querySelector('.workspace-heading h1')
+        expect(mainHeading).toHaveTextContent(expectedHeading)
+      })
+    }
+  })
 })
