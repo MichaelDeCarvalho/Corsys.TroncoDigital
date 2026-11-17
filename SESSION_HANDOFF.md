@@ -1,3 +1,14 @@
+## V35 — M06.02: estabilização dos KPIs no Dashboard mobile e folga de rolagem da `.mobile-nav` (17/11/2026)
+
+- **Base analisada:** snapshot do workspace AI Studio correspondente à revisão `73d5f8a9da5396f465d8efeeb464b1fd217b668d` (homologada no Cloudflare DEV `52ffabb6-4dce-4672-b564-61bd6207c242`).
+- **Alterações aplicadas:**
+  - `src/components/FinancialDashboard.tsx`: reserva estrutural durante `loading` com 6 cartões `.panel.metric.metric-placeholder` dentro de `.metric-grid` (`data-testid="financial-kpi-placeholders"`, `aria-hidden="true"`), sem valores financeiros fictícios (`—`), mantendo `<p role="status" className="subtle">` acessível e preservando os 6 KPIs, atualização, tratamento de erro/permissão (`42501`/`28000`) e isolamento por Loja.
+  - `src/styles.css`: `.metric-placeholder { pointer-events: none; user-select: none; opacity: .72; }` e, em `@media (max-width: 760px)`, `--mobile-nav-clearance: calc(88px + env(safe-area-inset-bottom, 0px))` aplicado a `html { scroll-padding-bottom }`, `.app-body main button, .metric-grid .metric { scroll-margin-bottom }` e `padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px))` em `.app-body main` (`<= 760px` e `<= 420px`).
+  - Testes adicionados em `src/components/FinancialDashboard.test.tsx`, `src/components/WorkspaceDashboard.test.tsx` e `src/components/ResponsiveLayout.test.tsx`.
+- **Estado de homologação:** testes automatizados, TypeScript e build Vite executados localmente; validação geométrica de ponteiro e `elementFromPoint` em navegador real (`320 × 800 px`) pendente de reteste independente no ChatGPT Work após publicação autorizada no Cloudflare DEV.
+
+---
+
 ## V35 — M06.02: navegação Master no DEV com revisão identificada (15/11/2026)
 
 - Login confirmado pelo proprietário e sessão Master observada no Edge após a recuperação do Cloudflare DEV principal. Worker `325b1f83-3d3f-4230-8e53-3eeafb2768d8`, build da main `9e0ff0a9ac9e2b0511925c7d8e2e82daa7d2a907`, entrada `index-Ca9UP64Z.js` idêntica ao build local. TypeScript, 85 arquivos Vitest, Vite e dry-run aprovados. O Supabase DEV aceitou a chave pública publicada (HTTP 200 na consulta de configuração de Auth). A cópia antiga ainda tem a configuração rejeitada.

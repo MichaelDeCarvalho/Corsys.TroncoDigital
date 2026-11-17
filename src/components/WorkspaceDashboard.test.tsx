@@ -367,4 +367,57 @@ describe('Workspace V35 dashboard modes, shortcuts and KPI navigation', () => {
       expect(screen.getByRole('button', { name: 'Ágapes e participantes' })).toHaveAttribute('aria-pressed', 'false')
     })
   })
+
+  it('keeps 6 structural KPI placeholders above Atalhos e Ações Rápidas while dashboard RPC is pending and navigates Novo Ágape to Ágapes e participantes', async () => {
+    const base = createWorkspaceClient()
+    let resolveKpis!: (value: unknown) => void
+    const origRpc = base.rpc
+    base.rpc.mockImplementation((name: string, params?: Record<string, unknown>) => {
+      if (name === 'read_tenant_financial_dashboard') {
+        return new Promise(resolve => {
+          resolveKpis = resolve
+        })
+      }
+      return origRpc(name, params)
+    })
+
+    render(<Workspace client={base.client} user={user} onSignOut={vi.fn()} />)
+
+    await screen.findByRole('heading', { name: 'Atalhos e Ações Rápidas' }, { timeout: 8000 })
+
+    // While KPIs are pending, the 6 structural placeholders are rendered in the KPI metric-grid
+    const placeholderGrid = screen.getByTestId('financial-kpi-placeholders')
+    expect(placeholderGrid.querySelectorAll('.panel.metric.metric-placeholder')).toHaveLength(6)
+
+    const novoAgapeBtn = screen.getByRole('button', { name: /Novo Ágape/i })
+    expect(novoAgapeBtn).toBeInTheDocument()
+
+    // Resolve the delayed KPI RPC
+    resolveKpis({
+      data: {
+        organization_id: 'org-a',
+        as_of: '2026-10-15',
+        member_open: '400.00',
+        institutional_open: '100.00',
+        receivables_open: '500.00',
+        receivables_overdue: '120.00',
+        received_this_month: '850.00',
+        cash_bank_balance: '3200.00',
+        payables_open: '250.00',
+        payables_overdue: '50.00',
+        integrity_ok: true,
+      },
+      error: null,
+    })
+
+    await screen.findByRole('button', { name: /A receber vencido/i })
+    expect(screen.queryByTestId('financial-kpi-placeholders')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /Novo Ágape/i }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: 'Financeiro' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Ágapes e participantes' })).toHaveAttribute('aria-pressed', 'true')
+    })
+  })
 })

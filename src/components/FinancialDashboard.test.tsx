@@ -54,4 +54,85 @@ describe('Financial dashboard',()=>{
   await act(async()=>{resolve({data,error:null});await previous})
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
  })
+ it('reserves 6 structural placeholders without fake financial values during delayed load and refresh, then preserves all 6 KPI navigation destinations',async()=>{
+  let resolveFirst!: (v:{data:unknown;error:null})=>void
+  let resolveRefresh!: (v:{data:unknown;error:null})=>void
+  let callCount = 0
+  const rpc = vi.fn().mockImplementation(() => {
+   callCount += 1
+   if (callCount === 1) {
+    return new Promise<{data:unknown;error:null}>(done => { resolveFirst = done })
+   }
+   return new Promise<{data:unknown;error:null}>(done => { resolveRefresh = done })
+  })
+  const onNavigate = vi.fn()
+  const client = { rpc } as unknown as SupabaseClient
+
+  const { container } = render(
+   <FinancialDashboard client={client} organizationId="org-a" onNavigate={onNavigate} />,
+  )
+
+  // Pending state: accessible status message + 6 structural .panel.metric.metric-placeholder cards
+  expect(screen.getByRole('status')).toHaveTextContent('Consultando indicadores financeiros…')
+  expect(screen.getByRole('button', { name: 'Atualizar indicadores' })).toBeDisabled()
+
+  const placeholderGrid = screen.getByTestId('financial-kpi-placeholders')
+  expect(placeholderGrid).toHaveClass('metric-grid')
+  expect(placeholderGrid).toHaveAttribute('aria-hidden', 'true')
+  const placeholders = placeholderGrid.querySelectorAll('.panel.metric.metric-placeholder')
+  expect(placeholders).toHaveLength(6)
+
+  // No fake currency values or premature KPI buttons while pending
+  expect(container.textContent).not.toMatch(/R\$\s?\d/)
+  expect(screen.queryByRole('button', { name: /Total a receber/i })).not.toBeInTheDocument()
+
+  // Resolve initial delayed RPC
+  await act(async () => {
+   resolveFirst({ data, error: null })
+  })
+
+  await screen.findByText(/R\$\s?200,30/)
+  expect(screen.queryByTestId('financial-kpi-placeholders')).not.toBeInTheDocument()
+  expect(screen.queryByRole('status')).not.toBeInTheDocument()
+
+  // Verify all 6 KPI buttons and their navigation destinations
+  const expectedKpis: Array<[RegExp, string]> = [
+   [/Total a receber/i, 'members'],
+   [/A receber vencido/i, 'inadimplencia'],
+   [/Recebido no mês/i, 'fluxo-caixa'],
+   [/Saldo das contas/i, 'tesouraria'],
+   [/Contas a pagar\s+R\$\s?300,00/i, 'contas-pagar'],
+   [/Contas a pagar vencidas/i, 'contas-pagar'],
+  ]
+
+  for (const [labelPattern, targetPage] of expectedKpis) {
+   onNavigate.mockClear()
+   const kpiBtn = screen.getByRole('button', { name: labelPattern })
+   kpiBtn.click()
+   expect(onNavigate).toHaveBeenCalledWith(targetPage)
+  }
+
+  // Trigger refresh ("Atualizar indicadores"): structural placeholders return while refresh RPC is pending
+  const refreshBtn = screen.getByRole('button', { name: 'Atualizar indicadores' })
+  expect(refreshBtn).not.toBeDisabled()
+  await act(async () => {
+   refreshBtn.click()
+  })
+
+  expect(screen.getByRole('status')).toHaveTextContent('Consultando indicadores financeiros…')
+  expect(screen.getByTestId('financial-kpi-placeholders').querySelectorAll('.panel.metric.metric-placeholder')).toHaveLength(6)
+  expect(container.textContent).not.toMatch(/R\$\s?\d/)
+
+  await act(async () => {
+   resolveRefresh({
+    data: { ...data, receivables_open: '180.00', member_open: '129.80' },
+    error: null,
+   })
+  })
+
+  await waitFor(() => {
+   expect(screen.getByText(/R\$\s?180,00/)).toBeInTheDocument()
+  })
+  expect(screen.queryByTestId('financial-kpi-placeholders')).not.toBeInTheDocument()
+ })
 })

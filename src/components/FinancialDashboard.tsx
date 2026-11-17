@@ -4,6 +4,15 @@ import { formatMoney, formatDate } from '../lib/finance-data'
 import { loadFinancialDashboard, type DashboardValues } from '../lib/finance-dashboard'
 import type { Page } from './AppShell'
 
+const METRIC_ITEMS = [
+  ['Total a receber', 'receivables_open', 'Cobranças de integrantes e recebíveis institucionais em aberto', 'members', 'view-dashboard-A001'],
+  ['A receber vencido', 'receivables_overdue', 'Somente vencimentos anteriores à data da consulta', 'inadimplencia', 'view-dashboard-A002'],
+  ['Recebido no mês', 'received_this_month', 'Entradas operacionais menos estornos no mês corrente', 'fluxo-caixa', 'view-dashboard-A003-received'],
+  ['Saldo das contas', 'cash_bank_balance', 'Caixa e bancos, sem implicar conciliação bancária', 'tesouraria', 'view-dashboard-A003'],
+  ['Contas a pagar', 'payables_open', 'Obrigações institucionais em aberto', 'contas-pagar', 'view-dashboard-A004'],
+  ['Contas a pagar vencidas', 'payables_overdue', 'Despesas vencidas ainda não liquidadas', 'contas-pagar', 'view-dashboard-A005'],
+] as const
+
 export function FinancialDashboard({
   client,
   organizationId,
@@ -36,14 +45,15 @@ export function FinancialDashboard({
     return () => { live = false }
   }, [client, organizationId, revision])
 
-  const metrics = values ? [
-    ['Total a receber', values.receivables_open, 'Cobranças de integrantes e recebíveis institucionais em aberto', 'members' as Page, 'view-dashboard-A001'],
-    ['A receber vencido', values.receivables_overdue, 'Somente vencimentos anteriores à data da consulta', 'inadimplencia' as Page, 'view-dashboard-A002'],
-    ['Recebido no mês', values.received_this_month, 'Entradas operacionais menos estornos no mês corrente', 'fluxo-caixa' as Page, 'view-dashboard-A003-received'],
-    ['Saldo das contas', values.cash_bank_balance, 'Caixa e bancos, sem implicar conciliação bancária', 'tesouraria' as Page, 'view-dashboard-A003'],
-    ['Contas a pagar', values.payables_open, 'Obrigações institucionais em aberto', 'contas-pagar' as Page, 'view-dashboard-A004'],
-    ['Contas a pagar vencidas', values.payables_overdue, 'Despesas vencidas ainda não liquidadas', 'contas-pagar' as Page, 'view-dashboard-A005'],
-  ] as const : []
+  const metrics = values
+    ? METRIC_ITEMS.map(([title, key, description, targetPage, requirementId]) => [
+        title,
+        values[key],
+        description,
+        targetPage,
+        requirementId,
+      ] as const)
+    : []
 
   return (
     <section aria-label="Indicadores financeiros da Loja">
@@ -53,7 +63,41 @@ export function FinancialDashboard({
           Atualizar indicadores
         </button>
       </div>
-      {loading && <p role="status">Consultando indicadores financeiros…</p>}
+      {loading && (
+        <>
+          <p role="status" className="subtle">
+            <span>Consultando indicadores financeiros…</span>{' '}
+            <span aria-hidden="true">
+              Consolidado no banco. Obrigações não são recebimentos e recebimentos não são receita adicional.
+            </span>
+          </p>
+          <div
+            className="metric-grid"
+            aria-hidden="true"
+            data-testid="financial-kpi-placeholders"
+          >
+            {METRIC_ITEMS.map(([, , , , requirementId]) => (
+              <article
+                key={requirementId}
+                className="panel metric metric-placeholder"
+                style={{
+                  textAlign: 'left',
+                  background: 'var(--panel-bg, inherit)',
+                  border: '1px solid var(--border-color, #e5e7eb)',
+                  width: '100%',
+                  borderRadius: '6px',
+                }}
+              >
+                <p>Indicador em apuração</p>
+                <strong>—</strong>
+                <p className="subtle">
+                  Indicador consolidado da Loja em apuração no servidor
+                </p>
+              </article>
+            ))}
+          </div>
+        </>
+      )}
       {denied && <p className="subtle">Os indicadores financeiros exigem autorização específica na Loja.</p>}
       {error && <p role="alert" className="message error">{error}</p>}
       {values && (

@@ -124,6 +124,20 @@ describe('Responsive layout & mobile navigation invariants (320px / 390px / 768p
     // Controls must not lock rigid min-widths wider than narrow mobile tracks
     expect(stylesCss).not.toMatch(/\.member-filter\s*\{[^}]*min-width:\s*148px/s)
     expect(stylesCss).toMatch(/\.period-date-input\s*\{[^}]*width:\s*100%;\s*min-width:\s*0/s)
+
+    // KPI structural placeholders must remain non-interactive while reserving space
+    expect(stylesCss).toMatch(/\.metric-placeholder\s*\{[^}]*pointer-events:\s*none;/s)
+
+    // Mobile <= 760px must reserve scroll clearance above fixed .mobile-nav and include safe-area-inset-bottom
+    expect(stylesCss).toMatch(
+      /@media\s*\(max-width:\s*760px\)\s*\{[\s\S]*--mobile-nav-clearance:\s*calc\(88px\s*\+\s*env\(safe-area-inset-bottom,\s*0px\)\)/s,
+    )
+    expect(stylesCss).toMatch(
+      /@media\s*\(max-width:\s*760px\)\s*\{[\s\S]*html\s*\{\s*scroll-padding-bottom:\s*var\(--mobile-nav-clearance\);/s,
+    )
+    expect(stylesCss).toMatch(
+      /@media\s*\(max-width:\s*760px\)\s*\{[\s\S]*\.app-body\s+main\s+button,\s*\.metric-grid\s+\.metric\s*\{\s*scroll-margin-bottom:\s*var\(--mobile-nav-clearance\);/s,
+    )
   })
 
   it('wraps MasterBilling preview and breakdown tables in .finance-table horizontal scroll containers', async () => {
