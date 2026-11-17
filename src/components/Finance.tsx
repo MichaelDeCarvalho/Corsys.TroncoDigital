@@ -56,7 +56,7 @@ export type FinanceSection = FinanceKind | 'mutuals' | 'agapes' | 'agreements' |
 export function Finance({ client, organizationId, initialSection }: { client: SupabaseClient; organizationId: string; initialSection?: FinanceSection }) {
   const [kind, setKind] = useState<FinanceSection>(initialSection ?? 'charges')
   useEffect(() => {
-    setKind(initialSection ?? 'charges')
+    if (initialSection) setKind(initialSection)
   }, [initialSection])
   return <>
     <div className="finance-sections" role="group" aria-label="Consultas financeiras">

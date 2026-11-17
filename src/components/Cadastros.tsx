@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Shield, ShieldAlert, ShieldCheck, UserCheck, Plus, Trash2, X, AlertCircle } from 'lucide-react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Member } from '../lib/tenant-data'
@@ -49,6 +49,72 @@ export function Cadastros({
   const [submittingAction, setSubmittingAction] = useState(false)
   const [actionError, setActionError] = useState('')
   const [actionSuccess, setActionSuccess] = useState('')
+  const modalTriggerRef = useRef<HTMLButtonElement | null>(null)
+  const modalCardRef = useRef<HTMLDivElement | null>(null)
+  const reasonInputRef = useRef<HTMLInputElement | null>(null)
+  const closeModalButtonRef = useRef<HTMLButtonElement | null>(null)
+
+  const restoreModalTriggerFocus = () => {
+    const trigger = modalTriggerRef.current
+    if (trigger && trigger.isConnected && !trigger.disabled) {
+      trigger.focus()
+    }
+  }
+
+  const closeActionModal = () => {
+    if (submittingAction) return
+    setActionModal(null)
+    setReason('')
+    restoreModalTriggerFocus()
+  }
+
+  const actionModalOpen = Boolean(actionModal)
+
+  useEffect(() => {
+    if (!actionModalOpen) return
+    if (reasonInputRef.current && !reasonInputRef.current.disabled) {
+      reasonInputRef.current.focus()
+    } else {
+      closeModalButtonRef.current?.focus()
+    }
+  }, [actionModalOpen])
+
+  useEffect(() => {
+    if (!actionModalOpen) return
+
+    function handleModalKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        if (submittingAction) return
+        event.preventDefault()
+        setActionModal(null)
+        setReason('')
+        restoreModalTriggerFocus()
+        return
+      }
+      if (event.key !== 'Tab') return
+
+      const dialog = modalCardRef.current
+      if (!dialog) return
+      const focusable = Array.from(
+        dialog.querySelectorAll<HTMLElement>('button, input, select, textarea, [tabindex]:not([tabindex="-1"])')
+      ).filter((el) => !el.hasAttribute('disabled') && !(el as HTMLButtonElement | HTMLInputElement).disabled)
+      if (!focusable.length) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      const focusedInside = dialog.contains(document.activeElement)
+
+      if (event.shiftKey && (document.activeElement === first || !focusedInside)) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && (document.activeElement === last || !focusedInside)) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    document.addEventListener('keydown', handleModalKeyDown)
+    return () => document.removeEventListener('keydown', handleModalKeyDown)
+  }, [actionModalOpen, submittingAction])
 
   useEffect(() => {
     if (tab !== 'permissoes' || !client || !organizationId) return
@@ -439,7 +505,8 @@ export function Cadastros({
                                                 color: badgeStyle.color,
                                                 display: 'inline-flex'
                                               }}
-                                              onClick={() => {
+                                              onClick={(event) => {
+                                                modalTriggerRef.current = event.currentTarget
                                                 setActionError('')
                                                 setActionSuccess('')
                                                 setActionModal({
@@ -483,11 +550,12 @@ export function Cadastros({
                                         type="button"
                                         className="secondary"
                                         disabled={!selectedAssignRoleId || !availableRoles.some(r => r.id === selectedAssignRoleId)}
-                                        onClick={() => {
+                                        onClick={(event) => {
                                           const roleToAssign = availableRoles.find(
                                             (r) => r.id === selectedAssignRoleId
                                           )
                                           if (!roleToAssign) return
+                                          modalTriggerRef.current = event.currentTarget
                                           setActionError('')
                                           setActionSuccess('')
                                           setActionModal({
@@ -535,6 +603,10 @@ export function Cadastros({
           }}
         >
           <div
+            ref={modalCardRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="rbac-modal-title"
             className="panel modal-card"
             style={{
               maxWidth: '480px',
@@ -556,14 +628,15 @@ export function Cadastros({
                 marginBottom: '1rem'
               }}
             >
-              <h4 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#0f172a', margin: 0 }}>
+              <h4 id="rbac-modal-title" style={{ fontSize: '1.1rem', fontWeight: 600, color: '#0f172a', margin: 0 }}>
                 {actionModal.type === 'assign' ? 'Atribuir Perfil de Acesso' : 'Revogar Perfil de Acesso'}
               </h4>
               <button
+                ref={closeModalButtonRef}
                 type="button"
                 aria-label="Fechar modal"
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#334155', minHeight: '36px' }}
-                onClick={() => setActionModal(null)}
+                onClick={closeActionModal}
                 disabled={submittingAction}
               >
                 <X size={20} />
@@ -587,6 +660,7 @@ export function Cadastros({
                 Justificativa da alteração (obrigatória para auditoria):
               </label>
               <input
+                ref={reasonInputRef}
                 id="rbacReason"
                 type="text"
                 placeholder="Ex: Definido em reunião de diretoria da Loja"
@@ -608,7 +682,7 @@ export function Cadastros({
                 type="button"
                 className="secondary"
                 disabled={submittingAction}
-                onClick={() => setActionModal(null)}
+                onClick={closeActionModal}
               >
                 Cancelar
               </button>

@@ -702,7 +702,7 @@ export function Chamados({
                                   </div>
 
                                   {/* Footer Actions */}
-                                  <div className="flex items-center justify-end gap-2 pt-2 border-t">
+                                  <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t">
                                     <button
                                       type="button"
                                       className="secondary text-xs px-3 py-1.5"
@@ -731,7 +731,7 @@ export function Chamados({
             )}
 
             {/* Pagination */}
-            <div className="flex items-center justify-between pt-2 border-t text-sm text-slate-600">
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t text-sm text-slate-600">
               <span role="status">
                 Página {page + 1}
                 {tickets?.rows
@@ -740,7 +740,7 @@ export function Chamados({
                     : ` · ${tickets.rows.length} chamados nesta página`
                   : ''}
               </span>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   className="secondary px-3 py-1.5 text-xs inline-flex items-center gap-1"

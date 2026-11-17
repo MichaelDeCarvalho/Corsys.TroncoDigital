@@ -388,4 +388,45 @@ describe('Chamados (view-chamados)', () => {
       expect(screen.getByRole('button', { name: 'Enviar resposta' })).not.toBeDisabled()
     })
   })
+
+  it('wraps pagination container and button group with flex-wrap for 320px/390px viewports while preserving server-side pagination', async () => {
+    const sixteenTickets = Array.from({ length: 16 }, (_, i) => ({
+      ...mockTickets[0],
+      id: `b0000000-0000-0000-0000-${String(i + 1).padStart(12, '0')}`,
+      ticket_seq: 200 + i,
+      subject: `Chamado paginado #${200 + i}`,
+    }))
+
+    mockClient.from.mockImplementation((table: string) => {
+      if (table === 'v_saas_support_ticket_metrics' || table === 'saas_support_tickets') {
+        return {
+          select: vi.fn(() => createQueryBuilder(sixteenTickets)),
+        }
+      }
+      return {
+        select: vi.fn(() => createQueryBuilder([])),
+      }
+    })
+
+    render(<Chamados client={mockClient} organizationId={validOrgId} />)
+
+    const status = await screen.findByText(/Página 1 · 15 chamados nesta página/i)
+    const prevBtn = screen.getByRole('button', { name: /Anterior/i })
+    const nextBtn = screen.getByRole('button', { name: /Próxima/i })
+
+    expect(prevBtn).toBeDisabled()
+    expect(nextBtn).not.toBeDisabled()
+
+    const paginationBar = status.parentElement
+    const buttonGroup = prevBtn.parentElement
+    expect(paginationBar).toHaveClass('flex', 'flex-wrap', 'items-center', 'justify-between', 'gap-2')
+    expect(buttonGroup).toHaveClass('flex', 'flex-wrap', 'items-center', 'gap-2')
+
+    fireEvent.click(nextBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Página 2 · 15 chamados nesta página/i)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Anterior/i })).not.toBeDisabled()
+    })
+  })
 })

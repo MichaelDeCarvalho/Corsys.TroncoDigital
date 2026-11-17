@@ -209,4 +209,132 @@ describe('Cadastros Component (Cadastros.tsx)', () => {
       expect(screen.getByText('Não é possível remover o único administrador da Loja.')).toBeInTheDocument()
     })
   })
+
+  it('enforces dialog semantics, initial focus, Tab/Shift+Tab trap, Escape close, and focus restoration for Assign modal without executing RPC', async () => {
+    const client = createMockSupabaseClient()
+    render(
+      <Cadastros
+        members={sampleMembers}
+        client={client}
+        organizationId={ORG_ID}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Perfis e Permissões' }))
+    await screen.findByText('Perfis e Permissões da Conta (RBAC)')
+
+    const select = screen.getByRole('combobox')
+    fireEvent.change(select, { target: { value: TREASURER_ROLE_ID } })
+
+    const assignButton = screen.getByRole('button', { name: 'Atribuir' })
+    assignButton.focus()
+    fireEvent.click(assignButton)
+
+    const dialog = await screen.findByRole('dialog', { name: 'Atribuir Perfil de Acesso' })
+    expect(dialog).toHaveAttribute('aria-modal', 'true')
+    expect(dialog).toHaveAttribute('aria-labelledby', 'rbac-modal-title')
+
+    const closeBtn = screen.getByRole('button', { name: 'Fechar modal' })
+    const reasonInput = screen.getByLabelText(/Justificativa da alteração/)
+    const cancelBtn = screen.getByRole('button', { name: 'Cancelar' })
+    const confirmBtn = screen.getByRole('button', { name: 'Confirmar Alteração' })
+
+    // Initial focus placed inside the dialog on the justification input
+    expect(reasonInput).toHaveFocus()
+    expect(confirmBtn).toBeDisabled()
+
+    // While confirmBtn is disabled, cancelBtn is the last enabled focusable control
+    cancelBtn.focus()
+    fireEvent.keyDown(document, { key: 'Tab' })
+    expect(closeBtn).toHaveFocus()
+
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
+    expect(cancelBtn).toHaveFocus()
+
+    // Enabling confirmBtn includes it as the last focusable control in the Tab cycle
+    fireEvent.change(reasonInput, { target: { value: 'Atribuição revisada' } })
+    expect(confirmBtn).not.toBeDisabled()
+
+    confirmBtn.focus()
+    fireEvent.keyDown(document, { key: 'Tab' })
+    expect(closeBtn).toHaveFocus()
+
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
+    expect(confirmBtn).toHaveFocus()
+
+    // Escape closes the modal and restores focus to the Atribuir button without calling RPC
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(assignButton).toHaveFocus()
+    expect(client.rpc).not.toHaveBeenCalled()
+  })
+
+  it('enforces dialog semantics, initial focus, Tab/Shift+Tab trap, Escape close, focus restoration, and in-flight guard for Revoke modal', async () => {
+    let resolveRevoke: ((value: unknown) => void) | undefined
+    const baseClient = createMockSupabaseClient()
+    const rpc = vi.fn((name: string) => {
+      if (name === 'revoke_tenant_user_role') {
+        return new Promise((resolve) => {
+          resolveRevoke = resolve
+        })
+      }
+      return baseClient.rpc(name as never)
+    })
+    const client = { ...baseClient, rpc } as unknown as SupabaseClient
+
+    render(
+      <Cadastros
+        members={sampleMembers}
+        client={client}
+        organizationId={ORG_ID}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Perfis e Permissões' }))
+    await screen.findByText('Perfis e Permissões da Conta (RBAC)')
+
+    const revokeButton = screen.getByTitle('Revogar perfil Administrador')
+    revokeButton.focus()
+    fireEvent.click(revokeButton)
+
+    const dialog = await screen.findByRole('dialog', { name: 'Revogar Perfil de Acesso' })
+    expect(dialog).toHaveAttribute('aria-modal', 'true')
+    expect(dialog).toHaveAttribute('aria-labelledby', 'rbac-modal-title')
+
+    const closeBtn = screen.getByRole('button', { name: 'Fechar modal' })
+    const reasonInput = screen.getByLabelText(/Justificativa da alteração/)
+    const cancelBtn = screen.getByRole('button', { name: 'Cancelar' })
+
+    expect(reasonInput).toHaveFocus()
+
+    // Tab trap inside Revoke modal
+    cancelBtn.focus()
+    fireEvent.keyDown(document, { key: 'Tab' })
+    expect(closeBtn).toHaveFocus()
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
+    expect(cancelBtn).toHaveFocus()
+
+    // Escape closes Revoke modal and restores focus to the Revoke button
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(revokeButton).toHaveFocus()
+    expect(rpc).not.toHaveBeenCalled()
+
+    // Reopen Revoke modal, start submission, and verify Escape does NOT close while in flight
+    fireEvent.click(revokeButton)
+    await screen.findByRole('dialog', { name: 'Revogar Perfil de Acesso' })
+    fireEvent.change(screen.getByLabelText(/Justificativa da alteração/), {
+      target: { value: 'Revogação autorizada em ata' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar Alteração' }))
+
+    expect(screen.getByRole('button', { name: 'Processando...' })).toBeDisabled()
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.getByRole('dialog', { name: 'Revogar Perfil de Acesso' })).toBeInTheDocument()
+
+    resolveRevoke?.({ data: USER_ID, error: null })
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
+  })
 })

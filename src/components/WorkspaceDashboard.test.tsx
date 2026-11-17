@@ -258,4 +258,113 @@ describe('Workspace V35 dashboard modes, shortcuts and KPI navigation', () => {
       })
     }
   })
+
+  it('preserves active Ágapes section and form input when clicking Financeiro again, resets on normal re-entry from another page, and isolates state on organization switch', async () => {
+    const base = createWorkspaceClient()
+    const origFrom = base.client.from
+    ;(base.client as unknown as { from: ReturnType<typeof vi.fn> }).from = vi.fn().mockImplementation((table: string) => {
+      let currentOrg = 'org-a'
+      const makeBuilder = (getRows: (org: string) => unknown[]) => {
+        const builder: Record<string, unknown> = {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn((col: string, val: string) => {
+            if (col === 'organization_id') currentOrg = val
+            return builder
+          }),
+          neq: vi.fn().mockReturnThis(),
+          gte: vi.fn().mockReturnThis(),
+          lte: vi.fn().mockReturnThis(),
+          in: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          limit: vi.fn().mockReturnThis(),
+          range: vi.fn().mockReturnThis(),
+          abortSignal: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn(() => Promise.resolve({ data: getRows(currentOrg)[0] ?? null, error: null })),
+          then: (resolve: (v: unknown) => void) =>
+            Promise.resolve({ data: getRows(currentOrg), error: null }).then(resolve),
+        }
+        return builder
+      }
+
+      if (table === 'organizations') {
+        return makeBuilder(() => [
+          { id: 'org-a', name: 'Loja Alpha', status: 'active' },
+          { id: 'org-b', name: 'Loja Beta', status: 'active' },
+        ])
+      }
+      if (table === 'members') {
+        return makeBuilder(org => [
+          { id: '11111111-1111-4111-8111-111111111111', organization_id: org, full_name: 'Carlos Silva', status: 'active' },
+        ])
+      }
+      if (table === 'financial_categories') {
+        return makeBuilder(org => [
+          {
+            id: '22222222-2222-4222-8222-222222222222',
+            organization_id: org,
+            name: 'Ágape Fraternal',
+            direction: 'inflow',
+            domain: 'member_receivable',
+            active: true,
+          },
+        ])
+      }
+      if (table === 'agape_events') {
+        return makeBuilder(() => [])
+      }
+      return origFrom(table)
+    })
+
+    render(<Workspace client={base.client} user={user} onSignOut={vi.fn()} />)
+
+    // 1. Click Novo Ágape on Dashboard
+    const novoAgapeShortcut = await screen.findByRole('button', { name: /Novo Ágape/i }, { timeout: 8000 })
+    fireEvent.click(novoAgapeShortcut)
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: 'Financeiro' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Ágapes e participantes' })).toHaveAttribute('aria-pressed', 'true')
+    })
+
+    // Wait for AgapeEvents form to load and fill a draft field
+    const agapeNameInput = await screen.findByLabelText(/Nome do ágape/i)
+    fireEvent.change(agapeNameInput, { target: { value: 'Ágape de Solstício' } })
+    expect(agapeNameInput).toHaveValue('Ágape de Solstício')
+
+    // 2. Click Financeiro again on the mobile bottom navigation bar (and main nav)
+    const mobileNav = screen.getByRole('navigation', { name: 'Navegação móvel' })
+    const mobileFinanceBtn = Array.from(mobileNav.querySelectorAll('button')).find(
+      btn => btn.textContent?.trim() === 'Financeiro',
+    )!
+    fireEvent.click(mobileFinanceBtn)
+
+    // Section remains Ágapes e participantes, form is NOT remounted, and input value is preserved
+    expect(screen.getByRole('button', { name: 'Ágapes e participantes' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByLabelText(/Nome do ágape/i)).toBe(agapeNameInput)
+    expect(screen.getByLabelText(/Nome do ágape/i)).toHaveValue('Ágape de Solstício')
+
+    // 3. Switch to another organization (Loja Beta): state is isolated and draft is not carried over
+    const orgSelect = screen.getByLabelText('Loja')
+    fireEvent.change(orgSelect, { target: { value: 'org-b' } })
+
+    const newOrgAgapeInput = await screen.findByLabelText(/Nome do ágape/i)
+    expect(newOrgAgapeInput).not.toBe(agapeNameInput)
+    expect(newOrgAgapeInput).toHaveValue('')
+
+    // 4. Navigate to another route (Integrantes) and then click Financeiro normally -> opens default Cobranças de integrantes
+    const mobileMembersBtn = Array.from(mobileNav.querySelectorAll('button')).find(
+      btn => btn.textContent?.trim() === 'Integrantes',
+    )!
+    fireEvent.click(mobileMembersBtn)
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: 'Integrantes' })).toBeInTheDocument()
+    })
+
+    fireEvent.click(mobileFinanceBtn)
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: 'Financeiro' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Cobranças de integrantes' })).toHaveAttribute('aria-pressed', 'true')
+      expect(screen.getByRole('button', { name: 'Ágapes e participantes' })).toHaveAttribute('aria-pressed', 'false')
+    })
+  })
 })
