@@ -1,3 +1,12 @@
+## V35 — M06.02: PR #57 integrado e publicado no DEV (15/11/2026)
+
+- PR #57 integrado por squash na main `0bcf0933e346b3697e8c481b69133375d1f016cb`. Head revisado `c81e6fb434a307a36ed9aec58311500432d75c98`, com [Foundation checks #523](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/43794048209) 3/3. O patch permite quebra em duas filas de abas em Cadastros e Plano de Contas, preservando handlers, rótulos, ordem e permissões.
+- Build local do squash com TypeScript, 582/582 testes em 85 arquivos, Vite e dry-run aprovados. Cloudflare DEV principal publicado na versão `ac31016b-7ead-4610-9ca8-8b86c0f749ee`, entrada `index-BLqyvx5G.js`. HTML e JS públicos HTTP 200, JS idêntico ao build local e chave publicada aceita pelo Auth DEV (consulta de configuração HTTP 200).
+- Homologação no Edge com conta de teste vinculada à Loja, no bundle publicado: 28 seleções (sete abas em 320/390/768/1440 × 900 px) ativaram a aba esperada, com todos os botões dentro da área útil. Nenhuma medição do documento excedeu a largura nominal do viewport. A 320 px, a área útil chegou a 305 px com barra vertical enquanto o documento mediu 320 px, sem overflow interno do conteúdo medido. Cadastros: tabela com rolagem interna, busca sintética 3 → 0 e limpeza 0 → 3. Formulários de integrante e de forma de pagamento abertos a 320 px, sem gravar. O recorte valida a correção das abas e controles amostrados. As demais jornadas e a paridade integral continuam em aberto.
+- Comparação estática da referência imutável: Plano de Contas preserva os quatro rótulos e sua ordem; Cadastros conserva as três áreas do protótipo em abas, onde a referência usa atalhos. Isso confirma o agrupamento de entrada nesse recorte. A paridade de jornadas e visual das 21 telas segue em M06.01/M06.02.
+
+---
+
 ## V35 — M06.02: navegação Master no DEV com revisão identificada (15/11/2026)
 
 - Login confirmado pelo proprietário e sessão Master observada no Edge após a recuperação do Cloudflare DEV principal. Worker `325b1f83-3d3f-4230-8e53-3eeafb2768d8`, build da main `9e0ff0a9ac9e2b0511925c7d8e2e82daa7d2a907`, entrada `index-Ca9UP64Z.js` idêntica ao build local. TypeScript, 85 arquivos Vitest, Vite e dry-run aprovados. O Supabase DEV aceitou a chave pública publicada (HTTP 200 na consulta de configuração de Auth). A cópia antiga ainda tem a configuração rejeitada.
