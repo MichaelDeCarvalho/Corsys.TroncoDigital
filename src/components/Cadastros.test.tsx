@@ -210,8 +210,19 @@ describe('Cadastros Component (Cadastros.tsx)', () => {
     })
   })
 
-  it('enforces dialog semantics, initial focus, Tab/Shift+Tab trap, Escape close, and focus restoration for Assign modal without executing RPC', async () => {
-    const client = createMockSupabaseClient()
+  it('enforces dialog semantics, initial focus, Tab/Shift+Tab containment before and during pending Assign RPC, prevents duplicate submission, and closes cleanly on success', async () => {
+    let resolveAssign: ((value: unknown) => void) | undefined
+    const baseClient = createMockSupabaseClient()
+    const rpc = vi.fn((name: string) => {
+      if (name === 'assign_tenant_user_role') {
+        return new Promise((resolve) => {
+          resolveAssign = resolve
+        })
+      }
+      return baseClient.rpc(name as never)
+    })
+    const client = { ...baseClient, rpc } as unknown as SupabaseClient
+
     render(
       <Cadastros
         members={sampleMembers}
@@ -220,7 +231,8 @@ describe('Cadastros Component (Cadastros.tsx)', () => {
       />
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Perfis e Permissões' }))
+    const externalTabBtn = screen.getByRole('button', { name: 'Perfis e Permissões' })
+    fireEvent.click(externalTabBtn)
     await screen.findByText('Perfis e Permissões da Conta (RBAC)')
 
     const select = screen.getByRole('combobox')
@@ -243,15 +255,17 @@ describe('Cadastros Component (Cadastros.tsx)', () => {
     expect(reasonInput).toHaveFocus()
     expect(confirmBtn).toBeDisabled()
 
-    // While confirmBtn is disabled, cancelBtn is the last enabled focusable control
-    cancelBtn.focus()
+    // While confirmBtn is disabled, Tab cycles across [closeBtn, reasonInput, cancelBtn]
+    fireEvent.keyDown(document, { key: 'Tab' })
+    expect(cancelBtn).toHaveFocus()
     fireEvent.keyDown(document, { key: 'Tab' })
     expect(closeBtn).toHaveFocus()
-
     fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
     expect(cancelBtn).toHaveFocus()
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
+    expect(reasonInput).toHaveFocus()
 
-    // Enabling confirmBtn includes it as the last focusable control in the Tab cycle
+    // Enabling confirmBtn includes it in the Tab cycle
     fireEvent.change(reasonInput, { target: { value: 'Atribuição revisada' } })
     expect(confirmBtn).not.toBeDisabled()
 
@@ -266,10 +280,54 @@ describe('Cadastros Component (Cadastros.tsx)', () => {
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(assignButton).toHaveFocus()
-    expect(client.rpc).not.toHaveBeenCalled()
+    expect(rpc).not.toHaveBeenCalled()
+
+    // Reopen Assign modal and start pending RPC
+    fireEvent.click(assignButton)
+    const pendingDialog = await screen.findByRole('dialog', { name: 'Atribuir Perfil de Acesso' })
+    fireEvent.change(screen.getByLabelText(/Justificativa da alteração/), {
+      target: { value: 'Atribuição aprovada em ata' },
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar Alteração' }))
+
+    // During pending RPC: all modal controls are disabled, focus remains inside dialog
+    const processingBtn = screen.getByRole('button', { name: 'Processando...' })
+    expect(processingBtn).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Fechar modal' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Cancelar' })).toBeDisabled()
+    expect(screen.getByLabelText(/Justificativa da alteração/)).toBeDisabled()
+    expect(pendingDialog.contains(document.activeElement)).toBe(true)
+    expect(pendingDialog).toHaveFocus()
+
+    // Duplicate submission is prevented while RPC is pending
+    fireEvent.click(processingBtn)
+    expect(rpc).toHaveBeenCalledTimes(1)
+
+    // Tab and Shift+Tab remain trapped inside the dialog and never reach external controls
+    fireEvent.keyDown(document, { key: 'Tab' })
+    expect(pendingDialog.contains(document.activeElement)).toBe(true)
+    expect(externalTabBtn).not.toHaveFocus()
+    expect(assignButton).not.toHaveFocus()
+
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
+    expect(pendingDialog.contains(document.activeElement)).toBe(true)
+    expect(externalTabBtn).not.toHaveFocus()
+    expect(assignButton).not.toHaveFocus()
+
+    // Escape does not close the modal during pending RPC
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.getByRole('dialog', { name: 'Atribuir Perfil de Acesso' })).toBeInTheDocument()
+
+    // Resolve RPC and verify modal closes properly
+    resolveAssign?.({ data: USER_ID, error: null })
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
+    expect(screen.getByText(/Perfil Tesoureiro atribuído com sucesso/)).toBeInTheDocument()
   })
 
-  it('enforces dialog semantics, initial focus, Tab/Shift+Tab trap, Escape close, focus restoration, and in-flight guard for Revoke modal', async () => {
+  it('enforces focus containment during pending Revoke RPC and restores accessible focus inside the dialog after RPC error', async () => {
     let resolveRevoke: ((value: unknown) => void) | undefined
     const baseClient = createMockSupabaseClient()
     const rpc = vi.fn((name: string) => {
@@ -307,7 +365,7 @@ describe('Cadastros Component (Cadastros.tsx)', () => {
 
     expect(reasonInput).toHaveFocus()
 
-    // Tab trap inside Revoke modal
+    // Tab trap inside Revoke modal before submission
     cancelBtn.focus()
     fireEvent.keyDown(document, { key: 'Tab' })
     expect(closeBtn).toHaveFocus()
@@ -320,21 +378,59 @@ describe('Cadastros Component (Cadastros.tsx)', () => {
     expect(revokeButton).toHaveFocus()
     expect(rpc).not.toHaveBeenCalled()
 
-    // Reopen Revoke modal, start submission, and verify Escape does NOT close while in flight
+    // Reopen Revoke modal, start submission, and verify focus containment while in flight
     fireEvent.click(revokeButton)
-    await screen.findByRole('dialog', { name: 'Revogar Perfil de Acesso' })
+    const pendingDialog = await screen.findByRole('dialog', { name: 'Revogar Perfil de Acesso' })
     fireEvent.change(screen.getByLabelText(/Justificativa da alteração/), {
       target: { value: 'Revogação autorizada em ata' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar Alteração' }))
 
     expect(screen.getByRole('button', { name: 'Processando...' })).toBeDisabled()
+    expect(pendingDialog.contains(document.activeElement)).toBe(true)
+
+    fireEvent.keyDown(document, { key: 'Tab' })
+    expect(pendingDialog.contains(document.activeElement)).toBe(true)
+    expect(revokeButton).not.toHaveFocus()
+
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
+    expect(pendingDialog.contains(document.activeElement)).toBe(true)
+    expect(revokeButton).not.toHaveFocus()
+
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(screen.getByRole('dialog', { name: 'Revogar Perfil de Acesso' })).toBeInTheDocument()
 
-    resolveRevoke?.({ data: USER_ID, error: null })
-    await waitFor(() => {
-      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    // Resolve with last-admin error and verify focus returns to an enabled interactive control inside the dialog
+    resolveRevoke?.({
+      data: null,
+      error: {
+        code: '55000',
+        message: 'cannot remove last administrator from store',
+      },
     })
+
+    await waitFor(() => {
+      expect(screen.getByText('Não é possível remover o único administrador da Loja.')).toBeInTheDocument()
+    })
+
+    const activeDialog = screen.getByRole('dialog', { name: 'Revogar Perfil de Acesso' })
+    const reenabledCloseBtn = screen.getByRole('button', { name: 'Fechar modal' })
+    const reenabledCancelBtn = screen.getByRole('button', { name: 'Cancelar' })
+    const lockedReasonInput = screen.getByLabelText(/Justificativa da alteração/)
+
+    // Reason input stays locked for idempotency, while focus moves to the enabled close button inside the dialog
+    expect(lockedReasonInput).toBeDisabled()
+    expect(reenabledCloseBtn).not.toBeDisabled()
+    expect(reenabledCloseBtn).toHaveFocus()
+    expect(activeDialog.contains(document.activeElement)).toBe(true)
+
+    // Tab continues cycling only across enabled controls inside the dialog
+    fireEvent.keyDown(document, { key: 'Tab' })
+    expect(reenabledCancelBtn).toHaveFocus()
+
+    // Closing after error restores focus to the trigger button
+    fireEvent.click(reenabledCancelBtn)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(revokeButton).toHaveFocus()
   })
 })

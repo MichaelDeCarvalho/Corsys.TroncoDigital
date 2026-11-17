@@ -72,20 +72,24 @@ export function Cadastros({
 
   useEffect(() => {
     if (!actionModalOpen) return
+    if (submittingAction) {
+      modalCardRef.current?.focus()
+      return
+    }
     if (reasonInputRef.current && !reasonInputRef.current.disabled) {
       reasonInputRef.current.focus()
     } else {
       closeModalButtonRef.current?.focus()
     }
-  }, [actionModalOpen])
+  }, [actionModalOpen, submittingAction])
 
   useEffect(() => {
     if (!actionModalOpen) return
 
     function handleModalKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
-        if (submittingAction) return
         event.preventDefault()
+        if (submittingAction) return
         setActionModal(null)
         setReason('')
         restoreModalTriggerFocus()
@@ -95,20 +99,30 @@ export function Cadastros({
 
       const dialog = modalCardRef.current
       if (!dialog) return
+      event.preventDefault()
+
       const focusable = Array.from(
         dialog.querySelectorAll<HTMLElement>('button, input, select, textarea, [tabindex]:not([tabindex="-1"])')
       ).filter((el) => !el.hasAttribute('disabled') && !(el as HTMLButtonElement | HTMLInputElement).disabled)
-      if (!focusable.length) return
-      const first = focusable[0]
-      const last = focusable[focusable.length - 1]
-      const focusedInside = dialog.contains(document.activeElement)
 
-      if (event.shiftKey && (document.activeElement === first || !focusedInside)) {
-        event.preventDefault()
-        last.focus()
-      } else if (!event.shiftKey && (document.activeElement === last || !focusedInside)) {
-        event.preventDefault()
-        first.focus()
+      if (!focusable.length) {
+        dialog.focus()
+        return
+      }
+
+      const activeElement = document.activeElement as HTMLElement | null
+      const currentIndex = activeElement ? focusable.indexOf(activeElement) : -1
+
+      if (event.shiftKey) {
+        const prevIndex =
+          currentIndex <= 0 ? focusable.length - 1 : currentIndex - 1
+        focusable[prevIndex].focus()
+      } else {
+        const nextIndex =
+          currentIndex === -1 || currentIndex >= focusable.length - 1
+            ? 0
+            : currentIndex + 1
+        focusable[nextIndex].focus()
       }
     }
 
@@ -148,7 +162,7 @@ export function Cadastros({
   }, [tab, client, organizationId, rbacReloadTrigger])
 
   const handleExecuteRoleAction = async () => {
-    if (!actionModal || !client || !organizationId) return
+    if (!actionModal || !client || !organizationId || submittingAction) return
     if (!reason.trim() || reason.trim().length < 3) {
       setActionError('Forneça uma justificativa válida com pelo menos 3 caracteres.')
       return
@@ -185,6 +199,7 @@ export function Cadastros({
       setActionModal(null)
       setReason('')
       setSelectedAssignRoleId('')
+      restoreModalTriggerFocus()
       setRbacReloadTrigger((v) => v + 1)
       if (onReload) onReload()
     } catch (err: unknown) {
@@ -607,6 +622,7 @@ export function Cadastros({
             role="dialog"
             aria-modal="true"
             aria-labelledby="rbac-modal-title"
+            tabIndex={-1}
             className="panel modal-card"
             style={{
               maxWidth: '480px',
