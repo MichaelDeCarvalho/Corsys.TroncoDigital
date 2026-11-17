@@ -461,7 +461,7 @@ export function Cadastros({
                                 </td>
                                 <td>
                                   {availableRoles.length > 0 && (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}>
                                       <select
                                         style={{ fontSize: '0.85rem', padding: '0.25rem 0.5rem' }}
                                         value={
@@ -521,6 +521,7 @@ export function Cadastros({
       {/* Confirmation Modal */}
       {actionModal && (
         <div
+          className="modal-backdrop"
           style={{
             position: 'fixed',
             inset: 0,
@@ -529,15 +530,19 @@ export function Cadastros({
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 100,
-            padding: '1rem'
+            padding: '1rem',
+            overflowY: 'auto'
           }}
         >
           <div
-            className="panel"
+            className="panel modal-card"
             style={{
               maxWidth: '480px',
               width: '100%',
+              maxHeight: 'calc(100dvh - 2rem)',
+              overflowY: 'auto',
               background: '#ffffff',
+              color: '#0f172a',
               borderRadius: '8px',
               padding: '1.5rem'
             }}
@@ -547,15 +552,17 @@ export function Cadastros({
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
+                gap: '0.5rem',
                 marginBottom: '1rem'
               }}
             >
-              <h4 style={{ fontSize: '1.1rem', fontWeight: 600 }}>
+              <h4 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#0f172a', margin: 0 }}>
                 {actionModal.type === 'assign' ? 'Atribuir Perfil de Acesso' : 'Revogar Perfil de Acesso'}
               </h4>
               <button
                 type="button"
-                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                aria-label="Fechar modal"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#334155', minHeight: '36px' }}
                 onClick={() => setActionModal(null)}
                 disabled={submittingAction}
               >
@@ -575,7 +582,7 @@ export function Cadastros({
             <div style={{ marginBottom: '1rem' }}>
               <label
                 htmlFor="rbacReason"
-                style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.35rem' }}
+                style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.35rem', color: '#0f172a' }}
               >
                 Justificativa da alteração (obrigatória para auditoria):
               </label>
@@ -596,7 +603,7 @@ export function Cadastros({
               </p>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: '0.5rem' }}>
               <button
                 type="button"
                 className="secondary"

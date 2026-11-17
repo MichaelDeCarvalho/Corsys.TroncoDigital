@@ -639,7 +639,7 @@ function TenantReports({ client, organizationId }: { client: SupabaseClient; org
           <div className="report-subview">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>A. Posição Financeira Geral</h3>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <button type="button" className="secondary" disabled={!posicaoItems || posicaoLoading || !!posicaoError} onClick={exportPosicaoPageCsv}>
                   <Download size={16} aria-hidden="true" style={{ marginRight: '0.25rem' }} /> Exportar Página (CSV)
                 </button>
@@ -731,7 +731,7 @@ function TenantReports({ client, organizationId }: { client: SupabaseClient; org
                   </table>
                 </div>
 
-                <div className="pagination" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '1rem' }}>
+                <div className="pagination" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center', marginTop: '1rem' }}>
                   <button
                     type="button"
                     className="secondary"
@@ -760,7 +760,7 @@ function TenantReports({ client, organizationId }: { client: SupabaseClient; org
           <div className="report-subview">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>B. Relatório de Recebimentos Efetivados</h3>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <button type="button" className="secondary" disabled={!recebimentosData || recebimentosLoading || !!recebimentosError} onClick={exportRecebimentosPageCsv}>
                   <Download size={16} aria-hidden="true" style={{ marginRight: '0.25rem' }} /> Exportar Página (CSV)
                 </button>
@@ -812,7 +812,7 @@ function TenantReports({ client, organizationId }: { client: SupabaseClient; org
                   </table>
                 </div>
 
-                <div className="pagination" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '1rem' }}>
+                <div className="pagination" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center', marginTop: '1rem' }}>
                   <button
                     type="button"
                     className="secondary"
@@ -848,7 +848,7 @@ function TenantReports({ client, organizationId }: { client: SupabaseClient; org
           <div className="report-subview">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>C. Fechamento Mensal e DRE por Competência</h3>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <button type="button" className="quiet" disabled={exportBusy} onClick={() => handleExtendedExportRequest('PDF', 'DRE Contábil')}>
                   PDF
                 </button>
@@ -949,7 +949,7 @@ function TenantReports({ client, organizationId }: { client: SupabaseClient; org
           <div className="report-subview">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>D. Plano de Contas & Exportação Contábil</h3>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <button type="button" className="secondary" disabled={!planDetail || contabilLoading || !!contabilError} onClick={exportChartOfAccountsCsv}>
                   <Download size={16} aria-hidden="true" style={{ marginRight: '0.25rem' }} /> Exportar Plano de Contas (CSV)
                 </button>

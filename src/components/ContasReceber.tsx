@@ -124,7 +124,7 @@ export function ContasReceber({ client, organizationId }: { client: SupabaseClie
             />
           </div>
 
-          <div className="filter-actions" style={{ display: 'flex', gap: '0.5rem' }}>
+          <div className="filter-actions" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
             <button
               type="button"
               className="secondary"
@@ -176,7 +176,7 @@ export function ContasReceber({ client, organizationId }: { client: SupabaseClie
                         </tbody>
                       </table>
                     </div>
-                    <div className="finance-pagination" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', margin: '0.5rem 0' }}>
+                    <div className="finance-pagination" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center', margin: '0.5rem 0' }}>
                       <button className="secondary" disabled={memberPage === 0} onClick={() => setMemberPage(p => Math.max(0, p - 1))}>Anterior</button>
                       <span role="status">Página {memberPage + 1} ({memberResult.rows.length} cobranças)</span>
                       <button className="secondary" disabled={!memberResult.hasNext} onClick={() => setMemberPage(p => p + 1)}>Próxima</button>
@@ -220,7 +220,7 @@ export function ContasReceber({ client, organizationId }: { client: SupabaseClie
                         </tbody>
                       </table>
                     </div>
-                    <div className="finance-pagination" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', margin: '0.5rem 0' }}>
+                    <div className="finance-pagination" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center', margin: '0.5rem 0' }}>
                       <button className="secondary" disabled={institutionalPage === 0} onClick={() => setInstitutionalPage(p => Math.max(0, p - 1))}>Anterior</button>
                       <span role="status">Página {institutionalPage + 1} ({institutionalResult.rows.length} títulos)</span>
                       <button className="secondary" disabled={!institutionalResult.hasNext} onClick={() => setInstitutionalPage(p => p + 1)}>Próxima</button>

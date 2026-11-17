@@ -156,9 +156,9 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
   </div>
   <p className="subtle">Chamados de clientes e internos são tratados separadamente. O histórico interno é restrito à plataforma. Tempo até primeira resposta e resolução são métricas de eventos reais, não contadores do navegador. Consulta somente leitura.</p>
   {organizationFilter && (
-   <div role="status" className="panel" style={{padding:'0.65rem',marginBottom:'0.75rem'}}>
-    Chamados da Loja selecionada: <code>{organizationFilter}</code>
-    <button type="button" className="secondary" onClick={()=>{setOrganizationFilter('');setPage(0)}} style={{marginLeft:'0.75rem'}}>Mostrar todos os chamados</button>
+   <div role="status" className="panel" style={{padding:'0.65rem',marginBottom:'0.75rem',display:'flex',flexWrap:'wrap',alignItems:'center',gap:'0.5rem'}}>
+    <span>Chamados da Loja selecionada: <code>{organizationFilter}</code></span>
+    <button type="button" className="secondary" onClick={()=>{setOrganizationFilter('');setPage(0)}}>Mostrar todos os chamados</button>
    </div>
   )}
   {ticketError&&<p role="alert" className="message error">{ticketError}</p>}
@@ -231,9 +231,9 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
           <tr key={`${ticket.id}-drawer`} className="bg-slate-50 border-b">
            <td colSpan={6} className="p-3">
             <div className="p-3 bg-white border rounded shadow-2xs space-y-3 text-xs text-slate-700">
-             <div className="flex justify-between items-center border-b pb-2">
+             <div className="flex flex-wrap justify-between items-center gap-2 border-b pb-2">
               <strong className="text-slate-900">Histórico & Detalhes — Chamado #{ticket.ticket_seq}</strong>
-              <span className="text-slate-500 font-mono text-[11px]">{ticket.organization_id || 'Uso interno da plataforma'}</span>
+              <span className="text-slate-500 font-mono text-[11px] break-all">{ticket.organization_id || 'Uso interno da plataforma'}</span>
              </div>
              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -250,7 +250,7 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
                <p className="text-slate-500 bg-slate-50 p-2 rounded border text-[11px]">Nenhum anexo extra registrado. Comprovantes e arquivos podem ser anexados na mensagem da conversa.</p>
               </div>
              </div>
-             <div className="flex justify-end gap-2 pt-1 border-t">
+             <div className="flex flex-wrap justify-end gap-2 pt-1 border-t">
               <button type="button" className="secondary text-xs px-2.5 py-1" onClick={()=>setExpandedId(null)}>Recolher</button>
               <button type="button" className="primary text-xs px-2.5 py-1" onClick={()=>{
                 if(selected!==ticket){setEvents(null);setEventsError('')}
@@ -293,7 +293,7 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
        <ol className="support-events" style={{listStyle:'none',padding:0,margin:0,display:'flex',flexDirection:'column',gap:'0.5rem'}}>
         {events.map(ev=>(
          <li key={String(ev.id)} className="panel" style={{padding:'0.65rem 0.85rem',background:'var(--surface-2,#1C2028)',fontSize:'0.82rem'}}>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <div style={{display:'flex',flexWrap:'wrap',justifyContent:'space-between',alignItems:'center',gap:'0.35rem'}}>
            <span>
             <strong>{ev.from_status ? `${ev.from_status} → ${ev.to_status}` : `Criado (${ev.to_status})`}</strong>
             {' · '}

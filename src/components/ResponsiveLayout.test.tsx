@@ -93,8 +93,13 @@ describe('Responsive layout & mobile navigation invariants (320px / 390px / 768p
     const { readFileSync } = await vi.importActual<{ readFileSync: (path: string, encoding: string) => string }>('node:fs')
     const stylesCss = readFileSync('src/styles.css', 'utf8')
 
-    // Must never blindly hide horizontal overflow on html/body
+    // Must never blindly hide horizontal overflow on html/body, nor force min-width: 320px on html/body (PR #59 parity)
     expect(stylesCss).not.toMatch(/html,\s*body\s*\{[^}]*overflow-x\s*:\s*hidden/i)
+    expect(stylesCss).not.toMatch(/html,\s*body\s*\{[^}]*min-width\s*:\s*320px/i)
+
+    // Global fieldset, code, and modal containers must shrink safely on narrow viewports (320px / 390px)
+    expect(stylesCss).toMatch(/fieldset\s*\{[^}]*min-width:\s*0;\s*max-width:\s*100%/s)
+    expect(stylesCss).toMatch(/\.modal-card\s*\{[^}]*max-height:\s*calc\(100dvh\s*-\s*32px\);\s*overflow-y:\s*auto/s)
 
     // Tablet/mobile <= 960px must collapse fixed 260px sidebar into drawer and disable pointer events when closed
     expect(stylesCss).toMatch(
@@ -113,6 +118,7 @@ describe('Responsive layout & mobile navigation invariants (320px / 390px / 768p
 
     // Scroll wrappers must stay constrained and scrollable
     expect(stylesCss).toMatch(/\.table-wrap\s*\{[^}]*overflow-x:\s*auto;\s*max-width:\s*100%;\s*min-width:\s*0/s)
+    expect(stylesCss).toMatch(/\.table-wrap\s+table\s*\{[^}]*width:\s*100%;\s*border-collapse:\s*collapse/s)
     expect(stylesCss).toMatch(/\.finance-table\s*\{[^}]*overflow-x:\s*auto;\s*max-width:\s*100%;\s*min-width:\s*0/s)
 
     // Controls must not lock rigid min-widths wider than narrow mobile tracks

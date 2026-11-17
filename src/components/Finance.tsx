@@ -56,30 +56,30 @@ export type FinanceSection = FinanceKind | 'mutuals' | 'agapes' | 'agreements' |
 export function Finance({ client, organizationId, initialSection }: { client: SupabaseClient; organizationId: string; initialSection?: FinanceSection }) {
   const [kind, setKind] = useState<FinanceSection>(initialSection ?? 'charges')
   useEffect(() => {
-    if (initialSection) setKind(initialSection)
+    setKind(initialSection ?? 'charges')
   }, [initialSection])
   return <>
     <div className="finance-sections" role="group" aria-label="Consultas financeiras">
-      {(Object.keys(financeSources) as FinanceKind[]).map(id => <button className="secondary" key={id} aria-pressed={kind === id} onClick={() => setKind(id)}>{financeSources[id].label}</button>)}
-      <button className="secondary" aria-pressed={kind === 'memberPayments'} onClick={() => setKind('memberPayments')}>Pagamentos de integrantes</button>
-      <button className="secondary" aria-pressed={kind === 'dre'} onClick={() => setKind('dre')}>DRE contábil</button>
-      <button className="secondary" aria-pressed={kind === 'institutional'} onClick={() => setKind('institutional')}>Operações institucionais</button>
-      <button className="secondary" aria-pressed={kind === 'institutionalMonthly'} onClick={() => setKind('institutionalMonthly')}>Recorrências institucionais</button>
-      <button className="secondary" aria-pressed={kind === 'approvals'} onClick={() => setKind('approvals')}>Aprovação de despesas</button>
-      <button className="secondary" aria-pressed={kind === 'approvalPolicies'} onClick={() => setKind('approvalPolicies')}>Políticas de aprovação</button>
-      <button className="secondary" aria-pressed={kind === 'monthly'} onClick={() => setKind('monthly')}>Gerar mensalidades</button>
-      <button className="secondary" aria-pressed={kind === 'manual'} onClick={() => setKind('manual')}>Cobranças avulsas</button>
-      <button className="secondary" aria-pressed={kind === 'agreements'} onClick={() => setKind('agreements')}>Negociar dívida</button>
-      <button className="secondary" aria-pressed={kind === 'agapes'} onClick={() => setKind('agapes')}>Ágapes e participantes</button>
-      <button className="secondary" aria-pressed={kind === 'mutuals'} onClick={() => setKind('mutuals')}>Mútuas por faixa</button>
-      <button className="secondary" aria-pressed={kind === 'periods'} onClick={() => setKind('periods')}>Fechamento mensal</button>
-      <button className="secondary" aria-pressed={kind === 'treasury'} onClick={() => setKind('treasury')}>Caixa e bancos</button>
-      <button className="secondary" aria-pressed={kind === 'transfers'} onClick={() => setKind('transfers')}>Transferências</button>
-      <button className="secondary" aria-pressed={kind === 'reconciliation'} onClick={() => setKind('reconciliation')}>Conciliação bancária</button>
-      <button className="secondary" aria-pressed={kind === 'cashflow'} onClick={() => setKind('cashflow')}>Fluxo de caixa</button>
-      <button className="secondary" aria-pressed={kind === 'budget'} onClick={() => setKind('budget')}>Orçado × realizado</button>
-      <button className="secondary" aria-pressed={kind === 'budgetManagement'} onClick={() => setKind('budgetManagement')}>Planejar orçamento</button>
-      <button className="secondary" aria-pressed={kind === 'delinquency'} onClick={() => setKind('delinquency')}>Inadimplência</button>
+      {(Object.keys(financeSources) as FinanceKind[]).map(id => <button type="button" className="secondary" key={id} aria-pressed={kind === id} onClick={() => setKind(id)}>{financeSources[id].label}</button>)}
+      <button type="button" className="secondary" aria-pressed={kind === 'memberPayments'} onClick={() => setKind('memberPayments')}>Pagamentos de integrantes</button>
+      <button type="button" className="secondary" aria-pressed={kind === 'dre'} onClick={() => setKind('dre')}>DRE contábil</button>
+      <button type="button" className="secondary" aria-pressed={kind === 'institutional'} onClick={() => setKind('institutional')}>Operações institucionais</button>
+      <button type="button" className="secondary" aria-pressed={kind === 'institutionalMonthly'} onClick={() => setKind('institutionalMonthly')}>Recorrências institucionais</button>
+      <button type="button" className="secondary" aria-pressed={kind === 'approvals'} onClick={() => setKind('approvals')}>Aprovação de despesas</button>
+      <button type="button" className="secondary" aria-pressed={kind === 'approvalPolicies'} onClick={() => setKind('approvalPolicies')}>Políticas de aprovação</button>
+      <button type="button" className="secondary" aria-pressed={kind === 'monthly'} onClick={() => setKind('monthly')}>Gerar mensalidades</button>
+      <button type="button" className="secondary" aria-pressed={kind === 'manual'} onClick={() => setKind('manual')}>Cobranças avulsas</button>
+      <button type="button" className="secondary" aria-pressed={kind === 'agreements'} onClick={() => setKind('agreements')}>Negociar dívida</button>
+      <button type="button" className="secondary" aria-pressed={kind === 'agapes'} onClick={() => setKind('agapes')}>Ágapes e participantes</button>
+      <button type="button" className="secondary" aria-pressed={kind === 'mutuals'} onClick={() => setKind('mutuals')}>Mútuas por faixa</button>
+      <button type="button" className="secondary" aria-pressed={kind === 'periods'} onClick={() => setKind('periods')}>Fechamento mensal</button>
+      <button type="button" className="secondary" aria-pressed={kind === 'treasury'} onClick={() => setKind('treasury')}>Caixa e bancos</button>
+      <button type="button" className="secondary" aria-pressed={kind === 'transfers'} onClick={() => setKind('transfers')}>Transferências</button>
+      <button type="button" className="secondary" aria-pressed={kind === 'reconciliation'} onClick={() => setKind('reconciliation')}>Conciliação bancária</button>
+      <button type="button" className="secondary" aria-pressed={kind === 'cashflow'} onClick={() => setKind('cashflow')}>Fluxo de caixa</button>
+      <button type="button" className="secondary" aria-pressed={kind === 'budget'} onClick={() => setKind('budget')}>Orçado × realizado</button>
+      <button type="button" className="secondary" aria-pressed={kind === 'budgetManagement'} onClick={() => setKind('budgetManagement')}>Planejar orçamento</button>
+      <button type="button" className="secondary" aria-pressed={kind === 'delinquency'} onClick={() => setKind('delinquency')}>Inadimplência</button>
     </div>
     <p className="subtle">Cobranças e obrigações são separadas dos pagamentos. Os valores em aberto não representam saldo de caixa.</p>
     {kind === 'memberPayments'
@@ -198,7 +198,7 @@ function FinanceList({ client, organizationId, kind }: { client: SupabaseClient;
         />
       </div>
 
-      <div className="filter-actions" style={{ display: 'flex', gap: '0.5rem' }}>
+      <div className="filter-actions" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
         <button
           type="button"
           className="secondary"

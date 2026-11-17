@@ -125,7 +125,7 @@ export function ContasPagar({ client, organizationId }: { client: SupabaseClient
             />
           </div>
 
-          <div className="filter-actions" style={{ display: 'flex', gap: '0.5rem' }}>
+          <div className="filter-actions" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
             <button
               type="button"
               className="secondary"
@@ -169,7 +169,7 @@ export function ContasPagar({ client, organizationId }: { client: SupabaseClient
                 </tbody>
               </table>
             </div>
-            <div className="finance-pagination" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', margin: '0.75rem 0' }}>
+            <div className="finance-pagination" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center', margin: '0.75rem 0' }}>
               <button className="secondary" disabled={page === 0} onClick={() => setPage(p => Math.max(0, p - 1))}>Anterior</button>
               <span role="status">Página {page + 1} ({result.rows.length} registros)</span>
               <button className="secondary" disabled={!result.hasNext} onClick={() => setPage(p => p + 1)}>Próxima</button>

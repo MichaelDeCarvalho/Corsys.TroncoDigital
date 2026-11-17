@@ -240,7 +240,7 @@ export function DreConfig({ client, organizationId, onNavigate }: DreConfigProps
           <h2>Configurações da DRE</h2>
           <p>Diagnóstico contábil, cobertura de mapeamentos e parâmetros da Demonstração do Resultado.</p>
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
           <button
             type="button"
             className="secondary"
@@ -304,8 +304,8 @@ export function DreConfig({ client, organizationId, onNavigate }: DreConfigProps
 
             {activePlan ? (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'flex-start', marginTop: '1rem' }}>
-                <div style={{ flex: '1 1 300px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <div style={{ flex: '1 1 300px', minWidth: 0 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                     <h4 style={{ margin: 0, fontSize: '1.15rem' }}>{activePlan.name}</h4>
                     <span
                       className="pill"
@@ -331,7 +331,7 @@ export function DreConfig({ client, organizationId, onNavigate }: DreConfigProps
                   )}
                 </div>
 
-                <div style={{ flex: '1 1 240px', background: '#f8fafc', border: '1px solid #cbd5e1', padding: '1rem', borderRadius: '8px' }}>
+                <div style={{ flex: '1 1 240px', minWidth: 0, background: '#f8fafc', border: '1px solid #cbd5e1', padding: '1rem', borderRadius: '8px' }}>
                   <strong style={{ fontSize: '0.9rem', display: 'block', marginBottom: '6px', color: '#0f172a' }}>
                     Regime Contábil de Apuração
                   </strong>

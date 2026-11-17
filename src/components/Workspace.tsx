@@ -97,7 +97,7 @@ function TenantPanel({ client, organization, page, financeSection, onNavigate }:
     {page === 'tesouraria' && <Tesouraria key={organization.id} client={client} organizationId={organization.id} />}
     {page === 'fluxo-caixa' && <FluxoCaixa key={organization.id} client={client} organizationId={organization.id} />}
     {page === 'dre' && <DreView key={organization.id} client={client} organizationId={organization.id} />}
-    {page === 'finance' && <Finance key={organization.id} client={client} organizationId={organization.id} initialSection={financeSection} />}
+    {page === 'finance' && <Finance key={`${organization.id}:${financeSection ?? 'default'}`} client={client} organizationId={organization.id} initialSection={financeSection} />}
     {page === 'inadimplencia' && <DelinquencyReport key={organization.id} client={client} organizationId={organization.id} />}
     {page === 'relatorios' && <Relatorios key={organization.id} client={client} organizationId={organization.id} />}
     {page === 'cadastros' && <Cadastros members={data.members} client={client} organizationId={organization.id} onSaved={() => setRevision(v => v + 1)} onReload={() => setRevision(v => v + 1)} />}
