@@ -68,7 +68,7 @@ export function FinancialDashboard({
           <p role="status" className="subtle">
             <span>Consultando indicadores financeiros…</span>{' '}
             <span aria-hidden="true">
-              Consolidado no banco. Obrigações não são recebimentos e recebimentos não são receita adicional.
+              Calculado no banco. Obrigações não são recebimentos e recebimentos não são receita contábil adicional.
             </span>
           </p>
           <div
@@ -76,7 +76,7 @@ export function FinancialDashboard({
             aria-hidden="true"
             data-testid="financial-kpi-placeholders"
           >
-            {METRIC_ITEMS.map(([, , , , requirementId]) => (
+            {METRIC_ITEMS.map(([title, , description, , requirementId]) => (
               <article
                 key={requirementId}
                 className="panel metric metric-placeholder"
@@ -88,11 +88,9 @@ export function FinancialDashboard({
                   borderRadius: '6px',
                 }}
               >
-                <p>Indicador em apuração</p>
+                <p>{title}</p>
                 <strong>—</strong>
-                <p className="subtle">
-                  Indicador consolidado da Loja em apuração no servidor
-                </p>
+                <p className="subtle">{description}</p>
               </article>
             ))}
           </div>
