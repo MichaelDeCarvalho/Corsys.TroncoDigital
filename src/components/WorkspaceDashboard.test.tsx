@@ -371,19 +371,26 @@ describe('Workspace V35 dashboard modes, shortcuts and KPI navigation', () => {
   it('keeps 6 structural KPI placeholders above Atalhos e Ações Rápidas while dashboard RPC is pending and navigates Novo Ágape to Ágapes e participantes', async () => {
     const base = createWorkspaceClient()
     let resolveKpis!: (value: unknown) => void
-    const origRpc = base.rpc
+    const origRpcImpl = base.rpc.getMockImplementation()!
     base.rpc.mockImplementation((name: string, params?: Record<string, unknown>) => {
       if (name === 'read_tenant_financial_dashboard') {
         return new Promise(resolve => {
           resolveKpis = resolve
         })
       }
-      return origRpc(name, params)
+      return origRpcImpl(name, params)
     })
 
     render(<Workspace client={base.client} user={user} onSignOut={vi.fn()} />)
 
     await screen.findByRole('heading', { name: 'Atalhos e Ações Rápidas' }, { timeout: 8000 })
+
+    // Verify non-intercepted RPCs (e.g., read_tenant_daily_cash_flow) continue resolving via origRpcImpl without recursion
+    expect(base.rpc).toHaveBeenCalledWith(
+      'read_tenant_daily_cash_flow',
+      expect.objectContaining({ p_organization_id: 'org-a' }),
+    )
+    expect((await screen.findAllByText(/R\$\s?850,00/)).length).toBeGreaterThan(0)
 
     // While KPIs are pending, the 6 structural placeholders are rendered in the KPI metric-grid
     const placeholderGrid = screen.getByTestId('financial-kpi-placeholders')

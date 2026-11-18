@@ -1,11 +1,12 @@
-## V35 — M06.02: estabilização dos KPIs no Dashboard mobile e folga de rolagem da `.mobile-nav` (17/11/2026)
+## V35 — M06.02: estabilização dos KPIs no Dashboard mobile e folga de rolagem da `.mobile-nav` (18/11/2026)
 
-- **Base analisada:** snapshot do workspace AI Studio alinhado ao HEAD `73d5f8a9da5396f465d8efeeb464b1fd217b668d` (pós-correção do modal RBAC em `Cadastros.tsx` / `Cadastros.test.tsx`, Worker DEV homologado `52ffabb6-4dce-4672-b564-61bd6207c242`).
-- **Mecanismos corrigidos:**
-  1. **Deslocamento vertical na chegada assíncrona dos KPIs (`1.207,5 px` medidos em `320 × 800 px`):** `src/components/FinancialDashboard.tsx` passa a renderizar, enquanto `loading === true` (carga inicial e ação `Atualizar indicadores`), `data-testid="financial-kpi-placeholders"` (`className="metric-grid" aria-hidden="true"`) contendo 6 cartões estruturais `.panel.metric.metric-placeholder` com a mesma geometria dos 6 KPIs reais, sem valores monetários fictícios (`—`) e sem expor botões prematuros antes da autorização da RPC `read_tenant_financial_dashboard`.
-  2. **Sobreposição física da barra móvel fixa (`.mobile-nav`, `y = 734,9..800 px` em `320 × 800 px`):** `src/styles.css` define em `@media (max-width: 760px)` `--mobile-nav-clearance: calc(88px + env(safe-area-inset-bottom, 0px))`, aplicando `html { scroll-padding-bottom: var(--mobile-nav-clearance); }`, `.app-body main button, .metric-grid .metric { scroll-margin-bottom: var(--mobile-nav-clearance); }` e `padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px))` em `.app-body main` (`<= 760px` e `<= 420px`).
-- **Preservação:** `Workspace.tsx`, `Finance.tsx`, Auth, MFA, RLS, RBAC, contratos de RPC, banco e Cloudflare PROD inalterados.
-- **Próxima ação:** publicar revisão no Cloudflare DEV (quando autorizado) e executar no ChatGPT Work o reteste geométrico real em `320 × 800 px` (Cenários A, B e C com `elementFromPoint` e captura de eventos de ponteiro).
+- **Base analisada:** GitHub `main` `47d728a8b4c2189bc6092456340af0edb4709b63` (CI GitHub Actions `44390518135` 3/3 PASS sobre `73d5f8a9da5396f465d8efeeb464b1fd217b668d`).
+- **Mecanismos e ajustes pré-homologação aplicados:**
+  1. **Deslocamento vertical na chegada assíncrona e nos estados terminais dos KPIs (`1.207,5 px` medidos em `320 × 800 px`):** `src/components/FinancialDashboard.tsx` renderiza `data-testid="financial-kpi-placeholders"` (`className="metric-grid" aria-hidden="true"`) com 6 cartões estruturais `.panel.metric.metric-placeholder` sempre que `!values` (`loading`, `denied` ou `error`), utilizando o título e a descrição estáticos de cada KPI com `<strong>—</strong>` (sem valores monetários fictícios e sem expor `<button>`). Isso evita o colapso de altura tanto na chegada dos indicadores quanto nas transições terminais de erro ou acesso negado (`42501`/`28000`).
+  2. **Mock de RPC em `src/components/WorkspaceDashboard.test.tsx`:** captura a implementação original via `base.rpc.getMockImplementation()!` antes de interceptar `read_tenant_financial_dashboard`, eliminando recursão nas demais RPCs e comprovando a resolução de `read_tenant_daily_cash_flow`.
+  3. **Folga de rolagem da barra móvel fixa (`.mobile-nav`, `y = 734,9..800 px` em `320 × 800 px`):** preservada em `src/styles.css` (`--mobile-nav-clearance: calc(88px + env(safe-area-inset-bottom, 0px))` em `scroll-padding-bottom`, `scroll-margin-bottom` e `padding-bottom` com `safe-area-inset-bottom`).
+- **Preservação:** `Workspace.tsx`, `Finance.tsx`, `AppShell.tsx`, Auth, MFA, RLS, RBAC, contratos de RPC, banco e Cloudflare PROD inalterados.
+- **Próxima ação:** sincronizar com GitHub, aguardar CI 3/3 PASS, publicar no Cloudflare DEV (quando autorizado) e executar no ChatGPT Work o reteste geométrico real em `320 × 800 px`.
 
 ---
 

@@ -64,40 +64,40 @@ export function FinancialDashboard({
         </button>
       </div>
       {loading && (
-        <>
-          <p role="status" className="subtle">
-            <span>Consultando indicadores financeiros…</span>{' '}
-            <span aria-hidden="true">
-              Calculado no banco. Obrigações não são recebimentos e recebimentos não são receita contábil adicional.
-            </span>
-          </p>
-          <div
-            className="metric-grid"
-            aria-hidden="true"
-            data-testid="financial-kpi-placeholders"
-          >
-            {METRIC_ITEMS.map(([title, , description, , requirementId]) => (
-              <article
-                key={requirementId}
-                className="panel metric metric-placeholder"
-                style={{
-                  textAlign: 'left',
-                  background: 'var(--panel-bg, inherit)',
-                  border: '1px solid var(--border-color, #e5e7eb)',
-                  width: '100%',
-                  borderRadius: '6px',
-                }}
-              >
-                <p>{title}</p>
-                <strong>—</strong>
-                <p className="subtle">{description}</p>
-              </article>
-            ))}
-          </div>
-        </>
+        <p role="status" className="subtle">
+          <span>Consultando indicadores financeiros…</span>{' '}
+          <span aria-hidden="true">
+            Calculado no banco. Obrigações não são recebimentos e recebimentos não são receita contábil adicional.
+          </span>
+        </p>
       )}
       {denied && <p className="subtle">Os indicadores financeiros exigem autorização específica na Loja.</p>}
       {error && <p role="alert" className="message error">{error}</p>}
+      {!values && (
+        <div
+          className="metric-grid"
+          aria-hidden="true"
+          data-testid="financial-kpi-placeholders"
+        >
+          {METRIC_ITEMS.map(([title, , description, , requirementId]) => (
+            <article
+              key={requirementId}
+              className="panel metric metric-placeholder"
+              style={{
+                textAlign: 'left',
+                background: 'var(--panel-bg, inherit)',
+                border: '1px solid var(--border-color, #e5e7eb)',
+                width: '100%',
+                borderRadius: '6px',
+              }}
+            >
+              <p>{title}</p>
+              <strong>—</strong>
+              <p className="subtle">{description}</p>
+            </article>
+          ))}
+        </div>
+      )}
       {values && (
         <>
           <p className="subtle">

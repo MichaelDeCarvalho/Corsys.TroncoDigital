@@ -1,11 +1,11 @@
-## V35 — M06.02: estabilização dos KPIs no Dashboard mobile e folga de rolagem da `.mobile-nav` (17/11/2026)
+## V35 — M06.02: estabilização dos KPIs no Dashboard mobile e folga de rolagem da `.mobile-nav` (18/11/2026)
 
-- **Base analisada:** snapshot do workspace AI Studio correspondente à revisão `73d5f8a9da5396f465d8efeeb464b1fd217b668d` (homologada no Cloudflare DEV `52ffabb6-4dce-4672-b564-61bd6207c242`).
-- **Alterações aplicadas:**
-  - `src/components/FinancialDashboard.tsx`: reserva estrutural durante `loading` com 6 cartões `.panel.metric.metric-placeholder` dentro de `.metric-grid` (`data-testid="financial-kpi-placeholders"`, `aria-hidden="true"`), sem valores financeiros fictícios (`—`), mantendo `<p role="status" className="subtle">` acessível e preservando os 6 KPIs, atualização, tratamento de erro/permissão (`42501`/`28000`) e isolamento por Loja.
-  - `src/styles.css`: `.metric-placeholder { pointer-events: none; user-select: none; opacity: .72; }` e, em `@media (max-width: 760px)`, `--mobile-nav-clearance: calc(88px + env(safe-area-inset-bottom, 0px))` aplicado a `html { scroll-padding-bottom }`, `.app-body main button, .metric-grid .metric { scroll-margin-bottom }` e `padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px))` em `.app-body main` (`<= 760px` e `<= 420px`).
-  - Testes adicionados em `src/components/FinancialDashboard.test.tsx`, `src/components/WorkspaceDashboard.test.tsx` e `src/components/ResponsiveLayout.test.tsx`.
-- **Estado de homologação:** testes automatizados, TypeScript e build Vite executados localmente; validação geométrica de ponteiro e `elementFromPoint` em navegador real (`320 × 800 px`) pendente de reteste independente no ChatGPT Work após publicação autorizada no Cloudflare DEV.
+- **Base analisada:** GitHub `main` `47d728a8b4c2189bc6092456340af0edb4709b63` (CI GitHub Actions `44390518135` 3/3 PASS sobre `73d5f8a9da5396f465d8efeeb464b1fd217b668d`).
+- **Alterações e ajustes pré-homologação aplicados:**
+  - `src/components/FinancialDashboard.tsx`: mantém os 6 cartões estruturais `.panel.metric.metric-placeholder` dentro de `.metric-grid` (`data-testid="financial-kpi-placeholders"`, `aria-hidden="true"`, com título e descrição estáticos de cada indicador e `<strong>—</strong>`) sempre que `!values` (`loading`, `denied` ou `error`), preservando a estabilidade geométrica tanto durante a carga/atualização quanto nos estados terminais de erro ou acesso negado (`42501`/`28000`), sem expor saldos ou botões interativos.
+  - `src/components/WorkspaceDashboard.test.tsx`: captura `base.rpc.getMockImplementation()!` antes de substituir `base.rpc.mockImplementation`, eliminando recursão em RPCs não interceptadas e adicionando asserção de resolução para `read_tenant_daily_cash_flow`.
+  - `src/components/FinancialDashboard.test.tsx`: valida a permanência dos 6 placeholders estruturais e ausência de botões/valores nos estados terminais `denied` (`42501`) e `error` (`organization_id` divergente), além do ciclo atrasado e `Atualizar indicadores`.
+- **Estado de homologação:** testes focados, TypeScript e build Vite aprovados; estabilidade geométrica, hit-testing e homologação em navegador real permanecem `NOT EVALUATED` até a validação independente pelo ChatGPT Work no Cloudflare DEV.
 
 ---
 

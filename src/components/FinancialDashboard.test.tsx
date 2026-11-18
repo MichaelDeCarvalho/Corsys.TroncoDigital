@@ -25,17 +25,25 @@ describe('Financial dashboard',()=>{
   expect(screen.getByText(/Obrigações não são recebimentos/)).toBeInTheDocument()
   expect(rpc).toHaveBeenCalledWith('read_tenant_financial_dashboard',{p_organization_id:'org-a'})
  })
- it('handles missing finance.read without leaking balances',async()=>{
+ it('handles missing finance.read without leaking balances and keeps structural placeholders to prevent layout collapse',async()=>{
   const {client}=mock(null,{code:'42501'})
-  render(<FinancialDashboard client={client} organizationId="org-a"/>)
+  const onNavigate=vi.fn()
+  const {container}=render(<FinancialDashboard client={client} organizationId="org-a" onNavigate={onNavigate}/>)
   await screen.findByText('Os indicadores financeiros exigem autorização específica na Loja.')
   expect(screen.queryByText(/R\$\s?200,30/)).not.toBeInTheDocument()
+  expect(container.textContent).not.toMatch(/R\$\s?\d/)
+  expect(screen.getByTestId('financial-kpi-placeholders').querySelectorAll('.panel.metric.metric-placeholder')).toHaveLength(6)
+  expect(screen.queryByRole('button',{name:/Total a receber/i})).not.toBeInTheDocument()
  })
- it('fails closed when the returned dashboard belongs to another organization',async()=>{
+ it('fails closed when the returned dashboard belongs to another organization and preserves structural placeholders without interactive KPI buttons',async()=>{
   const {client}=mock({...data,organization_id:'org-b'})
-  render(<FinancialDashboard client={client} organizationId="org-a"/>)
+  const onNavigate=vi.fn()
+  const {container}=render(<FinancialDashboard client={client} organizationId="org-a" onNavigate={onNavigate}/>)
   await screen.findByRole('alert')
   expect(screen.queryByText(/R\$\s?200,30/)).not.toBeInTheDocument()
+  expect(container.textContent).not.toMatch(/R\$\s?\d/)
+  expect(screen.getByTestId('financial-kpi-placeholders').querySelectorAll('.panel.metric.metric-placeholder')).toHaveLength(6)
+  expect(screen.queryByRole('button',{name:/Total a receber/i})).not.toBeInTheDocument()
  })
  it('fails closed on inconsistent obligations and nonfinite numbers',()=>{
   expect(()=>normalizeDashboard({...data,receivables_open:'300.00'},'org-a')).toThrow()
