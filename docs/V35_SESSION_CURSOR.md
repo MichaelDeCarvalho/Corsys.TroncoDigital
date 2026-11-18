@@ -1,3 +1,15 @@
+## V35 — Dashboard Mobile: homologação parcial independente (18/11/2026)
+
+- Revisão `a3a8c1b0acce1b8e425afed37248d5a919d92fa2`, CI 44394038164 com frontend/onboarding/static PASS. Cópia isolada limpa e build Vite exit 0. DEV já publicado em `a5db79ae-ad74-457a-93c7-a84b44723f61`; sem republicação. Assets públicos e locais idênticos: JS SHA256 `4bfe90ed33618ea19563792ace48de209333c72e488786c6726c5cb513536611`, CSS `d097c336347da0070d63898805dea564882ff010f7a98bd126589e49cb50d404`. Referência de rollback preservada da base homologada: `52ffabb6-4dce-4672-b564-61bd6207c242` / `73d5f8a`.
+- Cenário A PASS: centro, lateral e Enter abriram Financeiro/Ágapes nas quatro resoluções (12 acionamentos). Em 320×800, retângulo do botão [26,8;257,7;251,2;108,4], scrollY 1918,4, barra iniciando em 734,9. Em 390×844, [26,8;279,9;321,6;108,4], scrollY 1787,2, barra em 778,9. Em 768×900 e 1440×900, retângulos [494,3;375,5;211,7;148,4] e [742,9;364,4;199;171,2], scrollY 900,8 e 748. Sem overflow nas medições (305/305,375/375,753/753,1425/1425).
+- Cenário B controlado NOT EVALUATED: ferramenta não expõe interceptação seletiva de RPC nem listeners para pointerdown/pointerup/click. Duas transições naturais em 320×800 capturaram seis placeholders → seis KPIs com docY 2176,137 e delta 0 px, scrollY 0. Isso acrescenta evidência de estabilidade sem cumprir o atraso controlado exigido.
+- Cenário C parcial: foco por teclado posicionou integralmente Novo Ágape acima da barra móvel nas duas resoluções mobile e manteve hit-test no próprio botão. Os cinco controles móveis funcionaram (Início, Integrantes, Financeiro, Inadimplência e Menu). scrollIntoView explícito NOT EVALUATED pela API disponível; desktop e tablet sem barra inferior visível.
+- Cenário D controlado NOT EVALUATED. Uma falha real da consulta manteve seis placeholders, zero botões dentro deles, nenhum valor em R$, e mensagem “Os indicadores financeiros não puderam ser verificados. Valores não são exibidos.” Atualizar indicadores recuperou os cartões. Negação simulada de acesso não executada.
+- Regressões PASS no recorte: destinos dos seis KPIs e dez atalhos por Enter, preservação de nome não salvo na reentrada da mesma rota, seção padrão após saída/retorno e rascunho vazio em outra Loja de teste. Nenhum formulário enviado.
+- Correção específica ainda pendente de homologação final por B/D controlados, alvos reais dos eventos e scrollIntoView explícito. Completar esse recorte com navegador que permita interceptação da única RPC e observação dos eventos, preservando código, permissões e dados. M06.02 integral segue aberta.
+
+---
+
 ## V35 — M06.02: estabilização dos KPIs no Dashboard mobile e folga de rolagem da `.mobile-nav` (18/11/2026)
 
 - **Base analisada:** GitHub `main` `47d728a8b4c2189bc6092456340af0edb4709b63` (CI GitHub Actions `44390518135` 3/3 PASS sobre `73d5f8a9da5396f465d8efeeb464b1fd217b668d`).
