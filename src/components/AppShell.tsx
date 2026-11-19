@@ -56,6 +56,16 @@ const navItems = [
   { id: 'configuracoes' as const, label: 'Configurações', Icon: Settings },
 ]
 
+function isDrawerViewport(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return true
+  return window.matchMedia('(max-width: 960px)').matches
+}
+
+function isBottomNavViewport(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return true
+  return window.matchMedia('(max-width: 760px)').matches
+}
+
 export function AppShell({
   children,
   page,
@@ -72,24 +82,133 @@ export function AppShell({
   email: string
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [isDrawerMode, setIsDrawerMode] = useState<boolean>(() => isDrawerViewport())
+  const isDrawerModeRef = useRef<boolean>(isDrawerMode)
+  const isBottomNavModeRef = useRef<boolean>(isBottomNavViewport())
   const menuTriggerRef = useRef<HTMLButtonElement | null>(null)
+  const topMenuTriggerRef = useRef<HTMLButtonElement | null>(null)
+  const bottomMenuTriggerRef = useRef<HTMLButtonElement | null>(null)
   const firstNavButtonRef = useRef<HTMLButtonElement | null>(null)
+  const focusRafRef = useRef<number | null>(null)
+
+  function cancelPendingFocus() {
+    if (focusRafRef.current !== null && typeof window !== 'undefined' && typeof window.cancelAnimationFrame === 'function') {
+      window.cancelAnimationFrame(focusRafRef.current)
+    }
+    focusRafRef.current = null
+  }
+
+  function restoreTriggerFocus() {
+    if (!isDrawerModeRef.current) return
+    const candidate = menuTriggerRef.current
+    if (candidate && candidate === bottomMenuTriggerRef.current && !isBottomNavModeRef.current) {
+      topMenuTriggerRef.current?.focus()
+      return
+    }
+    if (candidate) {
+      candidate.focus()
+      return
+    }
+    topMenuTriggerRef.current?.focus()
+  }
 
   function closeMobileMenu() {
+    cancelPendingFocus()
     setMobileMenuOpen(false)
-    menuTriggerRef.current?.focus()
+    restoreTriggerFocus()
   }
 
   function toggleMobileMenu(event: MouseEvent<HTMLButtonElement>) {
-    if (!mobileMenuOpen) menuTriggerRef.current = event.currentTarget
-    setMobileMenuOpen(open => !open)
+    if (!isDrawerModeRef.current) {
+      setMobileMenuOpen(false)
+      return
+    }
+    if (!mobileMenuOpen) {
+      menuTriggerRef.current = event.currentTarget
+      setMobileMenuOpen(true)
+    } else {
+      closeMobileMenu()
+    }
   }
 
   useEffect(() => {
-    if (!mobileMenuOpen) return
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
+
+    const mqlDrawer = window.matchMedia('(max-width: 960px)')
+    const mqlBottom = window.matchMedia('(max-width: 760px)')
+
+    isDrawerModeRef.current = mqlDrawer.matches
+    isBottomNavModeRef.current = mqlBottom.matches
+    setIsDrawerMode(mqlDrawer.matches)
+
+    function handleDrawerBreakpointChange(event: MediaQueryListEvent) {
+      const matches = event.matches
+      isDrawerModeRef.current = matches
+      setIsDrawerMode(matches)
+      if (!matches) {
+        cancelPendingFocus()
+        setMobileMenuOpen(false)
+        const sidebar = document.getElementById('sidebar')
+        const active = document.activeElement
+        if (
+          active === topMenuTriggerRef.current ||
+          active === bottomMenuTriggerRef.current ||
+          (sidebar && !sidebar.contains(active) && active === document.body)
+        ) {
+          const currentActiveNav = sidebar?.querySelector<HTMLButtonElement>('.side-nav button[aria-current="page"]')
+          ;(currentActiveNav ?? firstNavButtonRef.current)?.focus()
+        }
+      }
+    }
+
+    function handleBottomBreakpointChange(event: MediaQueryListEvent) {
+      isBottomNavModeRef.current = event.matches
+      if (!event.matches && menuTriggerRef.current === bottomMenuTriggerRef.current) {
+        menuTriggerRef.current = topMenuTriggerRef.current
+      }
+    }
+
+    if (typeof mqlDrawer.addEventListener === 'function') {
+      mqlDrawer.addEventListener('change', handleDrawerBreakpointChange)
+      mqlBottom.addEventListener('change', handleBottomBreakpointChange)
+      return () => {
+        mqlDrawer.removeEventListener('change', handleDrawerBreakpointChange)
+        mqlBottom.removeEventListener('change', handleBottomBreakpointChange)
+      }
+    }
+
+    mqlDrawer.addListener(handleDrawerBreakpointChange)
+    mqlBottom.addListener(handleBottomBreakpointChange)
+    return () => {
+      mqlDrawer.removeListener(handleDrawerBreakpointChange)
+      mqlBottom.removeListener(handleBottomBreakpointChange)
+    }
+  }, [])
+
+  const drawerActive = mobileMenuOpen && isDrawerMode
+
+  useEffect(() => {
+    if (!drawerActive) {
+      cancelPendingFocus()
+      return
+    }
+
     firstNavButtonRef.current?.focus()
+    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+      cancelPendingFocus()
+      focusRafRef.current = window.requestAnimationFrame(() => {
+        focusRafRef.current = null
+        if (!isDrawerModeRef.current) return
+        const sidebar = document.getElementById('sidebar')
+        if (!sidebar || !sidebar.classList.contains('open')) return
+        if (!sidebar.contains(document.activeElement)) {
+          firstNavButtonRef.current?.focus()
+        }
+      })
+    }
 
     function handleDrawerKeyDown(event: KeyboardEvent) {
+      if (!isDrawerModeRef.current) return
       if (event.key === 'Escape') {
         event.preventDefault()
         closeMobileMenu()
@@ -114,12 +233,16 @@ export function AppShell({
     }
 
     document.addEventListener('keydown', handleDrawerKeyDown)
-    return () => document.removeEventListener('keydown', handleDrawerKeyDown)
-  }, [mobileMenuOpen])
+    return () => {
+      cancelPendingFocus()
+      document.removeEventListener('keydown', handleDrawerKeyDown)
+    }
+  }, [drawerActive])
 
   function handleNavigate(target: Page) {
+    cancelPendingFocus()
     onNavigate(target)
-    if (mobileMenuOpen) menuTriggerRef.current?.focus()
+    if (drawerActive) restoreTriggerFocus()
     setMobileMenuOpen(false)
   }
 
@@ -139,11 +262,11 @@ export function AppShell({
     <div className="app-layout">
       <a className="skip-link" href="#main">Pular para conteúdo</a>
       <div
-        className={`sidebar-backdrop ${mobileMenuOpen ? 'open' : ''}`}
+        className={`sidebar-backdrop ${drawerActive ? 'open' : ''}`}
         onClick={closeMobileMenu}
         aria-hidden="true"
       />
-      <aside className={`sidebar ${mobileMenuOpen ? 'open' : ''}`} id="sidebar">
+      <aside className={`sidebar ${drawerActive ? 'open' : ''}`} id="sidebar">
         <div className="brand">
           <div className="brand-mark" aria-hidden="true">CT</div>
           {page === 'master' ? (
@@ -185,15 +308,16 @@ export function AppShell({
         <header className="topbar">
           <div className="top-left">
             <button
+              ref={topMenuTriggerRef}
               type="button"
               className="ghost mobile-menu"
               id="mobileMenu"
-              aria-expanded={mobileMenuOpen}
+              aria-expanded={drawerActive}
               aria-controls="sidebar"
-              aria-label={mobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
+              aria-label={drawerActive ? 'Fechar menu' : 'Abrir menu'}
               onClick={toggleMobileMenu}
             >
-              {mobileMenuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
+              {drawerActive ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
             </button>
             <div className="topbar-title-block">
               <span className="eyebrow">{page === 'master' ? 'Gestão SaaS' : 'Loja Maçônica'}</span>
@@ -237,12 +361,13 @@ export function AppShell({
             </button>
           ))}
         <button
+          ref={bottomMenuTriggerRef}
           type="button"
-          aria-expanded={mobileMenuOpen}
+          aria-expanded={drawerActive}
           aria-controls="sidebar"
           onClick={toggleMobileMenu}
         >
-          {mobileMenuOpen ? <X size={18} aria-hidden="true" /> : <Menu size={18} aria-hidden="true" />}
+          {drawerActive ? <X size={18} aria-hidden="true" /> : <Menu size={18} aria-hidden="true" />}
           <span>Menu</span>
         </button>
       </nav>

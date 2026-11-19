@@ -81,7 +81,6 @@ p { line-height: 1.6; }
 .session-screen .panel { max-width: 500px; }
 .app-layout { min-height: 100dvh; display: grid; grid-template-columns: 260px minmax(0, 1fr); }
 .sidebar-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 25; display: none; }
-.sidebar-backdrop.open { display: block; }
 .sidebar { position: sticky; top: 0; height: 100dvh; border-right: 1px solid var(--border-soft); background: rgba(15,17,21,.96); backdrop-filter: blur(18px); padding: 24px 18px 20px; display: flex; flex-direction: column; z-index: 30; }
 .nav-section { display: grid; gap: 5px; margin-top: 16px; }
 .nav-title { font-size: 10px; text-transform: uppercase; letter-spacing: .14em; color: var(--soft); padding: 0 10px 4px; font-weight: 650; }
@@ -89,6 +88,7 @@ p { line-height: 1.6; }
 .side-nav button { display: flex; align-items: center; gap: 11px; text-align: left; padding: 10px 12px; border-radius: 10px; background: transparent; color: var(--muted); font-size: .88rem; transition: .16s ease; }
 .side-nav button:hover { background: rgba(255,255,255,.04); color: var(--text); }
 .side-nav button[aria-current] { background: rgba(197,168,128,.12); color: var(--text); outline: 1px solid rgba(197,168,128,.18); font-weight: 600; }
+.side-nav button[aria-current]:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; box-shadow: 0 0 0 1px rgba(197,168,128,.28); }
 .side-nav button[aria-current] svg { color: var(--gold); }
 .sidebar-footer { margin-top: auto; border-top: 1px solid var(--border-soft); padding-top: 16px; display: flex; gap: 8px; align-items: center; color: var(--muted); font-size: .72rem; }
 .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #22C55E; box-shadow: 0 0 8px rgba(34,197,94,.5); }
@@ -271,6 +271,7 @@ p { line-height: 1.6; }
   .login-layout { grid-template-columns: 1fr; }
   .login-story { padding: 28px; gap: 35px; border-right: 0; border-bottom: 1px solid var(--line); }
   .app-layout { display: block; }
+  .sidebar-backdrop.open { display: block; }
   .sidebar { position: fixed; left: 0; top: 0; width: min(282px, 85vw); height: 100vh; transform: translateX(-100%); transition: transform .22s ease; z-index: 100; box-shadow: none; pointer-events: none; visibility: hidden; display: flex !important; overflow-y: auto; }
   .sidebar.open { transform: translateX(0); box-shadow: 10px 0 30px rgba(0,0,0,.6); pointer-events: auto; visibility: visible; }
   .mobile-menu { display: inline-flex !important; }

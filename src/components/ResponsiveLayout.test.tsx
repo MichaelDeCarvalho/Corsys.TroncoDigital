@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { describe, expect, it, vi } from 'vitest'
 import { AppShell } from './AppShell'
@@ -138,6 +138,208 @@ describe('Responsive layout & mobile navigation invariants (320px / 390px / 768p
     expect(stylesCss).toMatch(
       /@media\s*\(max-width:\s*760px\)\s*\{[\s\S]*\.app-body\s+main\s+button,\s*\.metric-grid\s+\.metric\s*\{\s*scroll-margin-bottom:\s*var\(--mobile-nav-clearance\);/s,
     )
+
+    // F2: .sidebar-backdrop.open must only display inside @media (max-width: 960px) and never at top-level on desktop
+    expect(stylesCss).not.toMatch(/^\.sidebar-backdrop\.open\s*\{\s*display:\s*block;\s*\}/m)
+    expect(stylesCss).toMatch(
+      /@media\s*\(max-width:\s*960px\)\s*\{[\s\S]*^\s+\.sidebar-backdrop\.open\s*\{\s*display:\s*block;\s*\}/m,
+    )
+
+    // F3: Active route in .side-nav must have a distinct :focus-visible outline higher contrast than its resting 1px border/outline
+    expect(stylesCss).toMatch(
+      /\.side-nav\s+button\[aria-current\]:focus-visible\s*\{[^}]*outline:\s*2px\s+solid\s+var\(--gold\)/s,
+    )
+  })
+
+  it('closes drawer modal state on resize from mobile (<=960px) to desktop (>960px), removes backdrop and Tab/Escape trap, does not reopen on return to mobile, and handles 760/761px bottom trigger transition', () => {
+    const listeners: Record<string, Set<(e: MediaQueryListEvent) => void>> = {
+      '(max-width: 960px)': new Set(),
+      '(max-width: 760px)': new Set(),
+    }
+    const matchesState: Record<string, boolean> = {
+      '(max-width: 960px)': true,
+      '(max-width: 760px)': true,
+    }
+
+    const originalMatchMedia = window.matchMedia
+    const matchMediaMock = vi.fn((query: string): MediaQueryList => {
+      const set = (listeners[query] ??= new Set())
+      return {
+        get matches() {
+          return matchesState[query] ?? false
+        },
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn((_type: string, cb: EventListenerOrEventListenerObject) => {
+          if (typeof cb === 'function') set.add(cb as (e: MediaQueryListEvent) => void)
+        }),
+        removeEventListener: vi.fn((_type: string, cb: EventListenerOrEventListenerObject) => {
+          if (typeof cb === 'function') set.delete(cb as (e: MediaQueryListEvent) => void)
+        }),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }
+    })
+    window.matchMedia = matchMediaMock
+
+    function setViewport(width: number) {
+      const next960 = width <= 960
+      const next760 = width <= 760
+      const changed960 = matchesState['(max-width: 960px)'] !== next960
+      const changed760 = matchesState['(max-width: 760px)'] !== next760
+      matchesState['(max-width: 960px)'] = next960
+      matchesState['(max-width: 760px)'] = next760
+      act(() => {
+        if (changed960) {
+          for (const cb of Array.from(listeners['(max-width: 960px)'])) {
+            cb({ matches: next960, media: '(max-width: 960px)' } as MediaQueryListEvent)
+          }
+        }
+        if (changed760) {
+          for (const cb of Array.from(listeners['(max-width: 760px)'])) {
+            cb({ matches: next760, media: '(max-width: 760px)' } as MediaQueryListEvent)
+          }
+        }
+      })
+    }
+
+    try {
+      const onNavigate = vi.fn()
+      const { container, unmount } = render(
+        <AppShell page="master" showMaster={true} onNavigate={onNavigate} onSignOut={vi.fn()} email="master@corsys.test">
+          <div>
+            <button type="button">Atualizar plataforma</button>
+          </div>
+        </AppShell>,
+      )
+
+      const topTrigger = document.getElementById('mobileMenu') as HTMLButtonElement
+      const bottomNav = screen.getByRole('navigation', { name: 'Navegação móvel' })
+      const bottomTrigger = within(bottomNav).getByRole('button', { name: 'Menu' })
+      const drawer = document.getElementById('sidebar')!
+      const backdrop = container.querySelector('.sidebar-backdrop')!
+      const sideNav = within(drawer).getByRole('navigation', { name: 'Navegação principal' })
+      const navButtons = within(sideNav).getAllByRole('button')
+      const outsideButton = screen.getByRole('button', { name: 'Atualizar plataforma' })
+
+      // 1 & 2. Open and close from top trigger, then open from bottom trigger at 390px
+      setViewport(390)
+      fireEvent.click(topTrigger)
+      expect(drawer).toHaveClass('open')
+      expect(backdrop).toHaveClass('open')
+      expect(navButtons[0]).toHaveFocus()
+      fireEvent.keyDown(document, { key: 'Escape' })
+      expect(drawer).not.toHaveClass('open')
+      expect(topTrigger).toHaveFocus()
+
+      // Open via bottom trigger at 390px
+      fireEvent.click(bottomTrigger)
+      expect(drawer).toHaveClass('open')
+      expect(backdrop).toHaveClass('open')
+      expect(navButtons[0]).toHaveFocus()
+
+      // 3, 4 & 5. Resize from 390px to 1024px (desktop > 960px) while drawer is open
+      setViewport(1024)
+      expect(drawer).not.toHaveClass('open')
+      expect(backdrop).not.toHaveClass('open')
+      expect(topTrigger).toHaveAttribute('aria-expanded', 'false')
+      expect(bottomTrigger).toHaveAttribute('aria-expanded', 'false')
+      // Focus must NOT be returned to hidden mobile triggers on desktop; stays on visible sidebar navigation
+      expect(topTrigger).not.toHaveFocus()
+      expect(bottomTrigger).not.toHaveFocus()
+      expect(drawer.contains(document.activeElement)).toBe(true)
+
+      // Tab and Escape on desktop must NOT be intercepted by drawer modal listener
+      outsideButton.focus()
+      const tabEvent = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })
+      document.dispatchEvent(tabEvent)
+      expect(tabEvent.defaultPrevented).toBe(false)
+      expect(outsideButton).toHaveFocus()
+
+      const escEvent = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })
+      document.dispatchEvent(escEvent)
+      expect(escEvent.defaultPrevented).toBe(false)
+
+      // 6. Returning to mobile (390px) must NOT reopen stale drawer
+      setViewport(390)
+      expect(drawer).not.toHaveClass('open')
+      expect(backdrop).not.toHaveClass('open')
+      expect(topTrigger).toHaveAttribute('aria-expanded', 'false')
+      expect(bottomTrigger).toHaveAttribute('aria-expanded', 'false')
+
+      // 7. Boundary 760px -> 761px (tablet <=960px where bottom .mobile-nav hides at >760px, but top #mobileMenu stays visible)
+      fireEvent.click(bottomTrigger)
+      expect(drawer).toHaveClass('open')
+      expect(navButtons[0]).toHaveFocus()
+
+      // Resize to 768px (>760px and <=960px): drawer remains valid in tablet mode, but closing must restore focus to visible #mobileMenu, NOT hidden bottomTrigger
+      setViewport(768)
+      expect(drawer).toHaveClass('open')
+      fireEvent.keyDown(document, { key: 'Escape' })
+      expect(drawer).not.toHaveClass('open')
+      expect(topTrigger).toHaveFocus()
+      expect(bottomTrigger).not.toHaveFocus()
+
+      // 8 & 9. Consecutive opens/closes, post-visibility RAF focus when initial focus is rejected by visibility:hidden, and clean cancellation on close/unmount
+      const rafCallbacks: FrameRequestCallback[] = []
+      const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(cb => {
+        rafCallbacks.push(cb)
+        return rafCallbacks.length
+      })
+      const cafSpy = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {})
+
+      try {
+        setViewport(390)
+        // Simulate browser ignoring synchronous focus() before visibility:visible takes effect, keeping focus on trigger
+        topTrigger.focus()
+        const origFocus = navButtons[0].focus.bind(navButtons[0])
+        let blockedInitialSyncFocus = false
+        vi.spyOn(navButtons[0], 'focus').mockImplementation(() => {
+          if (!blockedInitialSyncFocus) {
+            blockedInitialSyncFocus = true
+            return
+          }
+          origFocus()
+        })
+
+        fireEvent.click(topTrigger)
+        expect(drawer).toHaveClass('open')
+        // Before RAF fires, focus remained on topTrigger due to simulated visibility:hidden timing
+        expect(topTrigger).toHaveFocus()
+        expect(rafCallbacks.length).toBeGreaterThan(0)
+
+        // When next animation frame runs after .sidebar.open is committed, focus moves effectively to Início
+        const latestRaf = rafCallbacks[rafCallbacks.length - 1]
+        latestRaf(performance.now())
+        expect(navButtons[0]).toHaveFocus()
+
+        // Closing before RAF fires cancels the pending frame and does not steal focus back into the closed drawer
+        fireEvent.keyDown(document, { key: 'Escape' })
+        expect(drawer).not.toHaveClass('open')
+        expect(topTrigger).toHaveFocus()
+
+        blockedInitialSyncFocus = false
+        fireEvent.click(bottomTrigger)
+        expect(drawer).toHaveClass('open')
+        const pendingRafWhileClosing = rafCallbacks[rafCallbacks.length - 1]
+        fireEvent.keyDown(document, { key: 'Escape' })
+        expect(cafSpy).toHaveBeenCalled()
+        pendingRafWhileClosing(performance.now())
+        expect(bottomTrigger).toHaveFocus()
+      } finally {
+        rafSpy.mockRestore()
+        cafSpy.mockRestore()
+      }
+
+      fireEvent.click(topTrigger)
+      expect(drawer).toHaveClass('open')
+      unmount()
+      expect(listeners['(max-width: 960px)'].size).toBe(0)
+      expect(listeners['(max-width: 760px)'].size).toBe(0)
+    } finally {
+      window.matchMedia = originalMatchMedia
+    }
   })
 
   it('wraps MasterBilling preview and breakdown tables in .finance-table horizontal scroll containers', async () => {
