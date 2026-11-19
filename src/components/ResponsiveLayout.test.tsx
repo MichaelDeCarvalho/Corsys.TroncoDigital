@@ -139,6 +139,12 @@ describe('Responsive layout & mobile navigation invariants (320px / 390px / 768p
       /@media\s*\(max-width:\s*760px\)\s*\{[\s\S]*\.app-body\s+main\s+button,\s*\.metric-grid\s+\.metric\s*\{\s*scroll-margin-bottom:\s*var\(--mobile-nav-clearance\);/s,
     )
 
+    // F1: .side-nav button must NOT use blanket transition: .16s ease (transition-property: all) which transitions inherited visibility from hidden to visible
+    expect(stylesCss).not.toMatch(/\.side-nav\s+button\s*\{[^}]*transition:\s*\.16s\s+ease\s*;/s)
+    expect(stylesCss).toMatch(
+      /\.side-nav\s+button\s*\{[^}]*transition:\s*background-color\s+\.16s\s+ease,\s*color\s+\.16s\s+ease;/s,
+    )
+
     // F2: .sidebar-backdrop.open must only display inside @media (max-width: 960px) and never at top-level on desktop
     expect(stylesCss).not.toMatch(/^\.sidebar-backdrop\.open\s*\{\s*display:\s*block;\s*\}/m)
     expect(stylesCss).toMatch(
@@ -337,6 +343,212 @@ describe('Responsive layout & mobile navigation invariants (320px / 390px / 768p
       unmount()
       expect(listeners['(max-width: 960px)'].size).toBe(0)
       expect(listeners['(max-width: 760px)'].size).toBe(0)
+    } finally {
+      window.matchMedia = originalMatchMedia
+    }
+  })
+
+  it('transfers initial focus deterministically to Início from top and bottom triggers via click, Enter, and Space, survives multi-frame visibility deferral, never steals focus after user moves inside drawer, and cancels pending focus on close/navigate/resize/unmount', () => {
+    const listeners: Record<string, Set<(e: MediaQueryListEvent) => void>> = {
+      '(max-width: 960px)': new Set(),
+      '(max-width: 760px)': new Set(),
+    }
+    const matchesState: Record<string, boolean> = {
+      '(max-width: 960px)': true,
+      '(max-width: 760px)': true,
+    }
+    const originalMatchMedia = window.matchMedia
+    window.matchMedia = vi.fn((query: string): MediaQueryList => {
+      const set = (listeners[query] ??= new Set())
+      return {
+        get matches() {
+          return matchesState[query] ?? false
+        },
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn((_type: string, cb: EventListenerOrEventListenerObject) => {
+          if (typeof cb === 'function') set.add(cb as (e: MediaQueryListEvent) => void)
+        }),
+        removeEventListener: vi.fn((_type: string, cb: EventListenerOrEventListenerObject) => {
+          if (typeof cb === 'function') set.delete(cb as (e: MediaQueryListEvent) => void)
+        }),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }
+    })
+
+    function setViewport(width: number) {
+      const next960 = width <= 960
+      const next760 = width <= 760
+      matchesState['(max-width: 960px)'] = next960
+      matchesState['(max-width: 760px)'] = next760
+      act(() => {
+        for (const cb of Array.from(listeners['(max-width: 960px)'])) {
+          cb({ matches: next960, media: '(max-width: 960px)' } as MediaQueryListEvent)
+        }
+        for (const cb of Array.from(listeners['(max-width: 760px)'])) {
+          cb({ matches: next760, media: '(max-width: 760px)' } as MediaQueryListEvent)
+        }
+      })
+    }
+
+    try {
+      const onNavigate = vi.fn()
+      const { container, unmount } = render(
+        <AppShell page="home" showMaster={true} onNavigate={onNavigate} onSignOut={vi.fn()} email="master@corsys.test">
+          <div>Conteúdo</div>
+        </AppShell>,
+      )
+
+      const topTrigger = document.getElementById('mobileMenu') as HTMLButtonElement
+      const bottomNav = screen.getByRole('navigation', { name: 'Navegação móvel' })
+      const bottomTrigger = within(bottomNav).getByRole('button', { name: 'Menu' })
+      const drawer = document.getElementById('sidebar')!
+      const backdrop = container.querySelector('.sidebar-backdrop')!
+      const sideNav = within(drawer).getByRole('navigation', { name: 'Navegação principal' })
+      const navButtons = within(sideNav).getAllByRole('button')
+      const inicioBtn = navButtons[0]
+      const integrantesBtn = navButtons[1]
+
+      // 1. All 6 combinations: Top & Bottom triggers × Click, Enter, Space
+      for (const trigger of [topTrigger, bottomTrigger]) {
+        // Click
+        trigger.focus()
+        fireEvent.click(trigger)
+        expect(drawer).toHaveClass('open')
+        expect(inicioBtn).toHaveFocus()
+        fireEvent.keyDown(document, { key: 'Escape' })
+        expect(drawer).not.toHaveClass('open')
+        expect(trigger).toHaveFocus()
+
+        // Enter (even if browser also dispatches synthesized click right after keydown)
+        trigger.focus()
+        const enterPrevented = !fireEvent.keyDown(trigger, { key: 'Enter' })
+        expect(enterPrevented).toBe(true)
+        fireEvent.click(trigger)
+        expect(drawer).toHaveClass('open')
+        expect(inicioBtn).toHaveFocus()
+        fireEvent.keyDown(document, { key: 'Escape' })
+        expect(drawer).not.toHaveClass('open')
+        expect(trigger).toHaveFocus()
+
+        // Space (even if browser also dispatches synthesized click right after keydown)
+        trigger.focus()
+        const spacePrevented = !fireEvent.keyDown(trigger, { key: ' ' })
+        expect(spacePrevented).toBe(true)
+        fireEvent.click(trigger)
+        expect(drawer).toHaveClass('open')
+        expect(inicioBtn).toHaveFocus()
+        fireEvent.keyDown(document, { key: 'Escape' })
+        expect(drawer).not.toHaveClass('open')
+        expect(trigger).toHaveFocus()
+      }
+
+      // 2. Multi-frame deferral: both synchronous focus() AND Frame 1 pre-paint rAF focus() are rejected by browser before paint; Frame 2 post-paint rAF transfers focus to Início
+      const rafQueue: Array<{ id: number; cb: FrameRequestCallback; cancelled: boolean }> = []
+      let nextRafId = 1
+      const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(cb => {
+        const id = nextRafId++
+        rafQueue.push({ id, cb, cancelled: false })
+        return id
+      })
+      const cafSpy = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(id => {
+        const entry = rafQueue.find(item => item.id === id)
+        if (entry) entry.cancelled = true
+      })
+
+      const origInicioFocus = inicioBtn.focus.bind(inicioBtn)
+      let rejectedCallsRemaining = 0
+      const focusSpy = vi.spyOn(inicioBtn, 'focus').mockImplementation(() => {
+        if (rejectedCallsRemaining > 0) {
+          rejectedCallsRemaining -= 1
+          return
+        }
+        origInicioFocus()
+      })
+
+      try {
+        // Block both sync useLayoutEffect focus AND Frame 1 pre-paint rAF focus (2 calls blocked)
+        rejectedCallsRemaining = 2
+        bottomTrigger.focus()
+        fireEvent.keyDown(bottomTrigger, { key: 'Enter' })
+        expect(drawer).toHaveClass('open')
+        expect(bottomTrigger).toHaveFocus()
+
+        // Run Frame 1 rAF (still blocked before paint, queues Frame 2 rAF)
+        const frame1 = rafQueue[rafQueue.length - 1]
+        expect(frame1.cancelled).toBe(false)
+        frame1.cb(performance.now())
+        expect(bottomTrigger).toHaveFocus()
+
+        // Run Frame 2 rAF (post-paint: focus succeeds on Início!)
+        const frame2 = rafQueue[rafQueue.length - 1]
+        expect(frame2.id).toBeGreaterThan(frame1.id)
+        expect(frame2.cancelled).toBe(false)
+        frame2.cb(performance.now())
+        expect(inicioBtn).toHaveFocus()
+
+        fireEvent.keyDown(document, { key: 'Escape' })
+        expect(bottomTrigger).toHaveFocus()
+
+        // 3. No focus stealing after user has already moved focus to another item inside the drawer (e.g. Integrantes)
+        rejectedCallsRemaining = 0
+        topTrigger.focus()
+        fireEvent.click(topTrigger)
+        expect(inicioBtn).toHaveFocus()
+
+        // User moves focus to Integrantes before Frame 1 / Frame 2 / transitionend fire
+        integrantesBtn.focus()
+        fireEvent.focusIn(integrantesBtn)
+        expect(integrantesBtn).toHaveFocus()
+
+        // Pending rAF was cancelled when user moved focus inside drawer, and even if invoked or transitionend fires, focus stays on Integrantes
+        for (const entry of rafQueue) {
+          entry.cb(performance.now())
+        }
+        fireEvent.transitionEnd(drawer)
+        expect(integrantesBtn).toHaveFocus()
+
+        // 4. Cancellation on route navigation, backdrop close, desktop resize, and unmount (no late focus transfer)
+        fireEvent.click(integrantesBtn)
+        expect(onNavigate).toHaveBeenCalledWith('members')
+        expect(drawer).not.toHaveClass('open')
+        expect(topTrigger).toHaveFocus()
+
+        // Open with deferred focus, then close via backdrop before rAF runs -> no late focus transfer
+        rejectedCallsRemaining = 1
+        bottomTrigger.focus()
+        fireEvent.click(bottomTrigger)
+        const pendingBeforeBackdrop = rafQueue[rafQueue.length - 1]
+        fireEvent.click(backdrop)
+        expect(pendingBeforeBackdrop.cancelled).toBe(true)
+        rejectedCallsRemaining = 0
+        pendingBeforeBackdrop.cb(performance.now())
+        fireEvent.transitionEnd(drawer)
+        expect(bottomTrigger).toHaveFocus()
+
+        // Open with deferred focus, then resize to desktop (1280px) before rAF runs -> cancels pending rAF
+        rejectedCallsRemaining = 1
+        topTrigger.focus()
+        fireEvent.click(topTrigger)
+        const pendingBeforeResize = rafQueue[rafQueue.length - 1]
+        setViewport(1280)
+        expect(pendingBeforeResize.cancelled).toBe(true)
+
+        // Return to mobile, open with deferred focus, then unmount -> cancels pending rAF
+        setViewport(390)
+        rejectedCallsRemaining = 1
+        topTrigger.focus()
+        fireEvent.click(topTrigger)
+        const pendingBeforeUnmount = rafQueue[rafQueue.length - 1]
+        unmount()
+        expect(pendingBeforeUnmount.cancelled).toBe(true)
+      } finally {
+        focusSpy.mockRestore()
+        rafSpy.mockRestore()
+        cafSpy.mockRestore()
+      }
     } finally {
       window.matchMedia = originalMatchMedia
     }

@@ -85,7 +85,7 @@ p { line-height: 1.6; }
 .nav-section { display: grid; gap: 5px; margin-top: 16px; }
 .nav-title { font-size: 10px; text-transform: uppercase; letter-spacing: .14em; color: var(--soft); padding: 0 10px 4px; font-weight: 650; }
 .side-nav { display: grid; gap: 4px; }
-.side-nav button { display: flex; align-items: center; gap: 11px; text-align: left; padding: 10px 12px; border-radius: 10px; background: transparent; color: var(--muted); font-size: .88rem; transition: .16s ease; }
+.side-nav button { display: flex; align-items: center; gap: 11px; text-align: left; padding: 10px 12px; border-radius: 10px; background: transparent; color: var(--muted); font-size: .88rem; transition: background-color .16s ease, color .16s ease; }
 .side-nav button:hover { background: rgba(255,255,255,.04); color: var(--text); }
 .side-nav button[aria-current] { background: rgba(197,168,128,.12); color: var(--text); outline: 1px solid rgba(197,168,128,.18); font-weight: 600; }
 .side-nav button[aria-current]:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; box-shadow: 0 0 0 1px rgba(197,168,128,.28); }

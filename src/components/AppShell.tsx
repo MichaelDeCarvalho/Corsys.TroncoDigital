@@ -1,4 +1,12 @@
-import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
+} from 'react'
 import { Home, Users, Wallet, MessagesSquare, Settings, ShieldCheck, LogOut, Menu, X, FileText } from 'lucide-react'
 
 export type Page =
@@ -90,6 +98,8 @@ export function AppShell({
   const bottomMenuTriggerRef = useRef<HTMLButtonElement | null>(null)
   const firstNavButtonRef = useRef<HTMLButtonElement | null>(null)
   const focusRafRef = useRef<number | null>(null)
+  const userMovedFocusInsideRef = useRef<boolean>(false)
+  const openedByKeyRef = useRef<boolean>(false)
 
   function cancelPendingFocus() {
     if (focusRafRef.current !== null && typeof window !== 'undefined' && typeof window.cancelAnimationFrame === 'function') {
@@ -114,20 +124,47 @@ export function AppShell({
 
   function closeMobileMenu() {
     cancelPendingFocus()
+    userMovedFocusInsideRef.current = false
+    openedByKeyRef.current = false
     setMobileMenuOpen(false)
     restoreTriggerFocus()
   }
 
-  function toggleMobileMenu(event: MouseEvent<HTMLButtonElement>) {
+  function activateMobileMenuTrigger(trigger: HTMLButtonElement) {
     if (!isDrawerModeRef.current) {
       setMobileMenuOpen(false)
       return
     }
     if (!mobileMenuOpen) {
-      menuTriggerRef.current = event.currentTarget
+      menuTriggerRef.current = trigger
+      userMovedFocusInsideRef.current = false
       setMobileMenuOpen(true)
     } else {
       closeMobileMenu()
+    }
+  }
+
+  function toggleMobileMenu(event: MouseEvent<HTMLButtonElement>) {
+    if (openedByKeyRef.current && mobileMenuOpen) {
+      openedByKeyRef.current = false
+      return
+    }
+    openedByKeyRef.current = false
+    activateMobileMenuTrigger(event.currentTarget)
+  }
+
+  function handleTriggerKeyDown(event: ReactKeyboardEvent<HTMLButtonElement>) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      if (!mobileMenuOpen) {
+        openedByKeyRef.current = true
+        if (typeof queueMicrotask === 'function') {
+          queueMicrotask(() => {
+            openedByKeyRef.current = false
+          })
+        }
+      }
+      activateMobileMenuTrigger(event.currentTarget)
     }
   }
 
@@ -147,6 +184,7 @@ export function AppShell({
       setIsDrawerMode(matches)
       if (!matches) {
         cancelPendingFocus()
+        userMovedFocusInsideRef.current = false
         setMobileMenuOpen(false)
         const sidebar = document.getElementById('sidebar')
         const active = document.activeElement
@@ -187,24 +225,60 @@ export function AppShell({
 
   const drawerActive = mobileMenuOpen && isDrawerMode
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!drawerActive) {
       cancelPendingFocus()
+      userMovedFocusInsideRef.current = false
       return
     }
 
-    firstNavButtonRef.current?.focus()
+    userMovedFocusInsideRef.current = false
+
+    function focusFirstNavIfNeeded(): boolean {
+      if (!isDrawerModeRef.current || userMovedFocusInsideRef.current) return false
+      const sidebar = document.getElementById('sidebar')
+      if (!sidebar || !sidebar.classList.contains('open')) return false
+      if (sidebar.contains(document.activeElement)) return true
+      void sidebar.offsetHeight
+      const target = firstNavButtonRef.current ?? sidebar.querySelector<HTMLButtonElement>('.side-nav button:not(:disabled)')
+      if (!target) return false
+      void target.offsetHeight
+      target.focus()
+      return sidebar.contains(document.activeElement)
+    }
+
+    focusFirstNavIfNeeded()
+
     if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
       cancelPendingFocus()
       focusRafRef.current = window.requestAnimationFrame(() => {
         focusRafRef.current = null
-        if (!isDrawerModeRef.current) return
+        if (!isDrawerModeRef.current || userMovedFocusInsideRef.current) return
         const sidebar = document.getElementById('sidebar')
         if (!sidebar || !sidebar.classList.contains('open')) return
-        if (!sidebar.contains(document.activeElement)) {
-          firstNavButtonRef.current?.focus()
-        }
+        focusFirstNavIfNeeded()
+        focusRafRef.current = window.requestAnimationFrame(() => {
+          focusRafRef.current = null
+          focusFirstNavIfNeeded()
+        })
       })
+    }
+
+    const sidebarElement = document.getElementById('sidebar')
+
+    function handleSidebarFocusIn(event: FocusEvent) {
+      if (!sidebarElement) return
+      const target = event.target as Node | null
+      if (target && sidebarElement.contains(target) && target !== firstNavButtonRef.current) {
+        userMovedFocusInsideRef.current = true
+        cancelPendingFocus()
+      }
+    }
+
+    function handleSidebarTransitionEnd(event: TransitionEvent) {
+      if (event.target === sidebarElement) {
+        focusFirstNavIfNeeded()
+      }
     }
 
     function handleDrawerKeyDown(event: KeyboardEvent) {
@@ -232,15 +306,21 @@ export function AppShell({
       }
     }
 
+    sidebarElement?.addEventListener('focusin', handleSidebarFocusIn)
+    sidebarElement?.addEventListener('transitionend', handleSidebarTransitionEnd)
     document.addEventListener('keydown', handleDrawerKeyDown)
     return () => {
       cancelPendingFocus()
+      userMovedFocusInsideRef.current = false
+      sidebarElement?.removeEventListener('focusin', handleSidebarFocusIn)
+      sidebarElement?.removeEventListener('transitionend', handleSidebarTransitionEnd)
       document.removeEventListener('keydown', handleDrawerKeyDown)
     }
   }, [drawerActive])
 
   function handleNavigate(target: Page) {
     cancelPendingFocus()
+    userMovedFocusInsideRef.current = false
     onNavigate(target)
     if (drawerActive) restoreTriggerFocus()
     setMobileMenuOpen(false)
@@ -316,6 +396,7 @@ export function AppShell({
               aria-controls="sidebar"
               aria-label={drawerActive ? 'Fechar menu' : 'Abrir menu'}
               onClick={toggleMobileMenu}
+              onKeyDown={handleTriggerKeyDown}
             >
               {drawerActive ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
             </button>
@@ -366,6 +447,7 @@ export function AppShell({
           aria-expanded={drawerActive}
           aria-controls="sidebar"
           onClick={toggleMobileMenu}
+          onKeyDown={handleTriggerKeyDown}
         >
           {drawerActive ? <X size={18} aria-hidden="true" /> : <Menu size={18} aria-hidden="true" />}
           <span>Menu</span>
