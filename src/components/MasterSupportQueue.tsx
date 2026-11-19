@@ -28,6 +28,7 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
  const [replyError,setReplyError]=useState(''),[replySuccess,setReplySuccess]=useState(false)
  const [pending,setPending]=useState(false),[uncertain,setUncertain]=useState(false)
  const command=useRef<{args:Record<string,unknown>}|null>(null),guard=useRef(false),mounted=useRef(false)
+ const detailButtonRefs=useRef<Record<string,HTMLButtonElement|null>>({})
 
  useEffect(()=>{
   try{
@@ -59,10 +60,16 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
   })
  },[tickets?.rows,search])
 
+ useEffect(()=>{
+  if(expandedId&&tickets?.rows&&!filteredRows.some(ticket=>ticket.id===expandedId)){
+   setExpandedId(null)
+  }
+ },[expandedId,tickets?.rows,filteredRows])
+
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false}},[])
  useEffect(()=>{
   let live=true;const controller=new AbortController()
-  setTickets(null);setTicketError('');setSelected(null);setMessages(null);setEvents(null)
+  setTickets(null);setTicketError('');setSelected(null);setExpandedId(null);setMessages(null);setEvents(null)
   loadMasterTickets(client,page,controller.signal,organizationFilter)
    .then(t=>{if(live)setTickets(t)})
    .catch(()=>{if(live)setTicketError('Fila de suporte indisponível ou incompleta para esta autenticação.')})
@@ -194,6 +201,7 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
       <tbody>{filteredRows.map(ticket=>{
        const isHighlighted = Boolean(search.trim())
        const isExpanded = expandedId === ticket.id
+       const detailsPanelId = `master-ticket-details-${ticket.id}`
        return (
         <Fragment key={ticket.id}>
          <tr
@@ -211,9 +219,12 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
           <td>
            <div className="flex items-center gap-1">
             <button
+             ref={el=>{detailButtonRefs.current[ticket.id]=el}}
              className="secondary text-xs px-2 py-1"
              type="button"
              aria-label={`Detalhes do chamado #${ticket.ticket_seq}`}
+             aria-expanded={isExpanded}
+             aria-controls={detailsPanelId}
              onClick={()=>setExpandedId(v=>v===ticket.id?null:ticket.id)}
             >
              {isExpanded ? 'Ocultar' : 'Detalhes'}
@@ -227,10 +238,20 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
            </div>
           </td>
          </tr>
-         {isExpanded && (
-          <tr key={`${ticket.id}-drawer`} className="bg-slate-50 border-b">
-           <td colSpan={6} className="p-3">
-            <div className="p-3 bg-white border rounded shadow-2xs space-y-3 text-xs text-slate-700">
+         <tr
+          id={detailsPanelId}
+          key={`${ticket.id}-drawer`}
+          hidden={!isExpanded}
+          aria-hidden={!isExpanded}
+          className={isExpanded ? 'bg-slate-50 border-b' : undefined}
+         >
+          {isExpanded && (
+           <td colSpan={6} className="p-3 whitespace-normal" style={{whiteSpace:'normal',overflowWrap:'anywhere'}}>
+            <div
+             role="region"
+             aria-label={`Histórico e detalhes do chamado #${ticket.ticket_seq}`}
+             className="p-3 bg-white border rounded shadow-2xs space-y-3 text-xs text-slate-700"
+            >
              <div className="flex flex-wrap justify-between items-center gap-2 border-b pb-2">
               <strong className="text-slate-900">Histórico & Detalhes — Chamado #{ticket.ticket_seq}</strong>
               <span className="text-slate-500 font-mono text-[11px] break-all">{ticket.organization_id || 'Uso interno da plataforma'}</span>
@@ -251,7 +272,16 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
               </div>
              </div>
              <div className="flex flex-wrap justify-end gap-2 pt-1 border-t">
-              <button type="button" className="secondary text-xs px-2.5 py-1" onClick={()=>setExpandedId(null)}>Recolher</button>
+              <button
+               type="button"
+               className="secondary text-xs px-2.5 py-1"
+               onClick={()=>{
+                setExpandedId(null)
+                detailButtonRefs.current[ticket.id]?.focus()
+               }}
+              >
+               Recolher
+              </button>
               <button type="button" className="primary text-xs px-2.5 py-1" onClick={()=>{
                 if(selected!==ticket){setEvents(null);setEventsError('')}
                 setSelected(ticket);setReplyText('');setNextStatus('');setReplyError('');setReplySuccess(false)
@@ -259,8 +289,8 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
              </div>
             </div>
            </td>
-          </tr>
-         )}
+          )}
+         </tr>
         </Fragment>
        )
       })}</tbody>
