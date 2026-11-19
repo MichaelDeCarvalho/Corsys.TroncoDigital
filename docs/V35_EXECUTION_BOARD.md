@@ -1,5 +1,9 @@
 # V35 — PLANO MESTRE DE EXECUÇÃO (macroetapas e microentregas)
 
+## Consolidação operacional — 18/11/2026
+
+Dashboard Mobile/Novo Ágape encerrado para investigação e desenvolvimento por decisão do proprietário, com evidências de ambientes discriminadas no cursor e handoff. Mantidos o FAIL documental de 1 CSS px e o residual de testes controlados no DEV autenticado antes da liberação aplicável em produção. M06.02 segue EM_EXECUCAO. Próxima microentrega independente: acessibilidade de expansão/recolhimento de detalhes na fila Master de suporte, com paridade de leitura e responsividade; acesso Master/AAL2 necessário para homologação DEV. Estados históricos abaixo exigem reconciliação antes de nova execução.
+
 ## Atualização operacional — gate HTTP real aprovado em DEV (15/11/2026)
 
 - **Subgate HTTP somente leitura M02.03/M04.03/M06.03:** **5/5 PASS** observado no PowerShell do proprietário após correção de assinatura `p_page: 0`; negativas A↔B e `finance.read`, Master AAL1 negado, Master AAL2/TOTP positivo. [Evidência detalhada](V35_HTTP_READONLY_GATE_20261115.md).
