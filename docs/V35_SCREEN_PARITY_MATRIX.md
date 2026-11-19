@@ -9,6 +9,12 @@
 
 Atualização consolidada após o ciclo **Fechamento dos Gates M02.03 / M04.03 / M06** (15/11/2026).
 
+## M06.02 — homologação real parcial de chamados Master (18/11/2026)
+
+Revisão `d859b16`; CI **3/3 PASS**; typecheck, 591 testes e build locais executados, mas exit agregado do wrapper local NOT EVALUATED; dry-run local **PASS/exit 0**. Checkout exato recuperado e limpo. Workers Builds confirmou publicação automática DEV **`c110100d-4d25-4b20-afaf-6c768cdbbce6`**; nomes dos assets JS/CSS coincidem com build local (SHA-256 remoto NOT EVALUATED). Sessão Master existente homologou disclosure/ARIA, clique/Enter/Space, tabulação, alternância e retorno de foco real em Recolher (#13 Enter; #10 Space): **PASS**. Buscas, limpeza, atualização/foco, filtro de Loja e Mostrar todos **PASS**. Documento sem overflow em 320/390/428/768/1024/1440 px; tabela com rolagem interna nos cinco menores. Paginação real **NOT EVALUATED** (6/25 registros). Contraste inspecionado visualmente, auditoria quantitativa NOT EVALUATED.
+
+**FAIL:** histórico de mensagens do chamado interno #10 exibe erro genérico em duas aberturas; conversa de cliente #13 carrega. Escopo visual preservado; causa e regressão atribuível a este commit não comprovadas. **Não promover o recorte integral a HOMOLOGADO_DEV/CONCLUIDO**; prioridade é diagnóstico localizado, sem modificar código/banco nesta homologação. Evidência completa, medidas e reprodução no início de [SESSION_HANDOFF.md](../SESSION_HANDOFF.md). Registro inicial de bloqueios abaixo é histórico superado quanto a checkout e sessão.
+
 ## M06.02 — evidência inicial de chamados Master (18/11/2026)
 
 Recorte da revisão `d859b16262c48a16001b7cd778620371f13df3a3`: CI [44429221490](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/44429221490) **3/3 PASS**, check **591/591**, MasterSupportQueue **12/12**, build/dry-run PASS no CI. **Homologação real deste recorte: NOT EVALUATED**. Sem publicação nesta execução: workspace antigo/sujo preservado; clone isolado bloqueado por DNS (`Could not resolve host: github.com`). Sessão DEV observada como Administração da Loja/Tenant A; Master AAL2 não confirmado.
