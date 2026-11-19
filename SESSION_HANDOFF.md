@@ -1,3 +1,76 @@
+## M06.02 — homologação real dos chamados Master: parcial com falha de histórico (18/11/2026)
+
+Este registro **atualiza os bloqueios da tentativa inicial abaixo**, preservada como histórico. A acessibilidade do disclosure foi comprovada no DEV; **o aceite integral deste recorte NÃO está concluído** devido à falha reproduzível da conversa interna #10 e aos limites de evidência indicados.
+
+### Revisão, integridade e publicação
+
+- GitHub `main=d859b16262c48a16001b7cd778620371f13df3a3`; base `f65848bfdc5994fa967d928267bb9267b8c76ecc`; diff de apenas três arquivos já conferido na tentativa inicial. Não repetir a revisão automatizada como se fosse nova.
+- DNS do terminal continua impedindo clone/fetch. A alternativa somente leitura via conector GitHub recuperou a árvore recursiva completa (**não truncada; 621 blobs**) e os objetos ausentes. Todos os blobs recuperados e árvores foram conferidos pelo SHA-1 Git; o objeto de commit original foi reconstruído com hash exato. **HEAD `d859b16262c48a16001b7cd778620371f13df3a3`, árvore `d965b9c1d4aa78800c945393d4a40e9177fea3c9`, checkout isolado limpo.** Worktree de validação em `repo/.test-tmp/m0602-qa`; workspace antigo e suas alterações preservados.
+- CI [44429221490](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/44429221490): **PASS 3/3** (frontend/static/onboarding). Evidência anterior permanece válida: check **591 testes/85 arquivos**, MasterSupportQueue **12/12**, typecheck/build e dry-run PASS no runner da revisão.
+- Na retomada local, `npm run check` efetivamente executou typecheck, **591/591 testes em 85 arquivos** e gerou o build (1904 módulos; Vite 6.4.5). O wrapper permaneceu aberto após a saída de conclusão do build; **código de saída agregado desse comando local não foi disponibilizado**, portanto não promovê-lo a check local PASS. Uma tentativa anterior ocorreu com cópia incompleta das dependências e falhou por ausência de TypeScript; esse foi um problema do preparo, sem alteração de código.
+- Dry-run local de Wrangler **4.156.1 PASS, exit 0**: oito assets lidos, sem bindings, sem upload. A primeira tentativa apresentou EPERM ao gravar logs fora da área permitida; repetir com `WRANGLER_LOG_PATH` no workspace resolveu essa limitação. Nenhum arquivo funcional foi modificado.
+- O check GitHub **Workers Builds: corsys-tronco-digital-dev** (`135244889701`) confirmou publicação automática já realizada para o HEAD autorizado, **SUCCESS**. Build `6fc04cf6-a726-46ba-a2f7-0b8ce307c876`; versão **`c110100d-4d25-4b20-afaf-6c768cdbbce6`**. [Build DEV](https://dash.cloudflare.com/ad50eeb9f9d8c4c4f4e9babe314b8af7/workers/services/view/corsys-tronco-digital-dev/production/builds/6fc04cf6-a726-46ba-a2f7-0b8ce307c876). O segmento `production` dessa URL é o ambiente do serviço **DEV**, não prova publicação no Worker de produção do sistema. **Não foi disparado outro deploy nesta retomada.**
+- Rollback de referência: versão **`6a43db80-7bd6-476a-9f31-9f0a07e8d1b5`**, build `3c23b19a-546d-4990-b80a-738753545fdc`, associado pelo Workers Builds à base `f65848bf`. Rollback não executado; disponibilidade operacional e tráfego atual no painel Cloudflare não foram consultados.
+- Assets carregados pela página DEV coincidem com os nomes de conteúdo gerados localmente: `index-DxjyA-rF.js` e `index-CPLBN8x7.css`. SHA-256 **locais**: JS `3e6bdd974eefb427deebf717e2da6bf61aef0c69f878a2439778fe2665476da0`; CSS `11fa1e0786357d4ac7ca5bb2b7c14cb5496c0382c431e8fe6299a90f0c29b6fd`. Igualdade byte a byte por SHA-256 remoto **NOT EVALUATED**; chunk de exportação sob demanda não carregado no navegador. Configuração pública de build obtida pelo conector, sem leitura de tokens/chaves do navegador nem modificação de configurações Supabase.
+
+### Homologação real — navegador integrado, sessão Master autorizada
+
+O primeiro erro de validação da sessão foi resolvido pelo botão existente “Tentar novamente”. Sessão existente de `michael@lojamais1.com` acessou o console Master e retornou indicadores/fila protegidos por Master/AAL2. Nenhum login, cadastro MFA, alteração Auth ou elevação de permissões foi executado pela automação.
+
+| Critério | Resultado real DEV | Evidência |
+|---|---|---|
+| Estado inicial recolhido | PASS | Seis botões #13/#12/#11/#10/#9/#8 com aria-expanded=false; painéis existentes e hidden=true |
+| aria-expanded e aria-controls | PASS | Associação única master-ticket-details-UUID, elemento correspondente existente; estados acompanhando exibição |
+| Ausência de controles ocultos na tabulação | PASS | Painéis recolhidos sem controles filhos; Tab de #13 → Ver conversa → Detalhes #12, sem passar por Recolher oculto |
+| Expandir/recolher por clique | PASS | #13 abriu e fechou; estado e painel sincronizados |
+| Enter e Space no botão Detalhes | PASS | Sequência Enter/Enter/Space/Space resultou true/false/true/false em #13 |
+| Alternância entre chamados | PASS | Expandir #13 e depois #10 recolheu #13; apenas painel #10 visível |
+| Foco real em Recolher antes do teclado | PASS | Tab desde Detalhes, passando por Ver conversa; activeElement.textContent=Recolher confirmado **antes** da ação |
+| Retorno de foco correto | PASS | Enter no Recolher de #13 → Detalhes #13; Space no Recolher de #10 → Detalhes #10; ambos recolhidos |
+| Abrir conversa correta de cliente | PASS | #13 exibiu título correto, mensagens do cliente/equipe e eventos do próprio chamado |
+| Abrir histórico da conversa interna | **FAIL** | #10 abriu cabeçalho correto, mas exibiu “Não foi possível validar o histórico desta conversa.” em **duas aberturas independentes** |
+| Escopo visual interno/cliente | PASS no recorte observado | #10: Uso interno da plataforma, evento interno e resposta de cliente bloqueada; #13: UUID da Loja e mensagens de cliente. Não foi reexecutado gate backend/RLS |
+| Busca por título, número e UUID | PASS | Título completo de #13, número 13 e UUID 81caf24e-2891-4cd4-a112-7201b50cbce4 selecionaram #13 |
+| Limpar busca e não reabrir painel obsoleto | PASS | Buscar DEV STAFF LIVE ocultou #13; limpar restaurou seis chamados sem expansão anterior |
+| Atualizar chamados e foco | PASS | Expansão e conversa limpas; foco permaneceu no botão Atualizar chamados durante/depois da consulta |
+| Mostrar todos os chamados | PASS | Diretório Master → Suporte do Tenant A mostrou #13/#12/#11/#8; após expandir #13 e Mostrar todos, retornaram seis registros, todos recolhidos |
+| Foco após Limpar/Mostrar todos | Observação | Botão removido do DOM deixa activeElement=BODY; não observado travamento. Retorno explícito ao campo de busca não implementado |
+| Próxima/Anterior e foco entre páginas | NOT EVALUATED | Apenas seis chamados, página de 25; ambos botões desabilitados; nenhum registro artificial criado |
+| Vazio/loading/erro distinguíveis | PASS nos estados observados | Consulta em andamento, busca sem resultado e erro de histórico com mensagens distintas |
+| Regressão causada por d859b16 | NOT EVALUATED | Falha interna reproduzida, mas não comprovada causalidade com este commit; loader de mensagens não está no diff de três arquivos |
+
+### Resoluções — medidas reais (CSS px)
+
+Medidas com painel #13 expandido. A diferença de 15 px entre viewport e clientWidth corresponde à barra de rolagem vertical observada. As dimensões foram conferidas pelo **innerWidth efetivo**; leituras transitórias durante troca de viewport foram descartadas.
+
+| Viewport | Documento clientWidth | Documento scrollWidth | Tabela clientWidth | Tabela scrollWidth | Overflow horizontal do documento |
+|---|---:|---:|---:|---:|---|
+| 320 | 305 | 305 | 251 | 841 | PASS — ausente |
+| 390 | 375 | 375 | 322 | 841 | PASS — ausente |
+| 428 | 413 | 413 | 355 | 841 | PASS — ausente |
+| 768 | 753 | 753 | 659 | 841 | PASS — ausente |
+| 1024 | 1009 | 1009 | 639 | 841 | PASS — ausente |
+| 1440 | 1425 | 1425 | 1043 | 1043 | PASS — ausente |
+
+- Tabela em região `.finance-table`, tabindex=0, overflow-x:auto. Rolagem interna observada ao navegar pelo teclado até Recolher (scrollLeft aproximado 385,6 px em 320 px), sem aumento do scrollWidth do documento. Em 1440 px, sem rolagem horizontal necessária.
+- Inspeção visual realizada nos seis tamanhos: conteúdos reais contidos, títulos extensos quebrando na coluna, UUID acessível pela rolagem interna, botões acessíveis por foco/teclado; painel de detalhes com texto escuro e fundo branco. Foco em Recolher visível, outline sólido de aproximadamente 1,6 px.
+- Paginação permanece presente e desabilitada pela quantidade insuficiente, sem teste de troca de página. Contraste **inspecionado visualmente**, sem certificação WCAG nem medição instrumental de todas as combinações: auditoria quantitativa de contraste **NOT EVALUATED**. Textos maiores que os existentes no DEV não foram fabricados para o teste.
+- Viewport restaurado ao tamanho original ao encerrar; nenhuma resposta, mudança de status, novo chamado ou sessão de suporte foi acionada.
+
+### Reprodução e menor próxima ação
+
+1. Entrar com sessão Master/AAL2 existente no DEV, Operação e suporte → Chamados.
+2. Expandir **Detalhes do chamado #10**, ID `6845109b-c3fa-47a4-b226-fe6415d4edf6`, assunto “DEV STAFF LIVE …”.
+3. Acionar **Abrir conversa completa** e aguardar as consultas.
+4. **Atual:** cabeçalho “Chamado interno” e evento de criação presentes; mensagens substituídas pelo erro “Não foi possível validar o histórico desta conversa.” **Esperado:** histórico autorizado do próprio chamado ou estado vazio válido; falha de integridade/transporte deve permanecer explícita se confirmada.
+5. Controle: abrir #13 carregou suas mensagens e eventos corretamente.
+
+**Causa: NOT EVALUATED.** A UI converte em mensagem genérica tanto erro de consulta como rejeição de payload em `loadMasterTicketMessages`; os testes de interface não distinguem essas causas. Não atribuir a RLS, migration ou dado específico por suposição.
+
+**Próxima prioridade M06.02:** diagnosticar somente a leitura da conversa interna #10 e, havendo incompatibilidade comprovada, propor a menor correção no ponto responsável, preservando validações de ticket/tenant/visibilidade e sem ampliar grants/RLS. Revalidar somente esse cenário e impactos comprovados. Revisar também o encerramento do wrapper de check local antes de declarar esse gate local PASS. Acessibilidade de disclosure aprovada no recorte observado; microentrega integral permanece **EM_EXECUCAO / aceite parcial com FAIL**, sem autorização para modificar código funcional nesta homologação.
+
+---
+
 ## M06.02 — chamados Master: validação inicial e bloqueios (18/11/2026)
 
 **Estado do recorte: BLOQUEADO para publicação/homologação; M06.02 integral permanece EM_EXECUCAO.**
