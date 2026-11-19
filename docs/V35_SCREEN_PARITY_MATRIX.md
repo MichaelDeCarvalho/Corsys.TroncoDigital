@@ -1,5 +1,7 @@
 # V35 — Matriz de Paridade de Telas (Oficial 21 IDs)
 
+**Consolidação de 18/11/2026.** A correção Dashboard Mobile/Novo Ágape teve investigação e desenvolvimento encerrados por decisão do proprietário sobre `a3a8c1b0`. Evidência Work no DEV e evidência complementar Codex/Chromium/Playwright com fixtures locais estão discriminadas no cursor e handoff. B/C/D controlados locais aprovados funcionalmente conforme relato do proprietário; preservado FAIL documental de tolerância de 1 CSS px. Testes controlados no DEV autenticado seguem NOT EVALUATED até a liberação aplicável em produção. O recorte não altera os status integrais das 21 telas. Próximo recorte M06.02: acessibilidade da expansão de detalhes em Operação/Suporte Master.
+
 **Evidência transversal nova — 15/11/2026:** gate de autorização HTTP **somente leitura** 5/5 PASS reportado pelo proprietário, após correção de `p_page: 0` no teste do usuário sem `finance.read`; Master AAL1/AAL2, Loja A↔B aprovados. [Relatório](V35_HTTP_READONLY_GATE_20261115.md). Isso **remove a pendência deste subgate específico**, mas não comprova paridade visual/funcional das 21 telas nem executa o Grupo B persistente. Os status por tela abaixo permanecem como evidência de escopo próprio, não são promovidos automaticamente.
 
 
