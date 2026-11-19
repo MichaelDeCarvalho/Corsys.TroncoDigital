@@ -1,5 +1,9 @@
 # V35 — PLANO MESTRE DE EXECUÇÃO (macroetapas e microentregas)
 
+## M06.02 — chamados Master: gate inicial e bloqueios (18/11/2026)
+
+Revisão `d859b16262c48a16001b7cd778620371f13df3a3` confirmada no GitHub. CI 44429221490 **3/3 PASS**, check (591 testes/85 arquivos), MasterSupportQueue 12/12 e dry-run PASS remotos. **Recorte BLOQUEADO; macro/micro M06.02 permanece EM_EXECUCAO.** Workspace local divergente/sujo preservado e cópia isolada impedida por `Could not resolve host: github.com`. DEV acessível como Administração da Loja/Tenant A; Master AAL2 não confirmado. Sem deploy nesta execução; versão/assets/rollback e homologação real (teclado/foco/filtros/escopo/seis resoluções) NOT EVALUATED. Evidências no início de [SESSION_HANDOFF.md](../SESSION_HANDOFF.md); prioridade é desbloquear e concluir este mesmo recorte, sem criar registros artificiais, alterar código funcional ou repetir homologações anteriores.
+
 ## Consolidação operacional — 18/11/2026
 
 Dashboard Mobile/Novo Ágape encerrado para investigação e desenvolvimento por decisão do proprietário, com evidências de ambientes discriminadas no cursor e handoff. Mantidos o FAIL documental de 1 CSS px e o residual de testes controlados no DEV autenticado antes da liberação aplicável em produção. M06.02 segue EM_EXECUCAO. Próxima microentrega independente: acessibilidade de expansão/recolhimento de detalhes na fila Master de suporte, com paridade de leitura e responsividade; acesso Master/AAL2 necessário para homologação DEV. Estados históricos abaixo exigem reconciliação antes de nova execução.
