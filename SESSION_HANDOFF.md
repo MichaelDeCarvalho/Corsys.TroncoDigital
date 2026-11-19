@@ -1,3 +1,47 @@
+## M06.02 — encerramento da microentrega de chamados Master (18/11/2026)
+
+**CONCLUIDO no recorte de leitura das conversas Master e regressão da Loja**, na revisão funcional `f9f900a6306f7a2275fdb3d17f4b7801d75173f8`. A M06.02 integral permanece **EM_EXECUCAO**. Este registro supera o FAIL de leitura interna da revisão anterior; o histórico e suas limitações permanecem abaixo.
+
+### Fonte, CI e ambiente DEV
+
+- GitHub `main=f9f900a`, base `d859b16262c48a16001b7cd778620371f13df3a3`, confirmado diretamente nesta execução. A correção afeta apenas os cinco arquivos de leitura/testes em `src/components/MasterSupportQueue*`, `src/lib/master-support*` e `src/lib/support.ts`; acessibilidade/disclosure e configurações de plataforma preservados.
+- Checkout isolado reutilizado com o procedimento já validado de objetos GitHub: cinco blobs novos, hashes do commit e árvore exatos, worktree limpo. Árvore funcional `e4e62ba64785efff91e05d49429f5beaf35f63d3`. Workspace anterior e dados não modificados.
+- [Actions 44438915012](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/44438915012): **3/3 PASS**, frontend/static/onboarding. Log do job frontend `135274602756` confirma **596/596 testes em 85 arquivos**, typecheck, build e Cloudflare dry-run aprovados. Testes automatizados de visibilidade e isolamento continuam separados das evidências reais abaixo; não repetir a suíte nem a matriz anterior sem mudança invalidante.
+- Workers Builds **SUCCESS** para a revisão exata: build `c35879e6-5ed4-4d73-8448-d9f0af2847c9`, versão DEV **`9586c7b2-e230-4248-a179-ba7c173021ad`**. [Build do Worker DEV](https://dash.cloudflare.com/ad50eeb9f9d8c4c4f4e9babe314b8af7/workers/services/view/corsys-tronco-digital-dev/production/builds/c35879e6-5ed4-4d73-8448-d9f0af2847c9). A página foi recarregada e os assets da revisão corrigida foram observados nas duas sessões. Não houve novo deploy manual nem publicação no Worker PROD.
+- Referência de rollback: versão DEV anterior **`c110100d-4d25-4b20-afaf-6c768cdbbce6`**, revisão `d859b16`, build `6fc04cf6-a726-46ba-a2f7-0b8ce307c876`. Rollback não executado; distribuição percentual de tráfego e disponibilidade do rollback no painel não consultadas.
+- Build local com configuração pública DEV existente gerou `index-BUXbLcYE.js`, `index-CPLBN8x7.css` e chunk sob demanda `index-XBmXvlNB.js`. Os nomes de conteúdo de JS/CSS correspondem aos carregados pelo DEV. **CSS remoto e local têm SHA-256 idêntico:** `11fa1e0786357d4ac7ca5bb2b7c14cb5496c0382c431e8fe6299a90f0c29b6fd` (CSS remoto exportado pelo navegador). SHA-256 local JS: `353d670609280d4c915fdd188ba0a8b2d9c168a6c8cd11e6a458d1e242720b3d`; SHA-256 remoto JS **NOT EVALUATED**: exportação de script não disponível nessa capacidade e terminal sem resolução do host. O chunk de exportação não foi carregado. Não usar o bundle CI com placeholder para publicar.
+- Não foi repetido `npm run check` local: o gate agregado anterior do wrapper continua sem PASS local e preservado no histórico; o gate de check da revisão atual tem **PASS real no CI**. O build local foi usado para inspeção dos artefatos.
+
+### Homologação funcional real A–D (somente leitura)
+
+Sessões já autenticadas e autorizadas foram utilizadas separadamente: Master AAL2 no navegador integrado e Administração da Loja no Edge. Nenhuma credencial, identificador pessoal ou conteúdo das mensagens foi incluído neste relatório; comparações de conteúdo ocorreram em memória e são registradas apenas como resultado.
+
+| Cenário | Resultado | Evidência real e limite |
+|---|---|---|
+| A — conversa interna #10 | **PASS** | Uma mensagem carregada como **Nota interna**, um evento como **Evento interno**, zero alertas e sem formulário de resposta ao cliente. O alerta anterior deixou de ocorrer na revisão corrigida. |
+| B — conversa de cliente #13 | **PASS** | Três mensagens **Visível ao cliente**, dois eventos de cliente, zero alertas; formulário autorizado de resposta e seleção de status presentes e intocados. |
+| C — alternância #10 → #13 → #10 | **PASS** | Cabeçalhos/escopos corretos; mensagens/eventos do chamado anterior não permaneceram no novo. Retorno ao interno restaurou somente seu próprio histórico; zero erros residuais e formulário ausente no interno. Comparação por impressões de conteúdo em memória, sem registrar texto. |
+| D — Administração da Loja | **PASS no cenário disponível** | Acesso ao próprio #13: três mensagens carregadas e coincidentes com as mensagens customer vistas pelo Master; dois eventos; duas mensagens da Loja e uma do suporte. Zero alertas, controles de recarga/resposta preservados e nenhuma Nota interna apresentada. |
+| D — ocultação de nota interna associada ao mesmo chamado de cliente | **NOT EVALUATED com dados reais** | O #13 não contém nota interna. Não criar fixture para produzir evidência. A negativa permanece comprovada separadamente pelos testes automatizados de `loadTenantTicketMessages`, que filtram customer e rejeitam internal_note retornada indevidamente. |
+
+**Segurança:** a leitura Master usa `customer/internal_note` para mensagens e `customer/internal` para eventos; a leitura da Loja mantém filtro e validação explícitos de `visibility=customer`, além de ticket/tenant. Rejeição automatizada de visibilidade inválida, ticket/organização incompatíveis e eventos internos para Loja preservada. A homologação não substitui nem repete o gate backend/RLS anterior. Nenhuma resposta enviada, status alterado, registro criado ou sessão de suporte iniciada; Supabase/PostgreSQL/migrations/Auth/MFA/AAL2/RLS/RBAC/RPC e código funcional não modificados.
+
+### Smoke e limites residuais
+
+- **PASS mobile 390 px:** conversa interna carregada, Nota interna/Evento interno corretos, zero alertas; disclosure abriu/recolheu. Documento clientWidth/scrollWidth **375/375**.
+- **PASS desktop 1440 px:** conversa de cliente carregada e disclosure recolhido normalmente; formulário e eventos preservados. Documento clientWidth/scrollWidth **1425/1425**.
+- Reutilizadas as evidências anteriores de ARIA, Enter/Space, tabulação, foco efetivo em Recolher/retorno correto e seis resoluções, pois o código correspondente foi preservado. Não reexecutada a matriz completa. Viewport restaurado.
+- Permanecem **NOT EVALUATED**: paginação real por apenas seis registros para páginas de 25; contraste quantitativo; SHA-256 remoto do JS; negativa real de nota interna num chamado de cliente sem tal registro. São limites explícitos, não PASS implícito.
+- Limitações históricas de Dashboard Mobile e demais módulos não são encerradas por esta homologação.
+
+### Consolidação e próxima prioridade
+
+Os critérios funcionais obrigatórios disponíveis A–D e smoke passaram; a limitação de ausência de nota interna em chamado de cliente segue a regra explícita do proprietário, com comprovação automatizada separada. **Microentrega de chamados Master encerrada; M06.02 geral continua EM_EXECUCAO.** A aprovação/integração documental do PR #62 depende de seu próprio CI verde e diff restrito aos quatro documentos; o resultado de integração será conferido antes do encerramento da execução.
+
+**Próximo recorte recomendado ao Gemini:** M06.02 — acessibilidade do drawer de navegação transversal (`AppShell.tsx`), cuja homologação de browser permanece pendente na `V35_SCREEN_PARITY_MATRIX.md`. Reconciliar a implementação já existente com a navegação da referência V35 e validar foco inicial, Tab/Shift+Tab, Escape, retorno de foco e controles ocultos em mobile/desktop. Não reconstruir o drawer nem repetir testes de chamados; corrigir somente eventual defeito demonstrado. O quadro M06.02 prevê teclado/acessibilidade/ergonomia; esta é uma prioridade recomendada dentro desse escopo, não uma nova macroetapa nem uma entrega já executada.
+
+---
+
 ## M06.02 — homologação real dos chamados Master: parcial com falha de histórico (18/11/2026)
 
 Este registro **atualiza os bloqueios da tentativa inicial abaixo**, preservada como histórico. A acessibilidade do disclosure foi comprovada no DEV; **o aceite integral deste recorte NÃO está concluído** devido à falha reproduzível da conversa interna #10 e aos limites de evidência indicados.

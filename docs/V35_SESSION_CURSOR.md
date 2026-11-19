@@ -1,3 +1,17 @@
+## M06.02 — chamados Master encerrados no recorte (18/11/2026)
+
+- Revisão funcional **`f9f900a6306f7a2275fdb3d17f4b7801d75173f8`**, árvore exata `e4e62ba64785efff91e05d49429f5beaf35f63d3`, checkout isolado limpo. CI **44438915012: 3/3 PASS**, check **596/596 testes/85 arquivos**, typecheck/build/dry-run PASS no CI.
+- Publicação automática DEV existente confirmada: build `c35879e6-5ed4-4d73-8448-d9f0af2847c9`, versão **`9586c7b2-e230-4248-a179-ba7c173021ad`**. Sem novo deploy manual. Rollback de referência `c110100d-4d25-4b20-afaf-6c768cdbbce6` (d859b16).
+- Assets JS/CSS com nomes de conteúdo coincidentes com build local; **SHA-256 CSS remoto/local idêntico**. SHA-256 remoto JS NOT EVALUATED. Não usado bundle CI placeholder.
+- **PASS real A/B/C:** interno #10 (Nota interna, Evento interno, sem alerta/formulário cliente); cliente #13 (três mensagens, dois eventos, formulário preservado); alternância sem resíduos ou mistura.
+- **PASS D no cenário disponível:** Administração da Loja carregou as três mensagens customer do próprio #13, dois eventos, recarga e formulário preservados. Ausência de nota interna nesse cliente limita a negativa real: **NOT EVALUATED**, com teste automatizado separado e aprovado.
+- **PASS smoke 390/1440 px**; reaproveitadas ARIA/foco/seis resoluções anteriores. Paginação real insuficiente e contraste quantitativo continuam **NOT EVALUATED**. Histórico de wrapper local não convertido em PASS.
+- **CONCLUIDO apenas o recorte de chamados Master**; M06.02 geral **EM_EXECUCAO**. Nenhuma escrita de dados/configuração/código funcional/PROD; conteúdos e identidades não registrados na nova evidência.
+- Próxima prioridade recomendada: **M06.02 — homologação de teclado/foco do drawer transversal (`AppShell.tsx`)**, já implementado e com QA browser pendente na matriz; reconciliar V35 e corrigir apenas defeito demonstrado. Evidência completa no início de [SESSION_HANDOFF.md](../SESSION_HANDOFF.md).
+- PR #62 reutilizado com os quatro documentos e histórico preservado; CI e integração documental serão conferidos nesta execução.
+
+---
+
 ## M06.02 — acessibilidade Master aprovada no recorte, aceite parcial com FAIL (18/11/2026)
 
 - Revisão funcional `d859b16262c48a16001b7cd778620371f13df3a3`, árvore `d965b9c1d4aa78800c945393d4a40e9177fea3c9`. Checkout isolado recuperado por objetos GitHub e hashes exatos, limpo; alterações do workspace antigo preservadas.
