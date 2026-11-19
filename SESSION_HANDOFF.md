@@ -1,3 +1,236 @@
+## M06.02 — F1 residual aprovada: drawer transversal CONCLUIDO no aceite funcional (19/11/2026)
+
+**F1 PASS — 18/18 aberturas reais; regressões obrigatórias PASS; smoke F2/F3 PASS.** Recorte do drawer apto ao encerramento documental após revisão/CI/integração do PR #63. M06.02 geral permanece EM_EXECUCAO. Histórico original F1/F2/F3 e limitações anteriores preservados integralmente abaixo. Chamados Master e Dashboard Mobile não reabertos.
+
+### Revisão, CI e publicação efetivamente avaliados
+
+- Main **`025d165da1e587c40170ec967b9ce16ccb7e6b4e`**, base `3be7995c3f76579630b4597b5fca8c47a787ae8e`; diff GitHub limitado a AppShell.tsx, ResponsiveLayout.test.tsx e styles.css. Checkout isolado recuperado pelo procedimento validado, hashes de objetos conferidos, HEAD exato/árvore `b6ef3ad3b53b1cc0b6300fc72110ae768c3ab10a`, limpo. Workspace antigo preservado.
+- [CI 44619837345](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/44619837345) **3/3 PASS**. Logs frontend confirmam TypeScript, **598/598 testes em 85 arquivos**, **ResponsiveLayout 7/7**, Vite e Cloudflare dry-run aprovados. Suíte automatizada não repetida localmente. CI/Vitest não substituem os resultados de navegador abaixo.
+- Workers Builds automático **SUCCESS** para 025d165: build **`89075dd8-f62f-43f8-829f-997ba9425a6e`**, versão DEV avaliada **`9c42e309-1d47-4e72-b017-f7eb5b60e24d`**. Inicialmente pendente e servindo assets antigos: nenhuma abertura foi contabilizada antes de concluir a publicação e recarregar os assets novos. Sem deploy manual.
+- Assets efetivamente servidos: **`index-DVZ5_eI3.js` e `index-BE1i90wT.css`**, coincidentes com build Vite local exato **PASS/exit 0**, usando configuração pública DEV existente, sem bundle CI placeholder. SHA-256 local JS `cba2aa26de7f507eeaf2f34a3c502fb0b6b0941339b32738b3ab911af97fe8ad`; CSS `beef658ae1b27617f9ca0856586f6922c2969fc41fbed484afdd2a71e0bc1bb2`. SHA-256 remoto nesta rodada **NOT EVALUATED**.
+- **Rollback operacional:** versão DEV anterior `8f7afd32-598d-4d79-a30b-f0dfad02d38b`, build `8684bef8-b2ea-46b3-968a-3702a6338e08`, commit 3be7995. Referência pelo histórico de versões do próprio Worker DEV; não executado. Não confundir o segmento /production do painel Cloudflare desse serviço com autorização para publicar no ambiente PROD do sistema.
+
+### F1 — registro individual das 18 aberturas
+
+Navegador integrado, sessão Master existente, **innerWidth=390 / innerHeight=844**. Rota mantida em Master SaaS para detectar navegação acidental para Início. Ponteiro real por click e teclas reais Enter/Space (pressionamento e liberação completos pelo navegador), sem dispatchEvent nem focus() artificial em Início. Cada abertura teve leitura inicial de document.activeElement antes de qualquer Tab, segunda leitura estabilizada em chamada posterior e fechamento por Escape antes da próxima. Botão Início realmente focado e dentro da sidebar em ambas as leituras; sidebar visível/transform final sem deslocamento, backdrop:block e aria-controls=sidebar nos dois acionadores.
+
+| ID | Acionador | Entrada | Repetição | Foco inicial → estabilizado | aria-expanded superior / inferior | Rota preservada | Foco após Escape | Resultado |
+|---:|---|---|---:|---|---|---|---|---|
+| 1 | Superior | Clique | 1 | Início → Início | true / true | Master SaaS | #mobileMenu | **PASS** |
+| 2 | Superior | Clique | 2 | Início → Início | true / true | Master SaaS | #mobileMenu | **PASS** |
+| 3 | Superior | Clique | 3 | Início → Início | true / true | Master SaaS | #mobileMenu | **PASS** |
+| 4 | Superior | Enter | 1 | Início → Início | true / true | Master SaaS | #mobileMenu | **PASS** |
+| 5 | Superior | Enter | 2 | Início → Início | true / true | Master SaaS | #mobileMenu | **PASS** |
+| 6 | Superior | Enter | 3 | Início → Início | true / true | Master SaaS | #mobileMenu | **PASS** |
+| 7 | Superior | Space | 1 | Início → Início | true / true | Master SaaS | #mobileMenu | **PASS** |
+| 8 | Superior | Space | 2 | Início → Início | true / true | Master SaaS | #mobileMenu | **PASS** |
+| 9 | Superior | Space | 3 | Início → Início | true / true | Master SaaS | #mobileMenu | **PASS** |
+| 10 | Inferior | Clique | 1 | Início → Início | true / true | Master SaaS | Menu inferior | **PASS** |
+| 11 | Inferior | Clique | 2 | Início → Início | true / true | Master SaaS | Menu inferior | **PASS** |
+| 12 | Inferior | Clique | 3 | Início → Início | true / true | Master SaaS | Menu inferior | **PASS** |
+| 13 | Inferior | Enter | 1 | Início → Início | true / true | Master SaaS | Menu inferior | **PASS** |
+| 14 | Inferior | Enter | 2 | Início → Início | true / true | Master SaaS | Menu inferior | **PASS** |
+| 15 | Inferior | Enter | 3 | Início → Início | true / true | Master SaaS | Menu inferior | **PASS** |
+| 16 | Inferior | Space | 1 | Início → Início | true / true | Master SaaS | Menu inferior | **PASS** |
+| 17 | Inferior | Space | 2 | Início → Início | true / true | Master SaaS | Menu inferior | **PASS** |
+| 18 | Inferior | Space | 3 | Início → Início | true / true | Master SaaS | Menu inferior | **PASS** |
+
+**Total 18/18 PASS.** Todas permaneceram abertas após a entrada completa, sem Tab extra, fechamento duplicado ou navegação involuntária observados. As 18 restaurações após Escape alcançaram o acionador de origem, com open=false, backdrop:none e aria-expanded=false. Não se inferiu aprovação a partir de useLayoutEffect/rAF/transitionend: o aceite se baseia no foco e estado reais lidos no navegador. Não há registro de conteúdo privado/identidades na evidência.
+
+### Regressões diretamente relacionadas — navegador real
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Enter/Space completos e ausência de efeito duplicado | **PASS** | Três repetições por tecla/acionador na tabela; ao finalizar a tecla, drawer aberto e foco em Início, enquanto rota/título continuam Master SaaS. Nenhuma ativação involuntária de Início. Não instrumentados contadores internos de eventos. |
+| Escape/restauração por acionador | **PASS** | Executado nas 18 aberturas; superior retorna a #mobileMenu, inferior a Menu. |
+| Backdrop | **PASS** | Aberto pelo Menu inferior/Space; clique real em área externa da sidebar (340,400) fecha, preserva Master SaaS e retorna ao Menu inferior. |
+| Seleção de rota | **PASS** | Aberto pelo superior/Enter; selecionar Integrantes fecha, muda título e aria-current para Integrantes e retorna a #mobileMenu. |
+| Fechamento rápido e cancelamento | **PASS** | Abrir superior por Enter e enviar Escape imediatamente na mesma sequência, sem observação intermediária; fecha com foco no superior. Leitura posterior estabilizada mantém esse foco e sidebar oculta. |
+| Ausência de foco tardio | **PASS nos cenários executados** | Após fechamento rápido, nenhuma transferência para sidebar fechada; nas 18 sequências, foco restaurado se mantém até a próxima entrada. |
+| Usuário avança para Integrantes | **PASS** | Abrir superior/Enter, Tab de Início para Integrantes; leitura imediata e leitura posterior estabilizada continuam em Integrantes, dentro do drawer, sem retorno imposto a Início; Master SaaS segue rota ativa. |
+
+### Smoke proporcional F2 e F3 — sem repetir matriz
+
+- **F2 PASS:** abrir em 390×844, colocar foco real em Master SaaS por Shift+Tab e ampliar para **1024×844 sem recarregar**. Drawer open=false, backdrop:none, ambos aria-expanded=false, sidebar desktop visível/transform:none. Tab desde Master SaaS alcança Sair fora da sidebar; Escape não reativa modalidade. Voltar a **390×844 sem recarregar** mantém drawer fechado, backdrop:none e sidebar oculta. Nenhum acionamento de Sair.
+- **F3 PASS:** Master SaaS ativo sem foco tem outline rgba(197,168,128,0.18) solid 0.8px, offset2.4px, shadow:none. Com foco real por Shift+Tab e **:focus-visible=true**, outline rgb(197,168,128) solid 1.6px, offset1.6px e shadow rgba(197,168,128,0.28) 0px 0px 0px 1px. Aro dourado visivelmente distinto na renderização real; aria-current=page preservado.
+- Reutilizadas evidências anteriores de R1/R2, seis/larguras pertinentes, 15 rotas da Loja, 16 itens Master e cinco atalhos. Não repetida matriz completa. Viewport restaurado e drawer fechado ao terminar.
+
+### Consolidação e próxima microentrega
+
+- **Aceite funcional do drawer CONCLUIDO**, sem defeito residual demonstrado nesta revisão; F1 original permanece no histórico como falha de revisões anteriores, agora sanada no reteste de 18 entradas. F2/F3/R1/R2 previamente aprovados preservados, F2/F3 com smoke adicional.
+- PR **[#63](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/pull/63)** reaproveitado com os mesmos quatro documentos, histórico integral preservado e commit sem skip ci. Revisão do diff exclusivamente documental, CI exigido, integração e conferência pós-merge/Workers Builds serão registrados no próprio PR e no relatório final, sem alterar código funcional ou publicar manualmente por consequência desta homologação.
+- **Próxima microentrega recomendada da M06.02:** homologação DEV dos filtros/estados e acessibilidade de **Planos SaaS (`view-master-planos`)**, já implementados em MasterCommercialCatalog/MasterPlanLifecycle/MasterPromotions, com QA real ainda pendente na matriz oficial. Priorizar vigência inicial/status, contagem/limpeza e teclado/estados, confrontando a seção V35 original; iniciar pela leitura/interação existente, sem criar planos/promoções ou reconstruir componentes. Recomendação derivada da pendência da matriz e do escopo M06.02 do quadro, não nova implementação autorizada.
+- Limites preservados: **contraste quantitativo, pixels exatos 761/961** (rodada anterior aplicou762/962), SHA-256 remoto e demais NOT EVALUATED históricos, incluindo paginação real de chamados insuficiente e negativa com nota interna no mesmo cliente. Encerrar o recorte não transforma essas ausências de evidência em PASS nem conclui M06.02/21 telas.
+- Nenhuma alteração de código funcional, Supabase/banco/migrations/Auth/MFA/AAL2/RLS/RBAC/RPC, dados da aplicação, operação financeira ou PROD. Sem registros artificiais e sem reabertura de chamados Master/Dashboard Mobile.
+
+---
+
+## M06.02 — reteste final do drawer: F2/F3 aprovados; F1 permanece (19/11/2026)
+
+**Drawer NÃO HOMOLOGADO; AGUARDA_CORRECAO_GEMINI exclusivamente de F1. M06.02 geral EM_EXECUCAO.** Chamados Master continuam CONCLUIDOS. Este registro complementa, sem apagar, as três falhas originais de 18/11 abaixo.
+
+### Revisão, publicação e validação automatizada
+
+- GitHub main confirmado em **`3be7995c3f76579630b4597b5fca8c47a787ae8e`**, base `a298d5f973cdecee75be2529a5a47d3803143dc0`. Diff real limitado a AppShell.tsx, ResponsiveLayout.test.tsx e styles.css. Checkout isolado exato, árvore `7c022b39de5d9488860e085fcb91ed4d015ef795`, limpo; workspace antigo preservado. Recuperação por objetos GitHub com hashes validados, sem repetir investigação de rede.
+- [CI 44607492433](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/44607492433): **3/3 PASS** (static/onboarding/frontend). Logs frontend confirmam **597/597 testes, 85 arquivos, ResponsiveLayout 6/6**, build e dry-run concluídos; typecheck integrante do check aprovado. Evidência automatizada separada da homologação real; não repetida a suíte.
+- Workers Builds publicou automaticamente o mesmo commit: **SUCCESS**, build `8684bef8-b2ea-46b3-968a-3702a6338e08`, **versão DEV `8f7afd32-598d-4d79-a30b-f0dfad02d38b`** ([check de publicação](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/runs/135856818746)). Não houve deploy manual.
+- DEV servido em corsys-tronco-digital-dev.corsys1.workers.dev: **`index-CBmSvN6r.js` e `index-DsHs0NTJ.css`**, nomes coincidentes com build Vite local da revisão exata e configuração pública DEV existente. Build local **PASS/exit 0**, sem bundle CI placeholder. SHA-256 local JS `cf75e6c835183e91d479454d67109fb743fc83d4209785aafd34979e32b13e69`; CSS `81299bc390e1ad6d55e0e7d3f52ddea65c93a125f8a7d71d5790e527aa54a58c`. SHA-256 remoto nesta rodada **NOT EVALUATED**; coincidência de nomes não é comparação binária remota.
+- **Rollback operacional de referência:** versão DEV anterior `105ad0e7-86e6-4886-b382-42fb3c7b2b56`, build `46063ac3-d61f-45b3-aba0-a2900272ea38`, commit a298d5f. Reversão, se necessária, pelo histórico de versões do próprio Worker DEV; não executada. PROD intacto.
+- Navegador integrado com sessão Master existente; Edge com Administração da Loja existente. Apenas navegação e atualização de leitura. Sem login, alteração de AAL2/Auth ou reabertura da homologação de chamados; visibilidade do menu não comprova autorização no servidor.
+
+### Resultados reais — F2, F1, F3, R1 e R2
+
+| Critério | Resultado | Evidência observada no navegador |
+|---|---|---|
+| **F2 — 390 → 1024 → 390 sem recarga** | **PASS** | Sidebar perde open, backdrop display:none, aria-expanded=false em ambos os acionadores. Shift+Tab desde Início alcança Pular para conteúdo; Tab desde último Master SaaS alcança Sair. Escape não reativa modalidade. Sidebar desktop navega normalmente; clique em Atualizar plataforma funciona e elementFromPoint no centro retorna o próprio controle, sem backdrop. Ao retornar a 390, drawer permanece fechado. |
+| F2 — limite 960/961 | **PASS no cruzamento observado; 961 exato NOT EVALUATED** | Em 960, drawer aberto; solicitado 961, aplicado **962**. Em 962, open=false, backdrop:none, aria-expanded=false e foco em item visível da sidebar desktop. |
+| F2 — limite 760/761 pelo Menu inferior | **PASS no cruzamento observado; 761 exato NOT EVALUATED** | Aberto em 760 pelo inferior; solicitado 761, aplicado **762**. Barra inferior desaparece; Escape fecha e retorna a **#mobileMenu visível**, sem deixar foco no Menu oculto. |
+| **F1 — foco inicial em 390** | **FAIL** | Abertura por clique superior e inferior deixa activeElement=#mobileMenu ou Menu, fora da sidebar, com open=true/backdrop:block/aria-expanded=true. Leituras posteriores estabilizadas mantiveram o foco externo. Clique nativo por coordenada no superior reproduziu. Enter no inferior também permaneceu em Menu após estabilização. Houve aberturas por Enter/Space com foco em Início; esses sucessos não eliminam as falhas reproduzidas. |
+| **F3 — rota ativa Master SaaS** | **PASS** | Foco real por Shift+Tab, :focus-visible=true, contorno dourado sólido e sombra distintos do estado sem foco; aria-current=page e identidade visual preservados. Conferência visual no drawer efetivamente renderizado. |
+| F3 — rota ativa da Loja e item não ativo | **PASS** | Início ativo da Loja com foco real por Tab apresenta o mesmo indicador dourado distinto. Integrantes não ativo mantém foco visível e não recebe aria-current. Estilos/renderização comparados abaixo. |
+| **R1 — desktop sidebar focada → mobile fechado** | **PASS no cenário observado** | Em 1024, Master SaaS recebeu foco por Shift+Tab desde o cabeçalho; ao reduzir a 390, activeElement=BODY, sem foco retido na sidebar oculta. Próximo Tab alcança Pular para conteúdo visível; navegação continua. Não classificado como defeito apenas por cair no documento. |
+| **R2 — foco inferior em 390 → 768 fechado** | **PASS no cenário observado** | Integrantes inferior recebeu foco por Tab; ao ampliar a 768, barra oculta e activeElement=BODY. Próximo Tab alcança Pular para conteúdo visível, sem foco em botão invisível ou bloqueio. |
+
+**F1 — reprodução mínima e evidência de foco:** 390×844, drawer fechado → clicar no botão superior → aguardar estabilização → ler document.activeElement **antes de Tab**: BUTTON#mobileMenu, sidebar.contains=false. Repetir Menu inferior: BUTTON com texto Menu, sidebar.contains=false. Ambos acionadores têm aria-controls=sidebar e aria-expanded=true, sidebar visível e backdrop:block. A reprodução superior foi confirmada por clique real na tela em (30,31), além do locator. Não foi usado focus() artificial em Início. Primeiro Tab recupera o foco para Início, mas não satisfaz o critério de foco inicial.
+
+Combinações executadas em 390: clique superior **FAIL**, clique inferior **FAIL**, Enter inferior **FAIL estabilizado**; Enter superior, Space superior e Space inferior tiveram sucesso observado em Início. Outros contextos/reaberturas (inclusive Loja) voltaram a reter foco no acionador; **não há garantia determinística para F1**. Os dois acionadores abrem/fecham e atualizam ARIA, sem inferir PASS integral do foco a partir disso.
+
+**Menor correção recomendada ao Gemini:** limitar o trabalho à sincronização do foco inicial em AppShell.tsx. A chamada de foco e o requestAnimationFrame já existem e **não garantiram o resultado real**. Causa provável, ainda inferida: transferência de foco não concluída/retida no momento efetivo de abertura. Confirmar visibilidade e activeElement no ciclo de abertura; assegurar foco em Início e cancelar qualquer tentativa pendente no fechamento/navegação/redimensionamento. Não prescrever um temporizador arbitrário como prova de correção, não alterar F2/F3 aprovados, rotas, segurança ou dados. Acrescentar verificação proporcional e repetir as seis entradas no navegador antes de encerrar; Vitest isolado não cobre esta falha real.
+
+### Teclado, fechamento e ausência de foco tardio
+
+- Após recuperar pelo primeiro Tab, percorridos os **16 itens Master** em ambas as direções; circularidade Início↔Master SaaS correta, sem fuga para skip-link/cabeçalho/conteúdo/barra inferior.
+- Escape restaura o acionador de origem. Backdrop por clique real fecha e devolve ao superior. Selecionar Integrantes após abertura inferior fecha, muda título/aria-current e retorna ao Menu inferior.
+- Três ciclos consecutivos Enter/Escape fecharam com foco no superior, open=false e backdrop:none. Leitura posterior manteve foco fora da sidebar; **não observada transferência tardia** para painel fechado.
+- Fechado em mobile: Shift+Tab do superior alcança Pular para conteúdo; Tab passa pelo superior e Sair, sem entrar na sidebar oculta. Não ativado Sair.
+- Navegação proporcional: Início no mobile 320 e Master SaaS no desktop 1440; Integrantes no desktop da Loja 1024. Sem clique interceptado após fechamento. Reutilizada a evidência anterior das **15 rotas da Loja/16 itens Master**, sem repetir a matriz integral.
+
+### Estilos computados e apresentação visual real — F3
+
+Valores efetivamente lidos no navegador (não normalizados para os valores nominais do CSS):
+
+| Item/estado | :focus-visible | outline | outline-offset | box-shadow |
+|---|---|---|---|---|
+| Master SaaS ativo, sem foco estabilizado | false | rgba(197,168,128,0.18) solid 0.8px | 2.4px | none |
+| Master SaaS ativo, foco por teclado | true | rgb(197,168,128) solid 1.6px | 1.6px | rgba(197,168,128,0.28) 0px 0px 0px 1px |
+| Início ativo da Loja, sem foco | false | rgba(197,168,128,0.18) solid 0.8px | 2.4px | none |
+| Início ativo da Loja, foco por Tab | true | rgb(197,168,128) solid 1.6px | 1.6px | rgba(197,168,128,0.28) 0px 0px 0px 1px |
+| Integrantes da Loja, não ativo com foco | true | rgb(197,168,128) solid 1.6px | 2.4px | none |
+
+Ativos preservam fundo rgba(197,168,128,0.12), cor rgb(226,232,240) e aria-current=page. Não ativo tem fundo transparente, cor rgb(148,163,184) e aria-current ausente. Inspeção visual confirmou aro dourado claramente distinto na rota ativa focada. Valores transitórios durante animação não usados como estado sem foco definitivo. **Contraste quantitativo NOT EVALUATED.**
+
+### Responsividade e regressão proporcional
+
+| Largura solicitada | innerWidth aplicado | Documento clientWidth/scrollWidth observado | Resultado |
+|---:|---:|---|---|
+| 320 | 320 | 320/320 | Sem overflow; cinco atalhos visíveis |
+| 390 | 390 | 390/390; 375/375 quando há scrollbar vertical | Sem overflow; cinco atalhos por perfil |
+| 760 | 760 | 760/760 | Barra inferior disponível; drawer abre |
+| 761 | **762** | 762/762 | Barra inferior oculta; 761 exato NOT EVALUATED |
+| 768 | 768 | 768/768 | Drawer fechado; barra inferior oculta |
+| 960 | 960 | 960/960 | Drawer disponível |
+| 961 | **962** | 946/946 | Sidebar desktop; 961 exato NOT EVALUATED |
+| 1024 | 1024 | 1009/1009 | Sidebar desktop, sem backdrop/trap |
+| 1440 | 1440 | 1425/1425 | Sidebar desktop e navegação utilizáveis |
+
+Em **390×320**, sidebar clientHeight=320, scrollHeight=884, scrollTop=564 no último item; Master SaaS visível entre y=222 e 266, body scrollY=0. Todos os 16 itens alcançados por Tab com rolagem interna. Sidebar sem overflow horizontal do documento. Cinco atalhos inferiores confirmados em Master e Loja; ausência de Master no menu da Loja, sem inferir autorização backend. Viewports restaurados e drawer fechado ao concluir.
+
+### Decisão e limites preservados
+
+- **F2 e F3 encerrados neste recorte de correção; F1 continua aberta.** Não reabrir chamados Master nem encaminhar reconstrução do drawer. Prioridade única: corrigir F1 com escopo mínimo e retestar a transferência real do foco.
+- PR documental **[#63](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/pull/63)** reaproveitado; quatro documentos apenas, histórico original mantido. Permanece **rascunho, sem merge**, pois o gate funcional obrigatório F1 falhou. Atualização documental sem skip ci; resultado do CI do PR registrado no próprio PR após sua execução. Não realizar integração nem deploy por esta homologação reprovada.
+- Limitações históricas continuam: paginação real de chamados por insuficiência de registros, contraste quantitativo, negativa real de notas internas no mesmo cliente e demais NOT EVALUATED anteriores não promovidos. Nesta rodada, pixels exatos 761/961 e SHA-256 remoto também NOT EVALUATED.
+- Nenhum código funcional, banco/Supabase/migrations/Auth/MFA/AAL2/RLS/RBAC/RPC, dados de chamados, operação financeira/persistente ou PROD alterado. Sem novo deploy e sem repetição da suíte aprovada. Não avançar a outra microentrega enquanto F1 bloquear o encerramento.
+
+---
+
+## M06.02 — drawer transversal: homologação de navegador com FAIL (18/11/2026)
+
+**Recorte NÃO HOMOLOGADO; AGUARDA_CORRECAO_GEMINI. M06.02 integral EM_EXECUCAO.** A microentrega anterior de chamados Master permanece **CONCLUIDA** e não foi reaberta. Esta execução avaliou somente o drawer existente; nenhum código funcional foi corrigido.
+
+### Revisão, ambiente e referência
+
+- GitHub main confirmado em **`a298d5f973cdecee75be2529a5a47d3803143dc0`**, revisão funcional `f9f900a6306f7a2275fdb3d17f4b7801d75173f8`.
+- Cloudflare DEV confirmado pelo Workers Builds dessa main: versão **`105ad0e7-86e6-4886-b382-42fb3c7b2b56`**, build `46063ac3-d61f-45b3-aba0-a2900272ea38`, SUCCESS. Assets observados `index-BUXbLcYE.js` e `index-CPLBN8x7.css`; reaproveitada a validação de publicação anterior, sem novo deploy.
+- CI [44440984311](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/44440984311) **3/3 PASS** e 596 testes aprovados: evidência automatizada anterior reutilizada. Não reexecutados suíte completa, check local ou dry-run nesta homologação. **CI/Vitest não constituem PASS de navegador para o drawer.**
+- Consultados cursor, quadro, matriz, `AppShell.tsx`, regras pertinentes de `styles.css`, inventário V35 e o HTML original versionado `docs/pilot/v35-planos-ofertas.reference.html`. A referência contém os 15 destinos da Loja, navegação Master e acionador `mobileMenu`; inventário `SHARED-A022`, áreas compartilhadas e limites de homologação visual/teclado. Não executar o HTML demonstrativo nem alterar a referência.
+- Sessão Master existente no navegador integrado; Administração da Loja existente no Edge. Uma indisponibilidade inicial da sessão da Loja foi recuperada por “Tentar novamente”, sem login, mudança de credenciais ou configuração Auth. Não registrar identidades ou conteúdo privado na evidência.
+
+### Resultado consolidado por cenário
+
+| Cenário | Resultado | Evidência real |
+|---|---|---|
+| A — abertura/fechamento | **PASS nos mecanismos testados**, com limite de ponteiro descrito abaixo | Acionadores superior e inferior abriram por clique, Enter e Space; aria-expanded dos dois e aria-controls=sidebar coerentes; Escape e backdrop fecharam; seleção de Integrantes fechou e restaurou foco ao acionador correto. |
+| B — teclado, foco e isolamento | **FAIL** | Foco inicial permanece fora do drawer; indicador da rota ativa não se distingue entre foco e ausência de foco. Após a primeira tecla, Tab/Shift+Tab circulam corretamente; itens fechados são pulados. |
+| C — breakpoints/redimensionamento | **FAIL** | Modos CSS básicos corretos e altura reduzida utilizável, mas abrir mobile e ampliar para desktop mantém backdrop e aprisionamento do teclado. Fronteiras exatas 761/961 não obtidas; limites abaixo. |
+| D — rotas/perfis | **PASS no escopo de navegação UI** | Loja: 15 destinos acionados, títulos e aria-current=page corretos, sem Master; Master: 16 itens alcançáveis e entrada Master preservada. Barra inferior com cinco atalhos nos dois perfis. Não equivale à comprovação de autorização no servidor. |
+
+**A — detalhes:** em 390 px, clique/Enter/Space nos dois acionadores, Escape e restauração de foco foram executados. Escape retornou ao `#mobileMenu` quando a abertura veio do topo e ao botão “Menu” quando veio da barra inferior. Clique direto no backdrop à direita da sidebar fechou sem navegar. Seleção de Integrantes em 320 px/Master retornou ao topo; em 390 px/Loja retornou ao Menu inferior, com rota e aria-current corretos. Enter/Enter no superior e Space/Space no inferior também alternaram abrir/fechar enquanto o foco estava indevidamente retido no acionador — isso **não sana F1**. Ponteiro no próprio acionador com menu aberto: **NOT EVALUATED como acionamento direto**, porque o superior está encoberto pela sidebar e o inferior pelo backdrop; não usados force-click ou foco artificial para contornar o modal.
+
+**B — partes aprovadas:** foram percorridos os 16 itens Master por Tab e Shift+Tab; primeiro/último circularam em ambos os sentidos. Após a recuperação pelo primeiro Tab, não houve fuga para Pular para conteúdo, Sair/cabeçalho, conteúdo principal ou barra inferior. Fechado em mobile, Shift+Tab desde o topo alcançou Pular para conteúdo e Tab seguiu para Sair e Atualizar plataforma, sem entrar na sidebar oculta. Sidebar fechada com visibility:hidden/pointer-events:none; clique no atalho Master em 320 px e clique no controle de leitura Atualizar plataforma no desktop chegaram à página sem interceptação. Backdrop do drawer aberto impediu clique no conteúdo subjacente. Nenhuma ação financeira/persistente foi acionada.
+
+### F1 — foco inicial permanece no acionador encoberto (FAIL)
+
+- **Resolução principal:** 390 × 900 CSS px; também observado ao abrir em 768 px e no perfil da Loja em 390 px.
+- **Reprodução:** drawer fechado → clicar no acionador superior, ou focá-lo e usar Enter/Space. Repetir com Menu inferior. Não pressionar Tab após abrir.
+- **Observado:** sidebar.open, visibility:visible, aria-expanded=true e backdrop visível; `document.activeElement` continua sendo `#mobileMenu` ou “Menu”, **fora da sidebar**. Depois de estabilizar a transição e em nova leitura, continuou no acionador. Reproduzido também por clique por coordenada no botão superior, sem depender de locator.click.
+- **Esperado:** foco inicial no primeiro item “Início”, visível e dentro do drawer. O primeiro Tab recupera o foco para a navegação, mas não substitui o foco inicial obrigatório.
+- **Causa provável — INFERIDA:** falta de sincronização efetiva entre o efeito de foco e a visibilidade/renderização do drawer. A chamada `firstNavButtonRef.current?.focus()` **já existe**; não alegar ausência dessa implementação. A causa temporal exata ainda exige diagnóstico localizado.
+- **Menor correção recomendada:** em `AppShell.tsx`, garantir foco no primeiro item após a abertura estar efetivamente visível no viewport de drawer, com agendamento/cleanup apropriados se necessário. Confirmar activeElement no navegador **antes** de qualquer Tab; preservar ocultação da sidebar fechada e restauração por acionador.
+
+### F2 — estado mobile, backdrop e foco modal persistem no desktop (FAIL)
+
+- **Reprodução principal exata:** 390 × 900 → abrir drawer → percorrer até Master SaaS → redimensionar para **1024 × 900 sem recarregar**.
+- **Observado:** sidebar vira position:sticky, mas mantém classe open; backdrop display:block; acionadores superior/inferior ficam ocultos com aria-expanded=true. Foco em Master SaaS; Tab → Início → Integrantes → Cadastros, sempre preso à sidebar. No centro de “Atualizar plataforma”, elementFromPoint encontrou **o backdrop**, não o botão.
+- **Esperado:** acima de 960 px, sidebar desktop normal, sem backdrop/modalidade nem restrição de Tab; controles do cabeçalho e conteúdo acessíveis.
+- **Retorno a 390 px:** estado aberto e foco na sidebar persistiram; Escape fechou e restaurou o acionador. O retorno funciona como recuperação, mas não elimina o bloqueio indevido no desktop.
+- **Reprodução complementar na fronteira:** abrir em 960 px e pedir 961 px resultou em viewport real 962 px; backdrop/estado persistiram. Como o foco ainda estava no acionador que ficou oculto, passou a BODY. Tab enviado à página voltou a Início e permaneceu sob o controle modal.
+- **Causa corroborada em código:** `mobileMenuOpen` e o listener global de teclado dependem somente do estado de abertura; não há conciliação com a mudança do breakpoint. `.sidebar-backdrop.open` aplica display:block globalmente, inclusive no desktop.
+- **Menor correção recomendada:** em `AppShell.tsx`, conciliar estado/modalidade com `(max-width: 960px)`, encerrar o estado mobile ao entrar no desktop e remover o trap/backdrop. Não restaurar foco para um acionador display:none; usar destino visível e previsível. Em `styles.css`, limitar o backdrop ao modo drawer como defesa complementar. **Não corrigir só escondendo o backdrop:** o listener de Tab também precisa deixar de atuar.
+
+### F3 — rota ativa não ganha indicador visual distinto ao receber foco (FAIL)
+
+- **Reprodução:** em 390 px/Master, abrir drawer; Tab para Início; Shift+Tab para Master SaaS (rota ativa). Observar com :focus-visible=true. Tab para Início e comparar o estilo de Master SaaS agora sem foco.
+- **Observado:** nos dois estados, outline `rgba(197,168,128,0.18) solid 0.8px`, outline-offset 2.4px, box-shadow none, fundo `rgba(197,168,128,0.12)` e cor idênticos. Somente os estados de foco mudaram; o indicador visual permaneceu o mesmo. Itens não ativos apresentaram outline dourado sólido de aproximadamente 1.6px no navegador.
+- **Esperado:** distinguir visualmente foco de teclado da seleção da rota, inclusive no item ativo.
+- **Causa corroborada:** a especificidade de `.side-nav button[aria-current]` sobrescreve o outline global de `:focus-visible`.
+- **Menor correção recomendada:** regra de foco da sidebar com precedência suficiente, preservando o estilo da rota ativa fora do foco. Não é necessário redesenhar o menu nem remover aria-current. Esta constatação **não é uma medição quantitativa de contraste/WCAG**.
+
+### Breakpoints e altura reduzida — medidas reais
+
+Medições pelo innerWidth efetivo; leituras transitórias descartadas. Documento sem overflow horizontal nas posições medidas.
+
+| Largura solicitada | innerWidth real | Documento clientWidth/scrollWidth | Sidebar com estado fechado | Barra inferior |
+|---:|---:|---:|---|---|
+| 320 | 320 | 305/305 | drawer oculto | 5 atalhos visíveis |
+| 390 | 390 | 375/375 | drawer oculto | 5 atalhos visíveis |
+| 760 | 760 | 745/745 | drawer oculto | 5 atalhos visíveis |
+| 761 | **762** | 746/746 | drawer oculto | oculta |
+| 768 | 768 | 753/753 | drawer oculto | oculta |
+| 960 | 960 | 945/945 | drawer oculto | oculta |
+| 961 | **962** | 946/946 | desktop sticky; medido com estado mobile indevidamente aberto | oculta |
+| 1024 | 1024 | 1009/1009 | desktop sticky visível | oculta |
+| 1440 | 1440 | 1425/1425 | desktop sticky visível | oculta |
+
+- **760 PASS:** barra inferior disponível. **761 exato NOT EVALUATED:** a capacidade de viewport aplicou 762. **960 PASS:** sidebar drawer. **961 exato NOT EVALUATED:** aplicada largura real 962. Valores fracionários foram rejeitados pelo controle de viewport; não tratar 762/962 como se fossem 761/961. Observados os modos corretos dos dois lados das fronteiras, mas os pixels exatos não foram comprovados.
+- **390 × 320 PASS para alcance/rolagem interna:** os 16 itens Master percorridos por Tab; scrollHeight 884, clientHeight 320, scrollTop máximo 564; último item visível entre y=222 e y=266. Rolagem da página permaneceu 0. Não confundir com aprovação de F1/F3.
+- Desktop normal com estado mobile fechado: Tab desde o último item alcançou Sair; o trap não atuou. O bloqueio de F2 exige a sequência abrir mobile → ampliar.
+- Viewports restaurados e drawers fechados ao terminar.
+
+### Perfil da Loja e limite de escopo
+
+Em 1024 px, os 15 botões foram acionados, com título esperado e aria-current=page corretos: Início; Integrantes; Cadastros; Contas a Pagar; Contas a Receber; Tesouraria; Fluxo de Caixa; DRE Contábil; Financeiro; Inadimplência; Relatórios; Plano de Contas; Config. DRE; Chamados; Configurações. Isso testa **navegação da shell**, não reabre homologações de conteúdo/fluxos dessas telas. Barra inferior da Loja: Início, Integrantes, Financeiro, Inadimplência, Menu. Master: Início, Integrantes, Financeiro, Master, Menu; entrada Master SaaS adicional no menu lateral conforme autorização existente. Visibilidade não comprova autorização no servidor.
+
+### Decisão e entrega mínima para o Gemini
+
+**Não encerrar o drawer nem avançar para outro recorte.** Prioridade: F2 (bloqueio no desktop), F1 (foco inicial), F3 (foco visual da rota ativa), em uma correção delimitada. Arquivos prováveis: `src/components/AppShell.tsx`, `src/styles.css` e testes pertinentes em `src/components/ResponsiveLayout.test.tsx` (ou teste comportamental existente apropriado). Não alterar banco/Auth/MFA/RLS/RBAC/RPC ou reconstruir navegação. Validar os três reproduzidores em navegador após correção; cobertura automatizada pertinente não substitui a homologação real.
+
+Registro documental proposto em branch/PR em rascunho, **sem integração** porque os critérios obrigatórios falharam. Reaproveitado CI anterior; o commit documental usa `[skip ci]` para não repetir a suíte completa sem mudança funcional e **não será usado para merge sem novo CI quando aplicável**. Nenhum workflow/configuração de CI foi alterado ou proteção de merge desativada.
+
+Limitações preservadas: fronteiras exatas 761/961 indisponíveis neste controle; contraste quantitativo não avaliado; sem novas negativas de autorização/RLS. Paginação e demais limites da microentrega de chamados continuam no histórico e não foram reavaliados.
+
+---
+
 ## M06.02 — encerramento da microentrega de chamados Master (18/11/2026)
 
 **CONCLUIDO no recorte de leitura das conversas Master e regressão da Loja**, na revisão funcional `f9f900a6306f7a2275fdb3d17f4b7801d75173f8`. A M06.02 integral permanece **EM_EXECUCAO**. Este registro supera o FAIL de leitura interna da revisão anterior; o histórico e suas limitações permanecem abaixo.

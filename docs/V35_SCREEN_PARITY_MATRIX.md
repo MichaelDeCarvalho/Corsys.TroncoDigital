@@ -1,3 +1,27 @@
+## M06.02 — F1 aprovada; drawer transversal com aceite funcional CONCLUIDO (19/11/2026)
+
+Revisão **`025d165da1e587c40170ec967b9ce16ccb7e6b4e`**. CI [44619837345](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/44619837345) **3/3 PASS / 598 testes / 85 arquivos / ResponsiveLayout 7/7 / TypeScript, build e dry-run PASS**. Workers Builds automático SUCCESS, build `89075dd8-f62f-43f8-829f-997ba9425a6e`, DEV avaliado **`9c42e309-1d47-4e72-b017-f7eb5b60e24d`**. Assets index-DVZ5_eI3.js/index-BE1i90wT.css correspondem ao build local exato PASS/exit0. Rollback de referência 8f7afd32 (3be7995). Sem deploy manual/suíte local repetida.
+
+**F1 PASS real: 18/18 em 390×844**, três repetições de clique/Enter/Space por acionador superior/inferior, individualizadas no início de [SESSION_HANDOFF.md](../SESSION_HANDOFF.md). Todas: activeElement=Início antes de Tab e após estabilização, dentro do drawer aberto; ARIA coerente; Master SaaS preservado; Escape/restauração ao acionador correto. Nenhum focus() artificial ou efeito duplicado observado. **Regressões PASS:** backdrop, seleção de Integrantes, fechamento rápido, ausência de foco tardio e preservação de Integrantes após avanço por Tab. **Smoke F2/F3 PASS:** 390→1024→390 sem backdrop/trap ou reabertura; foco da rota ativa claramente distinto com :focus-visible real. R1/R2 e matriz anterior reutilizados, sem repetir navegação completa.
+
+**Drawer com aceite funcional CONCLUIDO; encerramento documental via PR #63 após revisão/CI/integração e conferência pós-merge. M06.02 geral EM_EXECUCAO.** Histórico F1/F2/F3 abaixo preservado; chamados Master e Dashboard Mobile não reabertos. Contraste quantitativo, pixels exatos761/961, SHA-256 remoto e demais NOT EVALUATED históricos mantidos, incluindo paginação real insuficiente. Sem código funcional/dados/Auth/PROD alterados.
+
+**Próxima recomendação M06.02:** homologar filtros/estados e acessibilidade de **Planos SaaS (`view-master-planos`)**, conforme QA real pendente na matriz e escopo do quadro; vigência/status, contagem/limpeza e teclado, confrontando a V35 original. Primeiro verificar implementação existente, somente leitura/interação, sem criar planos/promoções. Resultados de CI/merge/rebuild documental serão registrados no PR e relatório final.
+
+---
+
+## M06.02 — reteste final do drawer: somente F1 pendente (19/11/2026)
+
+Revisão **`3be7995c3f76579630b4597b5fca8c47a787ae8e`**, CI [44607492433](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/44607492433) **3/3 PASS / 597 testes / 85 arquivos / ResponsiveLayout 6/6**; typecheck/build/dry-run aprovados. Workers Builds automático SUCCESS: DEV **`8f7afd32-598d-4d79-a30b-f0dfad02d38b`**, build `8684bef8-b2ea-46b3-968a-3702a6338e08`. Assets index-CBmSvN6r.js/index-DsHs0NTJ.css coincidem com build local exato PASS/exit 0; SHA-256 remoto NOT EVALUATED. Rollback de referência DEV 105ad0e7 (a298d5f); nenhum deploy manual.
+
+**Homologação real:** **F2 PASS** (390→1024→390, backdrop/modalidade removidos, Tab/Shift+Tab/Escape livres, hit-test Atualizar plataforma no próprio controle); **F3 PASS** (Master SaaS e Início ativo da Loja com indicador visivelmente distinto sob foco real/:focus-visible; aria-current preservado). **F1 FAIL:** clique superior/inferior deixa activeElement=#mobileMenu/Menu fora da sidebar mesmo após estabilização; clique nativo superior reproduziu e Enter inferior também falhou. Houve sucessos de Enter/Space, sem garantia determinística. Não usado focus() artificial em Início; rAF existente não comprovou resultado.
+
+**R1/R2 PASS nos cenários observados:** foco passa a BODY ao ocultar sidebar/barra inferior; próximo Tab alcança Pular para conteúdo, sem retenção invisível nem bloqueio. Escape após 760→762 retorna ao superior visível. 960→962 encerra estado modal. **761/961 exatos NOT EVALUATED** (aplicados 762/962). 320/390/768/1024/1440 sem overflow; cinco atalhos por perfil; altura 390×320 com rolagem interna até scrollTop564 e todos os 16 itens alcançáveis. Tab/Shift+Tab circulares após recuperação inicial, Escape/backdrop/rota e três ciclos sem foco tardio PASS. Evidências completas, estilos computados e medidas no início de [SESSION_HANDOFF.md](../SESSION_HANDOFF.md).
+
+**Drawer NÃO HOMOLOGADO / AGUARDA_CORRECAO_GEMINI somente F1.** M06.02 EM_EXECUCAO; chamados Master CONCLUIDOS. Menor correção: sincronização/validação da transferência inicial para Início em AppShell.tsx, com cancelamento ao fechar/navegar/redimensionar; preservar F2/F3 aprovados e retestar seis entradas no navegador. PR #63 documental atualizado sem skip ci, mantido em rascunho e sem merge; CI acompanhado no PR. Histórico das três falhas abaixo preservado. Não avançar outra microentrega. Sem código funcional/dados/Auth/PROD alterados. Mantidas as limitações de paginação real, contraste quantitativo e demais NOT EVALUATED anteriores.
+
+---
+
 # V35 — Matriz de Paridade de Telas (Oficial 21 IDs)
 
 **Consolidação de 18/11/2026.** A correção Dashboard Mobile/Novo Ágape teve investigação e desenvolvimento encerrados por decisão do proprietário sobre `a3a8c1b0`. Evidência Work no DEV e evidência complementar Codex/Chromium/Playwright com fixtures locais estão discriminadas no cursor e handoff. B/C/D controlados locais aprovados funcionalmente conforme relato do proprietário; preservado FAIL documental de tolerância de 1 CSS px. Testes controlados no DEV autenticado seguem NOT EVALUATED até a liberação aplicável em produção. O recorte não altera os status integrais das 21 telas. Próximo recorte M06.02: acessibilidade da expansão de detalhes em Operação/Suporte Master.
@@ -8,6 +32,12 @@
 **Acessibilidade mobile transversal, em revisão:** o drawer de navegação passou a tratar foco inicial, Escape, Tab, retorno de foco e visibilidade quando fechado (PR de M06.02); CI e QA físico/browser ainda devem ser confirmados. Não altera status de homologação das telas.
 
 Atualização consolidada após o ciclo **Fechamento dos Gates M02.03 / M04.03 / M06** (15/11/2026).
+
+## M06.02 — drawer transversal com FAIL de navegador (18/11/2026)
+
+Base a298d5f, DEV 105ad0e7; CI anterior 3/3 PASS/596 reutilizado, **não equivale a aprovação do drawer**. A: mecanismos de abertura/fechamento/ARIA/restauração PASS; B: **FAIL** no foco inicial retido no acionador encoberto e indicador da rota ativa inalterado sob foco; C: **FAIL** ao abrir em 390 e ampliar para 1024 sem recarga (backdrop e trap permanecem no desktop); D: navegação UI PASS, 15 rotas da Loja, 16 itens Master e cinco atalhos inferiores por perfil, sem inferir autorização backend.
+
+Modos básicos e contenção 320/390/768/1024/1440 e 760/960 conferidos; **761/961 exatos NOT EVALUATED**, controle aplicou 762/962. Altura 390×320 com todos os itens alcançáveis por rolagem interna. Contraste quantitativo segue NOT EVALUATED. **Drawer NÃO HOMOLOGADO; prioridade Gemini F2 → F1 → F3**, sem reconstrução ou mudanças de segurança/dados. Reprodução, foco/estados e correção mínima no início do handoff. Registro documental em rascunho sem merge; nenhuma alteração funcional nesta etapa. Chamados Master permanecem encerrados.
 
 ## M06.02 — leitura Master e regressão da Loja homologadas (18/11/2026)
 
