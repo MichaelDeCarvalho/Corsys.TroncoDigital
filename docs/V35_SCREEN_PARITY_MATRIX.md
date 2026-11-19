@@ -9,6 +9,12 @@
 
 Atualização consolidada após o ciclo **Fechamento dos Gates M02.03 / M04.03 / M06** (15/11/2026).
 
+## M06.02 — evidência inicial de chamados Master (18/11/2026)
+
+Recorte da revisão `d859b16262c48a16001b7cd778620371f13df3a3`: CI [44429221490](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/44429221490) **3/3 PASS**, check **591/591**, MasterSupportQueue **12/12**, build/dry-run PASS no CI. **Homologação real deste recorte: NOT EVALUATED**. Sem publicação nesta execução: workspace antigo/sujo preservado; clone isolado bloqueado por DNS (`Could not resolve host: github.com`). Sessão DEV observada como Administração da Loja/Tenant A; Master AAL2 não confirmado.
+
+Disclosure, Enter/Space, tabulação, foco efetivo em Recolher e retorno ao Detalhes, conversa/escopo, filtros e paginação seguem NOT EVALUATED no DEV. Resoluções **320/390/428/768/1024/1440 px**: clientWidth/scrollWidth do documento e tabela, overflow, UUID/textos, botões/paginação, contraste e foco **NOT EVALUATED**. Tabela detalhada no início de [SESSION_HANDOFF.md](../SESSION_HANDOFF.md). Não promover este recorte a HOMOLOGADO_DEV; o estado histórico da tela na matriz abaixo permanece referente ao seu escopo anterior.
+
 ## Legenda canônica de status
 - `HOMOLOGADO_DEV`: fluxo principal validado em Supabase DEV (`szqkdekwhzxsoxorgvaz`) com evidência registrada.
 - `IMPLEMENTADO_E_TESTADO`: UI, serviços e testes unitários/integração Vitest aprovados localmente sobre contratos já existentes no DEV (aguardando aceite HTTP/RBAC/AAL2 real e/ou aplicação da migration `20261115120000` de timezone no DEV).
