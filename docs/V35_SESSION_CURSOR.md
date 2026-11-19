@@ -1,3 +1,16 @@
+## M06.02 — acessibilidade Master aprovada no recorte, aceite parcial com FAIL (18/11/2026)
+
+- Revisão funcional `d859b16262c48a16001b7cd778620371f13df3a3`, árvore `d965b9c1d4aa78800c945393d4a40e9177fea3c9`. Checkout isolado recuperado por objetos GitHub e hashes exatos, limpo; alterações do workspace antigo preservadas.
+- CI 44429221490 **3/3 PASS**. Local: typecheck, 591 testes/85 arquivos e build executados; wrapper de `npm run check` não disponibilizou exit agregado após build, portanto gate agregado local **NOT EVALUATED**. Dry-run local Wrangler 4.156.1 **PASS/exit 0**, logs redirecionados ao workspace.
+- Workers Builds confirmou publicação automática existente do HEAD: build `6fc04cf6-a726-46ba-a2f7-0b8ce307c876`, versão DEV **`c110100d-4d25-4b20-afaf-6c768cdbbce6`**. Sem novo deploy. Rollback de referência: base f65848bf, versão `6a43db80-7bd6-476a-9f31-9f0a07e8d1b5`.
+- JS `index-DxjyA-rF.js` e CSS `index-CPLBN8x7.css` carregados no DEV coincidem com nomes de conteúdo do build local; SHA-256 remoto e chunk não carregado NOT EVALUATED.
+- Sessão Master existente no navegador integrado acessou consultas protegidas. **PASS real:** estado/ARIA, clique, Enter/Space, alternância, tabulação sem controles ocultos, foco efetivo em Recolher e retorno ao Detalhes correto (#13/Enter e #10/Space), conversa do cliente #13, separação visual de escopo, buscas, limpar, atualizar/foco e Mostrar todos.
+- **PASS de contenção nas seis resoluções** 320/390/428/768/1024/1440; documento clientWidth=scrollWidth em todas. Medidas completas e limites de contraste visual em [SESSION_HANDOFF.md](../SESSION_HANDOFF.md). Paginação real/foco entre páginas **NOT EVALUATED**: seis chamados, página de 25; sem registros artificiais.
+- **FAIL reproduzido duas vezes:** abrir conversa interna #10 (`6845109b-c3fa-47a4-b226-fe6415d4edf6`) mostra “Não foi possível validar o histórico desta conversa.”; cabeçalho/evento interno corretos, conversa de cliente #13 carrega. Causa e vínculo com d859b16 **NOT EVALUATED**.
+- **Próxima prioridade M06.02:** diagnosticar somente a leitura de mensagens internas #10 e propor correção mínima apenas com evidência, preservando validações e autorização; conferir término do wrapper local. Sem mudança funcional autorizada nesta homologação. Recorte integral **EM_EXECUCAO / aceite parcial com FAIL**, não CONCLUIDO. Histórico inicial de bloqueios abaixo foi superado quanto a checkout e sessão, não apagado.
+
+---
+
 ## M06.02 — homologação dos chamados Master bloqueada (18/11/2026)
 
 - Revisão alvo: `d859b16262c48a16001b7cd778620371f13df3a3`; base `f65848bfdc5994fa967d928267bb9267b8c76ecc`. GitHub confirma diff de três arquivos; cursor/handoff preservados.
