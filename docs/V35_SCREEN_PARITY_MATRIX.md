@@ -9,6 +9,12 @@
 
 Atualização consolidada após o ciclo **Fechamento dos Gates M02.03 / M04.03 / M06** (15/11/2026).
 
+## M06.02 — drawer transversal com FAIL de navegador (18/11/2026)
+
+Base a298d5f, DEV 105ad0e7; CI anterior 3/3 PASS/596 reutilizado, **não equivale a aprovação do drawer**. A: mecanismos de abertura/fechamento/ARIA/restauração PASS; B: **FAIL** no foco inicial retido no acionador encoberto e indicador da rota ativa inalterado sob foco; C: **FAIL** ao abrir em 390 e ampliar para 1024 sem recarga (backdrop e trap permanecem no desktop); D: navegação UI PASS, 15 rotas da Loja, 16 itens Master e cinco atalhos inferiores por perfil, sem inferir autorização backend.
+
+Modos básicos e contenção 320/390/768/1024/1440 e 760/960 conferidos; **761/961 exatos NOT EVALUATED**, controle aplicou 762/962. Altura 390×320 com todos os itens alcançáveis por rolagem interna. Contraste quantitativo segue NOT EVALUATED. **Drawer NÃO HOMOLOGADO; prioridade Gemini F2 → F1 → F3**, sem reconstrução ou mudanças de segurança/dados. Reprodução, foco/estados e correção mínima no início do handoff. Registro documental em rascunho sem merge; nenhuma alteração funcional nesta etapa. Chamados Master permanecem encerrados.
+
 ## M06.02 — leitura Master e regressão da Loja homologadas (18/11/2026)
 
 **Recorte de chamados Master CONCLUIDO na revisão `f9f900a`; M06.02 geral EM_EXECUCAO.** CI 44438915012 **3/3 PASS**, 596 testes/85 arquivos, typecheck/build/dry-run PASS. DEV automático **`9586c7b2-e230-4248-a179-ba7c173021ad`**; nomes de assets JS/CSS coincidentes, SHA-256 CSS remoto/local igual; SHA-256 remoto JS NOT EVALUATED. A/B/C PASS real: interno #10 com Nota interna/Evento interno e sem formulário cliente/alerta; cliente #13 normal; alternância sem resíduos. D PASS no cenário disponível: Loja lê três mensagens customer e dois eventos próprios, sem Nota interna e com controles preservados. Negativa real com nota interna no mesmo cliente NOT EVALUATED por inexistência desse registro; negativa automatizada aprovada separadamente.

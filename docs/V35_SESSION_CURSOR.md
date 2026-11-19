@@ -1,3 +1,16 @@
+## M06.02 — drawer transversal NÃO HOMOLOGADO (18/11/2026)
+
+- Base **`a298d5f973cdecee75be2529a5a47d3803143dc0`**; funcional f9f900a; DEV **`105ad0e7-86e6-4886-b382-42fb3c7b2b56`** confirmado. Reutilizado CI 44440984311 **3/3 PASS / 596 testes**; sem novo deploy, suíte ou código funcional alterado. Consultados referência V35 original, inventário, matriz e cursor.
+- **A PASS nos mecanismos testados:** clique/Enter/Space dos dois acionadores, Escape/backdrop, ARIA, fechamento por rota e retorno ao acionador correto; acionadores encobertos durante abertura não foram forçados pelo ponteiro.
+- **B FAIL — F1/F3:** foco inicial fica em mobileMenu/Menu fora e encoberto; rota ativa tem o mesmo indicador visual com/sem :focus-visible. Tab/Shift+Tab circulam após a primeira tecla; controles fechados não recebem foco nos percursos testados.
+- **C FAIL — F2:** abrir em 390 e ampliar para 1024 sem recarga mantém backdrop e trap de teclado no desktop, bloqueando conteúdo. Causa corroborada: estado/listener modal não conciliados com breakpoint. Retorno mobile permite Escape, mas não sana bloqueio desktop.
+- Larguras 320/390/768/1024/1440 e 760/960 medidas sem overflow. **761/961 exatos NOT EVALUATED:** navegador aplicou 762/962. Em 390×320, todos os 16 itens alcançáveis, rolagem interna 564 px e página sem rolar.
+- **D PASS na UI:** Loja com 15 rotas/títulos/aria-current conferidos, sem Master; Master com 16 itens; cinco atalhos inferiores por perfil. Não é teste de autorização no servidor.
+- **Próxima ação única: Gemini corrigir F2 → F1 → F3** com escopo mínimo em AppShell.tsx/styles.css e testes pertinentes; reproduções completas em [SESSION_HANDOFF.md](../SESSION_HANDOFF.md). Não desenvolver outra frente nem refazer chamados Master.
+- Drawer **AGUARDA_CORRECAO_GEMINI**; M06.02 geral EM_EXECUCAO; chamados Master permanecem CONCLUIDOS. Documento proposto em PR rascunho sem merge; CI anterior reutilizado, commit documental [skip ci], sem modificar workflows/proteções. Viewports restaurados, sem operações financeiras/persistentes, dados ou configurações de plataforma alterados.
+
+---
+
 ## M06.02 — chamados Master encerrados no recorte (18/11/2026)
 
 - Revisão funcional **`f9f900a6306f7a2275fdb3d17f4b7801d75173f8`**, árvore exata `e4e62ba64785efff91e05d49429f5beaf35f63d3`, checkout isolado limpo. CI **44438915012: 3/3 PASS**, check **596/596 testes/85 arquivos**, typecheck/build/dry-run PASS no CI.

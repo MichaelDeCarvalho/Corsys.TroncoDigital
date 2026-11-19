@@ -1,5 +1,11 @@
 # V35 — PLANO MESTRE DE EXECUÇÃO (macroetapas e microentregas)
 
+## M06.02 — drawer: FAIL; correção delimitada pendente (18/11/2026)
+
+Base a298d5f, funcional f9f900a, DEV 105ad0e7. Homologação real do drawer existente: A mecanismos PASS; **B FAIL** (foco inicial fora do painel e ausência de foco distinto na rota ativa); **C FAIL** (mobile aberto → desktop conserva backdrop e trap); D PASS no escopo de navegação UI/aria-current/perfis. 320/390/768/1024/1440, 760/960 e altura reduzida conferidos; pixels exatos 761/961 NOT EVALUATED por aplicação de 762/962 pelo navegador. CI 44440984311/596 anterior reaproveitado; nenhuma suíte, deploy ou mudança funcional nesta execução.
+
+**M06.02 EM_EXECUCAO, recorte drawer AGUARDA_CORRECAO_GEMINI.** Próximo ato prioritário: F2 → F1 → F3, escopo mínimo AppShell.tsx/styles.css/testes de responsividade/foco; reproduzidores no handoff. Não encerrar nem avançar para outro recorte. Evidência documental proposta em PR rascunho sem merge e sem CI repetido ([skip ci] apenas no commit de documentação; workflows/proteções intactos). A microentrega de chamados Master continua CONCLUIDA.
+
 ## M06.02 — microentrega de chamados Master encerrada (18/11/2026)
 
 **CONCLUIDO no recorte de leitura Master/Loja e disclosure; M06.02 geral permanece EM_EXECUCAO.** Revisão `f9f900a`, CI 44438915012 **3/3 PASS**, 596 testes/85 arquivos/typecheck/build/dry-run PASS. DEV automático **`9586c7b2-e230-4248-a179-ba7c173021ad`**, assets JS/CSS com nomes correspondentes e SHA-256 CSS remoto/local igual; sem novo deploy manual. Cenários A/B/C PASS reais (interno corrigido, cliente e alternância); D PASS no cliente disponível, com negativa de nota interna no mesmo cliente NOT EVALUATED por ausência desse dado e testes automatizados separados. Smoke 390/1440 PASS; reaproveitadas evidências de acessibilidade/seis resoluções; paginação real e contraste quantitativo permanecem NOT EVALUATED. Handoff preserva histórico, limites e rollback. PR #62 documental reutilizado para fechamento após CI e revisão do diff. **Próximo recorte recomendado ao Gemini:** M06.02, homologação de teclado/foco do drawer transversal já implementado em `AppShell.tsx`, pendência expressa na matriz de telas; reconciliar com V35, sem reconstrução nem repetição dos chamados.
