@@ -1,3 +1,113 @@
+## M06.02 — Planos SaaS: filtros, estados disponíveis e acessibilidade homologados no recorte (19/11/2026)
+
+**Microentrega delimitada de consulta/filtros/acessibilidade CONCLUIDA no aceite funcional. Não equivale à homologação integral de Planos SaaS.** Nenhum defeito funcional reproduzido nas condições disponíveis; lacunas de paridade e NOT EVALUATED discriminados abaixo. M06.02 geral EM_EXECUCAO. Drawer, chamados Master e Dashboard Mobile não reabertos.
+
+### Revisão, ambiente e evidências reaproveitadas
+
+- GitHub main **`b3fe1b336c4d574fb371af67ab84a66db766445b`**, funcional `025d165da1e587c40170ec967b9ce16ccb7e6b4e`. Árvore src **`f10358a3abda5b85f220713a69a24c55f871621b`** idêntica na revisão funcional e na main documental; checkout isolado 025d165 limpo. Workspace antigo preservado.
+- Workers Builds pós-merge **SUCCESS**, build **`4b96aad6-71a0-4b7c-9ebb-121983337d2a`**, versão DEV **`b86d492c-e8ec-4ab0-82a2-f3d75ded4fbc`**. Última versão anteriormente homologada `9c42e309-1d47-4e72-b017-f7eb5b60e24d` mantida como referência operacional de rollback (mesmo código funcional). Nenhum deploy manual/PROD.
+- Assets observados nesta sessão: **index-C-35ixZm.js / index-BJXaZgFj.css**. O build Windows local 025d165 **PASS/exit0** emitiu index-DVZ5_eI3.js / index-BE1i90wT.css. **Nomes diferem; correspondência binária e causa da diferença de build NOT EVALUATED.** Não afirmar igualdade de assets ou SHA-256 remoto. A origem da versão e identidade do código-fonte estão apoiadas no check Workers/GitHub e na árvore src, separadamente da limitação de reprodutibilidade dos assets. Sem novo deploy para tentar igualar nomes.
+- [CI pós-merge 44622872535](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/44622872535) **3/3 PASS**, 598 testes/85 arquivos. Logs consultados confirmam **MasterCommercialCatalog 6/6**, **MasterPlanLifecycle 5/5**, **MasterPromotions 6/6**. Reutilizados sem repetir suíte; testes de publicação são fixtures automatizadas, não operações comerciais desta homologação.
+- Consultados AGENTS.md, cursor/quadro/matriz, referência HTML versionada seção view-master-planos, três componentes, master-commercial.ts e testes correspondentes. Sessão Master existente no navegador integrado acessou a área protegida; nenhuma mudança em MFA/AAL2/Auth. Sem ler credenciais/tokens ou inferir autorização servidor a partir de menus.
+
+### A–E — classificação consolidada
+
+| Cenário | Resultado | Alcance real |
+|---|---|---|
+| A — histórico/consistência | **PASS na apresentação disponível; NOT EVALUATED na reconciliação independente e histórico múltiplo** | Uma versão vigente, nenhuma série de ofertas; sete colunas legíveis e coerentes na UI. Conector SQL sem contexto equivalente de autenticação retornou zero linhas na view, portanto não usado para validar/contradizer o registro da sessão Master. |
+| B — filtros | **PASS nas condições disponíveis** | Seis status, datas isoladas/inclusivas, combinações, intervalo vazio/invertido, contagem, limpeza e atualização. Correspondência positiva de draft/future/historical/inactive NOT EVALUATED por falta de registros reais. |
+| C — estados | **PASS nos estados observados e no controle local de limite; NOT EVALUATED nos demais** | Loading inicial e atualização, ausência de resultados filtrados, retorno normal e ofertas vazias observados. Catálogo integralmente vazio, erro real, dados obsoletos durante falha e recuperação após falha real não disponíveis. |
+| D — acessibilidade/responsividade | **PASS no recorte executado** | Cinco larguras, contenção/rolagem da tabela, labels, datas por teclado, Tab/Shift+Tab, status por teclado, Limpar Enter/Space, contagem e foco visível. Sem submissão dos formulários. |
+| E — proteção comercial | **PASS na UI disponível e evidência automatizada; operações persistentes/autorizações servidor NOT EVALUATED nesta rodada** | Criação separada de publicação, confirmação PUBLICAR rotulada, controles de publicação disabled sem rascunho; avisos contratuais e formulários separados. Nenhum comando comercial acionado. |
+
+### A — catálogo efetivamente disponível
+
+- **1 versão de plano / 0 séries de ofertas**, conforme contagem e tabelas da sessão Master.
+- Nome comercial **DEV HTTP - no billing**; código **dev_http_financial_20261007**; versão **1**; preço **R$ 0,00**; periodicidade **monthly**; início **2026-10-07**, término aberto (“em diante”); status administrativo **current**. Valores reais exibidos na UI, não extraídos do HTML demonstrativo.
+- Símbolo de BRL exibido; o código ISO de moeda não aparece em coluna própria. A renderização BRL segue o caminho do componente; **currency bruta independente NOT EVALUATED** nesta rodada.
+- Sem promoções ou rascunhos elegíveis; correspondência positiva de ofertas, comparação entre várias versões/publicações/contratos e demais status **NOT EVALUATED**. Nenhum registro criado para ampliar cobertura.
+- Consulta autorizada somente SELECT às views via conector retornou plans=[]/promotion_series_count=0 sob contexto diferente do navegador. Não se injetaram claims nem se alterou Auth/RLS para contornar a diferença. **Reconciliação UI×consulta independente NOT EVALUATED**, sem classificar a diferença de contextos como defeito comercial.
+
+### B — filtros executados individualmente
+
+| Filtro de status (datas limpas) | Contagem real | Resultado |
+|---|---|---|
+| Todos | 1/1 | PASS |
+| Rascunho | 0/1 + mensagem sem resultados | PASS vazio; positiva NOT EVALUATED |
+| Vigente p/ novas contratações | 1/1 | PASS |
+| Publicada futura | 0/1 + mensagem sem resultados | PASS vazio; positiva NOT EVALUATED |
+| Histórica / contratos existentes | 0/1 + mensagem sem resultados | PASS vazio; positiva NOT EVALUATED |
+| Plano desativado | 0/1 + mensagem sem resultados | PASS vazio; positiva NOT EVALUATED |
+
+Ambas as datas filtram **valid_from**, não valid_to. O único plano tem término aberto, mas é excluído por “Vigência até” anterior ao seu início.
+
+| A partir de | Até | Status | Contagem | Resultado |
+|---|---|---|---|---|
+| 2026-10-07 | vazio | Todos | 1/1 | PASS — limite inicial inclusivo |
+| 2026-10-08 | vazio | Todos | 0/1 | PASS |
+| vazio | 2026-10-07 | Todos | 1/1 | PASS — limite superior inclusivo |
+| vazio | 2026-10-06 | Todos | 0/1 | PASS |
+| 2026-10-07 | 2026-10-07 | Todos | 1/1 | PASS — mesmo dia |
+| 2026-11-01 | 2026-11-30 | Todos | 0/1 | PASS — intervalo sem resultados |
+| 2026-10-08 | 2026-10-06 | Todos | 0/1 | PASS — intervalo invertido resulta vazio; não há aviso específico de intervalo inválido |
+| 2026-10-01 | 2026-10-31 | Vigente | 1/1 | PASS — combinação |
+
+- Datas confirmadas por **teclado real** nos controles nativos, incluindo ajuste de segmento e Tab. A preparação inicial por fill não atualizou de modo confiável o estado React neste canal de automação; essas leituras foram descartadas e não classificadas como defeito. Resultados da tabela vêm de edição confirmada por teclado, com valor final e contagem conferidos.
+- **Limpar filtros por Enter e Space PASS:** duas datas vazias, status Todos, contagem restaurada a1/1. Seleção de status por Home/ArrowDown/Enter alcançou Rascunho e0/1; Space em Limpar voltou a1/1.
+- **Atualizar catálogo PASS:** observada mensagem Consultando planos e ofertas com tabela/contagem anterior removidas durante uma atualização; retorno normal. No caso com 2026-10-01→2026-10-31/current, valores e resultado1/1 preservados após atualizar.
+- Ausência de ofertas permaneceu inalterada em todos os filtros. **Preservação positiva de ofertas preenchidas NOT EVALUATED**, pois existem0 séries.
+
+### C — estados e limite de completude
+
+- **PASS real:** entrada inicial exibiu Consultando rascunhos/ofertas/planos; posteriormente formulários/catálogo. Atualização exibiu loading e remoção da tabela antiga, seguida de retorno. Filtros vazios exibiram Exibindo0de1 e mensagem específica, sem confundir com catálogo sem registros. Ofertas vazias têm mensagem própria.
+- **NOT EVALUATED real:** catálogo de planos integralmente vazio; falha de rede/negação do servidor durante sessão carregada; erro com ausência de dados obsoletos; recuperação após falha. Nenhuma infraestrutura alterada para provocar esses estados.
+- Evidência automatizada anterior: teste de negação do catálogo confirma ausência de dados/alerta sob fixture de servidor negando, separado de browser. Código limpa rows ao iniciar consulta e valida arrays/duplicidades/preços; inspeção estática não equivale a teste real de falha.
+- **PASS controlado local, sem banco/rede:** executada a função real loadPlatformCommercialCatalog com client substituto em memória, retornando array de comprimento201 para planos e, separadamente, para ofertas. Ambos rejeitaram com “Master commercial catalog incomplete”; **0 chamadas ao banco, nenhum registro persistido**, sem executar suíte. Isso comprova a rejeição no consumidor acima200; não comprova runtime de truncamento de servidor nem catálogo real com200/201 registros.
+
+### D — responsividade, teclado e formulários
+
+Medições de largura efetivamente aplicada, documento clientWidth/scrollWidth e contêiner de versões:
+
+| innerWidth | Documento client/scroll | Tabela client/scroll | overflow-x | Resultado |
+|---:|---|---|---|---|
+| 320 | 305/305 | 251/786 | auto | PASS |
+| 390 | 375/375 | 322/786 | auto | PASS |
+| 768 | 753/753 | 659/786 | auto | PASS |
+| 1024 | 1009/1009 | 639/786 | auto | PASS |
+| 1440 | 1425/1425 | 1043/1043 | auto | PASS |
+
+- Nenhum controle dos formulários/filtros ultrapassou horizontalmente o documento; conferência visual em mobile/desktop sem sobreposição entre campos/botões. Em320 formulários/filtros empilham; em1440 filtros cabem na mesma linha. Conteúdo e contagem alcançáveis por rolagem.
+- Tabela é região nomeada, tabIndex0. **ArrowRight real em390 moveu scrollLeft para73,6px** dentro da tabela, sem criar overflow do documento. Colunas extensas permanecem alcançáveis; não exigido comprimir código/data para caber.
+- Labels associados em todos os inputs/selects/textareas dos planos/promoções e filtros, incluindo checkbox com label envolvente. Formulários têm nomes acessíveis e legendas. Código interno→nome→preço→periodicidade→teste/tolerância→competência→JSON percorridos por Tab; em seguida formulário de promoção, datas nativas/segmentos, elegibilidade, limite, checkbox, botão de criação apenas focado, Atualizar catálogo e filtros. Publicações disabled foram puladas. Nenhuma submissão.
+- Campo nativo de mês/data usa segmentos e botão de calendário; tabulação nativa continuou corretamente quando o foco estava em controle interno do widget. **Shift+Tab de Limpar filtros alcançou Status do plano**, com :focus-visible=true e outline dourado sólido1.6px. Datas editadas por teclado, status selecionado por teclado, Enter/Space somente em Limpar filtros.
+- Foco visível conferido nos controles e capturas reais; contraste quantitativo permanece **NOT EVALUATED**, sem certificação WCAG integral. Viewport restaurado, filtros limpos e nenhuma operação comercial persistente.
+
+### E — proteção comercial e limites de autorização
+
+- UI separa Criar rascunho SaaS/Publicar plano SaaS e Criar rascunho de promoção/Publicar promoção Master. Textos distinguem criar rascunho, publicar e migrar/aplicar benefícios.
+- **Sem rascunhos:** fieldsets/selects/confirmações de publicação e botões Publicar versão comercial/Publicar oferta disabled. Labels exigem PUBLICAR. Elegibilidade com rascunho real e habilitação após digitar confirmação **NOT EVALUATED real**, pois não há rascunho; testes previamente aprovados5/5e6/6 cobrem seleção/confirmação em fixtures.
+- Avisos preservam clientes na versão contratada, sucessora não edita desconto histórico e publicação de promoção não aplica resgate automaticamente. Preço-base do plano em formulário próprio, benefício/valor/duração de promoção em formulário separado.
+- Não acionados Criar, Publicar, desativar/reativar, excluir, migrar, aplicar benefício/resgate nem Verificar envio. Inspeção de frontend/testes **não é prova nova de autorização no servidor**.
+
+### Paridade V35 — diferenças registradas, sem reconstrução
+
+| Diferença observada | Classificação |
+|---|---|
+| Dois filtros de início da vigência, seis status, limpeza, contagem e histórico | PASS no recorte de leitura; sem usar dados demonstrativos |
+| V35 começa com hero/cards de planos e abre criação por +Novo plano; implementação mostra formulários completos antes do catálogo | Diferença visual/ergonômica e lacuna de apresentação dos cards; não defeito de filtros |
+| V35 histórico tem Plano/Versão/Vigência/Preço/Usuários/Status/Ações; atual tem Plano/Código/Versão/Preço/Periodicidade/Vigência/Situação | Lacuna de paridade: Usuários/limites e ações por linha não apresentados; código/periodicidade são informações adicionais. Não inferir ausência de funcionalidades no backend |
+| V35 usa cards de promoções; atual prevê tabela e formulários separados | Diferença de apresentação; positiva com ofertas reais NOT EVALUATED |
+| monthly/current apresentados como códigos técnicos, sem tradução na linha | Diferença de apresentação/localização, sem erro no valor observado |
+| Editar rascunhos, criar sucessora de plano, desativar/reativar/excluir/migrar/resgatar | Fora do recorte; não executados nem homologados integralmente. Sucessora de promoção existe no formulário e em teste automatizado, sem operação real |
+
+### Decisão e próxima ação
+
+- **Encerrar apenas consulta/filtros, estados disponíveis, acessibilidade e responsividade avaliados. Não promover o status integral de view-master-planos a HOMOLOGADO_DEV.** Ausências de dados/cenários, reconciliação independente, assets e lacunas V35 permanecem explícitas.
+- Atualizar quatro documentos em **novo PR exclusivamente documental**, revisar diff, CI sem skip e integrar após aprovação. Estado final de PR/CI/merge fica rastreado no PR e relatório; nenhum código funcional corrigido e nenhuma razão demonstrada para retornar ao Gemini nesta rodada.
+- **Próxima atividade recomendada M06.02: Cobrança SaaS (`view-master-cobranca`) — filtros/estados/acessibilidade/responsividade somente leitura**, conforme QA visual DEV ainda pendente na matriz. Primeiro verificar implementação atual; sem emitir faturas, cobrar, criar ciclos, alterar assinaturas ou reabrir recortes encerrados. Lacunas de paridade de Planos seguem registradas para priorização M06.01/V35, sem confundir com defeitos comprovados desta homologação.
+
+---
+
 ## M06.02 — F1 residual aprovada: drawer transversal CONCLUIDO no aceite funcional (19/11/2026)
 
 **F1 PASS — 18/18 aberturas reais; regressões obrigatórias PASS; smoke F2/F3 PASS.** Recorte do drawer apto ao encerramento documental após revisão/CI/integração do PR #63. M06.02 geral permanece EM_EXECUCAO. Histórico original F1/F2/F3 e limitações anteriores preservados integralmente abaixo. Chamados Master e Dashboard Mobile não reabertos.
