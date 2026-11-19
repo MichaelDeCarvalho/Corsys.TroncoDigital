@@ -1,3 +1,14 @@
+## M06.02 — homologação dos chamados Master bloqueada (18/11/2026)
+
+- Revisão alvo: `d859b16262c48a16001b7cd778620371f13df3a3`; base `f65848bfdc5994fa967d928267bb9267b8c76ecc`. GitHub confirma diff de três arquivos; cursor/handoff preservados.
+- CI [44429221490](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/44429221490): **3/3 PASS**. Log frontend confirma check (591 testes/85 arquivos; MasterSupportQueue 12/12), build e dry-run PASS **no CI**.
+- Workspace local em `20b093f08f3330130050c6b3925481e854cbed79`, sujo e preservado. Clone isolado falhou com `Could not resolve host: github.com`; checkout íntegro, check/dry-run locais e build comparável indisponíveis.
+- DEV abriu no Edge com sessão de Administração da Loja/Tenant A; Master AAL2 não confirmado. Não houve publicação, mudança funcional, mutation de banco ou alteração Auth/MFA.
+- **BLOQUEADO:** homologação real de disclosure/teclado/foco, filtros/paginação, escopo/conversa e seis resoluções **NOT EVALUATED**. Versão DEV atual/assets/rollback não verificados. Detalhes e matriz de evidências no início de [SESSION_HANDOFF.md](../SESSION_HANDOFF.md).
+- Próxima prioridade continua **este recorte M06.02**: obter checkout isolado íntegro com acesso ao GitHub, confirmar sessão Master AAL2 autorizada, publicar exclusivamente a revisão alvo no DEV pelo procedimento versionado e homologar os critérios pendentes. Não encerrar nem avançar por CI verde. Nenhum defeito demonstrado para remediação/Gemini.
+
+---
+
 ## V35 — consolidação Dashboard Mobile e próxima microentrega M06.02 (18/11/2026)
 
 - Decisão do proprietário nesta sessão: investigação e desenvolvimento de Dashboard Mobile/Novo Ágape encerrados na revisão funcional `a3a8c1b0acce1b8e425afed37248d5a919d92fa2`. A M06.02 integral continua EM_EXECUCAO.
