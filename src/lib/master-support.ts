@@ -1,4 +1,6 @@
 import type {SupabaseClient} from '@supabase/supabase-js'
+export type SupportMessageVisibility='customer'|'internal_note'
+export type SupportEventVisibility='customer'|'internal'
 export type MasterTicket={
  id:string;ticket_seq:number|string;organization_id:string|null;
  ticket_scope:string;related_organization_id:string|null;
@@ -8,11 +10,11 @@ export type MasterTicket={
 }
 export type MasterTicketMessage={
  id:string;ticket_id:string;organization_id:string|null;
- sender_kind:string;visibility:string;body:string;created_at:string
+ sender_kind:string;visibility:SupportMessageVisibility;body:string;created_at:string
 }
 export type MasterTicketEvent={
  id:number|string;organization_id:string|null;ticket_id:string;
- from_status:string|null;to_status:string;visibility:string;
+ from_status:string|null;to_status:string;visibility:SupportEventVisibility;
  created_at:string
 }
 export const MASTER_SUPPORT_PAGE=25
@@ -39,6 +41,7 @@ export async function loadMasterTickets(client:SupabaseClient,page:number,signal
   if(!row||!uuid.test(row.id)||ids.has(row.id)||
    !['tenant','internal'].includes(row.ticket_scope)||
    (row.ticket_scope==='tenant'&&!uuid.test(row.organization_id??''))||
+   (row.ticket_scope==='internal'&&row.organization_id!==null)||
    typeof row.subject!=='string'||typeof row.priority!=='string'||
    typeof row.status!=='string'||typeof row.opened_at!=='string'||
    typeof row.updated_at!=='string')throw Error('Unexpected support ticket data')
@@ -61,9 +64,10 @@ export async function loadMasterTicketMessages(
  for(const row of data as MasterTicketMessage[]){
   if(!row||!uuid.test(row.id)||row.ticket_id!==ticket.id||
    ids.has(row.id)||typeof row.body!=='string'||
-   typeof row.sender_kind!=='string'||!['customer','internal'].includes(row.visibility)||
+   typeof row.sender_kind!=='string'||!['customer','internal_note'].includes(row.visibility)||
    typeof row.created_at!=='string'||
-   (ticket.ticket_scope==='tenant'&&row.organization_id!==ticket.organization_id))
+   (ticket.ticket_scope==='tenant'&&row.organization_id!==ticket.organization_id)||
+   (ticket.ticket_scope==='internal'&&(ticket.organization_id!==null||row.organization_id!==null)))
    throw Error('Unexpected support conversation data')
   ids.add(row.id)
  }

@@ -309,7 +309,7 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
      {!messages&&!threadError&&<p role="status">Consultando mensagens…</p>}
      {messages&&(messages.length? <ol className="support-messages">
       {messages.map(message=><li key={message.id} className="panel">
-       <p><strong>{message.sender_kind}</strong> · {message.visibility==='internal'?'Nota interna':'Visível ao cliente'} · {new Date(message.created_at).toLocaleString('pt-BR')}</p>
+       <p><strong>{message.sender_kind}</strong> · {message.visibility==='internal_note'?'Nota interna':'Visível ao cliente'} · {new Date(message.created_at).toLocaleString('pt-BR')}</p>
        <p>{message.body}</p>
       </li>)}
      </ol>:<p>Sem mensagens registradas neste chamado.</p>)}

@@ -40,7 +40,7 @@ export type TenantTicketMessage = {
   organization_id: string
   ticket_id: string
   sender_kind: 'tenant_user' | 'platform_staff' | 'system'
-  visibility: 'customer' | 'internal'
+  visibility: 'customer'
   body: string
   created_at: string
 }
@@ -196,6 +196,7 @@ export async function loadTenantTicketMessages(
     .select('id,organization_id,ticket_id,sender_kind,visibility,body,created_at')
     .eq('organization_id', organizationId)
     .eq('ticket_id', ticketId)
+    .eq('visibility', 'customer')
     .order('created_at', { ascending: true })
     .order('id', { ascending: true })
     .limit(200)
@@ -205,7 +206,7 @@ export async function loadTenantTicketMessages(
   if (!Array.isArray(data)) return { messages: [], isTruncated: false }
 
   for (const msg of data) {
-    if (msg.organization_id !== organizationId || msg.ticket_id !== ticketId) {
+    if (!msg || msg.organization_id !== organizationId || msg.ticket_id !== ticketId || msg.visibility !== 'customer') {
       throw new Error('Violação de isolamento no histórico de mensagens.')
     }
   }

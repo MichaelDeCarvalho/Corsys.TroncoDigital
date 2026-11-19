@@ -21,7 +21,9 @@ function mock(options:{denied?:boolean;foreign?:boolean;badMetric?:boolean;inter
   const chain={select:()=>chain,order:()=>chain,eq:()=>chain,limit:()=>chain,range:()=>chain,
    abortSignal:()=>Promise.resolve({data:table==='v_saas_support_ticket_metrics'?
     [{...ticket,organization_id:options.internal?null:org,ticket_scope:options.internal?'internal':'tenant',first_response_seconds:options.badMetric?'-1':'300'}]:
-    [{...message,organization_id:options.foreign?'other':org}],
+    table==='saas_support_ticket_events'?
+    [{id:1,organization_id:options.internal?null:org,ticket_id:tid,from_status:null,to_status:'new',visibility:options.internal?'internal':'customer',created_at:'2026-10-09T10:00:00Z'}]:
+    [{...message,organization_id:options.foreign?'other':(options.internal?null:org),visibility:options.internal?'internal_note':'customer',body:options.internal?'Nota interna inicial do chamado #10':'Resposta registrada de suporte'}],
     error:options.denied?{code:'42501'}:null})}
   return chain
  })
@@ -35,6 +37,7 @@ describe('Master operational support queue',()=>{
   expect(screen.getByText('5 min')).toBeInTheDocument()
   fireEvent.click(screen.getByRole('button',{name:'Ver conversa'}))
   await screen.findByText('Resposta registrada de suporte')
+  expect(screen.getAllByText(/Visível ao cliente/).length).toBeGreaterThan(0)
   expect(from).toHaveBeenCalledWith('v_saas_support_ticket_metrics')
   expect(from).toHaveBeenCalledWith('saas_support_ticket_messages')
  })
@@ -109,11 +112,15 @@ describe('Master operational support queue',()=>{
   await waitFor(()=>expect(rpc).toHaveBeenCalledTimes(2))
   expect(rpc.mock.calls[1]).toEqual(rpc.mock.calls[0])
  })
- it('does not offer customer replies on internal platform tickets',async()=>{
+ it('does not offer customer replies on internal platform tickets and renders internal_note messages as Nota interna with null organization_id',async()=>{
   const {client,rpc}=mock({internal:true})
   render(<MasterSupportQueue client={client}/>)
   await screen.findByText('Dúvida sobre tesouraria')
   fireEvent.click(screen.getByRole('button',{name:'Ver conversa'}))
+  await screen.findByText('Nota interna inicial do chamado #10')
+  expect(screen.getByText(/· Nota interna ·/)).toBeInTheDocument()
+  expect(screen.getByText('Evento interno')).toBeInTheDocument()
+  expect(screen.queryByText('Não foi possível validar o histórico desta conversa.')).not.toBeInTheDocument()
   await screen.findByText(/resposta por este fluxo de clientes não é permitida/)
   expect(screen.queryByRole('form',{name:'Responder chamado Master'})).not.toBeInTheDocument()
   expect(rpc).not.toHaveBeenCalled()
