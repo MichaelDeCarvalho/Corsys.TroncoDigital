@@ -1,3 +1,41 @@
+## M06.02 — chamados Master encerrados no recorte (18/11/2026)
+
+- Revisão funcional **`f9f900a6306f7a2275fdb3d17f4b7801d75173f8`**, árvore exata `e4e62ba64785efff91e05d49429f5beaf35f63d3`, checkout isolado limpo. CI **44438915012: 3/3 PASS**, check **596/596 testes/85 arquivos**, typecheck/build/dry-run PASS no CI.
+- Publicação automática DEV existente confirmada: build `c35879e6-5ed4-4d73-8448-d9f0af2847c9`, versão **`9586c7b2-e230-4248-a179-ba7c173021ad`**. Sem novo deploy manual. Rollback de referência `c110100d-4d25-4b20-afaf-6c768cdbbce6` (d859b16).
+- Assets JS/CSS com nomes de conteúdo coincidentes com build local; **SHA-256 CSS remoto/local idêntico**. SHA-256 remoto JS NOT EVALUATED. Não usado bundle CI placeholder.
+- **PASS real A/B/C:** interno #10 (Nota interna, Evento interno, sem alerta/formulário cliente); cliente #13 (três mensagens, dois eventos, formulário preservado); alternância sem resíduos ou mistura.
+- **PASS D no cenário disponível:** Administração da Loja carregou as três mensagens customer do próprio #13, dois eventos, recarga e formulário preservados. Ausência de nota interna nesse cliente limita a negativa real: **NOT EVALUATED**, com teste automatizado separado e aprovado.
+- **PASS smoke 390/1440 px**; reaproveitadas ARIA/foco/seis resoluções anteriores. Paginação real insuficiente e contraste quantitativo continuam **NOT EVALUATED**. Histórico de wrapper local não convertido em PASS.
+- **CONCLUIDO apenas o recorte de chamados Master**; M06.02 geral **EM_EXECUCAO**. Nenhuma escrita de dados/configuração/código funcional/PROD; conteúdos e identidades não registrados na nova evidência.
+- Próxima prioridade recomendada: **M06.02 — homologação de teclado/foco do drawer transversal (`AppShell.tsx`)**, já implementado e com QA browser pendente na matriz; reconciliar V35 e corrigir apenas defeito demonstrado. Evidência completa no início de [SESSION_HANDOFF.md](../SESSION_HANDOFF.md).
+- PR #62 reutilizado com os quatro documentos e histórico preservado; CI e integração documental serão conferidos nesta execução.
+
+---
+
+## M06.02 — acessibilidade Master aprovada no recorte, aceite parcial com FAIL (18/11/2026)
+
+- Revisão funcional `d859b16262c48a16001b7cd778620371f13df3a3`, árvore `d965b9c1d4aa78800c945393d4a40e9177fea3c9`. Checkout isolado recuperado por objetos GitHub e hashes exatos, limpo; alterações do workspace antigo preservadas.
+- CI 44429221490 **3/3 PASS**. Local: typecheck, 591 testes/85 arquivos e build executados; wrapper de `npm run check` não disponibilizou exit agregado após build, portanto gate agregado local **NOT EVALUATED**. Dry-run local Wrangler 4.156.1 **PASS/exit 0**, logs redirecionados ao workspace.
+- Workers Builds confirmou publicação automática existente do HEAD: build `6fc04cf6-a726-46ba-a2f7-0b8ce307c876`, versão DEV **`c110100d-4d25-4b20-afaf-6c768cdbbce6`**. Sem novo deploy. Rollback de referência: base f65848bf, versão `6a43db80-7bd6-476a-9f31-9f0a07e8d1b5`.
+- JS `index-DxjyA-rF.js` e CSS `index-CPLBN8x7.css` carregados no DEV coincidem com nomes de conteúdo do build local; SHA-256 remoto e chunk não carregado NOT EVALUATED.
+- Sessão Master existente no navegador integrado acessou consultas protegidas. **PASS real:** estado/ARIA, clique, Enter/Space, alternância, tabulação sem controles ocultos, foco efetivo em Recolher e retorno ao Detalhes correto (#13/Enter e #10/Space), conversa do cliente #13, separação visual de escopo, buscas, limpar, atualizar/foco e Mostrar todos.
+- **PASS de contenção nas seis resoluções** 320/390/428/768/1024/1440; documento clientWidth=scrollWidth em todas. Medidas completas e limites de contraste visual em [SESSION_HANDOFF.md](../SESSION_HANDOFF.md). Paginação real/foco entre páginas **NOT EVALUATED**: seis chamados, página de 25; sem registros artificiais.
+- **FAIL reproduzido duas vezes:** abrir conversa interna #10 (`6845109b-c3fa-47a4-b226-fe6415d4edf6`) mostra “Não foi possível validar o histórico desta conversa.”; cabeçalho/evento interno corretos, conversa de cliente #13 carrega. Causa e vínculo com d859b16 **NOT EVALUATED**.
+- **Próxima prioridade M06.02:** diagnosticar somente a leitura de mensagens internas #10 e propor correção mínima apenas com evidência, preservando validações e autorização; conferir término do wrapper local. Sem mudança funcional autorizada nesta homologação. Recorte integral **EM_EXECUCAO / aceite parcial com FAIL**, não CONCLUIDO. Histórico inicial de bloqueios abaixo foi superado quanto a checkout e sessão, não apagado.
+
+---
+
+## M06.02 — homologação dos chamados Master bloqueada (18/11/2026)
+
+- Revisão alvo: `d859b16262c48a16001b7cd778620371f13df3a3`; base `f65848bfdc5994fa967d928267bb9267b8c76ecc`. GitHub confirma diff de três arquivos; cursor/handoff preservados.
+- CI [44429221490](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/44429221490): **3/3 PASS**. Log frontend confirma check (591 testes/85 arquivos; MasterSupportQueue 12/12), build e dry-run PASS **no CI**.
+- Workspace local em `20b093f08f3330130050c6b3925481e854cbed79`, sujo e preservado. Clone isolado falhou com `Could not resolve host: github.com`; checkout íntegro, check/dry-run locais e build comparável indisponíveis.
+- DEV abriu no Edge com sessão de Administração da Loja/Tenant A; Master AAL2 não confirmado. Não houve publicação, mudança funcional, mutation de banco ou alteração Auth/MFA.
+- **BLOQUEADO:** homologação real de disclosure/teclado/foco, filtros/paginação, escopo/conversa e seis resoluções **NOT EVALUATED**. Versão DEV atual/assets/rollback não verificados. Detalhes e matriz de evidências no início de [SESSION_HANDOFF.md](../SESSION_HANDOFF.md).
+- Próxima prioridade continua **este recorte M06.02**: obter checkout isolado íntegro com acesso ao GitHub, confirmar sessão Master AAL2 autorizada, publicar exclusivamente a revisão alvo no DEV pelo procedimento versionado e homologar os critérios pendentes. Não encerrar nem avançar por CI verde. Nenhum defeito demonstrado para remediação/Gemini.
+
+---
+
 ## V35 — consolidação Dashboard Mobile e próxima microentrega M06.02 (18/11/2026)
 
 - Decisão do proprietário nesta sessão: investigação e desenvolvimento de Dashboard Mobile/Novo Ágape encerrados na revisão funcional `a3a8c1b0acce1b8e425afed37248d5a919d92fa2`. A M06.02 integral continua EM_EXECUCAO.

@@ -1,3 +1,157 @@
+## M06.02 — encerramento da microentrega de chamados Master (18/11/2026)
+
+**CONCLUIDO no recorte de leitura das conversas Master e regressão da Loja**, na revisão funcional `f9f900a6306f7a2275fdb3d17f4b7801d75173f8`. A M06.02 integral permanece **EM_EXECUCAO**. Este registro supera o FAIL de leitura interna da revisão anterior; o histórico e suas limitações permanecem abaixo.
+
+### Fonte, CI e ambiente DEV
+
+- GitHub `main=f9f900a`, base `d859b16262c48a16001b7cd778620371f13df3a3`, confirmado diretamente nesta execução. A correção afeta apenas os cinco arquivos de leitura/testes em `src/components/MasterSupportQueue*`, `src/lib/master-support*` e `src/lib/support.ts`; acessibilidade/disclosure e configurações de plataforma preservados.
+- Checkout isolado reutilizado com o procedimento já validado de objetos GitHub: cinco blobs novos, hashes do commit e árvore exatos, worktree limpo. Árvore funcional `e4e62ba64785efff91e05d49429f5beaf35f63d3`. Workspace anterior e dados não modificados.
+- [Actions 44438915012](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/44438915012): **3/3 PASS**, frontend/static/onboarding. Log do job frontend `135274602756` confirma **596/596 testes em 85 arquivos**, typecheck, build e Cloudflare dry-run aprovados. Testes automatizados de visibilidade e isolamento continuam separados das evidências reais abaixo; não repetir a suíte nem a matriz anterior sem mudança invalidante.
+- Workers Builds **SUCCESS** para a revisão exata: build `c35879e6-5ed4-4d73-8448-d9f0af2847c9`, versão DEV **`9586c7b2-e230-4248-a179-ba7c173021ad`**. [Build do Worker DEV](https://dash.cloudflare.com/ad50eeb9f9d8c4c4f4e9babe314b8af7/workers/services/view/corsys-tronco-digital-dev/production/builds/c35879e6-5ed4-4d73-8448-d9f0af2847c9). A página foi recarregada e os assets da revisão corrigida foram observados nas duas sessões. Não houve novo deploy manual nem publicação no Worker PROD.
+- Referência de rollback: versão DEV anterior **`c110100d-4d25-4b20-afaf-6c768cdbbce6`**, revisão `d859b16`, build `6fc04cf6-a726-46ba-a2f7-0b8ce307c876`. Rollback não executado; distribuição percentual de tráfego e disponibilidade do rollback no painel não consultadas.
+- Build local com configuração pública DEV existente gerou `index-BUXbLcYE.js`, `index-CPLBN8x7.css` e chunk sob demanda `index-XBmXvlNB.js`. Os nomes de conteúdo de JS/CSS correspondem aos carregados pelo DEV. **CSS remoto e local têm SHA-256 idêntico:** `11fa1e0786357d4ac7ca5bb2b7c14cb5496c0382c431e8fe6299a90f0c29b6fd` (CSS remoto exportado pelo navegador). SHA-256 local JS: `353d670609280d4c915fdd188ba0a8b2d9c168a6c8cd11e6a458d1e242720b3d`; SHA-256 remoto JS **NOT EVALUATED**: exportação de script não disponível nessa capacidade e terminal sem resolução do host. O chunk de exportação não foi carregado. Não usar o bundle CI com placeholder para publicar.
+- Não foi repetido `npm run check` local: o gate agregado anterior do wrapper continua sem PASS local e preservado no histórico; o gate de check da revisão atual tem **PASS real no CI**. O build local foi usado para inspeção dos artefatos.
+
+### Homologação funcional real A–D (somente leitura)
+
+Sessões já autenticadas e autorizadas foram utilizadas separadamente: Master AAL2 no navegador integrado e Administração da Loja no Edge. Nenhuma credencial, identificador pessoal ou conteúdo das mensagens foi incluído neste relatório; comparações de conteúdo ocorreram em memória e são registradas apenas como resultado.
+
+| Cenário | Resultado | Evidência real e limite |
+|---|---|---|
+| A — conversa interna #10 | **PASS** | Uma mensagem carregada como **Nota interna**, um evento como **Evento interno**, zero alertas e sem formulário de resposta ao cliente. O alerta anterior deixou de ocorrer na revisão corrigida. |
+| B — conversa de cliente #13 | **PASS** | Três mensagens **Visível ao cliente**, dois eventos de cliente, zero alertas; formulário autorizado de resposta e seleção de status presentes e intocados. |
+| C — alternância #10 → #13 → #10 | **PASS** | Cabeçalhos/escopos corretos; mensagens/eventos do chamado anterior não permaneceram no novo. Retorno ao interno restaurou somente seu próprio histórico; zero erros residuais e formulário ausente no interno. Comparação por impressões de conteúdo em memória, sem registrar texto. |
+| D — Administração da Loja | **PASS no cenário disponível** | Acesso ao próprio #13: três mensagens carregadas e coincidentes com as mensagens customer vistas pelo Master; dois eventos; duas mensagens da Loja e uma do suporte. Zero alertas, controles de recarga/resposta preservados e nenhuma Nota interna apresentada. |
+| D — ocultação de nota interna associada ao mesmo chamado de cliente | **NOT EVALUATED com dados reais** | O #13 não contém nota interna. Não criar fixture para produzir evidência. A negativa permanece comprovada separadamente pelos testes automatizados de `loadTenantTicketMessages`, que filtram customer e rejeitam internal_note retornada indevidamente. |
+
+**Segurança:** a leitura Master usa `customer/internal_note` para mensagens e `customer/internal` para eventos; a leitura da Loja mantém filtro e validação explícitos de `visibility=customer`, além de ticket/tenant. Rejeição automatizada de visibilidade inválida, ticket/organização incompatíveis e eventos internos para Loja preservada. A homologação não substitui nem repete o gate backend/RLS anterior. Nenhuma resposta enviada, status alterado, registro criado ou sessão de suporte iniciada; Supabase/PostgreSQL/migrations/Auth/MFA/AAL2/RLS/RBAC/RPC e código funcional não modificados.
+
+### Smoke e limites residuais
+
+- **PASS mobile 390 px:** conversa interna carregada, Nota interna/Evento interno corretos, zero alertas; disclosure abriu/recolheu. Documento clientWidth/scrollWidth **375/375**.
+- **PASS desktop 1440 px:** conversa de cliente carregada e disclosure recolhido normalmente; formulário e eventos preservados. Documento clientWidth/scrollWidth **1425/1425**.
+- Reutilizadas as evidências anteriores de ARIA, Enter/Space, tabulação, foco efetivo em Recolher/retorno correto e seis resoluções, pois o código correspondente foi preservado. Não reexecutada a matriz completa. Viewport restaurado.
+- Permanecem **NOT EVALUATED**: paginação real por apenas seis registros para páginas de 25; contraste quantitativo; SHA-256 remoto do JS; negativa real de nota interna num chamado de cliente sem tal registro. São limites explícitos, não PASS implícito.
+- Limitações históricas de Dashboard Mobile e demais módulos não são encerradas por esta homologação.
+
+### Consolidação e próxima prioridade
+
+Os critérios funcionais obrigatórios disponíveis A–D e smoke passaram; a limitação de ausência de nota interna em chamado de cliente segue a regra explícita do proprietário, com comprovação automatizada separada. **Microentrega de chamados Master encerrada; M06.02 geral continua EM_EXECUCAO.** A aprovação/integração documental do PR #62 depende de seu próprio CI verde e diff restrito aos quatro documentos; o resultado de integração será conferido antes do encerramento da execução.
+
+**Próximo recorte recomendado ao Gemini:** M06.02 — acessibilidade do drawer de navegação transversal (`AppShell.tsx`), cuja homologação de browser permanece pendente na `V35_SCREEN_PARITY_MATRIX.md`. Reconciliar a implementação já existente com a navegação da referência V35 e validar foco inicial, Tab/Shift+Tab, Escape, retorno de foco e controles ocultos em mobile/desktop. Não reconstruir o drawer nem repetir testes de chamados; corrigir somente eventual defeito demonstrado. O quadro M06.02 prevê teclado/acessibilidade/ergonomia; esta é uma prioridade recomendada dentro desse escopo, não uma nova macroetapa nem uma entrega já executada.
+
+---
+
+## M06.02 — homologação real dos chamados Master: parcial com falha de histórico (18/11/2026)
+
+Este registro **atualiza os bloqueios da tentativa inicial abaixo**, preservada como histórico. A acessibilidade do disclosure foi comprovada no DEV; **o aceite integral deste recorte NÃO está concluído** devido à falha reproduzível da conversa interna #10 e aos limites de evidência indicados.
+
+### Revisão, integridade e publicação
+
+- GitHub `main=d859b16262c48a16001b7cd778620371f13df3a3`; base `f65848bfdc5994fa967d928267bb9267b8c76ecc`; diff de apenas três arquivos já conferido na tentativa inicial. Não repetir a revisão automatizada como se fosse nova.
+- DNS do terminal continua impedindo clone/fetch. A alternativa somente leitura via conector GitHub recuperou a árvore recursiva completa (**não truncada; 621 blobs**) e os objetos ausentes. Todos os blobs recuperados e árvores foram conferidos pelo SHA-1 Git; o objeto de commit original foi reconstruído com hash exato. **HEAD `d859b16262c48a16001b7cd778620371f13df3a3`, árvore `d965b9c1d4aa78800c945393d4a40e9177fea3c9`, checkout isolado limpo.** Worktree de validação em `repo/.test-tmp/m0602-qa`; workspace antigo e suas alterações preservados.
+- CI [44429221490](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/44429221490): **PASS 3/3** (frontend/static/onboarding). Evidência anterior permanece válida: check **591 testes/85 arquivos**, MasterSupportQueue **12/12**, typecheck/build e dry-run PASS no runner da revisão.
+- Na retomada local, `npm run check` efetivamente executou typecheck, **591/591 testes em 85 arquivos** e gerou o build (1904 módulos; Vite 6.4.5). O wrapper permaneceu aberto após a saída de conclusão do build; **código de saída agregado desse comando local não foi disponibilizado**; o wrapper foi encerrado por interrupção somente após as saídas de testes/build, resultando em exit 1 da interrupção, portanto não promovê-lo a check local PASS nem classificar esse exit como falha funcional dos testes. Uma tentativa anterior ocorreu com cópia incompleta das dependências e falhou por ausência de TypeScript; esse foi um problema do preparo, sem alteração de código.
+- Dry-run local de Wrangler **4.156.1 PASS, exit 0**: oito assets lidos, sem bindings, sem upload. A primeira tentativa apresentou EPERM ao gravar logs fora da área permitida; repetir com `WRANGLER_LOG_PATH` no workspace resolveu essa limitação. Nenhum arquivo funcional foi modificado.
+- O check GitHub **Workers Builds: corsys-tronco-digital-dev** (`135244889701`) confirmou publicação automática já realizada para o HEAD autorizado, **SUCCESS**. Build `6fc04cf6-a726-46ba-a2f7-0b8ce307c876`; versão **`c110100d-4d25-4b20-afaf-6c768cdbbce6`**. [Build DEV](https://dash.cloudflare.com/ad50eeb9f9d8c4c4f4e9babe314b8af7/workers/services/view/corsys-tronco-digital-dev/production/builds/6fc04cf6-a726-46ba-a2f7-0b8ce307c876). O segmento `production` dessa URL é o ambiente do serviço **DEV**, não prova publicação no Worker de produção do sistema. **Não foi disparado outro deploy nesta retomada.**
+- Rollback de referência: versão **`6a43db80-7bd6-476a-9f31-9f0a07e8d1b5`**, build `3c23b19a-546d-4990-b80a-738753545fdc`, associado pelo Workers Builds à base `f65848bf`. Rollback não executado; disponibilidade operacional e tráfego atual no painel Cloudflare não foram consultados.
+- Assets carregados pela página DEV coincidem com os nomes de conteúdo gerados localmente: `index-DxjyA-rF.js` e `index-CPLBN8x7.css`. SHA-256 **locais**: JS `3e6bdd974eefb427deebf717e2da6bf61aef0c69f878a2439778fe2665476da0`; CSS `11fa1e0786357d4ac7ca5bb2b7c14cb5496c0382c431e8fe6299a90f0c29b6fd`. Igualdade byte a byte por SHA-256 remoto **NOT EVALUATED**; chunk de exportação sob demanda não carregado no navegador. Configuração pública de build obtida pelo conector, sem leitura de tokens/chaves do navegador nem modificação de configurações Supabase.
+
+### Homologação real — navegador integrado, sessão Master autorizada
+
+O primeiro erro de validação da sessão foi resolvido pelo botão existente “Tentar novamente”. Sessão existente de `michael@lojamais1.com` acessou o console Master e retornou indicadores/fila protegidos por Master/AAL2. Nenhum login, cadastro MFA, alteração Auth ou elevação de permissões foi executado pela automação.
+
+| Critério | Resultado real DEV | Evidência |
+|---|---|---|
+| Estado inicial recolhido | PASS | Seis botões #13/#12/#11/#10/#9/#8 com aria-expanded=false; painéis existentes e hidden=true |
+| aria-expanded e aria-controls | PASS | Associação única master-ticket-details-UUID, elemento correspondente existente; estados acompanhando exibição |
+| Ausência de controles ocultos na tabulação | PASS | Painéis recolhidos sem controles filhos; Tab de #13 → Ver conversa → Detalhes #12, sem passar por Recolher oculto |
+| Expandir/recolher por clique | PASS | #13 abriu e fechou; estado e painel sincronizados |
+| Enter e Space no botão Detalhes | PASS | Sequência Enter/Enter/Space/Space resultou true/false/true/false em #13 |
+| Alternância entre chamados | PASS | Expandir #13 e depois #10 recolheu #13; apenas painel #10 visível |
+| Foco real em Recolher antes do teclado | PASS | Tab desde Detalhes, passando por Ver conversa; activeElement.textContent=Recolher confirmado **antes** da ação |
+| Retorno de foco correto | PASS | Enter no Recolher de #13 → Detalhes #13; Space no Recolher de #10 → Detalhes #10; ambos recolhidos |
+| Abrir conversa correta de cliente | PASS | #13 exibiu título correto, mensagens do cliente/equipe e eventos do próprio chamado |
+| Abrir histórico da conversa interna | **FAIL** | #10 abriu cabeçalho correto, mas exibiu “Não foi possível validar o histórico desta conversa.” em **duas aberturas independentes** |
+| Escopo visual interno/cliente | PASS no recorte observado | #10: Uso interno da plataforma, evento interno e resposta de cliente bloqueada; #13: UUID da Loja e mensagens de cliente. Não foi reexecutado gate backend/RLS |
+| Busca por título, número e UUID | PASS | Título completo de #13, número 13 e UUID 81caf24e-2891-4cd4-a112-7201b50cbce4 selecionaram #13 |
+| Limpar busca e não reabrir painel obsoleto | PASS | Buscar DEV STAFF LIVE ocultou #13; limpar restaurou seis chamados sem expansão anterior |
+| Atualizar chamados e foco | PASS | Expansão e conversa limpas; foco permaneceu no botão Atualizar chamados durante/depois da consulta |
+| Mostrar todos os chamados | PASS | Diretório Master → Suporte do Tenant A mostrou #13/#12/#11/#8; após expandir #13 e Mostrar todos, retornaram seis registros, todos recolhidos |
+| Foco após Limpar/Mostrar todos | Observação | Botão removido do DOM deixa activeElement=BODY; não observado travamento. Retorno explícito ao campo de busca não implementado |
+| Próxima/Anterior e foco entre páginas | NOT EVALUATED | Apenas seis chamados, página de 25; ambos botões desabilitados; nenhum registro artificial criado |
+| Vazio/loading/erro distinguíveis | PASS nos estados observados | Consulta em andamento, busca sem resultado e erro de histórico com mensagens distintas |
+| Regressão causada por d859b16 | NOT EVALUATED | Falha interna reproduzida, mas não comprovada causalidade com este commit; loader de mensagens não está no diff de três arquivos |
+
+### Resoluções — medidas reais (CSS px)
+
+Medidas com painel #13 expandido. A diferença de 15 px entre viewport e clientWidth corresponde à barra de rolagem vertical observada. As dimensões foram conferidas pelo **innerWidth efetivo**; leituras transitórias durante troca de viewport foram descartadas.
+
+| Viewport | Documento clientWidth | Documento scrollWidth | Tabela clientWidth | Tabela scrollWidth | Overflow horizontal do documento |
+|---|---:|---:|---:|---:|---|
+| 320 | 305 | 305 | 251 | 841 | PASS — ausente |
+| 390 | 375 | 375 | 322 | 841 | PASS — ausente |
+| 428 | 413 | 413 | 355 | 841 | PASS — ausente |
+| 768 | 753 | 753 | 659 | 841 | PASS — ausente |
+| 1024 | 1009 | 1009 | 639 | 841 | PASS — ausente |
+| 1440 | 1425 | 1425 | 1043 | 1043 | PASS — ausente |
+
+- Tabela em região `.finance-table`, tabindex=0, overflow-x:auto. Rolagem interna observada ao navegar pelo teclado até Recolher (scrollLeft aproximado 385,6 px em 320 px), sem aumento do scrollWidth do documento. Em 1440 px, sem rolagem horizontal necessária.
+- Inspeção visual realizada nos seis tamanhos: conteúdos reais contidos, títulos extensos quebrando na coluna, UUID acessível pela rolagem interna, botões acessíveis por foco/teclado; painel de detalhes com texto escuro e fundo branco. Foco em Recolher visível, outline sólido de aproximadamente 1,6 px.
+- Paginação permanece presente e desabilitada pela quantidade insuficiente, sem teste de troca de página. Contraste **inspecionado visualmente**, sem certificação WCAG nem medição instrumental de todas as combinações: auditoria quantitativa de contraste **NOT EVALUATED**. Textos maiores que os existentes no DEV não foram fabricados para o teste.
+- Viewport restaurado ao tamanho original ao encerrar; nenhuma resposta, mudança de status, novo chamado ou sessão de suporte foi acionada.
+
+### Reprodução e menor próxima ação
+
+1. Entrar com sessão Master/AAL2 existente no DEV, Operação e suporte → Chamados.
+2. Expandir **Detalhes do chamado #10**, ID `6845109b-c3fa-47a4-b226-fe6415d4edf6`, assunto “DEV STAFF LIVE …”.
+3. Acionar **Abrir conversa completa** e aguardar as consultas.
+4. **Atual:** cabeçalho “Chamado interno” e evento de criação presentes; mensagens substituídas pelo erro “Não foi possível validar o histórico desta conversa.” **Esperado:** histórico autorizado do próprio chamado ou estado vazio válido; falha de integridade/transporte deve permanecer explícita se confirmada.
+5. Controle: abrir #13 carregou suas mensagens e eventos corretamente.
+
+**Causa: NOT EVALUATED.** A UI converte em mensagem genérica tanto erro de consulta como rejeição de payload em `loadMasterTicketMessages`; os testes de interface não distinguem essas causas. Não atribuir a RLS, migration ou dado específico por suposição.
+
+**Próxima prioridade M06.02:** diagnosticar somente a leitura da conversa interna #10 e, havendo incompatibilidade comprovada, propor a menor correção no ponto responsável, preservando validações de ticket/tenant/visibilidade e sem ampliar grants/RLS. Revalidar somente esse cenário e impactos comprovados. Revisar também o encerramento do wrapper de check local antes de declarar esse gate local PASS. Acessibilidade de disclosure aprovada no recorte observado; microentrega integral permanece **EM_EXECUCAO / aceite parcial com FAIL**, sem autorização para modificar código funcional nesta homologação.
+
+---
+
+## M06.02 — chamados Master: validação inicial e bloqueios (18/11/2026)
+
+**Estado do recorte: BLOQUEADO para publicação/homologação; M06.02 integral permanece EM_EXECUCAO.**
+
+- Fonte de verdade: GitHub `main=d859b16262c48a16001b7cd778620371f13df3a3`, verificada pelo conector nesta execução. Base `f65848bfdc5994fa967d928267bb9267b8c76ecc`; um commit à frente, sem divergência. Diff restrito a `src/components/MasterSupportQueue.tsx` (+38/-8), `src/components/MasterSupportQueue.test.tsx` (+157) e `docs/V35_SCREEN_PARITY_MATRIX.md` (+1/-1). Cursor e handoff inalterados entre essas revisões.
+- CI [44429221490](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/44429221490): **PASS 3/3**, jobs `frontend`, `static` e `onboarding`. Log do frontend, job `135241960646`, confirma checkout da revisão exata, `npm run check` PASS (typecheck, **591 testes / 85 arquivos**, build), `MasterSupportQueue.test.tsx` **12/12 PASS** e `npx wrangler deploy --config wrangler.dev.jsonc --dry-run` PASS. Evidência automatizada remota, não execução local desta sessão.
+- Workspace existente: HEAD `20b093f08f3330130050c6b3925481e854cbed79`, com alterações rastreadas e arquivos não rastreados. Preservado integralmente; não usado para build/deploy. A revisão autorizada não está no banco de objetos local e `origin/main` não está disponível.
+- Tentativa de obter cópia isolada via `git clone --no-checkout` falhou: **`Could not resolve host: github.com`**. Sem checkout íntegro da revisão, check/dry-run locais e comparação build local ↔ assets DEV: **NOT EVALUATED**. Não utilizar build antigo nem o bundle CI com configuração placeholder para publicação.
+- Navegador Edge: a URL DEV abriu uma sessão existente com rótulo **Administração da Loja**, em **CORSYS DEV TENANT A**, sem console Master visível. Sessão Master AAL2 **não confirmada**; não houve logout, leitura de tokens, alteração Auth/MFA nem tentativa de elevar privilégios.
+- Nenhum deploy realizado nesta execução. Versão DEV corrente, correspondência dos assets e referência operacional de rollback: **NOT EVALUATED**; não reutilizar versão histórica como se fosse a atual. Produção, banco e código funcional preservados.
+
+| Critério | Automatizado remoto na revisão | Homologação real DEV nesta execução |
+|---|---|---|
+| Estado inicial recolhido; aria-expanded; aria-controls correto e único | PASS, suíte 12/12 | NOT EVALUATED |
+| Controles ocultos fora da tabulação | Sem prova de tabulação real | NOT EVALUATED |
+| Expandir/recolher por clique e alternar dois chamados | PASS, suíte 12/12 | NOT EVALUATED |
+| Expandir/recolher por Enter e Space | Não comprovado pelo fireEvent.click | NOT EVALUATED |
+| Focar efetivamente Recolher, acioná-lo por teclado e retornar ao Detalhes correto | Teste de clique verifica retorno, sem foco prévio em Recolher | NOT EVALUATED |
+| Conversa correta e escopo interno/cliente | Suíte aprovada; não equivale a sessão real | NOT EVALUATED |
+| Busca por título, número e identificador; limpar | Cobertura parcial de filtro/limpeza aprovada | NOT EVALUATED |
+| Atualizar; Mostrar todos; limpar expansão obsoleta | PASS, suíte 12/12 | NOT EVALUATED |
+| Próxima/Anterior e foco após atualização/paginação | Próxima sintética coberta; foco real não comprovado | NOT EVALUATED |
+| Regressões funcionais no DEV | Não deduzir do CI | NOT EVALUATED |
+
+| Largura (px) | Documento clientWidth / scrollWidth | Tabela clientWidth / scrollWidth | Overflow, UUID, textos, botões, paginação, contraste e foco |
+|---|---|---|---|
+| 320 | NOT EVALUATED | NOT EVALUATED | NOT EVALUATED |
+| 390 | NOT EVALUATED | NOT EVALUATED | NOT EVALUATED |
+| 428 | NOT EVALUATED | NOT EVALUATED | NOT EVALUATED |
+| 768 | NOT EVALUATED | NOT EVALUATED | NOT EVALUATED |
+| 1024 | NOT EVALUATED | NOT EVALUATED | NOT EVALUATED |
+| 1440 | NOT EVALUATED | NOT EVALUATED | NOT EVALUATED |
+
+**Próxima ação prioritária:** concluir este mesmo recorte da M06.02 após obter checkout isolado íntegro da revisão autorizada em ambiente com acesso ao GitHub e disponibilizar sessão Master AAL2 no DEV. Seguir o procedimento versionado de publicação, registrar versão/rollback e hashes dos assets, depois homologar apenas os critérios pendentes. Não criar chamados para testar paginação; se não houver registros suficientes, manter NOT EVALUATED. Não há defeito funcional demonstrado que justifique correção ou retorno ao Gemini; não encerrar a microentrega nem selecionar outro recorte como se o aceite estivesse concluído.
+
+---
+
 ## V35 — consolidação Dashboard Mobile e próxima microentrega M06.02 (18/11/2026)
 
 - Decisão do proprietário nesta sessão: investigação e desenvolvimento de Dashboard Mobile/Novo Ágape encerrados na revisão funcional `a3a8c1b0acce1b8e425afed37248d5a919d92fa2`. A M06.02 integral continua EM_EXECUCAO.
