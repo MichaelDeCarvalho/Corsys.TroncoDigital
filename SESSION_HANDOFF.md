@@ -1,3 +1,40 @@
+## M06.02 — chamados Master: validação inicial e bloqueios (18/11/2026)
+
+**Estado do recorte: BLOQUEADO para publicação/homologação; M06.02 integral permanece EM_EXECUCAO.**
+
+- Fonte de verdade: GitHub `main=d859b16262c48a16001b7cd778620371f13df3a3`, verificada pelo conector nesta execução. Base `f65848bfdc5994fa967d928267bb9267b8c76ecc`; um commit à frente, sem divergência. Diff restrito a `src/components/MasterSupportQueue.tsx` (+38/-8), `src/components/MasterSupportQueue.test.tsx` (+157) e `docs/V35_SCREEN_PARITY_MATRIX.md` (+1/-1). Cursor e handoff inalterados entre essas revisões.
+- CI [44429221490](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/44429221490): **PASS 3/3**, jobs `frontend`, `static` e `onboarding`. Log do frontend, job `135241960646`, confirma checkout da revisão exata, `npm run check` PASS (typecheck, **591 testes / 85 arquivos**, build), `MasterSupportQueue.test.tsx` **12/12 PASS** e `npx wrangler deploy --config wrangler.dev.jsonc --dry-run` PASS. Evidência automatizada remota, não execução local desta sessão.
+- Workspace existente: HEAD `20b093f08f3330130050c6b3925481e854cbed79`, com alterações rastreadas e arquivos não rastreados. Preservado integralmente; não usado para build/deploy. A revisão autorizada não está no banco de objetos local e `origin/main` não está disponível.
+- Tentativa de obter cópia isolada via `git clone --no-checkout` falhou: **`Could not resolve host: github.com`**. Sem checkout íntegro da revisão, check/dry-run locais e comparação build local ↔ assets DEV: **NOT EVALUATED**. Não utilizar build antigo nem o bundle CI com configuração placeholder para publicação.
+- Navegador Edge: a URL DEV abriu uma sessão existente com rótulo **Administração da Loja**, em **CORSYS DEV TENANT A**, sem console Master visível. Sessão Master AAL2 **não confirmada**; não houve logout, leitura de tokens, alteração Auth/MFA nem tentativa de elevar privilégios.
+- Nenhum deploy realizado nesta execução. Versão DEV corrente, correspondência dos assets e referência operacional de rollback: **NOT EVALUATED**; não reutilizar versão histórica como se fosse a atual. Produção, banco e código funcional preservados.
+
+| Critério | Automatizado remoto na revisão | Homologação real DEV nesta execução |
+|---|---|---|
+| Estado inicial recolhido; aria-expanded; aria-controls correto e único | PASS, suíte 12/12 | NOT EVALUATED |
+| Controles ocultos fora da tabulação | Sem prova de tabulação real | NOT EVALUATED |
+| Expandir/recolher por clique e alternar dois chamados | PASS, suíte 12/12 | NOT EVALUATED |
+| Expandir/recolher por Enter e Space | Não comprovado pelo fireEvent.click | NOT EVALUATED |
+| Focar efetivamente Recolher, acioná-lo por teclado e retornar ao Detalhes correto | Teste de clique verifica retorno, sem foco prévio em Recolher | NOT EVALUATED |
+| Conversa correta e escopo interno/cliente | Suíte aprovada; não equivale a sessão real | NOT EVALUATED |
+| Busca por título, número e identificador; limpar | Cobertura parcial de filtro/limpeza aprovada | NOT EVALUATED |
+| Atualizar; Mostrar todos; limpar expansão obsoleta | PASS, suíte 12/12 | NOT EVALUATED |
+| Próxima/Anterior e foco após atualização/paginação | Próxima sintética coberta; foco real não comprovado | NOT EVALUATED |
+| Regressões funcionais no DEV | Não deduzir do CI | NOT EVALUATED |
+
+| Largura (px) | Documento clientWidth / scrollWidth | Tabela clientWidth / scrollWidth | Overflow, UUID, textos, botões, paginação, contraste e foco |
+|---|---|---|---|
+| 320 | NOT EVALUATED | NOT EVALUATED | NOT EVALUATED |
+| 390 | NOT EVALUATED | NOT EVALUATED | NOT EVALUATED |
+| 428 | NOT EVALUATED | NOT EVALUATED | NOT EVALUATED |
+| 768 | NOT EVALUATED | NOT EVALUATED | NOT EVALUATED |
+| 1024 | NOT EVALUATED | NOT EVALUATED | NOT EVALUATED |
+| 1440 | NOT EVALUATED | NOT EVALUATED | NOT EVALUATED |
+
+**Próxima ação prioritária:** concluir este mesmo recorte da M06.02 após obter checkout isolado íntegro da revisão autorizada em ambiente com acesso ao GitHub e disponibilizar sessão Master AAL2 no DEV. Seguir o procedimento versionado de publicação, registrar versão/rollback e hashes dos assets, depois homologar apenas os critérios pendentes. Não criar chamados para testar paginação; se não houver registros suficientes, manter NOT EVALUATED. Não há defeito funcional demonstrado que justifique correção ou retorno ao Gemini; não encerrar a microentrega nem selecionar outro recorte como se o aceite estivesse concluído.
+
+---
+
 ## V35 — consolidação Dashboard Mobile e próxima microentrega M06.02 (18/11/2026)
 
 - Decisão do proprietário nesta sessão: investigação e desenvolvimento de Dashboard Mobile/Novo Ágape encerrados na revisão funcional `a3a8c1b0acce1b8e425afed37248d5a919d92fa2`. A M06.02 integral continua EM_EXECUCAO.
