@@ -1,3 +1,82 @@
+## M06.02 — reteste final do drawer: F2/F3 aprovados; F1 permanece (19/11/2026)
+
+**Drawer NÃO HOMOLOGADO; AGUARDA_CORRECAO_GEMINI exclusivamente de F1. M06.02 geral EM_EXECUCAO.** Chamados Master continuam CONCLUIDOS. Este registro complementa, sem apagar, as três falhas originais de 18/11 abaixo.
+
+### Revisão, publicação e validação automatizada
+
+- GitHub main confirmado em **`3be7995c3f76579630b4597b5fca8c47a787ae8e`**, base `a298d5f973cdecee75be2529a5a47d3803143dc0`. Diff real limitado a AppShell.tsx, ResponsiveLayout.test.tsx e styles.css. Checkout isolado exato, árvore `7c022b39de5d9488860e085fcb91ed4d015ef795`, limpo; workspace antigo preservado. Recuperação por objetos GitHub com hashes validados, sem repetir investigação de rede.
+- [CI 44607492433](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/44607492433): **3/3 PASS** (static/onboarding/frontend). Logs frontend confirmam **597/597 testes, 85 arquivos, ResponsiveLayout 6/6**, build e dry-run concluídos; typecheck integrante do check aprovado. Evidência automatizada separada da homologação real; não repetida a suíte.
+- Workers Builds publicou automaticamente o mesmo commit: **SUCCESS**, build `8684bef8-b2ea-46b3-968a-3702a6338e08`, **versão DEV `8f7afd32-598d-4d79-a30b-f0dfad02d38b`** ([check de publicação](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/runs/135856818746)). Não houve deploy manual.
+- DEV servido em corsys-tronco-digital-dev.corsys1.workers.dev: **`index-CBmSvN6r.js` e `index-DsHs0NTJ.css`**, nomes coincidentes com build Vite local da revisão exata e configuração pública DEV existente. Build local **PASS/exit 0**, sem bundle CI placeholder. SHA-256 local JS `cf75e6c835183e91d479454d67109fb743fc83d4209785aafd34979e32b13e69`; CSS `81299bc390e1ad6d55e0e7d3f52ddea65c93a125f8a7d71d5790e527aa54a58c`. SHA-256 remoto nesta rodada **NOT EVALUATED**; coincidência de nomes não é comparação binária remota.
+- **Rollback operacional de referência:** versão DEV anterior `105ad0e7-86e6-4886-b382-42fb3c7b2b56`, build `46063ac3-d61f-45b3-aba0-a2900272ea38`, commit a298d5f. Reversão, se necessária, pelo histórico de versões do próprio Worker DEV; não executada. PROD intacto.
+- Navegador integrado com sessão Master existente; Edge com Administração da Loja existente. Apenas navegação e atualização de leitura. Sem login, alteração de AAL2/Auth ou reabertura da homologação de chamados; visibilidade do menu não comprova autorização no servidor.
+
+### Resultados reais — F2, F1, F3, R1 e R2
+
+| Critério | Resultado | Evidência observada no navegador |
+|---|---|---|
+| **F2 — 390 → 1024 → 390 sem recarga** | **PASS** | Sidebar perde open, backdrop display:none, aria-expanded=false em ambos os acionadores. Shift+Tab desde Início alcança Pular para conteúdo; Tab desde último Master SaaS alcança Sair. Escape não reativa modalidade. Sidebar desktop navega normalmente; clique em Atualizar plataforma funciona e elementFromPoint no centro retorna o próprio controle, sem backdrop. Ao retornar a 390, drawer permanece fechado. |
+| F2 — limite 960/961 | **PASS no cruzamento observado; 961 exato NOT EVALUATED** | Em 960, drawer aberto; solicitado 961, aplicado **962**. Em 962, open=false, backdrop:none, aria-expanded=false e foco em item visível da sidebar desktop. |
+| F2 — limite 760/761 pelo Menu inferior | **PASS no cruzamento observado; 761 exato NOT EVALUATED** | Aberto em 760 pelo inferior; solicitado 761, aplicado **762**. Barra inferior desaparece; Escape fecha e retorna a **#mobileMenu visível**, sem deixar foco no Menu oculto. |
+| **F1 — foco inicial em 390** | **FAIL** | Abertura por clique superior e inferior deixa activeElement=#mobileMenu ou Menu, fora da sidebar, com open=true/backdrop:block/aria-expanded=true. Leituras posteriores estabilizadas mantiveram o foco externo. Clique nativo por coordenada no superior reproduziu. Enter no inferior também permaneceu em Menu após estabilização. Houve aberturas por Enter/Space com foco em Início; esses sucessos não eliminam as falhas reproduzidas. |
+| **F3 — rota ativa Master SaaS** | **PASS** | Foco real por Shift+Tab, :focus-visible=true, contorno dourado sólido e sombra distintos do estado sem foco; aria-current=page e identidade visual preservados. Conferência visual no drawer efetivamente renderizado. |
+| F3 — rota ativa da Loja e item não ativo | **PASS** | Início ativo da Loja com foco real por Tab apresenta o mesmo indicador dourado distinto. Integrantes não ativo mantém foco visível e não recebe aria-current. Estilos/renderização comparados abaixo. |
+| **R1 — desktop sidebar focada → mobile fechado** | **PASS no cenário observado** | Em 1024, Master SaaS recebeu foco por Shift+Tab desde o cabeçalho; ao reduzir a 390, activeElement=BODY, sem foco retido na sidebar oculta. Próximo Tab alcança Pular para conteúdo visível; navegação continua. Não classificado como defeito apenas por cair no documento. |
+| **R2 — foco inferior em 390 → 768 fechado** | **PASS no cenário observado** | Integrantes inferior recebeu foco por Tab; ao ampliar a 768, barra oculta e activeElement=BODY. Próximo Tab alcança Pular para conteúdo visível, sem foco em botão invisível ou bloqueio. |
+
+**F1 — reprodução mínima e evidência de foco:** 390×844, drawer fechado → clicar no botão superior → aguardar estabilização → ler document.activeElement **antes de Tab**: BUTTON#mobileMenu, sidebar.contains=false. Repetir Menu inferior: BUTTON com texto Menu, sidebar.contains=false. Ambos acionadores têm aria-controls=sidebar e aria-expanded=true, sidebar visível e backdrop:block. A reprodução superior foi confirmada por clique real na tela em (30,31), além do locator. Não foi usado focus() artificial em Início. Primeiro Tab recupera o foco para Início, mas não satisfaz o critério de foco inicial.
+
+Combinações executadas em 390: clique superior **FAIL**, clique inferior **FAIL**, Enter inferior **FAIL estabilizado**; Enter superior, Space superior e Space inferior tiveram sucesso observado em Início. Outros contextos/reaberturas (inclusive Loja) voltaram a reter foco no acionador; **não há garantia determinística para F1**. Os dois acionadores abrem/fecham e atualizam ARIA, sem inferir PASS integral do foco a partir disso.
+
+**Menor correção recomendada ao Gemini:** limitar o trabalho à sincronização do foco inicial em AppShell.tsx. A chamada de foco e o requestAnimationFrame já existem e **não garantiram o resultado real**. Causa provável, ainda inferida: transferência de foco não concluída/retida no momento efetivo de abertura. Confirmar visibilidade e activeElement no ciclo de abertura; assegurar foco em Início e cancelar qualquer tentativa pendente no fechamento/navegação/redimensionamento. Não prescrever um temporizador arbitrário como prova de correção, não alterar F2/F3 aprovados, rotas, segurança ou dados. Acrescentar verificação proporcional e repetir as seis entradas no navegador antes de encerrar; Vitest isolado não cobre esta falha real.
+
+### Teclado, fechamento e ausência de foco tardio
+
+- Após recuperar pelo primeiro Tab, percorridos os **16 itens Master** em ambas as direções; circularidade Início↔Master SaaS correta, sem fuga para skip-link/cabeçalho/conteúdo/barra inferior.
+- Escape restaura o acionador de origem. Backdrop por clique real fecha e devolve ao superior. Selecionar Integrantes após abertura inferior fecha, muda título/aria-current e retorna ao Menu inferior.
+- Três ciclos consecutivos Enter/Escape fecharam com foco no superior, open=false e backdrop:none. Leitura posterior manteve foco fora da sidebar; **não observada transferência tardia** para painel fechado.
+- Fechado em mobile: Shift+Tab do superior alcança Pular para conteúdo; Tab passa pelo superior e Sair, sem entrar na sidebar oculta. Não ativado Sair.
+- Navegação proporcional: Início no mobile 320 e Master SaaS no desktop 1440; Integrantes no desktop da Loja 1024. Sem clique interceptado após fechamento. Reutilizada a evidência anterior das **15 rotas da Loja/16 itens Master**, sem repetir a matriz integral.
+
+### Estilos computados e apresentação visual real — F3
+
+Valores efetivamente lidos no navegador (não normalizados para os valores nominais do CSS):
+
+| Item/estado | :focus-visible | outline | outline-offset | box-shadow |
+|---|---|---|---|---|
+| Master SaaS ativo, sem foco estabilizado | false | rgba(197,168,128,0.18) solid 0.8px | 2.4px | none |
+| Master SaaS ativo, foco por teclado | true | rgb(197,168,128) solid 1.6px | 1.6px | rgba(197,168,128,0.28) 0px 0px 0px 1px |
+| Início ativo da Loja, sem foco | false | rgba(197,168,128,0.18) solid 0.8px | 2.4px | none |
+| Início ativo da Loja, foco por Tab | true | rgb(197,168,128) solid 1.6px | 1.6px | rgba(197,168,128,0.28) 0px 0px 0px 1px |
+| Integrantes da Loja, não ativo com foco | true | rgb(197,168,128) solid 1.6px | 2.4px | none |
+
+Ativos preservam fundo rgba(197,168,128,0.12), cor rgb(226,232,240) e aria-current=page. Não ativo tem fundo transparente, cor rgb(148,163,184) e aria-current ausente. Inspeção visual confirmou aro dourado claramente distinto na rota ativa focada. Valores transitórios durante animação não usados como estado sem foco definitivo. **Contraste quantitativo NOT EVALUATED.**
+
+### Responsividade e regressão proporcional
+
+| Largura solicitada | innerWidth aplicado | Documento clientWidth/scrollWidth observado | Resultado |
+|---:|---:|---|---|
+| 320 | 320 | 320/320 | Sem overflow; cinco atalhos visíveis |
+| 390 | 390 | 390/390; 375/375 quando há scrollbar vertical | Sem overflow; cinco atalhos por perfil |
+| 760 | 760 | 760/760 | Barra inferior disponível; drawer abre |
+| 761 | **762** | 762/762 | Barra inferior oculta; 761 exato NOT EVALUATED |
+| 768 | 768 | 768/768 | Drawer fechado; barra inferior oculta |
+| 960 | 960 | 960/960 | Drawer disponível |
+| 961 | **962** | 946/946 | Sidebar desktop; 961 exato NOT EVALUATED |
+| 1024 | 1024 | 1009/1009 | Sidebar desktop, sem backdrop/trap |
+| 1440 | 1440 | 1425/1425 | Sidebar desktop e navegação utilizáveis |
+
+Em **390×320**, sidebar clientHeight=320, scrollHeight=884, scrollTop=564 no último item; Master SaaS visível entre y=222 e 266, body scrollY=0. Todos os 16 itens alcançados por Tab com rolagem interna. Sidebar sem overflow horizontal do documento. Cinco atalhos inferiores confirmados em Master e Loja; ausência de Master no menu da Loja, sem inferir autorização backend. Viewports restaurados e drawer fechado ao concluir.
+
+### Decisão e limites preservados
+
+- **F2 e F3 encerrados neste recorte de correção; F1 continua aberta.** Não reabrir chamados Master nem encaminhar reconstrução do drawer. Prioridade única: corrigir F1 com escopo mínimo e retestar a transferência real do foco.
+- PR documental **[#63](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/pull/63)** reaproveitado; quatro documentos apenas, histórico original mantido. Permanece **rascunho, sem merge**, pois o gate funcional obrigatório F1 falhou. Atualização documental sem skip ci; resultado do CI do PR registrado no próprio PR após sua execução. Não realizar integração nem deploy por esta homologação reprovada.
+- Limitações históricas continuam: paginação real de chamados por insuficiência de registros, contraste quantitativo, negativa real de notas internas no mesmo cliente e demais NOT EVALUATED anteriores não promovidos. Nesta rodada, pixels exatos 761/961 e SHA-256 remoto também NOT EVALUATED.
+- Nenhum código funcional, banco/Supabase/migrations/Auth/MFA/AAL2/RLS/RBAC/RPC, dados de chamados, operação financeira/persistente ou PROD alterado. Sem novo deploy e sem repetição da suíte aprovada. Não avançar a outra microentrega enquanto F1 bloquear o encerramento.
+
+---
+
 ## M06.02 — drawer transversal: homologação de navegador com FAIL (18/11/2026)
 
 **Recorte NÃO HOMOLOGADO; AGUARDA_CORRECAO_GEMINI. M06.02 integral EM_EXECUCAO.** A microentrega anterior de chamados Master permanece **CONCLUIDA** e não foi reaberta. Esta execução avaliou somente o drawer existente; nenhum código funcional foi corrigido.

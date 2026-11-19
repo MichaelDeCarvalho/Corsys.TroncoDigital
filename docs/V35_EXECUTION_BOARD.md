@@ -1,3 +1,15 @@
+## M06.02 — reteste final do drawer: somente F1 pendente (19/11/2026)
+
+Revisão **`3be7995c3f76579630b4597b5fca8c47a787ae8e`**, CI [44607492433](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/44607492433) **3/3 PASS / 597 testes / 85 arquivos / ResponsiveLayout 6/6**; typecheck/build/dry-run aprovados. Workers Builds automático SUCCESS: DEV **`8f7afd32-598d-4d79-a30b-f0dfad02d38b`**, build `8684bef8-b2ea-46b3-968a-3702a6338e08`. Assets index-CBmSvN6r.js/index-DsHs0NTJ.css coincidem com build local exato PASS/exit 0; SHA-256 remoto NOT EVALUATED. Rollback de referência DEV 105ad0e7 (a298d5f); nenhum deploy manual.
+
+**Homologação real:** **F2 PASS** (390→1024→390, backdrop/modalidade removidos, Tab/Shift+Tab/Escape livres, hit-test Atualizar plataforma no próprio controle); **F3 PASS** (Master SaaS e Início ativo da Loja com indicador visivelmente distinto sob foco real/:focus-visible; aria-current preservado). **F1 FAIL:** clique superior/inferior deixa activeElement=#mobileMenu/Menu fora da sidebar mesmo após estabilização; clique nativo superior reproduziu e Enter inferior também falhou. Houve sucessos de Enter/Space, sem garantia determinística. Não usado focus() artificial em Início; rAF existente não comprovou resultado.
+
+**R1/R2 PASS nos cenários observados:** foco passa a BODY ao ocultar sidebar/barra inferior; próximo Tab alcança Pular para conteúdo, sem retenção invisível nem bloqueio. Escape após 760→762 retorna ao superior visível. 960→962 encerra estado modal. **761/961 exatos NOT EVALUATED** (aplicados 762/962). 320/390/768/1024/1440 sem overflow; cinco atalhos por perfil; altura 390×320 com rolagem interna até scrollTop564 e todos os 16 itens alcançáveis. Tab/Shift+Tab circulares após recuperação inicial, Escape/backdrop/rota e três ciclos sem foco tardio PASS. Evidências completas, estilos computados e medidas no início de [SESSION_HANDOFF.md](../SESSION_HANDOFF.md).
+
+**Drawer NÃO HOMOLOGADO / AGUARDA_CORRECAO_GEMINI somente F1.** M06.02 EM_EXECUCAO; chamados Master CONCLUIDOS. Menor correção: sincronização/validação da transferência inicial para Início em AppShell.tsx, com cancelamento ao fechar/navegar/redimensionar; preservar F2/F3 aprovados e retestar seis entradas no navegador. PR #63 documental atualizado sem skip ci, mantido em rascunho e sem merge; CI acompanhado no PR. Histórico das três falhas abaixo preservado. Não avançar outra microentrega. Sem código funcional/dados/Auth/PROD alterados. Mantidas as limitações de paginação real, contraste quantitativo e demais NOT EVALUATED anteriores.
+
+---
+
 # V35 — PLANO MESTRE DE EXECUÇÃO (macroetapas e microentregas)
 
 ## M06.02 — drawer: FAIL; correção delimitada pendente (18/11/2026)
