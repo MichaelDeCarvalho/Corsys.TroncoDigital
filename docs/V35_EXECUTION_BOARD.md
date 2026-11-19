@@ -1,3 +1,15 @@
+## M06.02 — F1 aprovada; drawer transversal com aceite funcional CONCLUIDO (19/11/2026)
+
+Revisão **`025d165da1e587c40170ec967b9ce16ccb7e6b4e`**. CI [44619837345](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/44619837345) **3/3 PASS / 598 testes / 85 arquivos / ResponsiveLayout 7/7 / TypeScript, build e dry-run PASS**. Workers Builds automático SUCCESS, build `89075dd8-f62f-43f8-829f-997ba9425a6e`, DEV avaliado **`9c42e309-1d47-4e72-b017-f7eb5b60e24d`**. Assets index-DVZ5_eI3.js/index-BE1i90wT.css correspondem ao build local exato PASS/exit0. Rollback de referência 8f7afd32 (3be7995). Sem deploy manual/suíte local repetida.
+
+**F1 PASS real: 18/18 em 390×844**, três repetições de clique/Enter/Space por acionador superior/inferior, individualizadas no início de [SESSION_HANDOFF.md](../SESSION_HANDOFF.md). Todas: activeElement=Início antes de Tab e após estabilização, dentro do drawer aberto; ARIA coerente; Master SaaS preservado; Escape/restauração ao acionador correto. Nenhum focus() artificial ou efeito duplicado observado. **Regressões PASS:** backdrop, seleção de Integrantes, fechamento rápido, ausência de foco tardio e preservação de Integrantes após avanço por Tab. **Smoke F2/F3 PASS:** 390→1024→390 sem backdrop/trap ou reabertura; foco da rota ativa claramente distinto com :focus-visible real. R1/R2 e matriz anterior reutilizados, sem repetir navegação completa.
+
+**Drawer com aceite funcional CONCLUIDO; encerramento documental via PR #63 após revisão/CI/integração e conferência pós-merge. M06.02 geral EM_EXECUCAO.** Histórico F1/F2/F3 abaixo preservado; chamados Master e Dashboard Mobile não reabertos. Contraste quantitativo, pixels exatos761/961, SHA-256 remoto e demais NOT EVALUATED históricos mantidos, incluindo paginação real insuficiente. Sem código funcional/dados/Auth/PROD alterados.
+
+**Próxima recomendação M06.02:** homologar filtros/estados e acessibilidade de **Planos SaaS (`view-master-planos`)**, conforme QA real pendente na matriz e escopo do quadro; vigência/status, contagem/limpeza e teclado, confrontando a V35 original. Primeiro verificar implementação existente, somente leitura/interação, sem criar planos/promoções. Resultados de CI/merge/rebuild documental serão registrados no PR e relatório final.
+
+---
+
 ## M06.02 — reteste final do drawer: somente F1 pendente (19/11/2026)
 
 Revisão **`3be7995c3f76579630b4597b5fca8c47a787ae8e`**, CI [44607492433](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/44607492433) **3/3 PASS / 597 testes / 85 arquivos / ResponsiveLayout 6/6**; typecheck/build/dry-run aprovados. Workers Builds automático SUCCESS: DEV **`8f7afd32-598d-4d79-a30b-f0dfad02d38b`**, build `8684bef8-b2ea-46b3-968a-3702a6338e08`. Assets index-CBmSvN6r.js/index-DsHs0NTJ.css coincidem com build local exato PASS/exit 0; SHA-256 remoto NOT EVALUATED. Rollback de referência DEV 105ad0e7 (a298d5f); nenhum deploy manual.

@@ -1,3 +1,70 @@
+## M06.02 — F1 residual aprovada: drawer transversal CONCLUIDO no aceite funcional (19/11/2026)
+
+**F1 PASS — 18/18 aberturas reais; regressões obrigatórias PASS; smoke F2/F3 PASS.** Recorte do drawer apto ao encerramento documental após revisão/CI/integração do PR #63. M06.02 geral permanece EM_EXECUCAO. Histórico original F1/F2/F3 e limitações anteriores preservados integralmente abaixo. Chamados Master e Dashboard Mobile não reabertos.
+
+### Revisão, CI e publicação efetivamente avaliados
+
+- Main **`025d165da1e587c40170ec967b9ce16ccb7e6b4e`**, base `3be7995c3f76579630b4597b5fca8c47a787ae8e`; diff GitHub limitado a AppShell.tsx, ResponsiveLayout.test.tsx e styles.css. Checkout isolado recuperado pelo procedimento validado, hashes de objetos conferidos, HEAD exato/árvore `b6ef3ad3b53b1cc0b6300fc72110ae768c3ab10a`, limpo. Workspace antigo preservado.
+- [CI 44619837345](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/44619837345) **3/3 PASS**. Logs frontend confirmam TypeScript, **598/598 testes em 85 arquivos**, **ResponsiveLayout 7/7**, Vite e Cloudflare dry-run aprovados. Suíte automatizada não repetida localmente. CI/Vitest não substituem os resultados de navegador abaixo.
+- Workers Builds automático **SUCCESS** para 025d165: build **`89075dd8-f62f-43f8-829f-997ba9425a6e`**, versão DEV avaliada **`9c42e309-1d47-4e72-b017-f7eb5b60e24d`**. Inicialmente pendente e servindo assets antigos: nenhuma abertura foi contabilizada antes de concluir a publicação e recarregar os assets novos. Sem deploy manual.
+- Assets efetivamente servidos: **`index-DVZ5_eI3.js` e `index-BE1i90wT.css`**, coincidentes com build Vite local exato **PASS/exit 0**, usando configuração pública DEV existente, sem bundle CI placeholder. SHA-256 local JS `cba2aa26de7f507eeaf2f34a3c502fb0b6b0941339b32738b3ab911af97fe8ad`; CSS `beef658ae1b27617f9ca0856586f6922c2969fc41fbed484afdd2a71e0bc1bb2`. SHA-256 remoto nesta rodada **NOT EVALUATED**.
+- **Rollback operacional:** versão DEV anterior `8f7afd32-598d-4d79-a30b-f0dfad02d38b`, build `8684bef8-b2ea-46b3-968a-3702a6338e08`, commit 3be7995. Referência pelo histórico de versões do próprio Worker DEV; não executado. Não confundir o segmento /production do painel Cloudflare desse serviço com autorização para publicar no ambiente PROD do sistema.
+
+### F1 — registro individual das 18 aberturas
+
+Navegador integrado, sessão Master existente, **innerWidth=390 / innerHeight=844**. Rota mantida em Master SaaS para detectar navegação acidental para Início. Ponteiro real por click e teclas reais Enter/Space (pressionamento e liberação completos pelo navegador), sem dispatchEvent nem focus() artificial em Início. Cada abertura teve leitura inicial de document.activeElement antes de qualquer Tab, segunda leitura estabilizada em chamada posterior e fechamento por Escape antes da próxima. Botão Início realmente focado e dentro da sidebar em ambas as leituras; sidebar visível/transform final sem deslocamento, backdrop:block e aria-controls=sidebar nos dois acionadores.
+
+| ID | Acionador | Entrada | Repetição | Foco inicial → estabilizado | aria-expanded superior / inferior | Rota preservada | Foco após Escape | Resultado |
+|---:|---|---|---:|---|---|---|---|---|
+| 1 | Superior | Clique | 1 | Início → Início | true / true | Master SaaS | #mobileMenu | **PASS** |
+| 2 | Superior | Clique | 2 | Início → Início | true / true | Master SaaS | #mobileMenu | **PASS** |
+| 3 | Superior | Clique | 3 | Início → Início | true / true | Master SaaS | #mobileMenu | **PASS** |
+| 4 | Superior | Enter | 1 | Início → Início | true / true | Master SaaS | #mobileMenu | **PASS** |
+| 5 | Superior | Enter | 2 | Início → Início | true / true | Master SaaS | #mobileMenu | **PASS** |
+| 6 | Superior | Enter | 3 | Início → Início | true / true | Master SaaS | #mobileMenu | **PASS** |
+| 7 | Superior | Space | 1 | Início → Início | true / true | Master SaaS | #mobileMenu | **PASS** |
+| 8 | Superior | Space | 2 | Início → Início | true / true | Master SaaS | #mobileMenu | **PASS** |
+| 9 | Superior | Space | 3 | Início → Início | true / true | Master SaaS | #mobileMenu | **PASS** |
+| 10 | Inferior | Clique | 1 | Início → Início | true / true | Master SaaS | Menu inferior | **PASS** |
+| 11 | Inferior | Clique | 2 | Início → Início | true / true | Master SaaS | Menu inferior | **PASS** |
+| 12 | Inferior | Clique | 3 | Início → Início | true / true | Master SaaS | Menu inferior | **PASS** |
+| 13 | Inferior | Enter | 1 | Início → Início | true / true | Master SaaS | Menu inferior | **PASS** |
+| 14 | Inferior | Enter | 2 | Início → Início | true / true | Master SaaS | Menu inferior | **PASS** |
+| 15 | Inferior | Enter | 3 | Início → Início | true / true | Master SaaS | Menu inferior | **PASS** |
+| 16 | Inferior | Space | 1 | Início → Início | true / true | Master SaaS | Menu inferior | **PASS** |
+| 17 | Inferior | Space | 2 | Início → Início | true / true | Master SaaS | Menu inferior | **PASS** |
+| 18 | Inferior | Space | 3 | Início → Início | true / true | Master SaaS | Menu inferior | **PASS** |
+
+**Total 18/18 PASS.** Todas permaneceram abertas após a entrada completa, sem Tab extra, fechamento duplicado ou navegação involuntária observados. As 18 restaurações após Escape alcançaram o acionador de origem, com open=false, backdrop:none e aria-expanded=false. Não se inferiu aprovação a partir de useLayoutEffect/rAF/transitionend: o aceite se baseia no foco e estado reais lidos no navegador. Não há registro de conteúdo privado/identidades na evidência.
+
+### Regressões diretamente relacionadas — navegador real
+
+| Critério | Resultado | Evidência |
+|---|---|---|
+| Enter/Space completos e ausência de efeito duplicado | **PASS** | Três repetições por tecla/acionador na tabela; ao finalizar a tecla, drawer aberto e foco em Início, enquanto rota/título continuam Master SaaS. Nenhuma ativação involuntária de Início. Não instrumentados contadores internos de eventos. |
+| Escape/restauração por acionador | **PASS** | Executado nas 18 aberturas; superior retorna a #mobileMenu, inferior a Menu. |
+| Backdrop | **PASS** | Aberto pelo Menu inferior/Space; clique real em área externa da sidebar (340,400) fecha, preserva Master SaaS e retorna ao Menu inferior. |
+| Seleção de rota | **PASS** | Aberto pelo superior/Enter; selecionar Integrantes fecha, muda título e aria-current para Integrantes e retorna a #mobileMenu. |
+| Fechamento rápido e cancelamento | **PASS** | Abrir superior por Enter e enviar Escape imediatamente na mesma sequência, sem observação intermediária; fecha com foco no superior. Leitura posterior estabilizada mantém esse foco e sidebar oculta. |
+| Ausência de foco tardio | **PASS nos cenários executados** | Após fechamento rápido, nenhuma transferência para sidebar fechada; nas 18 sequências, foco restaurado se mantém até a próxima entrada. |
+| Usuário avança para Integrantes | **PASS** | Abrir superior/Enter, Tab de Início para Integrantes; leitura imediata e leitura posterior estabilizada continuam em Integrantes, dentro do drawer, sem retorno imposto a Início; Master SaaS segue rota ativa. |
+
+### Smoke proporcional F2 e F3 — sem repetir matriz
+
+- **F2 PASS:** abrir em 390×844, colocar foco real em Master SaaS por Shift+Tab e ampliar para **1024×844 sem recarregar**. Drawer open=false, backdrop:none, ambos aria-expanded=false, sidebar desktop visível/transform:none. Tab desde Master SaaS alcança Sair fora da sidebar; Escape não reativa modalidade. Voltar a **390×844 sem recarregar** mantém drawer fechado, backdrop:none e sidebar oculta. Nenhum acionamento de Sair.
+- **F3 PASS:** Master SaaS ativo sem foco tem outline rgba(197,168,128,0.18) solid 0.8px, offset2.4px, shadow:none. Com foco real por Shift+Tab e **:focus-visible=true**, outline rgb(197,168,128) solid 1.6px, offset1.6px e shadow rgba(197,168,128,0.28) 0px 0px 0px 1px. Aro dourado visivelmente distinto na renderização real; aria-current=page preservado.
+- Reutilizadas evidências anteriores de R1/R2, seis/larguras pertinentes, 15 rotas da Loja, 16 itens Master e cinco atalhos. Não repetida matriz completa. Viewport restaurado e drawer fechado ao terminar.
+
+### Consolidação e próxima microentrega
+
+- **Aceite funcional do drawer CONCLUIDO**, sem defeito residual demonstrado nesta revisão; F1 original permanece no histórico como falha de revisões anteriores, agora sanada no reteste de 18 entradas. F2/F3/R1/R2 previamente aprovados preservados, F2/F3 com smoke adicional.
+- PR **[#63](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/pull/63)** reaproveitado com os mesmos quatro documentos, histórico integral preservado e commit sem skip ci. Revisão do diff exclusivamente documental, CI exigido, integração e conferência pós-merge/Workers Builds serão registrados no próprio PR e no relatório final, sem alterar código funcional ou publicar manualmente por consequência desta homologação.
+- **Próxima microentrega recomendada da M06.02:** homologação DEV dos filtros/estados e acessibilidade de **Planos SaaS (`view-master-planos`)**, já implementados em MasterCommercialCatalog/MasterPlanLifecycle/MasterPromotions, com QA real ainda pendente na matriz oficial. Priorizar vigência inicial/status, contagem/limpeza e teclado/estados, confrontando a seção V35 original; iniciar pela leitura/interação existente, sem criar planos/promoções ou reconstruir componentes. Recomendação derivada da pendência da matriz e do escopo M06.02 do quadro, não nova implementação autorizada.
+- Limites preservados: **contraste quantitativo, pixels exatos 761/961** (rodada anterior aplicou762/962), SHA-256 remoto e demais NOT EVALUATED históricos, incluindo paginação real de chamados insuficiente e negativa com nota interna no mesmo cliente. Encerrar o recorte não transforma essas ausências de evidência em PASS nem conclui M06.02/21 telas.
+- Nenhuma alteração de código funcional, Supabase/banco/migrations/Auth/MFA/AAL2/RLS/RBAC/RPC, dados da aplicação, operação financeira ou PROD. Sem registros artificiais e sem reabertura de chamados Master/Dashboard Mobile.
+
+---
+
 ## M06.02 — reteste final do drawer: F2/F3 aprovados; F1 permanece (19/11/2026)
 
 **Drawer NÃO HOMOLOGADO; AGUARDA_CORRECAO_GEMINI exclusivamente de F1. M06.02 geral EM_EXECUCAO.** Chamados Master continuam CONCLUIDOS. Este registro complementa, sem apagar, as três falhas originais de 18/11 abaixo.
