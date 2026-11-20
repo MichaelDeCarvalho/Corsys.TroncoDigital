@@ -1,3 +1,130 @@
+## M06.02 — Cobrança SaaS: recorte de consulta/filtros/acessibilidade aprovado (19/11/2026)
+
+**Aceite funcional CONCLUIDO somente no recorte disponível de consulta, filtros, estados observáveis, teclado e responsividade. Cobrança SaaS integral NÃO HOMOLOGADA.** Sem defeito funcional reproduzido; operações financeiras, casos indisponíveis e lacunas V35 permanecem separados. M06.02 geral EM_EXECUCAO. Planos, drawer, chamados Master e Dashboard Mobile não reabertos.
+
+### Revisão, ambiente e reaproveitamento
+
+- GitHub main **`46b08c20d36cb792004c134d76dbd445ecdaac7b`**; funcional `025d165da1e587c40170ec967b9ce16ccb7e6b4e`. Árvore src **`f10358a3abda5b85f220713a69a24c55f871621b`** preservada. Checkout isolado funcional limpo; workspace antigo não modificado.
+- Workers Builds **SUCCESS**, build **`b479de7f-66ad-4db3-93ff-73643aeeaf6a`**, versão DEV avaliada **`96a75c83-ce8a-449a-95a3-d642c2a27570`**. Referência de rollback documental anterior: `b86d492c-e8ec-4ab0-82a2-f3d75ded4fbc`, mesmo código funcional. Nenhum deploy executado.
+- Assets servidos **index-C-35ixZm.js / index-BJXaZgFj.css**, iguais em nome aos observados na rodada anterior, mas diferentes dos nomes do build Windows então registrado. **Equivalência binária/causa da divergência NOT EVALUATED.** Ambiente e configuração exatos do Workers Builds não foram reproduzidos; não se repetiu build Windows que não resolveria essa limitação, nem se alterou deploy/infra. Origem do commit e preservação do código-fonte verificadas por GitHub/Workers e árvore src, sem afirmar igualdade binária.
+- [CI 44626184697](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/44626184697) **3/3 PASS**, 598 testes/85 arquivos. Logs confirmam **MasterBilling 17/17**, **ResponsiveLayout 7/7**. Reutilizados sem repetir suíte local. Os testes com clientes simulados não são homologação de operação financeira real.
+- Consultados AGENTS.md, handoff/cursor/quadro/matriz, referência view-master-cobranca, MasterBilling.tsx, master-billing.ts e testes. Sessão Master existente acessou a área de consulta; sem mudanças em AAL2/MFA/Auth/RLS/RBAC, leitura de credenciais ou simulação de claims.
+
+### Classificação A–E
+
+| Cenário | Resultado | Limite do aceite |
+|---|---|---|
+| A — consulta/contexto | **PASS na UI** | Estado inicial sem Loja, seis Lojas consultadas em ambos os modos, trocas sem fatura/composição residual, retorno sem Loja limpa documentos. Não é comprovação independente de RLS. |
+| B — filtros/paginação | **PASS nos filtros e controles disponíveis; paginação real NOT EVALUATED** | Número completo/parcial, seis status, competência, combinação, vazio, limpeza/atualização e reset por Loja. Apenas uma fatura; positivas de outros status e navegação para página2 indisponíveis. |
+| C — estados/integridade | **PASS na apresentação e consistência aritmética observável; demais critérios NOT EVALUATED** | Composição carregada e reconciliada visualmente com o total; documento cancelado tratado especificamente. Pagamentos, erro/recuperação reais e validação financeira independente indisponíveis. |
+| D — responsividade/acessibilidade | **PASS no conteúdo disponível** | Cinco larguras sem overflow do documento; tabelas de fatura/composição preenchidas, scroll interno, labels, teclado/foco e detalhamento. Tabela de pagamentos preenchida NOT EVALUATED. |
+| E — emissão manual | **PASS na inspeção permitida** | Painel abre/fecha, labels/avisos e ausência de prévia/confirmação antes da consulta. Não acionados RPC de prévia nem emissão; operações comerciais reais NOT EVALUATED. |
+
+### A — dados e isolamento de contexto
+
+- Entrada direta em Cobrança SaaS: **Selecione a Loja**, sem documentos, filtros de faturas, paginação ou composição apresentados antes da escolha.
+- Diretório disponível: CORSYS DEV TENANT A/B; DEV QA FINANCE A/B 20261015; DEV QA INTERFACE A/B 20261014. Consultadas **as seis Lojas** nos modos Faturas e Pagamentos SaaS.
+- **Uma fatura cancelada** em QA Finance A; zero faturas nas demais cinco Lojas. **Zero pagamentos SaaS nas seis Lojas**. Nenhum registro criado para ampliar cobertura.
+- Documento disponível **CORSYS-202611-00003**, competência **2026-11**, vencimento **10/11/2026**, total atualizado **R$1,00**, pago **R$0,00**, aberto **R$0,00**, status **void**.
+- Abrir composição, aplicar filtro na Loja A, reabrir composição e trocar para QA Finance B: tabela/documento/composição anteriores desaparecem, filtros voltam a vazio/Todos e página1. Alternar Faturas→Pagamentos remove a composição e os filtros de fatura; não aparece documento do outro modo. Ao retirar a seleção de Loja no fim, nenhum documento ou detalhamento permanece.
+- Seleção de Loja por **Home/ArrowDown/Enter** alcançou Tenant A e consulta vazia correta. Interface mantém aviso de separação entre documentos comerciais SaaS e tesouraria das Lojas. Nenhuma consulta/ação financeira da tesouraria foi executada.
+
+### B — filtros realmente executados
+
+Todos os resultados abaixo foram obtidos na QA Finance A por consulta normal da interface:
+
+| Caso | Resultado real | Classificação |
+|---|---|---|
+| Todos | 1 fatura cancelada | PASS |
+| Pago | vazio | PASS vazio; positiva NOT EVALUATED |
+| Parcial | vazio | PASS vazio; positiva NOT EVALUATED |
+| Em atraso | vazio | PASS vazio; positiva NOT EVALUATED |
+| Em aberto | vazio | PASS vazio; positiva NOT EVALUATED |
+| Cancelado | 1 fatura, status void | PASS |
+| Número completo CORSYS-202611-00003 | 1 fatura | PASS |
+| Número parcial 202611 | mesma fatura | PASS |
+| Número inexistente SEM-FATURA-M0602 | vazio | PASS |
+| Busca literal CORSYS%, sublinhado e barra invertida | vazio nos três casos | PASS como complemento negativo real; escape parametrizado comprovado separadamente pelos testes existentes |
+| Competência 2026-11 | 1 fatura | PASS |
+| Parcial202611 + Cancelado + competência2026-11 | 1 fatura | PASS |
+| Mesma combinação com competência2026-12 | vazio | PASS |
+| Limpar por Enter e Space | campos limpos, Todos, página1, fatura restaurada | PASS |
+| Atualizar cobrança | retorno à consulta correta da página1 | PASS |
+
+- Competência confirmada por **edição de segmento no campo nativo e Tab**, não só por valor atribuído ao DOM. Seleção de status por Home/ArrowDown/Enter alcançou Pago e, após aplicar, consulta vazia esperada.
+- Aplicar por **Enter no botão e no campo Número da fatura** submeteu somente o formulário de filtros. Limpar por Enter/Space restaurou a consulta.
+- Implementação e teste existente17/17 confirmam filtros no cliente de consulta **antes de range/paginação**, .ilike com escape de barra/percentual/sublinhado, .eq de status e competência **AAAA-MM-01**. **Inspeção HTTP independente das requisições NOT EVALUATED**: não havia captura de rede autorizada exposta nesta sessão; não se usaram tokens ou chamadas ocultas para produzi-la.
+- **Anterior/Próxima disabled e Página1** em todas as consultas com0/1 registros. Estados e rótulos PASS. **Navegação real Anterior/Próxima e reset desde página2 após aplicar/limpar NOT EVALUATED**, pois não há26 documentos. Permanecer na página1 não comprova reset a partir de outra página.
+
+### C — composição e integridade observável
+
+Composição acessada por **Enter em Ver composição**, com estado real “Conciliando composição do documento” seguido dos valores:
+
+| Item | Valor exibido |
+|---|---:|
+| Base contratual | R$1,00 |
+| Multa | R$0,00 |
+| Juros | R$0,00 |
+| Descontos e créditos | R$0,00 |
+| Outros ajustes | R$0,00 |
+| Total atualizado | R$1,00 |
+| Pago na listagem | R$0,00 |
+| Saldo aberto na listagem | R$0,00 |
+| Status | void |
+
+- **Consistência observável PASS:** base+ajustes=total atualizado e total da composição=total da listagem. **Documento cancelado não exige total=pago+aberto**; aberto zero com total histórico1 não foi classificado como erro. A regra especial também consta no consumidor/testes.
+- **Integridade financeira independente NOT EVALUATED:** a apresentação e o retorno aceito pelo consumidor não substituem reconciliação com documentos/alocações de origem sob contexto autorizado equivalente. A limitação de contexto do conector já registrada na rodada Planos foi reaproveitada, sem repetir consultas incompatíveis nem alterar claims/Auth.
+- **Pagamentos recebido/alocado/crédito não alocado, ativo/revertido: NOT EVALUATED real**, pois não existem pagamentos. Testes existentes cobrem rejeição de alocação inconsistente e outro tenant separadamente.
+- **Estados reais PASS:** ausência de documentos nas cinco Lojas, ausência de resultados filtrados na Loja com fatura, atualização/retorno normal, loading da composição e limpeza de contexto/modo. Loading inicial da consulta de documentos foi transitório e **não capturado conclusivamente**; não convertido em PASS por inspeção do código.
+- **Erro real, valores obsoletos durante falha, dados parciais e recuperação após falha: NOT EVALUATED.** Não alterada infraestrutura nem registros para provocar esses estados. Testes prévios de rejeição de organização diferente/integridade/composição discordante foram reutilizados, sem confundir fixture com browser real.
+
+### D — medidas reais e teclado
+
+Tabelas preenchidas de Faturas e Composição; o painel manual também estava aberto nas medições, sem executar consulta de prévia:
+
+| innerWidth | Documento clientWidth/scrollWidth | Faturas client/scroll | Composição client/scroll |
+|---:|---|---|---|
+| 320 | 305/305 | 251/774 | 222/650 |
+| 390 | 375/375 | 322/774 | 292/650 |
+| 768 | 753/753 | 659/774 | 606/650 |
+| 1024 | 1009/1009 | 639/774 | 586/650 |
+| 1440 | 1425/1425 | 1043/1043 | 990/990 |
+
+- Todas as tabelas com overflow-x:auto; nenhum controle fora da área horizontal do documento. Inspeção visual sem sobreposição dos filtros/botões/campos; empilhamento no mobile e redistribuição no desktop. Valores monetários reais0/1 legíveis no recorte disponível.
+- Composição é região nomeada/tabIndex0. ArrowRight real moveu scroll interno em320; em390 alcançou o extremo direito (~358px), deixando os seis valores monetários visíveis, sem overflow da página.
+- Labels associados a Loja, número, status, competência e aos três campos do painel manual. Tab percorreu status, segmentos de competência, Aplicar/Limpar, campos manuais, **Consultar contrato e prévia apenas focado**, alternância de modo, região Faturas e Ver composição. Shift+Tab testado; indicadores dourados de foco visível nos controles/regiões. Controles nativos de data/mês incluem segmentos e botão interno de calendário.
+- Paginação tem botões nomeados nativos e estado disabled coerente; interação habilitada e páginas adicionais NOT EVALUATED. Tabela de pagamentos preenchida e valores variados/não nulos adicionais NOT EVALUATED. Contraste quantitativo continua NOT EVALUATED.
+- Viewport restaurado, painel manual fechado e seleção de Loja removida ao terminar. Nenhuma submissão comercial.
+
+### E — inspeção da emissão manual, sem prévia
+
+- Botão Emitir fatura manual abre painel e passa a Fechar emissão manual com aria-expanded coerente; fechamento por clique/Enter executado. Campos de competência, vencimento opcional e observação rotulados e alcançáveis; aviso informa cálculo contratual no banco e ausência de preço arbitrário digitado no navegador.
+- **Consultar contrato e prévia NÃO acionado.** Apenas recebeu foco na sequência de Tab. Não houve prévia contratual apresentada nem botão Confirmar e emitir fatura nesta inspeção. Nenhuma emissão, recebimento, reversão, alteração de assinatura/encargo/acordo/suspensão/reativação/notificação.
+- Evidências automatizadas anteriores reaproveitadas: prévia contratual, idempotência, competência já faturada, invalidação ao mudar campos/Loja e manutenção da chave após falha de comunicação. São testes simulados existentes aprovados no CI, não nova homologação de operações reais ou de autorização no servidor.
+
+### Paridade com view-master-cobranca
+
+| Diferença pertinente | Classificação |
+|---|---|
+| Cards MRR/Pago/Aberto/Inadimplência e totais consolidados da V35 não aparecem nesta consulta | Lacuna de paridade/apresentação, fora do aceite delimitado; não substituídos por soma de uma página |
+| Coluna Cliente substituída por seleção explícita de Loja; busca atual por número, não busca global por nome de cliente | Diferença de escopo/navegação em relação à V35 |
+| Valor base/Encargos não constam como colunas principais, mas Base/Multa/Juros/Descontos/Outros são consultáveis em Ver composição | Funcionalidade existente em detalhamento separado; diferença de apresentação |
+| Mais status (Em aberto/Cancelado), paginação e modo Pagamentos SaaS | Funcionalidades existentes adicionais ao filtro demonstrativo |
+| Automação mensal/régua/política/encargos-acordos e ações por documento da V35 não são operados aqui | Lacunas de paridade do fluxo completo; aplicação/configuração comercial fora do recorte. Consulta de jobs existe em MasterOperations, sem equivaler à configuração da automação e sem nova homologação nesta rodada |
+| Ações Registrar pagamento/Enviar cobrança e acordos demonstrativos não acionadas/apresentadas nesta consulta | Fora do recorte; não inferir ausência backend nem declarar operação homologada |
+| Status void exibido como código técnico e competência AAAA-MM | Diferença de apresentação/localização, sem erro financeiro demonstrado |
+
+Nenhum valor financeiro demonstrativo do HTML foi usado como dado real. Nenhuma reconstrução ou correção funcional nesta rodada.
+
+### Consolidação e próxima prioridade
+
+- **Encerrar somente a microentrega disponível de consultas/filtros/estados observáveis/acessibilidade/responsividade. Não promover view-master-cobranca integral a HOMOLOGADO_DEV.** Erros/recuperação, integridade independente, pagamentos preenchidos, paginação real, operações críticas e lacunas V35 continuam pendentes/NOT EVALUATED.
+- Atualizar os quatro documentos em novo PR exclusivamente documental, revisar diff, CI sem skip e integrar após aprovação; estado final de PR/CI/merge será registrado no PR e relatório. Sem defeito reproduzido para encaminhar correção ao Gemini.
+- **Próxima recomendação M06.02: Configurações da Plataforma (`view-master-config`) — leitura, estados, teclado e responsividade, sem salvar parâmetros**, conforme matriz (implementada/testada, QA real do recorte ainda não registrado). Primeiro verificar a implementação existente. Permanecem fora do recorte alterações de segurança, integrações e configurações de plataforma.
+- Histórico anterior preservado; Planos, drawer, chamados e Dashboard não reabertos. Sem alterações funcionais, Supabase/banco/migrations/Auth/MFA/AAL2/RLS/RBAC, deploy ou PROD; nenhum documento financeiro criado/modificado.
+
+---
+
 ## M06.02 — Planos SaaS: filtros, estados disponíveis e acessibilidade homologados no recorte (19/11/2026)
 
 **Microentrega delimitada de consulta/filtros/acessibilidade CONCLUIDA no aceite funcional. Não equivale à homologação integral de Planos SaaS.** Nenhum defeito funcional reproduzido nas condições disponíveis; lacunas de paridade e NOT EVALUATED discriminados abaixo. M06.02 geral EM_EXECUCAO. Drawer, chamados Master e Dashboard Mobile não reabertos.
