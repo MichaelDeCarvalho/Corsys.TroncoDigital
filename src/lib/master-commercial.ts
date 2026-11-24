@@ -154,7 +154,7 @@ export async function loadPlanVersionEntitlements(
 ):Promise<Record<string,unknown>>{
  if(!uuid.test(planVersionId))throw Error('Invalid plan version id')
  const base=(client.from('saas_plan_version_entitlements') as unknown as OptionalEqQuery<{
-  plan_version_id?:string
+  plan_version_id?:unknown
   entitlement_key?:unknown
   entitlement_value?:unknown
  }>).select('plan_version_id,entitlement_key,entitlement_value')
@@ -164,12 +164,31 @@ export async function loadPlanVersionEntitlements(
  if(!Array.isArray(response.data)||response.data.length>200){
   throw Error('Plan entitlements payload incomplete')
  }
+ const seenKeys=new Set<string>()
  const result:Record<string,unknown>={}
  for(const row of response.data){
-  if(row.plan_version_id!==undefined&&row.plan_version_id!==planVersionId)continue
-  if(typeof row.entitlement_key!=='string'||!row.entitlement_key.trim()){
+  if(!row||typeof row!=='object'||Array.isArray(row)){
    throw Error('Untrusted plan entitlement row')
   }
+  if(typeof row.plan_version_id!=='string'||row.plan_version_id!==planVersionId){
+   throw Error('Mismatched plan version entitlement row')
+  }
+  if(
+   typeof row.entitlement_key!=='string'||
+   row.entitlement_key.trim().length===0||
+   row.entitlement_key.trim()!==row.entitlement_key||
+   row.entitlement_key.length>120||
+   row.entitlement_key==='__proto__'||
+   row.entitlement_key==='constructor'||
+   row.entitlement_key==='prototype'||
+   row.entitlement_value===undefined
+  ){
+   throw Error('Untrusted plan entitlement key or value')
+  }
+  if(seenKeys.has(row.entitlement_key)){
+   throw Error('Duplicate plan entitlement key')
+  }
+  seenKeys.add(row.entitlement_key)
   result[row.entitlement_key]=row.entitlement_value
  }
  return result

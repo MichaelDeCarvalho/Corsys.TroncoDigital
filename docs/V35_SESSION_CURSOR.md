@@ -1,3 +1,13 @@
+## M06.02 — Correção de integridade no Ciclo de Vida Comercial (`view-master-planos`, 24/11/2026)
+
+- **Base de partida:** HEAD `67cd89daa943ada01fad9d9638c796ed64e11d46` (CI `45480497365` **3/3 PASS**, **617/617 testes**).
+- **F1 (`MasterPlanLifecycle.tsx`, `MasterPromotions.tsx`):** removida repetição cega (`retryable: false`) em `update_saas_plan_version_draft`, `set_saas_plan_active`, `update_saas_promotion_draft` e `set_saas_promotion_series_active`; em erro de transporte incerto, trava os formulários via `reconcileRequired` sem exibir `Verificar envio` e exige `Atualizar rascunhos` / `Atualizar ofertas` bem-sucedido antes de nova ação, preservando reenvio idempotente exclusivamente nos comandos `*_idempotent`.
+- **F2 (`src/lib/master-commercial.ts`, `MasterPlanLifecycle.tsx`):** `loadPlanVersionEntitlements` falha de forma fechada em linhas sem ou com `plan_version_id` divergente, chaves inválidas/duplicadas/`__proto__` ou payloads `> 200` linhas, mantendo a edição e o botão de salvar desabilitados em leitura inconsistente.
+- **F3 (auditoria SQL confirmada sem nova migration):** registram evento em `public.saas_master_audit_logs`: `create_master_plan_draft_idempotent`, `publish_master_plan_draft_idempotent`, `set_saas_plan_active`, `delete_saas_plan_if_unused`, `create_master_promotion_draft_idempotent`, `create_master_promotion_successor_idempotent`, `publish_master_promotion_draft_idempotent`, `set_saas_promotion_series_active` e `delete_saas_promotion_series_if_unused`; **não** geram evento em `saas_master_audit_logs`: `update_saas_plan_version_draft`, `create_saas_plan_successor_draft` (`created_by`) e `update_saas_promotion_draft` (`updated_at`), com cópia da UI reconciliada.
+- **Próximo passo:** sync/push, CI remoto completo e homologação operacional controlada no DEV (`view-master-planos` permanece `IMPLEMENTADO_E_TESTADO`; `M06.02` segue `EM_EXECUCAO`).
+
+---
+
 ## M06.02 — Planos SaaS (`view-master-planos`): PASS visual da apresentação e Ciclo de Vida Comercial Completo (24/11/2026)
 
 - **Reconciliação da revisão anterior (`6585c1e62b6b472299948b93925c39b6895f2a7a`):** CI **`45474973273`** **3/3 PASS** (**609/609 testes**), Workers Builds DEV **SUCCESS** e **PASS visual** homologado pelo Work na paridade de apresentação de Planos SaaS (`view-master-planos`), sem promover a tela integral a `HOMOLOGADO_DEV`.

@@ -142,10 +142,12 @@ describe('Master plan version lifecycle',()=>{
   fireEvent.change(screen.getByLabelText('Plano base para nova versão'),{target:{value:plan}})
   await waitFor(()=>expect(screen.getByLabelText('Novos recursos do plano (JSON)')).toHaveValue('{\n  "members_max": 200\n}'))
   fireEvent.submit(screen.getByRole('form',{name:'Criar versão sucessora de plano'}))
-  await screen.findByText(/Atualize os rascunhos antes de tentar novamente para evitar duplicidade/)
+  await screen.findByText(/Clique em Atualizar rascunhos para reconciliar o estado atual antes de tentar nova ação/)
   expect(screen.queryByRole('button',{name:'Verificar envio'})).not.toBeInTheDocument()
+  expect(screen.getByRole('button',{name:'Criar somente rascunho'})).toBeDisabled()
+  expect(screen.getByRole('button',{name:'Atualizar rascunhos'})).toBeEnabled()
  })
- it('loads entitlements and updates an existing draft version, failing closed when entitlements fail to load',async()=>{
+ it('loads entitlements and updates an existing draft version, failing closed on mixed or unreadable entitlements',async()=>{
   const failFixture=fixture({entitlementError:{code:'50000'}})
   const {unmount}=render(<MasterPlanLifecycle client={failFixture.client}/>)
   await screen.findByLabelText('Rascunho de plano para editar')
@@ -153,6 +155,20 @@ describe('Master plan version lifecycle',()=>{
   await screen.findByText('Não foi possível carregar os recursos do rascunho selecionado.')
   expect(screen.getByRole('button',{name:'Salvar alterações do rascunho'})).toBeDisabled()
   unmount()
+
+  const mixedFixture=fixture({
+   entitlements:[
+    {plan_version_id:draft,entitlement_key:'members_max',entitlement_value:150},
+    {plan_version_id:publishedVersion,entitlement_key:'members_max',entitlement_value:999},
+   ],
+  })
+  const {unmount:unmountMixed}=render(<MasterPlanLifecycle client={mixedFixture.client}/>)
+  await screen.findByLabelText('Rascunho de plano para editar')
+  fireEvent.change(screen.getByLabelText('Rascunho de plano para editar'),{target:{value:draft}})
+  await screen.findByText('Não foi possível carregar os recursos do rascunho selecionado.')
+  expect(screen.getByLabelText('Recursos do rascunho (JSON)')).toBeDisabled()
+  expect(screen.getByRole('button',{name:'Salvar alterações do rascunho'})).toBeDisabled()
+  unmountMixed()
 
   const onCatalogChange=vi.fn()
   const okFixture=fixture({
@@ -206,6 +222,41 @@ describe('Master plan version lifecycle',()=>{
    p_plan_id:plan,p_reason:'Rascunho criado por engano',
   })
  })
+ it('locks non-idempotent update_saas_plan_version_draft and set_saas_plan_active on transport failure until manual reconciliation',async()=>{
+  const onCatalogChange=vi.fn()
+  const editDrop=fixture({
+   entitlements:[{plan_version_id:draft,entitlement_key:'members_max',entitlement_value:150}],
+  })
+  editDrop.rpc.mockRejectedValueOnce(new Error('network drop after server commit'))
+  const {unmount}=render(<MasterPlanLifecycle client={editDrop.client} onCatalogChange={onCatalogChange}/>)
+  fireEvent.change(await screen.findByLabelText('Rascunho de plano para editar'),{target:{value:draft}})
+  await waitFor(()=>expect(screen.getByLabelText('Recursos do rascunho (JSON)')).toHaveValue('{\n  "members_max": 150\n}'))
+  fireEvent.submit(screen.getByRole('form',{name:'Editar rascunho de plano'}))
+  await screen.findByText('Resultado de rede incerto para operação sem chave de idempotência. Clique em Atualizar rascunhos para reconciliar o estado atual antes de tentar nova ação.')
+  expect(editDrop.rpc).toHaveBeenCalledTimes(1)
+  expect(screen.queryByRole('button',{name:'Verificar envio'})).not.toBeInTheDocument()
+  expect(screen.getByRole('button',{name:'Criar somente rascunho'})).toBeDisabled()
+  expect(screen.getByRole('button',{name:'Salvar alterações do rascunho'})).toBeDisabled()
+  const refreshBtn=screen.getByRole('button',{name:'Atualizar rascunhos'})
+  expect(refreshBtn).toBeEnabled()
+  fireEvent.click(refreshBtn)
+  await waitFor(()=>expect(screen.getByRole('button',{name:'Criar somente rascunho'})).toBeEnabled())
+  expect(onCatalogChange).toHaveBeenCalledTimes(1)
+  unmount()
+
+  const activeDrop=fixture({plans:[publishedRow]})
+  activeDrop.rpc.mockRejectedValueOnce(new Error('network drop after server commit'))
+  render(<MasterPlanLifecycle client={activeDrop.client}/>)
+  fireEvent.change(await screen.findByLabelText('Plano para ativação ou exclusão'),{target:{value:plan}})
+  fireEvent.change(screen.getByLabelText('Motivo da alteração do plano'),{target:{value:'Teste queda de rede'}})
+  fireEvent.click(screen.getByRole('button',{name:'Desativar plano'}))
+  await screen.findByText('Resultado de rede incerto para operação sem chave de idempotência. Clique em Atualizar rascunhos para reconciliar o estado atual antes de tentar nova ação.')
+  expect(activeDrop.rpc).toHaveBeenCalledTimes(1)
+  expect(screen.queryByRole('button',{name:'Verificar envio'})).not.toBeInTheDocument()
+  expect(screen.getByRole('button',{name:'Desativar plano'})).toBeDisabled()
+  fireEvent.click(screen.getByRole('button',{name:'Atualizar rascunhos'}))
+  await waitFor(()=>expect(screen.getByRole('button',{name:'Criar somente rascunho'})).toBeEnabled())
+ })
  it('handles SQLSTATE 55000 delete rejection deterministically without retry',async()=>{
   const {client,rpc}=fixture({plans:[row],rpcResult:{data:null,error:{code:'55000'}}})
   render(<MasterPlanLifecycle client={client}/>)
@@ -217,5 +268,6 @@ describe('Master plan version lifecycle',()=>{
   await screen.findByText('O banco bloqueou a exclusão porque o plano possui vínculos publicados ou ativos; desative o plano em vez de excluir.')
   expect(rpc).toHaveBeenCalledTimes(1)
   expect(screen.queryByRole('button',{name:'Verificar envio'})).not.toBeInTheDocument()
+  expect(screen.getByRole('button',{name:'Criar somente rascunho'})).toBeEnabled()
  })
 })

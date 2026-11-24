@@ -15,9 +15,9 @@ const codePattern=/^[a-z0-9][a-z0-9_-]{1,40}$/
 type Command=
  |{name:'create_master_plan_draft_idempotent';args:Record<string,unknown>;retryable:true;kind:'create_draft'}
  |{name:'publish_master_plan_draft_idempotent';args:Record<string,unknown>;retryable:true;kind:'publish'}
- |{name:'update_saas_plan_version_draft';args:Record<string,unknown>;retryable:true;kind:'update_draft'}
+ |{name:'update_saas_plan_version_draft';args:Record<string,unknown>;retryable:false;kind:'update_draft'}
  |{name:'create_saas_plan_successor_draft';args:Record<string,unknown>;retryable:false;kind:'create_successor'}
- |{name:'set_saas_plan_active';args:{p_plan_id:string;p_active:boolean;p_reason:string};retryable:true;kind:'set_active'}
+ |{name:'set_saas_plan_active';args:{p_plan_id:string;p_active:boolean;p_reason:string};retryable:false;kind:'set_active'}
  |{name:'delete_saas_plan_if_unused';args:{p_plan_id:string;p_reason:string};retryable:false;kind:'delete_plan'}
 
 function formatInputPrice(price:string|number):string{
@@ -92,6 +92,7 @@ export function MasterPlanLifecycle({
  const [revision,setRevision]=useState(0)
  const [pending,setPending]=useState(false)
  const [uncertain,setUncertain]=useState(false)
+ const [reconcileRequired,setReconcileRequired]=useState(false)
  const [error,setError]=useState('')
  const [success,setSuccess]=useState('')
 
@@ -106,7 +107,7 @@ export function MasterPlanLifecycle({
   setSuccessorPlanId('');setSuccDetailsError('')
   setGovernancePlanId('');setGovernanceReason('');setDeleteConfirm('')
   loadPlatformCommercialCatalog(client,controller.signal)
-   .then(res=>{if(live)setPlans(res.plans)})
+   .then(res=>{if(live){setPlans(res.plans);setReconcileRequired(false)}})
    .catch(()=>{if(live)setError('Não foi possível consultar as versões comerciais em rascunho.')})
   return()=>{live=false;controller.abort()}
  },[client,revision])
@@ -222,7 +223,7 @@ export function MasterPlanLifecycle({
     throw Error('Unconfirmed Master plan command')
    }
    if(mounted.current){
-    command.current=null;setUncertain(false)
+    command.current=null;setUncertain(false);setReconcileRequired(false)
     if(executed.kind==='create_draft'){
      setSuccess('Rascunho comercial confirmado. Ainda não está publicado.')
     }else if(executed.kind==='create_successor'){
@@ -245,7 +246,7 @@ export function MasterPlanLifecycle({
    if(!mounted.current)return
    const errCode=(e as {code?:string}|null)?.code??''
    if(['22023','23503','23505','23514','42501','28000','55000'].includes(errCode)){
-    command.current=null;setUncertain(false)
+    command.current=null;setUncertain(false);setReconcileRequired(false)
     if(errCode==='42501'||errCode==='28000'){
      setError('A operação exige perfil MASTER da plataforma e MFA ativo.')
     }else if(errCode==='55000'&&executed.kind==='delete_plan'){
@@ -257,14 +258,14 @@ export function MasterPlanLifecycle({
     setUncertain(true)
     setError('Não foi possível confirmar o resultado. Use Verificar envio para repetir a mesma chave e parâmetros.')
    }else{
-    command.current=null;setUncertain(false)
-    setError('Não foi possível confirmar o resultado na rede. Atualize os rascunhos antes de tentar novamente para evitar duplicidade.')
+    command.current=null;setUncertain(false);setReconcileRequired(true)
+    setError('Resultado de rede incerto para operação sem chave de idempotência. Clique em Atualizar rascunhos para reconciliar o estado atual antes de tentar nova ação.')
    }
   }finally{guard.current=false;if(mounted.current)setPending(false)}
  }
 
  function create(e:FormEvent<HTMLFormElement>){
-  e.preventDefault();if(pending||uncertain||!plans)return
+  e.preventDefault();if(pending||uncertain||reconcileRequired||!plans)return
   const d=new FormData(e.currentTarget),get=(n:string)=>String(d.get(n)??'').trim()
   try{
    const planCode=get('code').toLowerCase(),name=get('name')
@@ -284,7 +285,7 @@ export function MasterPlanLifecycle({
  }
 
  function createSuccessor(e:FormEvent<HTMLFormElement>){
-  e.preventDefault();if(pending||uncertain||!plans||succLoadingDetails||succDetailsError)return
+  e.preventDefault();if(pending||uncertain||reconcileRequired||!plans||succLoadingDetails||succDetailsError)return
   if(!selectedSuccessorPlan){setError('Selecione um plano base para criar a nova versão.');return}
   try{
    const parsed=parsePlanTerms({
@@ -301,7 +302,7 @@ export function MasterPlanLifecycle({
  }
 
  function updateDraft(e:FormEvent<HTMLFormElement>){
-  e.preventDefault();if(pending||uncertain||!plans||editLoadingDetails||editDetailsError)return
+  e.preventDefault();if(pending||uncertain||reconcileRequired||!plans||editLoadingDetails||editDetailsError)return
   if(!selectedEditDraft||selectedEditDraft.publication_status!=='draft'){
    setError('Selecione uma versão em rascunho válida para editar.');return
   }
@@ -314,7 +315,7 @@ export function MasterPlanLifecycle({
     priceRaw:editPrice,interval:editInterval,trialRaw:editTrial,
     graceRaw:editGrace,validFrom:editFrom,entitlementsRaw:editEntitlements,
    })
-   void run({name:'update_saas_plan_version_draft',retryable:true,kind:'update_draft',args:{
+   void run({name:'update_saas_plan_version_draft',retryable:false,kind:'update_draft',args:{
     p_plan_version_id:selectedEditDraft.plan_version_id,
     p_name:name,p_code:planCode,p_price:parsed.price,p_billing_interval:parsed.interval,
     p_trial_days:parsed.trial,p_grace_days:parsed.grace,p_valid_from:parsed.validFrom,
@@ -324,7 +325,7 @@ export function MasterPlanLifecycle({
  }
 
  function publish(e:FormEvent<HTMLFormElement>){
-  e.preventDefault();if(pending||uncertain||confirmation!=='PUBLICAR')return
+  e.preventDefault();if(pending||uncertain||reconcileRequired||confirmation!=='PUBLICAR')return
   const target=drafts.find(p=>p.plan_version_id===draft&&p.publication_status==='draft')
   if(!target){setError('O rascunho foi modificado. Atualize e tente novamente.');return}
   void run({name:'publish_master_plan_draft_idempotent',retryable:true,kind:'publish',args:{
@@ -333,13 +334,13 @@ export function MasterPlanLifecycle({
  }
 
  function togglePlanActive(){
-  if(pending||uncertain||!selectedGovernancePlan)return
+  if(pending||uncertain||reconcileRequired||!selectedGovernancePlan)return
   const reason=governanceReason.trim()
   if(reason.length<3||reason.length>300){
    setError('Informe o motivo (mínimo de 3 caracteres) para ativar ou desativar o plano.')
    return
   }
-  void run({name:'set_saas_plan_active',retryable:true,kind:'set_active',args:{
+  void run({name:'set_saas_plan_active',retryable:false,kind:'set_active',args:{
    p_plan_id:selectedGovernancePlan.plan_id,
    p_active:!selectedGovernancePlan.plan_active,
    p_reason:reason,
@@ -348,7 +349,7 @@ export function MasterPlanLifecycle({
 
  function deleteUnusedPlan(e:FormEvent<HTMLFormElement>){
   e.preventDefault()
-  if(pending||uncertain||!selectedGovernancePlan)return
+  if(pending||uncertain||reconcileRequired||!selectedGovernancePlan)return
   if(!selectedGovernancePlan.can_delete_plan){
    setError(formatPlanDeleteBlockReason(false,selectedGovernancePlan.delete_block_reason))
    return
@@ -364,17 +365,17 @@ export function MasterPlanLifecycle({
   }})
  }
 
- const locked=pending||uncertain
+ const locked=pending||uncertain||reconcileRequired
  const normalizedReason=governanceReason.trim()
  const canTogglePlan=Boolean(selectedGovernancePlan&&normalizedReason.length>=3&&normalizedReason.length<=300)
  const canDeletePlan=Boolean(canTogglePlan&&selectedGovernancePlan?.can_delete_plan&&deleteConfirm==='EXCLUIR')
 
  return <section className="panel member-editor" aria-label="Gerenciar rascunhos comerciais">
   <div className="section-title"><h3>Rascunhos e publicação de planos</h3>
-   <button className="secondary" type="button" disabled={locked}
-    onClick={()=>{setSuccess('');setRevision(v=>v+1)}}>Atualizar rascunhos</button>
+   <button className="secondary" type="button" disabled={pending||uncertain}
+    onClick={()=>{setSuccess('');setRevision(v=>v+1);if(reconcileRequired)onCatalogChange?.()}}>Atualizar rascunhos</button>
   </div>
-  <p className="subtle">Os comandos exigem MASTER com MFA. Criar ou editar um rascunho não altera assinaturas vigentes nem migra clientes. A publicação e a governança ficam registradas em auditoria.</p>
+  <p className="subtle">Os comandos exigem MASTER com MFA. Criar ou editar um rascunho não altera assinaturas vigentes nem migra clientes. Criação inicial idempotente, publicação, ativação/desativação e exclusão registram evento em saas_master_audit_logs; edição de rascunho e sucessora de plano registram autoria/atualização na versão.</p>
   {success&&<p role="status">{success}</p>}
   {error&&<p role="alert" className="message error">{error}</p>}
   {uncertain&&<button type="button" className="secondary" disabled={pending}
@@ -465,30 +466,32 @@ export function MasterPlanLifecycle({
      {selectedEditDraft&&<>
       {editLoadingDetails&&<p role="status">Carregando recursos do rascunho…</p>}
       {editDetailsError&&<p role="alert" className="message error">{editDetailsError}</p>}
-      <div className="member-form-grid">
-       <div><label htmlFor="master-plan-edit-code">Código interno do rascunho</label>
-        <input id="master-plan-edit-code" value={editCode} onChange={e=>setEditCode(e.target.value)} maxLength={41} required/></div>
-       <div><label htmlFor="master-plan-edit-name">Nome comercial do rascunho</label>
-        <input id="master-plan-edit-name" value={editName} onChange={e=>setEditName(e.target.value)} maxLength={120} required/></div>
-       <div><label htmlFor="master-plan-edit-price">Preço do rascunho (R$)</label>
-        <input id="master-plan-edit-price" value={editPrice} onChange={e=>setEditPrice(e.target.value)} required inputMode="decimal"/></div>
-       <div><label htmlFor="master-plan-edit-interval">Periodicidade do rascunho</label>
-        <select id="master-plan-edit-interval" value={editInterval} onChange={e=>setEditInterval(e.target.value)}>
-         <option value="monthly">Mensal</option><option value="yearly">Anual</option>
-         <option value="custom">Personalizada</option>
-        </select></div>
-       <div><label htmlFor="master-plan-edit-trial">Dias de teste do rascunho</label>
-        <input id="master-plan-edit-trial" type="number" min={0} max={365} value={editTrial} onChange={e=>setEditTrial(e.target.value)} required/></div>
-       <div><label htmlFor="master-plan-edit-grace">Dias de tolerância do rascunho</label>
-        <input id="master-plan-edit-grace" type="number" min={0} max={365} value={editGrace} onChange={e=>setEditGrace(e.target.value)} required/></div>
-       <div><label htmlFor="master-plan-edit-from">Competência inicial do rascunho</label>
-        <input id="master-plan-edit-from" type="month" value={editFrom} onChange={e=>setEditFrom(e.target.value)} required/></div>
-      </div>
-      <label htmlFor="master-plan-edit-entitlements">Recursos do rascunho (JSON)</label>
-      <textarea id="master-plan-edit-entitlements" value={editEntitlements} onChange={e=>setEditEntitlements(e.target.value)} rows={3} required/>
-      <button className="primary" type="submit" disabled={locked||editLoadingDetails||Boolean(editDetailsError)}>
-       Salvar alterações do rascunho
-      </button>
+      <fieldset disabled={locked||editLoadingDetails||Boolean(editDetailsError)}>
+       <div className="member-form-grid">
+        <div><label htmlFor="master-plan-edit-code">Código interno do rascunho</label>
+         <input id="master-plan-edit-code" value={editCode} onChange={e=>setEditCode(e.target.value)} maxLength={41} required/></div>
+        <div><label htmlFor="master-plan-edit-name">Nome comercial do rascunho</label>
+         <input id="master-plan-edit-name" value={editName} onChange={e=>setEditName(e.target.value)} maxLength={120} required/></div>
+        <div><label htmlFor="master-plan-edit-price">Preço do rascunho (R$)</label>
+         <input id="master-plan-edit-price" value={editPrice} onChange={e=>setEditPrice(e.target.value)} required inputMode="decimal"/></div>
+        <div><label htmlFor="master-plan-edit-interval">Periodicidade do rascunho</label>
+         <select id="master-plan-edit-interval" value={editInterval} onChange={e=>setEditInterval(e.target.value)}>
+          <option value="monthly">Mensal</option><option value="yearly">Anual</option>
+          <option value="custom">Personalizada</option>
+         </select></div>
+        <div><label htmlFor="master-plan-edit-trial">Dias de teste do rascunho</label>
+         <input id="master-plan-edit-trial" type="number" min={0} max={365} value={editTrial} onChange={e=>setEditTrial(e.target.value)} required/></div>
+        <div><label htmlFor="master-plan-edit-grace">Dias de tolerância do rascunho</label>
+         <input id="master-plan-edit-grace" type="number" min={0} max={365} value={editGrace} onChange={e=>setEditGrace(e.target.value)} required/></div>
+        <div><label htmlFor="master-plan-edit-from">Competência inicial do rascunho</label>
+         <input id="master-plan-edit-from" type="month" value={editFrom} onChange={e=>setEditFrom(e.target.value)} required/></div>
+       </div>
+       <label htmlFor="master-plan-edit-entitlements">Recursos do rascunho (JSON)</label>
+       <textarea id="master-plan-edit-entitlements" value={editEntitlements} onChange={e=>setEditEntitlements(e.target.value)} rows={3} required/>
+       <button className="primary" type="submit" disabled={locked||editLoadingDetails||Boolean(editDetailsError)}>
+        Salvar alterações do rascunho
+       </button>
+      </fieldset>
      </>}
     </fieldset>
    </form>

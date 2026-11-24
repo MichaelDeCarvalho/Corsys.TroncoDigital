@@ -14,9 +14,9 @@ const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i
 
 type Command=
  |{name:'create_master_promotion_draft_idempotent'|'create_master_promotion_successor_idempotent';args:Record<string,unknown>;retryable:true;kind:'create_draft'}
- |{name:'update_saas_promotion_draft';args:Record<string,unknown>;retryable:true;kind:'update_draft'}
+ |{name:'update_saas_promotion_draft';args:Record<string,unknown>;retryable:false;kind:'update_draft'}
  |{name:'publish_master_promotion_draft_idempotent';args:Record<string,unknown>;retryable:true;kind:'publish'}
- |{name:'set_saas_promotion_series_active';args:{p_promotion_series_id:string;p_active:boolean;p_reason:string};retryable:true;kind:'set_active'}
+ |{name:'set_saas_promotion_series_active';args:{p_promotion_series_id:string;p_active:boolean;p_reason:string};retryable:false;kind:'set_active'}
  |{name:'delete_saas_promotion_series_if_unused';args:{p_promotion_series_id:string;p_reason:string};retryable:false;kind:'delete_series'}
 
 function when(input:string):string{
@@ -77,7 +77,8 @@ export function MasterPromotions({
  const [draft,setDraft]=useState(''),[confirmed,setConfirmed]=useState('')
  const [sourcePromotion,setSourcePromotion]=useState('')
  const [revision,setRevision]=useState(0),[pending,setPending]=useState(false)
- const [uncertain,setUncertain]=useState(false),[error,setError]=useState(''),[success,setSuccess]=useState('')
+ const [uncertain,setUncertain]=useState(false),[reconcileRequired,setReconcileRequired]=useState(false)
+ const [error,setError]=useState(''),[success,setSuccess]=useState('')
  const [duration,setDuration]=useState('once')
 
  const [editPromotionId,setEditPromotionId]=useState('')
@@ -109,7 +110,7 @@ export function MasterPromotions({
   setEditPromotionId('');setEditDetailsError('')
   setGovernanceSeriesId('');setGovernanceReason('');setDeleteConfirm('')
   loadPlatformCommercialCatalog(client,abort.signal)
-   .then(res=>{if(active){setPromotions(res.promotions);setDraft('');setConfirmed('')}})
+   .then(res=>{if(active){setPromotions(res.promotions);setDraft('');setConfirmed('');setReconcileRequired(false)}})
    .catch(()=>{if(active)setError('Não foi possível consultar rascunhos de ofertas no Master.')})
   return()=>{active=false;abort.abort()}
  },[client,revision])
@@ -178,7 +179,7 @@ export function MasterPromotions({
     throw Error('Master promotion command unconfirmed')
    }
    if(mounted.current){
-    cmd.current=null;setUncertain(false)
+    cmd.current=null;setUncertain(false);setReconcileRequired(false)
     if(executed.kind==='create_draft'){
      setSuccess('Rascunho promocional confirmado. A oferta ainda não está publicada.')
     }else if(executed.kind==='update_draft'){
@@ -199,7 +200,7 @@ export function MasterPromotions({
    if(!mounted.current)return
    const code=(e as {code?:string}|null)?.code??''
    if(['22023','23503','23505','23514','42501','28000','55000','PT409'].includes(code)){
-    cmd.current=null;setUncertain(false)
+    cmd.current=null;setUncertain(false);setReconcileRequired(false)
     if(code==='PT409'){
      setError('A oferta foi alterada. Atualize o catálogo antes de criar uma nova versão.')
     }else if(code==='42501'||code==='28000'){
@@ -212,15 +213,15 @@ export function MasterPromotions({
    }else if(executed.retryable){
     setUncertain(true);setError('Resposta não confirmada. Verifique o envio para repetir a mesma chave e parâmetros.')
    }else{
-    cmd.current=null;setUncertain(false)
-    setError('Não foi possível confirmar a operação na rede. Atualize as ofertas antes de tentar novamente.')
+    cmd.current=null;setUncertain(false);setReconcileRequired(true)
+    setError('Resultado de rede incerto para operação sem chave de idempotência. Clique em Atualizar ofertas para reconciliar o estado atual antes de tentar nova ação.')
    }
   }finally{guard.current=false;if(mounted.current)setPending(false)}
  }
 
  function create(event:FormEvent<HTMLFormElement>){
   event.preventDefault()
-  if(pending||uncertain||!promotions)return
+  if(pending||uncertain||reconcileRequired||!promotions)return
   const data=new FormData(event.currentTarget),get=(key:string)=>String(data.get(key)??'').trim()
   try{
    const fields=parsePromotionFields({
@@ -244,7 +245,7 @@ export function MasterPromotions({
 
  function updateDraft(event:FormEvent<HTMLFormElement>){
   event.preventDefault()
-  if(pending||uncertain||!promotions||editLoadingDetails||editDetailsError)return
+  if(pending||uncertain||reconcileRequired||!promotions||editLoadingDetails||editDetailsError)return
   if(!selectedEditDraft||selectedEditDraft.latest_version_status!=='draft'){
    setError('Selecione uma oferta em rascunho válida para editar.')
    return
@@ -258,7 +259,7 @@ export function MasterPromotions({
    })
    void run({
     name:'update_saas_promotion_draft',
-    retryable:true,
+    retryable:false,
     kind:'update_draft',
     args:{
      p_promotion_id:selectedEditDraft.latest_promotion_id,
@@ -270,7 +271,7 @@ export function MasterPromotions({
 
  function publish(event:FormEvent<HTMLFormElement>){
   event.preventDefault()
-  if(pending||uncertain||confirmed!=='PUBLICAR')return
+  if(pending||uncertain||reconcileRequired||confirmed!=='PUBLICAR')return
   const selected=drafts.find(p=>p.latest_promotion_id===draft&&p.latest_version_status==='draft')
   if(!selected){setError('O rascunho mudou. Atualize o catálogo.');return}
   void run({
@@ -284,7 +285,7 @@ export function MasterPromotions({
  }
 
  function toggleSeriesActive(){
-  if(pending||uncertain||!selectedGovernanceSeries)return
+  if(pending||uncertain||reconcileRequired||!selectedGovernanceSeries)return
   const reason=governanceReason.trim()
   if(reason.length<3||reason.length>300){
    setError('Informe o motivo (mínimo de 3 caracteres) para ativar ou desativar a série de oferta.')
@@ -292,7 +293,7 @@ export function MasterPromotions({
   }
   void run({
    name:'set_saas_promotion_series_active',
-   retryable:true,
+   retryable:false,
    kind:'set_active',
    args:{
     p_promotion_series_id:selectedGovernanceSeries.promotion_series_id,
@@ -304,7 +305,7 @@ export function MasterPromotions({
 
  function deleteUnusedSeries(event:FormEvent<HTMLFormElement>){
   event.preventDefault()
-  if(pending||uncertain||!selectedGovernanceSeries)return
+  if(pending||uncertain||reconcileRequired||!selectedGovernanceSeries)return
   if(!selectedGovernanceSeries.can_delete){
    setError(formatPromotionDeleteBlockReason(false,selectedGovernanceSeries.delete_block_reason))
    return
@@ -325,17 +326,17 @@ export function MasterPromotions({
   })
  }
 
- const locked=pending||uncertain
+ const locked=pending||uncertain||reconcileRequired
  const normalizedReason=governanceReason.trim()
  const canToggleSeries=Boolean(selectedGovernanceSeries&&normalizedReason.length>=3&&normalizedReason.length<=300)
  const canDeleteSeries=Boolean(canToggleSeries&&selectedGovernanceSeries?.can_delete&&deleteConfirm==='EXCLUIR')
 
  return <section className="panel member-editor" aria-label="Operar ofertas Master">
   <div className="section-title"><h3>Rascunhos e publicação de ofertas</h3>
-   <button className="secondary" type="button" disabled={locked}
-    onClick={()=>{setSuccess('');setRevision(v=>v+1)}}>Atualizar ofertas</button>
+   <button className="secondary" type="button" disabled={pending||uncertain}
+    onClick={()=>{setSuccess('');setRevision(v=>v+1);if(reconcileRequired)onCatalogChange?.()}}>Atualizar ofertas</button>
   </div>
-  <p className="subtle">Operações restritas ao MASTER com MFA. Criar ou editar rascunho não concede benefício nem altera contratos existentes. Ofertas publicadas só evoluem por nova versão sucessora.</p>
+  <p className="subtle">Operações restritas ao MASTER com MFA. Criar ou editar rascunho não concede benefício nem altera contratos existentes. Criação/sucessora idempotente, publicação, ativação/desativação e exclusão registram evento em saas_master_audit_logs; edição de rascunho atualiza updated_at na versão.</p>
   {success&&<p role="status">{success}</p>}
   {error&&<p role="alert" className="message error">{error}</p>}
   {uncertain&&<button type="button" disabled={pending} className="secondary"

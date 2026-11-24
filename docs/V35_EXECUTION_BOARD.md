@@ -1,3 +1,11 @@
+## M06.02 — Correção de integridade no Ciclo de Vida Comercial (`view-master-planos`, 24/11/2026)
+
+- **F1 (sem reenvio cego em RPCs não idempotentes):** `update_saas_plan_version_draft`, `set_saas_plan_active`, `update_saas_promotion_draft` e `set_saas_promotion_series_active` agora operam com `retryable: false`; em resultado de rede incerto, exigem reconciliação via `Atualizar rascunhos` / `Atualizar ofertas` com bloqueio de novas gravações até recarga bem-sucedida, preservando `p_idempotency_key` nos comandos `*_idempotent`.
+- **F2 (fail-closed em entitlements):** `loadPlanVersionEntitlements` rejeita linhas sem ou com `plan_version_id` diverso, chaves inválidas/duplicadas e payloads truncados (`> 200`), mantendo o formulário de edição travado.
+- **F3 (auditoria SQL sem nova migration):** conferido nas migrations versionadas que criação/sucessora de promoção, criação inicial de plano, publicação, ativação/desativação e exclusão gravam em `saas_master_audit_logs`, enquanto `update_saas_plan_version_draft`, `create_saas_plan_successor_draft` e `update_saas_promotion_draft` mantêm apenas autoria/timestamp na versão sem trigger de auditoria. **M06.02 permanece `EM_EXECUCAO`.**
+
+---
+
 ## M06.02 — Planos SaaS (`view-master-planos`): PASS visual da apresentação e Ciclo de Vida Comercial Completo (24/11/2026)
 
 - **Reconciliação (`6585c1e6`):** CI **`45474973273`** **3/3 PASS** (**609/609 testes**), Workers Builds DEV **SUCCESS** e **PASS visual** pelo Work no recorte de apresentação de Planos SaaS (`view-master-planos`), sem promover a tela integral a `HOMOLOGADO_DEV`.

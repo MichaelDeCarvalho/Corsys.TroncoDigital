@@ -1,3 +1,36 @@
+## M06.02 — Correção de integridade no Ciclo de Vida Comercial (`view-master-planos`, 24/11/2026)
+
+**Correções de integridade F1, F2 e conferência documental F3 CONCLUÍDAS localmente no Gemini sobre a base `67cd89daa943ada01fad9d9638c796ed64e11d46` (CI `45480497365` 3/3 PASS, 617/617 testes). Nenhuma migration SQL criada; `view-master-planos` permanece `IMPLEMENTADO_E_TESTADO` e `M06.02` segue `EM_EXECUCAO`.**
+
+### 1. F1 — Eliminação de reenvio cego em RPCs sem chave de idempotência (`MasterPlanLifecycle.tsx`, `MasterPromotions.tsx`)
+- As quatro RPCs sem `p_idempotency_key` (`update_saas_plan_version_draft`, `set_saas_plan_active`, `update_saas_promotion_draft`, `set_saas_promotion_series_active`) passaram para `retryable: false` (além de `create_saas_plan_successor_draft`, `delete_saas_plan_if_unused` e `delete_saas_promotion_series_if_unused`, já não reenviáveis).
+- Em falha de transporte com resultado incerto nessas operações: **nenhum** botão `Verificar envio` ou repetição cega é oferecido; o estado entra em `reconcileRequired: true`, todos os formulários de mutação permanecem travados (`locked = pending || uncertain || reconcileRequired`) e é exigida atualização explícita via `Atualizar rascunhos` / `Atualizar ofertas`, que só destrava quando `loadPlatformCommercialCatalog` conclui com sucesso.
+- Preservados intactos: reenvio com a mesma `p_idempotency_key` nos comandos `*_idempotent` (`create_master_plan_draft_idempotent`, `publish_master_plan_draft_idempotent`, `create_master_promotion_draft_idempotent`, `create_master_promotion_successor_idempotent`, `publish_master_promotion_draft_idempotent`), guarda de concorrência (`guard.current`) e distinção entre rejeição determinística do banco (`22023`, `23503`, `23505`, `23514`, `42501`, `28000`, `55000`, `PT409`) e falha de rede incerta.
+
+### 2. F2 — Leitura fail-closed dos entitlements (`src/lib/master-commercial.ts`)
+- Removido o `continue` silencioso em `loadPlanVersionEntitlements`: o cliente agora exige projeção explícita `.select('plan_version_id,entitlement_key,entitlement_value')` e `.limit(201)` (rejeitando `> 200` linhas).
+- Falha fechada (exceção) se qualquer linha não for objeto válido, vier sem ou com `plan_version_id !== planVersionId`, tiver `entitlement_key` vazio/com espaços nas bordas/`> 120` chars/`__proto__`/`constructor`/`prototype`, tiver `entitlement_value === undefined` ou chave duplicada (`seenKeys`).
+- Em leitura parcial/inconsistente na edição de rascunho de plano (`MasterPlanLifecycle.tsx`), campos e botão `Salvar alterações do rascunho` permanecem desabilitados (`<fieldset disabled={locked || editLoadingDetails || Boolean(editDetailsError)}>`).
+
+### 3. F3 — Conferência documental da auditoria em SQL (`supabase/migrations/`)
+- **Gravam explicitamente em `public.saas_master_audit_logs`:**
+  - `create_master_plan_draft_idempotent` → `'saas_plan_version.draft_created'` (`20261010010836`)
+  - `publish_master_plan_draft_idempotent` → `publish_saas_plan_version` → `'saas_plan_version.publish'` (`20261002202107`)
+  - `set_saas_plan_active` → `'saas_plan.reactivate'` / `'saas_plan.deactivate'` (`20261002202107`)
+  - `delete_saas_plan_if_unused` → `'saas_plan.delete_unused'` (`20261002202107`)
+  - `create_master_promotion_draft_idempotent` → `'saas_promotion.draft_created'` (`20261010210329`)
+  - `create_master_promotion_successor_idempotent` → `'saas_promotion.successor_draft'` (`20261010211529`, preservado em `20261019205415`)
+  - `publish_master_promotion_draft_idempotent` → `'saas_promotion.published'` (`20261010210329`)
+  - `set_saas_promotion_series_active` → `'saas_promotion.reactivate'` / `'saas_promotion.deactivate'` (`20261002202107`, além de `saas_promotion_series_state`)
+  - `delete_saas_promotion_series_if_unused` → `'saas_promotion.delete_unused'` (`20261002202107`)
+- **NÃO gravam em `public.saas_master_audit_logs` (sem `INSERT` explícito e sem trigger de auditoria):**
+  - `update_saas_plan_version_draft` (`20261002202107:89-174`): atualiza colunas + substitui entitlements e aciona apenas triggers de `updated_at` / guarda de versão publicada.
+  - `create_saas_plan_successor_draft` (`20261002202107:176-223`): grava `created_by = auth.uid()` na nova versão em `saas_plan_versions`, sem registro em `saas_master_audit_logs`.
+  - `update_saas_promotion_draft` (`20261002202107:518-565`): atualiza rascunho de oferta e aciona apenas `saas_promotions_set_updated_at` e `saas_promotions_published_terms_guard`.
+- Textos da interface em `MasterPlanLifecycle.tsx` e `MasterPromotions.tsx` ajustados para descrever fielmente esse recorte sem criar novas migrations.
+
+---
+
 ## M06.02 — Planos SaaS (`view-master-planos`): PASS visual da apresentação e Ciclo de Vida Comercial Completo (24/11/2026)
 
 **Paridade visual de apresentação em Planos SaaS (`view-master-planos`) com PASS pelo Work no recorte disponível da revisão `6585c1e62b6b472299948b93925c39b6895f2a7a` (sem promover a tela integral a HOMOLOGADO_DEV); Ciclo de Vida Comercial Completo de Planos e Ofertas (`view-master-planos`) IMPLEMENTADO E TESTADO localmente no Gemini sobre RPCs reais já existentes no DEV (CI pós-push e QA autenticado DEV pendentes); M06.02 geral segue EM_EXECUCAO.**
