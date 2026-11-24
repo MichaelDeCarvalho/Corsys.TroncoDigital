@@ -1,3 +1,22 @@
+## M06.02 — Fluxo de Caixa (aviso Projetado encerrado) e Paridade de Apresentação em Planos SaaS (24/11/2026)
+
+**Aviso do modo Projetado (`view-fluxo-caixa`) CONCLUÍDO no recorte visual; Paridade de apresentação em Planos SaaS (`view-master-planos`) IMPLEMENTADA E TESTADA localmente no Gemini (CI pós-push e QA autenticado DEV pendentes); M06.02 geral segue EM_EXECUCAO.**
+
+### 1. Consolidação do aviso Projetado (`view-fluxo-caixa`)
+- **Revisão aplicada:** `34291d4945bb01659c5c11dbbd877ac2e06e961d` (`34291d4`), CI [45463715864](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/45463715864) **3/3 PASS**, Workers Builds DEV **SUCCESS**.
+- **Homologação visual em navegador real (proprietário/DEV):** **PASS em 390 px e 1024 px** com fundo escuro `var(--surface-2)` em `src/components/FluxoCaixa.tsx`, texto preservado e período preservado de **02/11/2026 a 24/11/2026** nas trocas de modo (fechado sem PR documental isolado).
+
+### 2. Paridade de apresentação em Planos SaaS (`view-master-planos`, base `34291d4945bb01659c5c11dbbd877ac2e06e961d`)
+- **Entrega A — Terminologia comercial (`src/lib/master-commercial.ts`, `src/components/MasterCommercialCatalog.tsx`):** tradução determinística no catálogo de versões e filtros sem alterar valores técnicos subjacentes (`monthly` → `Mensal`, `yearly` → `Anual`, `custom` → `Personalizada`, `current` → `Vigente para novas contratações`, `future` → `Publicada futura`, `historical` → `Histórica / contratos existentes`, `draft` → `Rascunho`, `inactive` → `Plano desativado`) e mapeamento seguro para estados não reconhecidos (`Periodicidade não reconhecida`, `Situação não reconhecida`, `Publicação não reconhecida`, `Status não reconhecido`) e motivos de bloqueio de exclusão (`can_delete_plan`/`can_delete`).
+- **Entrega B — Cards comerciais com dados reais (`src/components/MasterCommercialCatalog.tsx`):** adicionados cards responsivos (`.master-config-grid` / `.master-config-card`) para versões de planos visíveis após filtros (identificação do plano/código interno, versão e status de publicação, preço e moeda, periodicidade, situação administrativa, vigência, dias de trial/tolerância e regra de exclusão) e cards de séries de ofertas/promoções (nome/código público, versão, status, vigência, resgates confirmados e regra de exclusão), preservando integralmente os formulários reais `MasterPlanLifecycle` e `MasterPromotions`, os filtros `valid_from`/status, contagem e limpeza, além das notas contratuais V35 (`Regra contratual` e `Boa prática comercial`).
+- **Entrega C — Lacunas documentadas (sem invenção de dados ou botões inativos):**
+  - Coluna **Usuários** no histórico: **não exibida** porque `public.v_saas_plan_version_admin` não expõe limite estruturado de usuários (`saas_plan_version_entitlements` é JSONB livre e não é consultada pelo catálogo somente leitura).
+  - Coluna **Ações por linha** e botões de demonstração (`Editar`, `Publicar` por linha, `Criar sucessora` para planos, `Desativar/Reativar`, `Excluir`): **não adicionados** na tabela somente leitura; criação de rascunho e publicação idempotente com confirmação `PUBLICAR` permanecem nos fluxos protegidos de `MasterPlanLifecycle` e `MasterPromotions`, sem alterar RPCs, banco ou consultas.
+- **Verificações locais no Gemini:** `npx vitest run src/components/MasterCommercialCatalog.test.tsx src/components/MasterPlanLifecycle.test.tsx src/components/MasterPromotions.test.tsx src/components/FluxoCaixa.test.tsx` → **4 arquivos / 22 testes PASS (exit 0)** (`MasterCommercialCatalog.test.tsx` 7/7, `MasterPlanLifecycle.test.tsx` 5/5, `MasterPromotions.test.tsx` 6/6, `FluxoCaixa.test.tsx` 4/4); `typecheck` e `vite build` aprovados.
+- **Limitações:** suíte integral (`npm run check`) e homologação visual autenticada DEV pós-push permanecem **PENDENTES** (a confirmar via GitHub Actions após sync/push e navegador real no DEV).
+
+---
+
 ## M06.02 — Configurações da Plataforma: homologação residual somente leitura concluída (24/11/2026)
 
 **Recorte de leitura CONCLUIDO; M06.02 geral EM_EXECUCAO e tela integral não promovida a HOMOLOGADO_DEV.** Homologação real pelo navegador Work no Cloudflare DEV, sessão Master existente aceita pela área AAL2. Sem novo login, inspeção de tokens, alteração funcional ou escrita no banco. A indisponibilidade anterior do navegador foi superada nesta sessão.

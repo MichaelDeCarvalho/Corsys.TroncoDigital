@@ -54,3 +54,64 @@ export async function loadPlatformCommercialCatalog(client:SupabaseClient,signal
  }
  return {plans:plans.data as PlatformPlanVersion[],promotions:promotions.data as PlatformPromotion[]}
 }
+
+export function formatBillingInterval(interval:string):string{
+ if(interval==='monthly')return 'Mensal'
+ if(interval==='yearly')return 'Anual'
+ if(interval==='custom')return 'Personalizada'
+ return 'Periodicidade não reconhecida'
+}
+
+export function resolveEffectivePlanStatus(plan:Pick<PlatformPlanVersion,'plan_active'|'admin_status'>):string{
+ return plan.plan_active?plan.admin_status:'inactive'
+}
+
+export function formatPlanAdminStatus(plan:Pick<PlatformPlanVersion,'plan_active'|'admin_status'>):string{
+ const status=resolveEffectivePlanStatus(plan)
+ if(status==='current')return 'Vigente para novas contratações'
+ if(status==='future')return 'Publicada futura'
+ if(status==='historical')return 'Histórica / contratos existentes'
+ if(status==='draft')return 'Rascunho'
+ if(status==='inactive')return 'Plano desativado'
+ return 'Situação não reconhecida'
+}
+
+export function formatPlanPublicationStatus(status:string):string{
+ if(status==='draft')return 'Rascunho'
+ if(status==='published')return 'Publicada'
+ return 'Publicação não reconhecida'
+}
+
+export function formatPlanDeleteBlockReason(canDelete:boolean,reason:string|null):string{
+ if(canDelete)return 'Exclusão permitida (sem vínculos)'
+ if(reason==='published_version_exists'||reason==='published')return 'Exclusão bloqueada: possui versão publicada'
+ if(reason==='subscription_exists')return 'Exclusão bloqueada: possui assinatura vinculada'
+ if(reason==='onboarding_link_exists')return 'Exclusão bloqueada: possui onboarding vinculado'
+ if(reason==='promotion_link_exists')return 'Exclusão bloqueada: possui oferta vinculada'
+ if(reason==='scheduled_change_exists')return 'Exclusão bloqueada: possui mudança agendada'
+ return 'Exclusão bloqueada por vínculo contratual'
+}
+
+export function formatPromotionStatus(promotion:Pick<PlatformPromotion,'active'|'latest_version_status'>):string{
+ if(!promotion.active)return 'Inativa'
+ if(promotion.latest_version_status==='published')return 'Publicada'
+ if(promotion.latest_version_status==='draft')return 'Rascunho'
+ if(promotion.latest_version_status==='retired')return 'Encerrada'
+ return 'Status não reconhecido'
+}
+
+export function formatPromotionValidity(validFrom:string|null,validTo:string|null):string{
+ if(!validFrom)return 'Vigência não informada'
+ const from=validFrom.slice(0,10)
+ const to=validTo?validTo.slice(0,10):null
+ return to?`${from} a ${to}`:`${from} em diante`
+}
+
+export function formatPromotionDeleteBlockReason(canDelete:boolean,reason:string|null):string{
+ if(canDelete)return 'Exclusão permitida (sem uso)'
+ if(reason==='published_history_exists')return 'Exclusão bloqueada: possui histórico publicado'
+ if(reason==='redemption_exists'||reason==='used')return 'Exclusão bloqueada: possui resgates registrados'
+ if(reason==='customer_link_exists')return 'Exclusão bloqueada: possui clientes vinculados'
+ if(reason==='invoice_adjustment_exists')return 'Exclusão bloqueada: possui ajuste em fatura'
+ return 'Exclusão bloqueada por vínculo comercial'
+}

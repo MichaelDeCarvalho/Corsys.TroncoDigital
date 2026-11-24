@@ -1,3 +1,14 @@
+## M06.02 — Fluxo de Caixa (aviso Projetado encerrado) e Paridade de Apresentação em Planos SaaS (24/11/2026)
+
+- **Encerramento visual do aviso Projetado (`view-fluxo-caixa`):** commit **`34291d4945bb01659c5c11dbbd877ac2e06e961d`** (`34291d4`), CI **`45463715864`** **3/3 PASS**, Workers Builds DEV **SUCCESS**, homologação visual **PASS em 390 e 1024 px** com período preservado de **02/11/2026 a 24/11/2026** entre modos. Encerrado neste incremento consolidado, sem PR documental isolado.
+- **Planos SaaS (`view-master-planos`, base `34291d4`):**
+  - **Entrega A:** rótulos comerciais legíveis no catálogo e filtro (`Mensal`, `Anual`, `Personalizada`, `Vigente para novas contratações`, `Publicada futura`, `Histórica / contratos existentes`, `Rascunho`, `Plano desativado`, mais motivos de bloqueio de exclusão) e fallbacks neutros para estados desconhecidos, preservando valores técnicos e filtros.
+  - **Entrega B:** adicionados cards responsivos de leitura para versões de planos visíveis e séries de ofertas com dados reais (`v_saas_plan_version_admin`, `v_saas_promotion_series_admin`) + avisos contratuais V35, mantendo `MasterPlanLifecycle`, `MasterPromotions`, tabela histórica e filtros intactos.
+  - **Entrega C (lacunas mantidas sem dados fictícios):** colunas `Usuários` e `Ações` por linha permanecem omitidas na tabela histórica porque a view administrativa não expõe limite estruturado de usuários nem existem ações por linha fora dos formulários idempotentes existentes.
+- **Testes no Gemini:** `MasterCommercialCatalog` **7/7**, `MasterPlanLifecycle` **5/5**, `MasterPromotions` **6/6**, `FluxoCaixa` **4/4** (**22/22 PASS, exit 0**); `typecheck` e `vite build` PASS. Pendentes: CI integral após push e QA visual autenticado DEV de Planos SaaS.
+
+---
+
 ## M06.02 — Configurações da Plataforma: homologação residual somente leitura concluída (24/11/2026)
 
 **Recorte de leitura CONCLUIDO; M06.02 geral EM_EXECUCAO e tela integral não promovida a HOMOLOGADO_DEV.** Homologação real pelo navegador Work no Cloudflare DEV, sessão Master existente aceita pela área AAL2. Sem novo login, inspeção de tokens, alteração funcional ou escrita no banco. A indisponibilidade anterior do navegador foi superada nesta sessão.

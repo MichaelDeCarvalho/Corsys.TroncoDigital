@@ -1,3 +1,12 @@
+## M06.02 — Fluxo de Caixa (aviso Projetado encerrado) e Paridade de Apresentação em Planos SaaS (24/11/2026)
+
+- **Fluxo de Caixa (`view-fluxo-caixa` — aviso Projetado):** **CONCLUÍDO** no recorte visual sobre o commit **`34291d4`** (`34291d4945bb01659c5c11dbbd877ac2e06e961d`), CI **`45463715864`** **3/3 PASS**, Workers Builds DEV **SUCCESS** e homologação visual **PASS em 390 e 1024 px** com período preservado de **02/11 a 24/11/2026** (consolidado diretamente sem PR documental isolado).
+- **Planos SaaS (`view-master-planos` — paridade de apresentação):** **IMPLEMENTADO E TESTADO no Gemini** sobre **`34291d4`**: rótulos comerciais legíveis (`Mensal`/`Anual`/`Personalizada` e situações de versão/oferta com tratamento neutro para desconhecidos), cards comerciais responsivos de planos e ofertas baseados exclusivamente nos campos reais retornados por `v_saas_plan_version_admin` e `v_saas_promotion_series_admin`, preservação dos formulários `MasterPlanLifecycle`/`MasterPromotions` e filtros `valid_from`/status.
+- **Lacunas documentadas (Entrega C):** colunas `Usuários` (não fornecida pela view) e `Ações` por linha (operações seguem nos formulários idempotentes com `PUBLICAR`) permanecem documentadas, sem dados simulados ou botões inativos.
+- **Verificações locais:** Vitest focado **22/22 PASS (exit 0)** (`MasterCommercialCatalog` 7/7, `MasterPlanLifecycle` 5/5, `MasterPromotions` 6/6, `FluxoCaixa` 4/4), `typecheck` PASS e `vite build` PASS. **M06.02 geral segue EM_EXECUCAO** aguardando sync/push, CI integral no GitHub Actions e QA autenticado DEV.
+
+---
+
 ## M06.02 — Configurações da Plataforma: homologação residual somente leitura concluída (24/11/2026)
 
 **Recorte de leitura CONCLUIDO; M06.02 geral EM_EXECUCAO e tela integral não promovida a HOMOLOGADO_DEV.** Homologação real pelo navegador Work no Cloudflare DEV, sessão Master existente aceita pela área AAL2. Sem novo login, inspeção de tokens, alteração funcional ou escrita no banco. A indisponibilidade anterior do navegador foi superada nesta sessão.
