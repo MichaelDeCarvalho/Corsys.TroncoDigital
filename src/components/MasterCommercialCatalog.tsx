@@ -51,8 +51,8 @@ export function MasterCommercialCatalog({client}:{client:SupabaseClient}){
   setHistoryStatus('all')
  }
  return <>
-  <MasterPlanLifecycle client={client}/>
-  <MasterPromotions client={client}/>
+  <MasterPlanLifecycle client={client} onCatalogChange={()=>setRevision(v=>v+1)}/>
+  <MasterPromotions client={client} onCatalogChange={()=>setRevision(v=>v+1)}/>
   <section className="panel" aria-label="Catálogo comercial Master">
   <div className="section-title"><h2>Planos e ofertas comerciais</h2>
    <button className="secondary" type="button" onClick={()=>setRevision(v=>v+1)}>Atualizar catálogo</button>

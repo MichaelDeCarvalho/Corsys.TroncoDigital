@@ -135,4 +135,20 @@ describe('Master commercial version history',()=>{
   expect(within(planTable).queryByText('weekly_unknown')).not.toBeInTheDocument()
   expect(within(planTable).queryByText('unexpected_admin_state')).not.toBeInTheDocument()
  })
+ it('reloads the commercial catalog when a lifecycle governance mutation succeeds',async()=>{
+  const baseFrom=fixture().from
+  const rpc=vi.fn().mockResolvedValue({data:plan.plan_id,error:null})
+  const client={from:baseFrom,rpc} as unknown as SupabaseClient
+  render(<MasterCommercialCatalog client={client}/>)
+  await screen.findByText('Plano ESSENCIAL')
+  const initialCalls=baseFrom.mock.calls.length
+  fireEvent.change(screen.getByLabelText('Plano para ativação ou exclusão'),{target:{value:plan.plan_id}})
+  fireEvent.change(screen.getByLabelText('Motivo da alteração do plano'),{target:{value:'Revisão de portfólio'}})
+  fireEvent.click(screen.getByRole('button',{name:'Desativar plano'}))
+  await screen.findByText('Plano desativado com confirmação. Assinaturas e histórico publicados foram preservados.')
+  expect(rpc).toHaveBeenCalledWith('set_saas_plan_active',{
+   p_plan_id:plan.plan_id,p_active:false,p_reason:'Revisão de portfólio',
+  })
+  expect(baseFrom.mock.calls.length).toBeGreaterThan(initialCalls)
+ })
 })

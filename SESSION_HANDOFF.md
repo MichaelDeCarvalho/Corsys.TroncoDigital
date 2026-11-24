@@ -1,3 +1,30 @@
+## M06.02 — Planos SaaS (`view-master-planos`): PASS visual da apresentação e Ciclo de Vida Comercial Completo (24/11/2026)
+
+**Paridade visual de apresentação em Planos SaaS (`view-master-planos`) com PASS pelo Work no recorte disponível da revisão `6585c1e62b6b472299948b93925c39b6895f2a7a` (sem promover a tela integral a HOMOLOGADO_DEV); Ciclo de Vida Comercial Completo de Planos e Ofertas (`view-master-planos`) IMPLEMENTADO E TESTADO localmente no Gemini sobre RPCs reais já existentes no DEV (CI pós-push e QA autenticado DEV pendentes); M06.02 geral segue EM_EXECUCAO.**
+
+### 1. Reconciliação de estado anterior (`6585c1e62b6b472299948b93925c39b6895f2a7a`)
+- **Base funcional anterior:** `6585c1e62b6b472299948b93925c39b6895f2a7a`, CI **`45474973273`** **3/3 PASS** (**609/609 testes**), Workers Builds DEV **SUCCESS**.
+- **Homologação do Work no recorte de apresentação:** **PASS visual** nos rótulos comerciais legíveis e cards de planos/ofertas em `view-master-planos` no recorte disponível, mantendo documentado que isso **não** equivale à homologação integral da tela nem altera seu status canônico na matriz.
+- **Triagem de outras candidatas M06.02 (sem inventar backend):**
+  - `view-master-config` (Configurações da Plataforma): permanece somente leitura no recorte atual por **ausência de RPCs de escrita** no schema PostgreSQL (`saas_platform_configuration` e `saas_terms_versions` possuem apenas políticas `SELECT` e privilégios de mutação revogados; exigiria nova migration e ADR).
+  - `view-master-cobranca` (Cobrança SaaS): emissão manual (`preview/issue_saas_manual_invoice`), filtros, paginação e composição já entregues; pagamentos automáticos, régua/dunning, cancelamento/estorno e acordos comerciais carecem de RPCs específicas no schema e decisões comerciais (`M04.04`).
+
+### 2. Nova entrega funcional implementada (`view-master-planos` — Ciclo de Vida Comercial V35)
+- **Contratos reais reutilizados no PostgreSQL DEV (`20261002202054` e `20261002202107`, com `SECURITY DEFINER`, `private.require_platform_staff('MASTER')` MFA/AAL2 e auditoria em `saas_master_audit_logs`):**
+  1. **Planos (`src/components/MasterPlanLifecycle.tsx`, `src/lib/master-commercial.ts`):**
+     - `create_saas_plan_successor_draft`: criação de nova versão sucessora (`v(max+1)`) em rascunho sobre plano existente sem sobrescrever histórico publicado, carregando entitlements da versão base (`loadPlanVersionEntitlements`) com falha fechada em caso de erro de leitura e proteção contra reenvio duplicado em falha de rede incerta (sem `Verificar envio` automático para criação não-chaveada por idempotência).
+     - `update_saas_plan_version_draft`: edição de versão ainda em `draft` (nome, código, preço, periodicidade, teste, tolerância, competência e recursos JSON carregados via `saas_plan_version_entitlements`).
+     - `set_saas_plan_active`: desativação e reativação de planos com motivo obrigatório auditado, preservando versões publicadas e assinaturas ativas.
+     - `delete_saas_plan_if_unused`: exclusão segura habilitada apenas quando `can_delete_plan === true`, exigindo motivo obrigatório + confirmação digitada `EXCLUIR`, validação estrita de retorno booleano `true` e tratamento determinístico de bloqueio `55000`.
+  2. **Ofertas e Promoções (`src/components/MasterPromotions.tsx`, `src/lib/master-commercial.ts`):**
+     - `update_saas_promotion_draft`: edição em rascunho **estritamente restrita** a ofertas com `latest_version_status === 'draft'`, carregando detalhes completos de `saas_promotions` (`loadPromotionDraftDetails`) com falha fechada se indisponível. Ofertas publicadas permanecem exclusivamente no fluxo de versão sucessora (`create_master_promotion_successor_idempotent`).
+     - `set_saas_promotion_series_active`: desativação e reativação de séries promocionais com motivo obrigatório auditado.
+     - `delete_saas_promotion_series_if_unused`: exclusão segura habilitada apenas quando `can_delete === true`, exigindo motivo obrigatório + confirmação digitada `EXCLUIR`, validação de retorno booleano `true` e tratamento determinístico `55000`.
+  3. **Sincronização reativa (`src/components/MasterCommercialCatalog.tsx`):** callback opcional `onCatalogChange` atualiza cards e histórico somente após confirmação de comando gravado no servidor, mantendo consultas iniciais e filtros estritamente somente leitura.
+- **Regressões e limites:** sem alterações de PROD, RLS, Auth, MFA, migrations ou contratos financeiros; criação/publicação em ambiente DEV real reservadas para homologação controlada no Work após sync/push e CI.
+
+---
+
 ## M06.02 — Fluxo de Caixa (aviso Projetado encerrado) e Paridade de Apresentação em Planos SaaS (24/11/2026)
 
 **Aviso do modo Projetado (`view-fluxo-caixa`) CONCLUÍDO no recorte visual; Paridade de apresentação em Planos SaaS (`view-master-planos`) IMPLEMENTADA E TESTADA localmente no Gemini (CI pós-push e QA autenticado DEV pendentes); M06.02 geral segue EM_EXECUCAO.**

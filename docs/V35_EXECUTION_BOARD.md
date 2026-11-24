@@ -1,3 +1,11 @@
+## M06.02 — Planos SaaS (`view-master-planos`): PASS visual da apresentação e Ciclo de Vida Comercial Completo (24/11/2026)
+
+- **Reconciliação (`6585c1e6`):** CI **`45474973273`** **3/3 PASS** (**609/609 testes**), Workers Builds DEV **SUCCESS** e **PASS visual** pelo Work no recorte de apresentação de Planos SaaS (`view-master-planos`), sem promover a tela integral a `HOMOLOGADO_DEV`.
+- **Ciclo de Vida Comercial Completo (`view-master-planos`) IMPLEMENTADO E TESTADO localmente no Gemini:** acoplamento das 7 RPCs reais já existentes no baseline DEV (`20261002202054` / `20261002202107`) — edição de rascunho de plano (`update_saas_plan_version_draft` + leitura `saas_plan_version_entitlements`), nova versão sucessora de plano (`create_saas_plan_successor_draft`), ativação/desativação (`set_saas_plan_active`), exclusão segura sem vínculos (`delete_saas_plan_if_unused`), edição de rascunho de oferta (`update_saas_promotion_draft` + leitura `saas_promotions`, restrita a `draft`), ativação/desativação de série (`set_saas_promotion_series_active`) e exclusão segura sem uso (`delete_saas_promotion_series_if_unused`), com atualização automática do catálogo (`onCatalogChange`).
+- **Candidatas bloqueadas documentadas:** `view-master-config` (sem RPCs de gravação no schema) e `view-master-cobranca` além da emissão manual (sem RPCs de gateway/régua/acordo). **M06.02 segue EM_EXECUCAO**, aguardando sync/push, CI integral e QA autenticado DEV no Work.
+
+---
+
 ## M06.02 — Fluxo de Caixa (aviso Projetado encerrado) e Paridade de Apresentação em Planos SaaS (24/11/2026)
 
 - **Fluxo de Caixa (`view-fluxo-caixa` — aviso Projetado):** **CONCLUÍDO** no recorte visual sobre o commit **`34291d4`** (`34291d4945bb01659c5c11dbbd877ac2e06e961d`), CI **`45463715864`** **3/3 PASS**, Workers Builds DEV **SUCCESS** e homologação visual **PASS em 390 e 1024 px** com período preservado de **02/11 a 24/11/2026** (consolidado diretamente sem PR documental isolado).

@@ -115,3 +115,118 @@ export function formatPromotionDeleteBlockReason(canDelete:boolean,reason:string
  if(reason==='invoice_adjustment_exists')return 'Exclusão bloqueada: possui ajuste em fatura'
  return 'Exclusão bloqueada por vínculo comercial'
 }
+
+export type PromotionDraftDetail={
+ id:string
+ name:string
+ public_code:string|null
+ status:'draft'
+ benefit_type:'percent'|'fixed_amount'|'trial_price'
+ benefit_value:number
+ duration_type:'once'|'cycles'|'date_range'
+ duration_cycles:number|null
+ valid_from:string
+ valid_to:string|null
+ eligibility_scope:'new_customers'|'selected_customers'|'all_eligible'
+ max_redemptions:number|null
+ stackable:boolean
+}
+
+export function toDatetimeLocalValue(iso:string|null):string{
+ if(!iso)return ''
+ const date=new Date(iso)
+ if(Number.isNaN(date.getTime()))return ''
+ const pad=(value:number)=>String(value).padStart(2,'0')
+ return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
+type OptionalEqQuery<T>={
+ select:(columns:string)=>OptionalEqQuery<T>
+ eq?:(column:string,value:string)=>OptionalEqQuery<T>
+ limit:(count:number)=>OptionalEqQuery<T>
+ abortSignal:(signal:AbortSignal)=>Promise<{data:T[]|null;error:unknown}>
+}
+
+export async function loadPlanVersionEntitlements(
+ client:SupabaseClient,
+ planVersionId:string,
+ signal:AbortSignal,
+):Promise<Record<string,unknown>>{
+ if(!uuid.test(planVersionId))throw Error('Invalid plan version id')
+ const base=(client.from('saas_plan_version_entitlements') as unknown as OptionalEqQuery<{
+  plan_version_id?:string
+  entitlement_key?:unknown
+  entitlement_value?:unknown
+ }>).select('plan_version_id,entitlement_key,entitlement_value')
+ const filtered=typeof base.eq==='function'?base.eq('plan_version_id',planVersionId):base
+ const response=await filtered.limit(201).abortSignal(signal)
+ if(response.error)throw response.error
+ if(!Array.isArray(response.data)||response.data.length>200){
+  throw Error('Plan entitlements payload incomplete')
+ }
+ const result:Record<string,unknown>={}
+ for(const row of response.data){
+  if(row.plan_version_id!==undefined&&row.plan_version_id!==planVersionId)continue
+  if(typeof row.entitlement_key!=='string'||!row.entitlement_key.trim()){
+   throw Error('Untrusted plan entitlement row')
+  }
+  result[row.entitlement_key]=row.entitlement_value
+ }
+ return result
+}
+
+export async function loadPromotionDraftDetails(
+ client:SupabaseClient,
+ promotionId:string,
+ signal:AbortSignal,
+):Promise<PromotionDraftDetail>{
+ if(!uuid.test(promotionId))throw Error('Invalid promotion id')
+ const base=(client.from('saas_promotions') as unknown as OptionalEqQuery<Record<string,unknown>>).select(
+  'id,name,public_code,status,benefit_type,benefit_value,duration_type,duration_cycles,valid_from,valid_to,eligibility_scope,max_redemptions,stackable',
+ )
+ const filtered=typeof base.eq==='function'?base.eq('id',promotionId):base
+ const response=await filtered.limit(201).abortSignal(signal)
+ if(response.error)throw response.error
+ if(!Array.isArray(response.data)||response.data.length>200){
+  throw Error('Promotion draft payload incomplete')
+ }
+ const row=response.data.find(item=>item.id===promotionId)
+ if(!row||row.status!=='draft')throw Error('Draft promotion not found')
+ const benefitType=row.benefit_type
+ const durationType=row.duration_type
+ const scope=row.eligibility_scope
+ const numericValue=Number(row.benefit_value)
+ const cycles=row.duration_cycles===null?null:Number(row.duration_cycles)
+ const maxRedemptions=row.max_redemptions===null?null:Number(row.max_redemptions)
+ if(
+  typeof row.name!=='string'||!row.name.trim()||
+  (row.public_code!==null&&typeof row.public_code!=='string')||
+  (benefitType!=='percent'&&benefitType!=='fixed_amount'&&benefitType!=='trial_price')||
+  !Number.isFinite(numericValue)||numericValue<=0||
+  (durationType!=='once'&&durationType!=='cycles'&&durationType!=='date_range')||
+  (cycles!==null&&(!Number.isSafeInteger(cycles)||cycles<1))||
+  typeof row.valid_from!=='string'||Number.isNaN(Date.parse(row.valid_from))||
+  (row.valid_to!==null&&(typeof row.valid_to!=='string'||Number.isNaN(Date.parse(row.valid_to))))||
+  (scope!=='new_customers'&&scope!=='selected_customers'&&scope!=='all_eligible')||
+  (maxRedemptions!==null&&(!Number.isSafeInteger(maxRedemptions)||maxRedemptions<1))||
+  typeof row.stackable!=='boolean'
+ ){
+  throw Error('Untrusted promotion draft data')
+ }
+ return {
+  id:String(row.id),
+  name:row.name,
+  public_code:row.public_code as string|null,
+  status:'draft',
+  benefit_type:benefitType,
+  benefit_value:numericValue,
+  duration_type:durationType,
+  duration_cycles:cycles,
+  valid_from:row.valid_from,
+  valid_to:row.valid_to as string|null,
+  eligibility_scope:scope,
+  max_redemptions:maxRedemptions,
+  stackable:row.stackable,
+ }
+}
+

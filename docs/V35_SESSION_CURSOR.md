@@ -1,3 +1,15 @@
+## M06.02 — Planos SaaS (`view-master-planos`): PASS visual da apresentação e Ciclo de Vida Comercial Completo (24/11/2026)
+
+- **Reconciliação da revisão anterior (`6585c1e62b6b472299948b93925c39b6895f2a7a`):** CI **`45474973273`** **3/3 PASS** (**609/609 testes**), Workers Builds DEV **SUCCESS** e **PASS visual** homologado pelo Work na paridade de apresentação de Planos SaaS (`view-master-planos`), sem promover a tela integral a `HOMOLOGADO_DEV`.
+- **Lacunas bloqueadas sem alteração de banco:** `view-master-config` (sem RPCs de gravação para configuração global/termos no schema) e `view-master-cobranca` (fluxos de pagamento automático/régua/acordos sem RPCs/decisões comerciais M04.04).
+- **Nova entrega funcional selecionada (`view-master-planos` — Ciclo de Vida Comercial sobre 7 RPCs já existentes em DEV):**
+  - `MasterPlanLifecycle.tsx`: `create_saas_plan_successor_draft`, `update_saas_plan_version_draft` (leitura validada de `saas_plan_version_entitlements`), `set_saas_plan_active` e `delete_saas_plan_if_unused` (`can_delete_plan` + motivo + `EXCLUIR`).
+  - `MasterPromotions.tsx`: `update_saas_promotion_draft` (apenas rascunhos carregados via `saas_promotions`; ofertas publicadas preservadas exclusivamente no fluxo sucessor), `set_saas_promotion_series_active` e `delete_saas_promotion_series_if_unused` (`can_delete` + motivo + `EXCLUIR`).
+  - `MasterCommercialCatalog.tsx`: atualização automática do catálogo (`onCatalogChange`) após mutação confirmada.
+- **Próximo passo:** sync/push + CI remoto + homologação no Work em DEV para os novos controles de rascunho/sucessora/ativação/exclusão de Planos e Ofertas (preservando status `IMPLEMENTADO_E_TESTADO` na matriz e `M06.02` em `EM_EXECUCAO`).
+
+---
+
 ## M06.02 — Fluxo de Caixa (aviso Projetado encerrado) e Paridade de Apresentação em Planos SaaS (24/11/2026)
 
 - **Encerramento visual do aviso Projetado (`view-fluxo-caixa`):** commit **`34291d4945bb01659c5c11dbbd877ac2e06e961d`** (`34291d4`), CI **`45463715864`** **3/3 PASS**, Workers Builds DEV **SUCCESS**, homologação visual **PASS em 390 e 1024 px** com período preservado de **02/11/2026 a 24/11/2026** entre modos. Encerrado neste incremento consolidado, sem PR documental isolado.
