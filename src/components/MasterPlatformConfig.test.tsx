@@ -463,7 +463,7 @@ describe('MasterPlatformConfig (view-master-config)', () => {
     expect(screen.queryByText('Corsys Tronco Digital')).not.toBeInTheDocument()
   })
 
-  it('implements full WAI-ARIA tab pattern and keyboard navigation (ArrowRight, ArrowLeft, ArrowDown, ArrowUp, Home, End)', async () => {
+  it('implements full WAI-ARIA tab pattern with all 6 tabpanels mounted in DOM, hidden inactive panels excluded from Tab focus, and keyboard navigation (ArrowRight, ArrowLeft, ArrowDown, ArrowUp, Home, End, Enter, Space)', async () => {
     render(<MasterPlatformConfig client={mockClient} />)
 
     await waitFor(() => {
@@ -474,71 +474,185 @@ describe('MasterPlatformConfig (view-master-config)', () => {
     const tabs = within(tablist).getAllByRole('tab')
     expect(tabs).toHaveLength(6)
 
-    // Initial state: first tab active (tabIndex 0), others inactive (tabIndex -1)
-    expect(tabs[0]).toHaveAttribute('id', 'master-config-tab-identity')
-    expect(tabs[0]).toHaveAttribute('aria-selected', 'true')
-    expect(tabs[0]).toHaveAttribute('aria-controls', 'master-config-panel-identity')
-    expect(tabs[0]).toHaveAttribute('tabIndex', '0')
-    for (let i = 1; i < tabs.length; i++) {
-      expect(tabs[i]).toHaveAttribute('aria-selected', 'false')
-      expect(tabs[i]).toHaveAttribute('tabIndex', '-1')
+    const allPanels = screen.getAllByRole('tabpanel', { hidden: true })
+    expect(allPanels).toHaveLength(6)
+
+    // 1 & 2. Every tab aria-controls points to an existing DOM tabpanel, and every panel aria-labelledby points back to its tab
+    for (const tab of tabs) {
+      const tabId = tab.getAttribute('id')
+      const controlsId = tab.getAttribute('aria-controls')
+      expect(tabId).toBeTruthy()
+      expect(controlsId).toBeTruthy()
+      const controlledPanel = document.getElementById(controlsId!)
+      expect(controlledPanel).not.toBeNull()
+      expect(controlledPanel).toHaveAttribute('role', 'tabpanel')
+      expect(controlledPanel).toHaveAttribute('aria-labelledby', tabId!)
     }
 
-    // Only one tabpanel is rendered in the DOM (no hidden inactive panel controls)
-    const activePanel = screen.getByRole('tabpanel')
-    expect(activePanel).toHaveAttribute('id', 'master-config-panel-identity')
-    expect(activePanel).toHaveAttribute('aria-labelledby', 'master-config-tab-identity')
-    expect(screen.getAllByRole('tabpanel')).toHaveLength(1)
+    // Helper to assert that strictly the panel at activeIdx is visible and focusable, and all other 5 panels + their inner regions are hidden and removed from Tab order
+    const assertActiveTabAndPanel = (activeIdx: number) => {
+      const visiblePanels = screen.getAllByRole('tabpanel')
+      expect(visiblePanels).toHaveLength(1)
+      expect(visiblePanels[0]).toBe(allPanels[activeIdx])
+
+      tabs.forEach((tab, idx) => {
+        const panel = allPanels[idx] as HTMLElement
+        if (idx === activeIdx) {
+          expect(tab).toHaveAttribute('aria-selected', 'true')
+          expect(tab).toHaveAttribute('tabIndex', '0')
+          expect(panel.hidden).toBe(false)
+          expect(panel).not.toHaveAttribute('hidden')
+          expect(panel).toHaveAttribute('tabIndex', '0')
+        } else {
+          expect(tab).toHaveAttribute('aria-selected', 'false')
+          expect(tab).toHaveAttribute('tabIndex', '-1')
+          expect(panel.hidden).toBe(true)
+          expect(panel).toHaveAttribute('hidden')
+          expect(panel).toHaveAttribute('tabIndex', '-1')
+        }
+      })
+
+      // 4. Inner scrollable region inside legal panel (index 4) must have tabIndex -1 when legal is inactive, and 0 when legal is active
+      const termsRegion = screen.getByRole('region', {
+        name: 'Tabela de termos e políticas versionadas',
+        hidden: true,
+      })
+      expect(termsRegion).toHaveAttribute('tabIndex', activeIdx === 4 ? '0' : '-1')
+    }
+
+    // Initial state: first tab (identity, index 0) is active
+    expect(tabs[0]).toHaveAttribute('id', 'master-config-tab-identity')
+    assertActiveTabAndPanel(0)
 
     // ArrowRight moves focus and selection to Regras Comerciais (index 1)
     tabs[0].focus()
     fireEvent.keyDown(tabs[0], { key: 'ArrowRight' })
     expect(tabs[1]).toHaveFocus()
-    expect(tabs[1]).toHaveAttribute('aria-selected', 'true')
-    expect(tabs[1]).toHaveAttribute('tabIndex', '0')
-    expect(tabs[0]).toHaveAttribute('tabIndex', '-1')
-    expect(screen.getByRole('tabpanel')).toHaveAttribute('id', 'master-config-panel-commercial')
+    assertActiveTabAndPanel(1)
 
     // ArrowDown moves focus and selection to Cobrança / Encargos (index 2)
     fireEvent.keyDown(tabs[1], { key: 'ArrowDown' })
     expect(tabs[2]).toHaveFocus()
-    expect(tabs[2]).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getByRole('tabpanel')).toHaveAttribute('id', 'master-config-panel-billing')
+    assertActiveTabAndPanel(2)
     expect(screen.getByText('CORSYS')).toBeInTheDocument()
 
     // ArrowRight moves to Comunicação (index 3)
     fireEvent.keyDown(tabs[2], { key: 'ArrowRight' })
     expect(tabs[3]).toHaveFocus()
-    expect(tabs[3]).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getByRole('tabpanel')).toHaveAttribute('id', 'master-config-panel-communications')
+    assertActiveTabAndPanel(3)
     expect(screen.getByText('financeiro@corsys.com.br')).toBeInTheDocument()
 
     // End jumps to Integrações (index 5)
     fireEvent.keyDown(tabs[3], { key: 'End' })
     expect(tabs[5]).toHaveFocus()
-    expect(tabs[5]).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getByRole('tabpanel')).toHaveAttribute('id', 'master-config-panel-integrations')
+    assertActiveTabAndPanel(5)
 
     // ArrowRight from End wraps around to Identidade / Fiscal (index 0)
     fireEvent.keyDown(tabs[5], { key: 'ArrowRight' })
     expect(tabs[0]).toHaveFocus()
-    expect(tabs[0]).toHaveAttribute('aria-selected', 'true')
+    assertActiveTabAndPanel(0)
 
     // ArrowLeft from index 0 wraps around to Integrações (index 5)
     fireEvent.keyDown(tabs[0], { key: 'ArrowLeft' })
     expect(tabs[5]).toHaveFocus()
-    expect(tabs[5]).toHaveAttribute('aria-selected', 'true')
+    assertActiveTabAndPanel(5)
 
     // ArrowUp moves to Termos e Privacidade (index 4)
     fireEvent.keyDown(tabs[5], { key: 'ArrowUp' })
     expect(tabs[4]).toHaveFocus()
-    expect(tabs[4]).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getByRole('tabpanel')).toHaveAttribute('id', 'master-config-panel-legal')
+    assertActiveTabAndPanel(4)
 
     // Home jumps back to Identidade / Fiscal (index 0)
     fireEvent.keyDown(tabs[4], { key: 'Home' })
     expect(tabs[0]).toHaveFocus()
-    expect(tabs[0]).toHaveAttribute('aria-selected', 'true')
+    assertActiveTabAndPanel(0)
+
+    // Enter and Space explicitly activate a focused tab
+    tabs[2].focus()
+    fireEvent.keyDown(tabs[2], { key: 'Enter' })
+    assertActiveTabAndPanel(2)
+
+    tabs[4].focus()
+    fireEvent.keyDown(tabs[4], { key: ' ' })
+    assertActiveTabAndPanel(4)
+  })
+
+  it('guarantees strict read-only operation with zero write or RPC mutations and unmounts all 6 tabpanels on fail-closed error', async () => {
+    let shouldFail = false
+    const insertSpy = vi.fn()
+    const updateSpy = vi.fn()
+    const upsertSpy = vi.fn()
+    const deleteSpy = vi.fn()
+    const rpcSpy = vi.fn()
+
+    const strictClient = {
+      rpc: rpcSpy,
+      from: vi.fn((table: string) => {
+        if (table === 'saas_platform_configuration') {
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                abortSignal: vi.fn(() => ({
+                  single: vi.fn(() =>
+                    shouldFail
+                      ? Promise.resolve({
+                          data: null,
+                          error: { code: '42501', message: 'denied' },
+                        })
+                      : Promise.resolve({ data: mockConfig, error: null })
+                  ),
+                })),
+              })),
+            })),
+            insert: insertSpy,
+            update: updateSpy,
+            upsert: upsertSpy,
+            delete: deleteSpy,
+          }
+        }
+        if (table === 'saas_terms_versions') {
+          return {
+            select: vi.fn(() => ({
+              order: vi.fn(() => ({
+                abortSignal: vi.fn(() => Promise.resolve({ data: mockTerms, error: null })),
+              })),
+            })),
+            insert: insertSpy,
+            update: updateSpy,
+            upsert: upsertSpy,
+            delete: deleteSpy,
+          }
+        }
+        return {}
+      }),
+    } as unknown as SupabaseClient
+
+    render(<MasterPlatformConfig client={strictClient} />)
+
+    await waitFor(() => {
+      expect(screen.getAllByRole('tabpanel', { hidden: true })).toHaveLength(6)
+    })
+
+    // Navigate across all 6 tabs
+    const tabs = screen.getAllByRole('tab')
+    for (const tab of tabs) {
+      fireEvent.click(tab)
+    }
+
+    expect(insertSpy).not.toHaveBeenCalled()
+    expect(updateSpy).not.toHaveBeenCalled()
+    expect(upsertSpy).not.toHaveBeenCalled()
+    expect(deleteSpy).not.toHaveBeenCalled()
+    expect(rpcSpy).not.toHaveBeenCalled()
+
+    // Trigger fail-closed refresh -> all 6 tabpanels must unmount from DOM
+    shouldFail = true
+    fireEvent.click(screen.getByRole('button', { name: 'Atualizar configurações da plataforma' }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeInTheDocument()
+    })
+    expect(screen.queryAllByRole('tabpanel', { hidden: true })).toHaveLength(0)
   })
 
   it('distinguishes integration states without false operational confirmation (configured, not_configured, unrecognized)', async () => {

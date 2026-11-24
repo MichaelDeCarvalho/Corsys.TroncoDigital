@@ -213,7 +213,7 @@ export function MasterPlatformConfig({ client }: { client: SupabaseClient }) {
         </p>
       )}
 
-      {ready && config && terms && (
+      {ready && config && terms && billingReadiness && emailReadiness && fiscalReadiness && (
         <>
           {/* Section Navigation Tabs */}
           <div
@@ -247,349 +247,343 @@ export function MasterPlatformConfig({ client }: { client: SupabaseClient }) {
           </div>
 
           {/* Section 1: Identidade / Fiscal */}
-          {activeSection === 'identity' && (
-            <section
-              id="master-config-panel-identity"
-              role="tabpanel"
-              aria-labelledby="master-config-tab-identity"
-              tabIndex={0}
-              className="panel master-config-panel"
-            >
-              <div className="section-title">
-                <h3>
-                  <Building2 size={18} aria-hidden="true" style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '8px' }} />
-                  Identidade e Cadastro Fiscal
-                </h3>
-              </div>
-              <p className="subtle">
-                Dados cadastrais da operadora da plataforma para emissão de faturas e identificação legal.
-              </p>
+          <section
+            id="master-config-panel-identity"
+            role="tabpanel"
+            aria-labelledby="master-config-tab-identity"
+            hidden={activeSection !== 'identity'}
+            tabIndex={activeSection === 'identity' ? 0 : -1}
+            className="panel master-config-panel"
+          >
+            <div className="section-title">
+              <h3>
+                <Building2 size={18} aria-hidden="true" style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '8px' }} />
+                Identidade e Cadastro Fiscal
+              </h3>
+            </div>
+            <p className="subtle">
+              Dados cadastrais da operadora da plataforma para emissão de faturas e identificação legal.
+            </p>
 
-              <div className="master-config-grid">
-                <div className="master-config-card">
-                  <span className="master-config-label">Nome Fantasia</span>
-                  <strong className="master-config-value">{config.trade_name}</strong>
-                </div>
-                <div className="master-config-card">
-                  <span className="master-config-label">Razão Social</span>
-                  <strong className="master-config-value">
-                    {config.legal_name ?? 'Não informada'}
-                  </strong>
-                </div>
-                <div className="master-config-card">
-                  <span className="master-config-label">CNPJ</span>
-                  <strong className="master-config-value">
-                    {config.tax_id ?? 'Não informado'}
-                  </strong>
-                </div>
-                <div className="master-config-card">
-                  <span className="master-config-label">Endereço</span>
-                  <strong className="master-config-value">
-                    {config.address_line ?? 'Não informado'}
-                  </strong>
-                </div>
-                <div className="master-config-card">
-                  <span className="master-config-label">Cidade / UF</span>
-                  <strong className="master-config-value">
-                    {config.city && config.state_code
-                      ? `${config.city} - ${config.state_code}`
-                      : config.city ?? config.state_code ?? 'Não informado'}
-                  </strong>
-                </div>
-                <div className="master-config-card">
-                  <span className="master-config-label">CEP</span>
-                  <strong className="master-config-value">
-                    {config.postal_code ?? 'Não informado'}
-                  </strong>
-                </div>
+            <div className="master-config-grid">
+              <div className="master-config-card">
+                <span className="master-config-label">Nome Fantasia</span>
+                <strong className="master-config-value">{config.trade_name}</strong>
               </div>
-            </section>
-          )}
+              <div className="master-config-card">
+                <span className="master-config-label">Razão Social</span>
+                <strong className="master-config-value">
+                  {config.legal_name ?? 'Não informada'}
+                </strong>
+              </div>
+              <div className="master-config-card">
+                <span className="master-config-label">CNPJ</span>
+                <strong className="master-config-value">
+                  {config.tax_id ?? 'Não informado'}
+                </strong>
+              </div>
+              <div className="master-config-card">
+                <span className="master-config-label">Endereço</span>
+                <strong className="master-config-value">
+                  {config.address_line ?? 'Não informado'}
+                </strong>
+              </div>
+              <div className="master-config-card">
+                <span className="master-config-label">Cidade / UF</span>
+                <strong className="master-config-value">
+                  {config.city && config.state_code
+                    ? `${config.city} - ${config.state_code}`
+                    : config.city ?? config.state_code ?? 'Não informado'}
+                </strong>
+              </div>
+              <div className="master-config-card">
+                <span className="master-config-label">CEP</span>
+                <strong className="master-config-value">
+                  {config.postal_code ?? 'Não informado'}
+                </strong>
+              </div>
+            </div>
+          </section>
 
           {/* Section 2: Regras Comerciais */}
-          {activeSection === 'commercial' && (
-            <section
-              id="master-config-panel-commercial"
-              role="tabpanel"
-              aria-labelledby="master-config-tab-commercial"
-              tabIndex={0}
-              className="panel master-config-panel"
-            >
-              <div className="section-title">
-                <h3>
-                  <Sliders size={18} aria-hidden="true" style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '8px' }} />
-                  Regras Comerciais Padrão
-                </h3>
-              </div>
-              <p className="subtle">
-                Parâmetros aplicados a novas assinaturas, ressalvadas condições expressas em contratos individuais.
-              </p>
+          <section
+            id="master-config-panel-commercial"
+            role="tabpanel"
+            aria-labelledby="master-config-tab-commercial"
+            hidden={activeSection !== 'commercial'}
+            tabIndex={activeSection === 'commercial' ? 0 : -1}
+            className="panel master-config-panel"
+          >
+            <div className="section-title">
+              <h3>
+                <Sliders size={18} aria-hidden="true" style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '8px' }} />
+                Regras Comerciais Padrão
+              </h3>
+            </div>
+            <p className="subtle">
+              Parâmetros aplicados a novas assinaturas, ressalvadas condições expressas em contratos individuais.
+            </p>
 
-              <div className="master-config-grid">
-                <div className="master-config-card">
-                  <span className="master-config-label">Período de Testes (Trial)</span>
-                  <strong className="master-config-value-lg">
-                    {config.default_trial_days} dias
-                  </strong>
-                </div>
-                <div className="master-config-card">
-                  <span className="master-config-label">Dia de Vencimento Padrão</span>
-                  <strong className="master-config-value-lg">
-                    Dia {config.default_due_day}
-                  </strong>
-                </div>
-                <div className="master-config-card">
-                  <span className="master-config-label">Tolerância (Grace Period)</span>
-                  <strong className="master-config-value-lg">
-                    {config.default_grace_days} dias
-                  </strong>
-                </div>
-                <div className="master-config-card">
-                  <span className="master-config-label">Retenção Pós-Cancelamento</span>
-                  <strong className="master-config-value-lg">
-                    {config.default_retention_days} dias
-                  </strong>
-                </div>
+            <div className="master-config-grid">
+              <div className="master-config-card">
+                <span className="master-config-label">Período de Testes (Trial)</span>
+                <strong className="master-config-value-lg">
+                  {config.default_trial_days} dias
+                </strong>
               </div>
+              <div className="master-config-card">
+                <span className="master-config-label">Dia de Vencimento Padrão</span>
+                <strong className="master-config-value-lg">
+                  Dia {config.default_due_day}
+                </strong>
+              </div>
+              <div className="master-config-card">
+                <span className="master-config-label">Tolerância (Grace Period)</span>
+                <strong className="master-config-value-lg">
+                  {config.default_grace_days} dias
+                </strong>
+              </div>
+              <div className="master-config-card">
+                <span className="master-config-label">Retenção Pós-Cancelamento</span>
+                <strong className="master-config-value-lg">
+                  {config.default_retention_days} dias
+                </strong>
+              </div>
+            </div>
 
-              <div className="callout">
-                <strong>Isolamento contratual:</strong> Alterações futuras nestes parâmetros aplicam-se apenas a novos contratos ou renovações expressas, preservando snapshots de versões de planos vigentes.
-              </div>
-            </section>
-          )}
+            <div className="callout">
+              <strong>Isolamento contratual:</strong> Alterações futuras nestes parâmetros aplicam-se apenas a novos contratos ou renovações expressas, preservando snapshots de versões de planos vigentes.
+            </div>
+          </section>
 
           {/* Section 3: Cobrança / Encargos */}
-          {activeSection === 'billing' && (
-            <section
-              id="master-config-panel-billing"
-              role="tabpanel"
-              aria-labelledby="master-config-tab-billing"
-              tabIndex={0}
-              className="panel master-config-panel"
-            >
-              <div className="section-title">
-                <h3>
-                  <DollarSign size={18} aria-hidden="true" style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '8px' }} />
-                  Cobrança e Encargos da Plataforma
-                </h3>
-              </div>
-              <p className="subtle">
-                Padronização de numeração de faturas e canais de notificação.
-              </p>
+          <section
+            id="master-config-panel-billing"
+            role="tabpanel"
+            aria-labelledby="master-config-tab-billing"
+            hidden={activeSection !== 'billing'}
+            tabIndex={activeSection === 'billing' ? 0 : -1}
+            className="panel master-config-panel"
+          >
+            <div className="section-title">
+              <h3>
+                <DollarSign size={18} aria-hidden="true" style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '8px' }} />
+                Cobrança e Encargos da Plataforma
+              </h3>
+            </div>
+            <p className="subtle">
+              Padronização de numeração de faturas e canais de notificação.
+            </p>
 
-              <div className="master-config-grid">
-                <div className="master-config-card">
-                  <span className="master-config-label">Prefixo das Faturas SaaS</span>
-                  <strong className="master-config-value-lg">{config.invoice_prefix}</strong>
-                </div>
-                <div className="master-config-card">
-                  <span className="master-config-label">Canal Principal de Cobrança</span>
-                  <strong className="master-config-value">
-                    {formatCollectionChannel(config.primary_collection_channel)}
-                  </strong>
-                </div>
+            <div className="master-config-grid">
+              <div className="master-config-card">
+                <span className="master-config-label">Prefixo das Faturas SaaS</span>
+                <strong className="master-config-value-lg">{config.invoice_prefix}</strong>
               </div>
+              <div className="master-config-card">
+                <span className="master-config-label">Canal Principal de Cobrança</span>
+                <strong className="master-config-value">
+                  {formatCollectionChannel(config.primary_collection_channel)}
+                </strong>
+              </div>
+            </div>
 
-              <div className="callout">
-                <strong>Conformidade e Limites Legais:</strong> Os encargos moratórios (juros e multa) são calculados conforme a minuta contratual e os limites estabelecidos pela legislação aplicável. Renegociações geram novos títulos sem sobrescrever o histórico da fatura originária.
-              </div>
-            </section>
-          )}
+            <div className="callout">
+              <strong>Conformidade e Limites Legais:</strong> Os encargos moratórios (juros e multa) são calculados conforme a minuta contratual e os limites estabelecidos pela legislação aplicável. Renegociações geram novos títulos sem sobrescrever o histórico da fatura originária.
+            </div>
+          </section>
 
           {/* Section 4: Comunicação */}
-          {activeSection === 'communications' && (
-            <section
-              id="master-config-panel-communications"
-              role="tabpanel"
-              aria-labelledby="master-config-tab-communications"
-              tabIndex={0}
-              className="panel master-config-panel"
-            >
-              <div className="section-title">
-                <h3>
-                  <Mail size={18} aria-hidden="true" style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '8px' }} />
-                  Canais Oficiais de Comunicação
-                </h3>
-              </div>
-              <p className="subtle">
-                Contatos divulgados aos clientes para emissão de cobranças e atendimento técnico.
-              </p>
+          <section
+            id="master-config-panel-communications"
+            role="tabpanel"
+            aria-labelledby="master-config-tab-communications"
+            hidden={activeSection !== 'communications'}
+            tabIndex={activeSection === 'communications' ? 0 : -1}
+            className="panel master-config-panel"
+          >
+            <div className="section-title">
+              <h3>
+                <Mail size={18} aria-hidden="true" style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '8px' }} />
+                Canais Oficiais de Comunicação
+              </h3>
+            </div>
+            <p className="subtle">
+              Contatos divulgados aos clientes para emissão de cobranças e atendimento técnico.
+            </p>
 
-              <div className="master-config-grid">
-                <div className="master-config-card">
-                  <span className="master-config-label">E-mail de Cobrança / Faturamento</span>
-                  <strong className="master-config-value">
-                    {config.billing_email ?? 'Não informado'}
-                  </strong>
-                </div>
-                <div className="master-config-card">
-                  <span className="master-config-label">E-mail de Suporte</span>
-                  <strong className="master-config-value">
-                    {config.support_email ?? 'Não informado'}
-                  </strong>
-                </div>
-                <div className="master-config-card">
-                  <span className="master-config-label">Telefone / WhatsApp de Suporte</span>
-                  <strong className="master-config-value">
-                    {config.support_phone ?? 'Não informado'}
-                  </strong>
-                </div>
+            <div className="master-config-grid">
+              <div className="master-config-card">
+                <span className="master-config-label">E-mail de Cobrança / Faturamento</span>
+                <strong className="master-config-value">
+                  {config.billing_email ?? 'Não informado'}
+                </strong>
               </div>
+              <div className="master-config-card">
+                <span className="master-config-label">E-mail de Suporte</span>
+                <strong className="master-config-value">
+                  {config.support_email ?? 'Não informado'}
+                </strong>
+              </div>
+              <div className="master-config-card">
+                <span className="master-config-label">Telefone / WhatsApp de Suporte</span>
+                <strong className="master-config-value">
+                  {config.support_phone ?? 'Não informado'}
+                </strong>
+              </div>
+            </div>
 
-              <div className="callout">
-                <strong>Governança de disparos:</strong> Envios transacionais operam exclusivamente no servidor via fila persistida e Edge Functions autenticadas, sem credenciais SMTP ou tokens de mensageria expostos no cliente.
-              </div>
-            </section>
-          )}
+            <div className="callout">
+              <strong>Governança de disparos:</strong> Envios transacionais operam exclusivamente no servidor via fila persistida e Edge Functions autenticadas, sem credenciais SMTP ou tokens de mensageria expostos no cliente.
+            </div>
+          </section>
 
           {/* Section 5: Termos e Privacidade */}
-          {activeSection === 'legal' && (
-            <section
-              id="master-config-panel-legal"
-              role="tabpanel"
-              aria-labelledby="master-config-tab-legal"
-              tabIndex={0}
-              className="panel master-config-panel"
-            >
-              <div className="section-title">
-                <h3>
-                  <FileText size={18} aria-hidden="true" style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '8px' }} />
-                  Termos de Uso e Políticas de Privacidade
-                </h3>
-              </div>
-              <p className="subtle">
-                Documentos jurídicos versionados por vigência determinística. Versões publicadas preservam histórico imutável.
-              </p>
+          <section
+            id="master-config-panel-legal"
+            role="tabpanel"
+            aria-labelledby="master-config-tab-legal"
+            hidden={activeSection !== 'legal'}
+            tabIndex={activeSection === 'legal' ? 0 : -1}
+            className="panel master-config-panel"
+          >
+            <div className="section-title">
+              <h3>
+                <FileText size={18} aria-hidden="true" style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '8px' }} />
+                Termos de Uso e Políticas de Privacidade
+              </h3>
+            </div>
+            <p className="subtle">
+              Documentos jurídicos versionados por vigência determinística. Versões publicadas preservam histórico imutável.
+            </p>
 
-              {terms.length === 0 ? (
-                <div className="callout" role="status">
-                  Nenhum termo versionado cadastrado.
-                </div>
-              ) : (
-                <div
-                  className="finance-table"
-                  role="region"
-                  aria-label="Tabela de termos e políticas versionadas"
-                  tabIndex={0}
-                >
-                  <table>
-                    <caption>
-                      Histórico de versões de Termos de Serviço, Política de Privacidade e DPA
-                    </caption>
-                    <thead>
-                      <tr>
-                        <th scope="col">Documento</th>
-                        <th scope="col">Tipo</th>
-                        <th scope="col">Versão</th>
-                        <th scope="col">Estado</th>
-                        <th scope="col">Vigência a partir de</th>
-                        <th scope="col">Vigência até</th>
+            {terms.length === 0 ? (
+              <div className="callout" role="status">
+                Nenhum termo versionado cadastrado.
+              </div>
+            ) : (
+              <div
+                className="finance-table"
+                role="region"
+                aria-label="Tabela de termos e políticas versionadas"
+                tabIndex={activeSection === 'legal' ? 0 : -1}
+              >
+                <table>
+                  <caption>
+                    Histórico de versões de Termos de Serviço, Política de Privacidade e DPA
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Documento</th>
+                      <th scope="col">Tipo</th>
+                      <th scope="col">Versão</th>
+                      <th scope="col">Estado</th>
+                      <th scope="col">Vigência a partir de</th>
+                      <th scope="col">Vigência até</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {terms.map(t => (
+                      <tr key={t.id}>
+                        <th scope="row">{t.title}</th>
+                        <td>{formatDocumentTypeLabel(t.document_type)}</td>
+                        <td>
+                          <code>{t.version_number}</code>
+                        </td>
+                        <td>{renderTermStatusBadge(t.status)}</td>
+                        <td>{new Date(t.effective_at).toLocaleDateString('pt-BR')}</td>
+                        <td>
+                          {t.valid_to
+                            ? new Date(t.valid_to).toLocaleDateString('pt-BR')
+                            : 'Indeterminada'}
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {terms.map(t => (
-                        <tr key={t.id}>
-                          <th scope="row">{t.title}</th>
-                          <td>{formatDocumentTypeLabel(t.document_type)}</td>
-                          <td>
-                            <code>{t.version_number}</code>
-                          </td>
-                          <td>{renderTermStatusBadge(t.status)}</td>
-                          <td>{new Date(t.effective_at).toLocaleDateString('pt-BR')}</td>
-                          <td>
-                            {t.valid_to
-                              ? new Date(t.valid_to).toLocaleDateString('pt-BR')
-                              : 'Indeterminada'}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </section>
-          )}
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
 
           {/* Section 6: Integrações */}
-          {activeSection === 'integrations' && billingReadiness && emailReadiness && fiscalReadiness && (
-            <section
-              id="master-config-panel-integrations"
-              role="tabpanel"
-              aria-labelledby="master-config-tab-integrations"
-              tabIndex={0}
-              className="panel master-config-panel"
-            >
-              <div className="section-title">
-                <h3>
-                  <Lock size={18} aria-hidden="true" style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '8px' }} />
-                  Status das Integrações Externas
-                </h3>
-              </div>
-              <p className="subtle">
-                Controle declarativo de configuração dos serviços integrados. Credenciais e tokens de API permanecem estritamente no servidor e nunca são exibidos no frontend.
-              </p>
+          <section
+            id="master-config-panel-integrations"
+            role="tabpanel"
+            aria-labelledby="master-config-tab-integrations"
+            hidden={activeSection !== 'integrations'}
+            tabIndex={activeSection === 'integrations' ? 0 : -1}
+            className="panel master-config-panel"
+          >
+            <div className="section-title">
+              <h3>
+                <Lock size={18} aria-hidden="true" style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '8px' }} />
+                Status das Integrações Externas
+              </h3>
+            </div>
+            <p className="subtle">
+              Controle declarativo de configuração dos serviços integrados. Credenciais e tokens de API permanecem estritamente no servidor e nunca são exibidos no frontend.
+            </p>
 
-              <div className="master-config-list">
-                <div className="master-config-item">
-                  <div className="master-config-item-copy">
-                    <h4>Gateway de Pagamentos (Billing Provider)</h4>
-                    <p className="master-config-meta">
-                      PIX, Boleto e Webhooks operam mediante provedor comercial homologado no servidor.
-                    </p>
-                  </div>
-                  <div className="master-config-badges">
-                    <span className={`status ${billingReadiness.badgeTone}`}>
-                      {billingReadiness.badgeLabel}
-                    </span>
-                    <span className="status">
-                      {billingReadiness.verificationNote}
-                    </span>
-                    {config.billing_provider_status === 'not_configured' && (
-                      <span className="status">Pendente de homologação</span>
-                    )}
-                  </div>
+            <div className="master-config-list">
+              <div className="master-config-item">
+                <div className="master-config-item-copy">
+                  <h4>Gateway de Pagamentos (Billing Provider)</h4>
+                  <p className="master-config-meta">
+                    PIX, Boleto e Webhooks operam mediante provedor comercial homologado no servidor.
+                  </p>
                 </div>
-
-                <div className="master-config-item">
-                  <div className="master-config-item-copy">
-                    <h4>Serviço de E-mail Transacional</h4>
-                    <p className="master-config-meta">
-                      Envios de convites e lembretes operam via fila persistida no servidor.
-                    </p>
-                  </div>
-                  <div className="master-config-badges">
-                    <span className={`status ${emailReadiness.badgeTone}`}>
-                      {emailReadiness.badgeLabel}
-                    </span>
-                    <span className="status">
-                      {emailReadiness.verificationNote}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="master-config-item">
-                  <div className="master-config-item-copy">
-                    <h4>Emissão Fiscal (NFS-e)</h4>
-                    <p className="master-config-meta">
-                      Integração com prefeituras para transmissão de notas fiscais de serviço.
-                    </p>
-                  </div>
-                  <div className="master-config-badges">
-                    <span className={`status ${fiscalReadiness.badgeTone}`}>
-                      {fiscalReadiness.badgeLabel}
-                    </span>
-                    <span className="status">
-                      {fiscalReadiness.verificationNote}
-                    </span>
-                  </div>
+                <div className="master-config-badges">
+                  <span className={`status ${billingReadiness.badgeTone}`}>
+                    {billingReadiness.badgeLabel}
+                  </span>
+                  <span className="status">
+                    {billingReadiness.verificationNote}
+                  </span>
+                  {config.billing_provider_status === 'not_configured' && (
+                    <span className="status">Pendente de homologação</span>
+                  )}
                 </div>
               </div>
 
-              <div className="callout">
-                <strong>Sem falsa prontidão:</strong> O valor <code>configured</code> reflete apenas registro declarativo na tabela <code>saas_platform_configuration</code> e não comprova conectividade operacional em tempo real.
+              <div className="master-config-item">
+                <div className="master-config-item-copy">
+                  <h4>Serviço de E-mail Transacional</h4>
+                  <p className="master-config-meta">
+                    Envios de convites e lembretes operam via fila persistida no servidor.
+                  </p>
+                </div>
+                <div className="master-config-badges">
+                  <span className={`status ${emailReadiness.badgeTone}`}>
+                    {emailReadiness.badgeLabel}
+                  </span>
+                  <span className="status">
+                    {emailReadiness.verificationNote}
+                  </span>
+                </div>
               </div>
-            </section>
-          )}
+
+              <div className="master-config-item">
+                <div className="master-config-item-copy">
+                  <h4>Emissão Fiscal (NFS-e)</h4>
+                  <p className="master-config-meta">
+                    Integração com prefeituras para transmissão de notas fiscais de serviço.
+                  </p>
+                </div>
+                <div className="master-config-badges">
+                  <span className={`status ${fiscalReadiness.badgeTone}`}>
+                    {fiscalReadiness.badgeLabel}
+                  </span>
+                  <span className="status">
+                    {fiscalReadiness.verificationNote}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="callout">
+              <strong>Sem falsa prontidão:</strong> O valor <code>configured</code> reflete apenas registro declarativo na tabela <code>saas_platform_configuration</code> e não comprova conectividade operacional em tempo real.
+            </div>
+          </section>
 
           <p className="subtle">
             Última atualização registrada: {new Date(config.updated_at).toLocaleString('pt-BR')}. Modificações de configurações globais exigem RPC de governança administrativa aprovada com auditoria.
