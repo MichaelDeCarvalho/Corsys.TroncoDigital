@@ -35,20 +35,54 @@ function mockClient(foreignAccount=false) {
 }
 
 describe('FluxoCaixa view', () => {
-  it('renders existing modes and reuses validated tenant balances in the Saldo mode', async () => {
+  it('renders existing modes, enforces var(--surface-2) on the Projetado notice exclusively in Projetado mode, and reuses validated tenant balances in the Saldo mode', async () => {
     const { client,from } = mockClient()
     render(<FluxoCaixa client={client} organizationId={org} />)
 
     expect(screen.getByText('Fluxo de Caixa — Entradas e Saídas Efetivas')).toBeInTheDocument()
 
+    const consolidadoBtn = screen.getByRole('button', { name: 'Consolidado' })
     const projectedBtn = screen.getByRole('button', { name: 'Projetado' })
-    fireEvent.click(projectedBtn)
-    expect(projectedBtn).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByText(/A visão projetada considera exclusivamente obrigações efetivas/)).toBeInTheDocument()
-
+    const movimentosBtn = screen.getByRole('button', { name: 'Receitas × Desp.' })
     const saldoBtn = screen.getByRole('button', { name: 'Saldo' })
+    const projectedNoticeText =
+      'A visão projetada considera exclusivamente obrigações efetivas confirmadas com vencimento no período selecionado, sem projeções probabilísticas fictícias.'
+
+    // Initial Consolidado mode: notice must not be rendered
+    expect(consolidadoBtn).toHaveAttribute('aria-pressed', 'true')
+    expect(projectedBtn).toHaveAttribute('aria-pressed', 'false')
+    expect(movimentosBtn).toHaveAttribute('aria-pressed', 'false')
+    expect(saldoBtn).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.queryByText(projectedNoticeText)).not.toBeInTheDocument()
+
+    // Projetado mode: notice rendered with var(--surface-2) and without light fallback #f3f4f6
+    fireEvent.click(projectedBtn)
+    expect(consolidadoBtn).toHaveAttribute('aria-pressed', 'false')
+    expect(projectedBtn).toHaveAttribute('aria-pressed', 'true')
+    expect(movimentosBtn).toHaveAttribute('aria-pressed', 'false')
+    expect(saldoBtn).toHaveAttribute('aria-pressed', 'false')
+
+    const notice = screen.getByText(projectedNoticeText)
+    expect(notice).toBeInTheDocument()
+    expect(notice.getAttribute('style')).toContain('background: var(--surface-2)')
+    expect(notice.getAttribute('style')).not.toContain('#f3f4f6')
+    expect(notice.getAttribute('style')).not.toContain('--highlight')
+
+    // Receitas × Desp. mode: notice hidden again
+    fireEvent.click(movimentosBtn)
+    expect(consolidadoBtn).toHaveAttribute('aria-pressed', 'false')
+    expect(projectedBtn).toHaveAttribute('aria-pressed', 'false')
+    expect(movimentosBtn).toHaveAttribute('aria-pressed', 'true')
+    expect(saldoBtn).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.queryByText(projectedNoticeText)).not.toBeInTheDocument()
+
+    // Saldo mode: notice remains hidden and validated tenant balances are displayed
     fireEvent.click(saldoBtn)
+    expect(consolidadoBtn).toHaveAttribute('aria-pressed', 'false')
+    expect(projectedBtn).toHaveAttribute('aria-pressed', 'false')
+    expect(movimentosBtn).toHaveAttribute('aria-pressed', 'false')
     expect(saldoBtn).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.queryByText(projectedNoticeText)).not.toBeInTheDocument()
     expect(screen.getByText('Saldos contábeis de caixa e bancos')).toBeInTheDocument()
     expect(screen.getByText(/Não representam saldo bancário conciliado/)).toBeInTheDocument()
     expect(await screen.findByText(/R\$\s?125,27/)).toBeInTheDocument()

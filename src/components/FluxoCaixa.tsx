@@ -56,7 +56,7 @@ export function FluxoCaixa({ client, organizationId }: { client: SupabaseClient;
         </div>
 
         {mode === 'projetado' && (
-          <p className="subtle" style={{ padding: '0.5rem', background: 'var(--highlight, #f3f4f6)', borderRadius: '4px' }}>
+          <p className="subtle" style={{ padding: '0.5rem', background: 'var(--surface-2)', borderRadius: '4px' }}>
             A visão projetada considera exclusivamente obrigações efetivas confirmadas com vencimento no período selecionado, sem projeções probabilísticas fictícias.
           </p>
         )}
