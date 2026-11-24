@@ -1,3 +1,14 @@
+## SEC-M0602-01 — Auditoria transacional, ordem de locks e proteção de entitlements no Ciclo de Vida Comercial (24/11/2026 — preparado)
+
+- **Escopo:** `supabase/migrations/20261124220000_v35_commercial_draft_audit_logs.sql`, `supabase/tests/test_commercial_draft_audit_rollback.sql` e `docs/adr/0049-commercial-draft-audit-logs.md`.
+- **Achados endereçados antes de qualquer deploy no DEV:**
+  1. **Compatibilidade de locks (`F1`):** evitada a inversão proposta inicialmente em `update_saas_plan_version_draft` (`saas_plans -> saas_plan_versions`), preservando o lock em `saas_plan_versions ... FOR UPDATE` antes da atualização condicional de `saas_plans`, mantendo a mesma ordenação de `publish_saas_plan_version`.
+  2. **Prevenção de limpeza silenciosa de entitlements (`F2`):** removido `coalesce(p_entitlements, '{}'::jsonb)` em `update_saas_plan_version_draft` e `create_saas_plan_successor_draft`; entradas `NULL`, não-objeto JSONB ou `> 16000` bytes falham com `SQLSTATE 22023` antes de qualquer lock ou chamada a `private.replace_plan_version_entitlements`, preservando `'{}'::jsonb` apenas quando explícito.
+  3. **Autorização, privilégios e metadados mínimos (`F3`/`F4`):** mantidos `SECURITY DEFINER`, `set search_path = ''`, `private.require_platform_staff('MASTER')` (AAL2 obrigatório), `REVOKE ALL` para `public`/`anon` e `GRANT EXECUTE` apenas para `authenticated`; registros em `public.saas_master_audit_logs` (`saas_plan_version.draft_updated`, `saas_plan_version.successor_draft`, `saas_promotion.draft_updated`) contêm apenas identificadores operacionais sem PII, secrets ou JSONB completo de entitlements.
+- **Limites residuais (`NÃO AVALIADO` nesta etapa):** execução real em instância PostgreSQL da suíte `ROLLBACK` e teste de contenção paralela entre duas conexões simultâneas permanecem pendentes de ambiente PostgreSQL/DEV controlado; nenhuma alteração remota aplicada.
+
+---
+
 ## SEC-M0502-01 — runner de restauração: secrets em logs e seleção insegura do destino (12/11/2026)
 
 - **Escopo:** `scripts/run_v35_m05_backup_restore_trial.sh` e `.gitignore`, identificados na revisão do PR #50 (código `b14a8c7`).

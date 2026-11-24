@@ -1,3 +1,11 @@
+## M06.02 — Revisão Final da Migration de Auditoria Comercial (`view-master-planos`, 24/11/2026 — preparado)
+
+- **Artefatos produzidos (`ADR-0049`):** `supabase/migrations/20261124220000_v35_commercial_draft_audit_logs.sql` e `supabase/tests/test_commercial_draft_audit_rollback.sql`, cobrindo auditoria transacional em `public.saas_master_audit_logs` para `update_saas_plan_version_draft` (`saas_plan_version.draft_updated`), `create_saas_plan_successor_draft` (`saas_plan_version.successor_draft`) e `update_saas_promotion_draft` (`saas_promotion.draft_updated`).
+- **Correções F1/F2/F3 aplicadas na proposta SQL:** ordem de locks preservada (`saas_plan_versions -> saas_plans`, compatível com `publish_saas_plan_version`), rejeição fail-closed `22023` para `p_entitlements IS NULL` ou não-objeto (sem `coalesce(..., '{}')`), e validação alinhada com RPCs idempotentes e UI sem `p_valid_from > now()`.
+- **Estado operacional:** nenhuma migration aplicada remotamente; execução real em PostgreSQL e contenção multi-sessão permanecem `NÃO AVALIADAS` localmente. Textos informativos da UI mantidos até aplicação da migration no DEV. **`M06.02` permanece `EM_EXECUCAO`.**
+
+---
+
 ## M06.02 — Correção de integridade no Ciclo de Vida Comercial (`view-master-planos`, 24/11/2026)
 
 - **F1 (sem reenvio cego em RPCs não idempotentes):** `update_saas_plan_version_draft`, `set_saas_plan_active`, `update_saas_promotion_draft` e `set_saas_promotion_series_active` agora operam com `retryable: false`; em resultado de rede incerto, exigem reconciliação via `Atualizar rascunhos` / `Atualizar ofertas` com bloqueio de novas gravações até recarga bem-sucedida, preservando `p_idempotency_key` nos comandos `*_idempotent`.

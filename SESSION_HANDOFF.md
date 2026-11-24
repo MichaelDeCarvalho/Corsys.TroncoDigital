@@ -1,3 +1,25 @@
+## M06.02 — Revisão Final da Migration de Auditoria Comercial (`view-master-planos`, 24/11/2026 — preparado para revisão)
+
+**Revisão final da proposta SQL de auditoria para `update_saas_plan_version_draft`, `create_saas_plan_successor_draft` e `update_saas_promotion_draft` CONCLUÍDA localmente no Gemini sobre `dea48d9ca522e91de90dee2f307cf1249ac3be63` (CI `45488251975` 3/3 PASS, 625/625 testes). Nenhuma migration aplicada em DEV/PROD e nenhuma operação comercial remota executada; `M06.02` segue `EM_EXECUCAO`.**
+
+### 1. Artefatos preparados
+- `supabase/migrations/20261124220000_v35_commercial_draft_audit_logs.sql`: redefinição idempotente e aditiva das três RPCs em `public` preservando assinaturas, `SECURITY DEFINER`, `set search_path = ''`, `private.require_platform_staff('MASTER')` e `EXECUTE` apenas para `authenticated`.
+- `supabase/tests/test_commercial_draft_audit_rollback.sql`: teste determinístico `BEGIN ... ROLLBACK` cobrindo ACLs, invariante estrutural de lock, negativas de autorização (`auth.uid()` nulo, AAL1, `SUPPORT`, `BILLING`, não-staff, `anon`), `F2` (`NULL`/array/escalar em `p_entitlements` sem apagar entitlements preexistentes + `'{}'::jsonb` explícito), validações `F3`, auditoria `F4`, rollback atômico em `23505`/`23503` e leitura via `list_master_audit_events`.
+- `docs/adr/0049-commercial-draft-audit-logs.md`: registro decisório de ordem de locks, guarda de entitlements, alinhamento de validação e eventos de auditoria.
+
+### 2. Decisões técnicas consolidadas (F1–F4)
+- **F1 (Ordem de locks):** rejeitada a inversão proposta anteriormente (`saas_plans -> saas_plan_versions`) em `update_saas_plan_version_draft`; preservada a ordem original `public.saas_plan_versions ... FOR UPDATE` seguida da atualização condicional de `public.saas_plans`, mantendo compatibilidade direta com `publish_saas_plan_version`. `create_saas_plan_successor_draft` bloqueia `saas_plans FOR UPDATE` antes de inserir nova versão; `set_saas_plan_active` e `delete_saas_plan_if_unused` não concorrem em ciclo invertido com `update_saas_plan_version_draft` (a exclusão exige ausência de assinaturas/faturas e o rascunho não altera estado durante a publicação depois de publicado).
+- **F2 (Proteção contra `NULL` em `p_entitlements`):** removido `coalesce(p_entitlements, '{}'::jsonb)` tanto em `update_saas_plan_version_draft` quanto em `create_saas_plan_successor_draft`. Ambas validam `p_entitlements IS NOT NULL`, `jsonb_typeof(p_entitlements) = 'object'` e `pg_column_size(p_entitlements) <= 16000` antes de adquirir qualquer lock (`SQLSTATE 22023`), preservando `'{}'::jsonb` quando explicitamente enviado.
+- **F3 (Alinhamento de validação e frontend):** todas as restrições espelham `create_master_plan_draft_idempotent`, `create_master_promotion_draft_idempotent`, `create_master_promotion_successor_idempotent`, `MasterPlanLifecycle.tsx` e `MasterPromotions.tsx`, mantendo `update_saas_promotion_draft` sem `p_valid_from > now()` para permitir edição de rascunhos cuja data inicial já esteja próxima ou em curso antes da publicação.
+- **F4 (Auditoria transacional mínima):** inserção em `public.saas_master_audit_logs` ao final de cada mutação (`saas_plan_version.draft_updated`, `saas_plan_version.successor_draft`, `saas_promotion.draft_updated`) somente com IDs/metadados operacionais mínimos, sem PII, secrets ou JSONB integral de entitlements.
+- **Textos informativos na UI (`MasterPlanLifecycle.tsx:378`, `MasterPromotions.tsx:339`):** mantidos intencionalmente sem alteração nesta entrega para continuar refletindo a verdade do DEV atual; após aplicação controlada da migration no DEV, remover o aviso de ausência de evento para essas três operações em follow-up dedicado.
+
+### 3. Limites e próximo ciclo
+- Ambiente local sem daemon/CLI PostgreSQL (`psql`, `pg_isready`, `docker` ausentes): execução em runtime de `test_commercial_draft_audit_rollback.sql` e contenção real paralela entre duas sessões permanecem **`NOT EVALUATED`**.
+- **Próxima etapa:** revisão humana do PR, aplicação controlada de `20261124220000_v35_commercial_draft_audit_logs.sql` no DEV mediante autorização específica, execução da suíte `ROLLBACK` + verificação pós-migração no DEV e ajuste pós-deploy da cópia informativa em `MasterPlanLifecycle.tsx`/`MasterPromotions.tsx`.
+
+---
+
 ## M06.02 — Correção de integridade no Ciclo de Vida Comercial (`view-master-planos`, 24/11/2026)
 
 **Correções de integridade F1, F2 e conferência documental F3 CONCLUÍDAS localmente no Gemini sobre a base `67cd89daa943ada01fad9d9638c796ed64e11d46` (CI `45480497365` 3/3 PASS, 617/617 testes). Nenhuma migration SQL criada; `view-master-planos` permanece `IMPLEMENTADO_E_TESTADO` e `M06.02` segue `EM_EXECUCAO`.**

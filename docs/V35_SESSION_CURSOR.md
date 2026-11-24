@@ -1,3 +1,14 @@
+## M06.02 — Revisão Final da Migration de Auditoria Comercial (`view-master-planos`, 24/11/2026 — preparado, sem apply remoto)
+
+- **Base de partida:** HEAD `dea48d9ca522e91de90dee2f307cf1249ac3be63` (CI `45488251975` **3/3 PASS**, **625/625 testes**, Cloudflare DEV `1f514b33`).
+- **Artefatos preparados:** `supabase/migrations/20261124220000_v35_commercial_draft_audit_logs.sql`, `supabase/tests/test_commercial_draft_audit_rollback.sql` e `docs/adr/0049-commercial-draft-audit-logs.md` (zero alteração nas 66 migrations baseline nem no DEV/PROD).
+- **F1 (ordem de locks):** preservada a ordenação `saas_plan_versions FOR UPDATE -> saas_plans` em `update_saas_plan_version_draft` (compatível com `publish_saas_plan_version`), descartando inversão de locks proposta anteriormente.
+- **F2 (entitlements):** removido `coalesce(p_entitlements, '{}'::jsonb)` em `update_saas_plan_version_draft` e `create_saas_plan_successor_draft`; entradas `NULL`/não-objeto/`> 16000` bytes retornam `22023` antes dos locks e preservam entitlements preexistentes.
+- **F3/F4 (validações e auditoria):** regras alinhadas às RPCs idempotentes e ao frontend (sem `p_valid_from > now()` na edição de rascunho de oferta); eventos transacionais `saas_plan_version.draft_updated`, `saas_plan_version.successor_draft` e `saas_promotion.draft_updated` com metadados mínimos. Cópias informativas em `MasterPlanLifecycle.tsx`/`MasterPromotions.tsx` preservadas até aplicação no DEV.
+- **Próximo passo:** revisão da migration/ADR, aplicação controlada no Supabase DEV mediante autorização específica, execução real do teste `ROLLBACK` em PostgreSQL (`NOT EVALUATED` localmente por ausência de `psql`/`docker`) e sincronização pós-apply da cópia da UI (`M06.02` segue `EM_EXECUCAO`).
+
+---
+
 ## M06.02 — Correção de integridade no Ciclo de Vida Comercial (`view-master-planos`, 24/11/2026)
 
 - **Base de partida:** HEAD `67cd89daa943ada01fad9d9638c796ed64e11d46` (CI `45480497365` **3/3 PASS**, **617/617 testes**).
