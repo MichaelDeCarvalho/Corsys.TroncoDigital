@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import {
   Building2,
@@ -6,10 +6,7 @@ import {
   Sliders,
   DollarSign,
   Mail,
-  ShieldAlert,
   RefreshCw,
-  CheckCircle,
-  AlertTriangle,
   Lock,
 } from 'lucide-react'
 import {
@@ -19,6 +16,74 @@ import {
   type PlatformTermVersion,
 } from '../lib/master-config'
 
+type ConfigSection =
+  | 'identity'
+  | 'commercial'
+  | 'billing'
+  | 'communications'
+  | 'legal'
+  | 'integrations'
+
+const SECTIONS: ReadonlyArray<{ id: ConfigSection; label: string }> = [
+  { id: 'identity', label: 'Identidade / Fiscal' },
+  { id: 'commercial', label: 'Regras Comerciais' },
+  { id: 'billing', label: 'Cobrança / Encargos' },
+  { id: 'communications', label: 'Comunicação' },
+  { id: 'legal', label: 'Termos e Privacidade' },
+  { id: 'integrations', label: 'Integrações' },
+]
+
+type ProviderReadinessDisplay = {
+  badgeLabel: 'Configurado' | 'Não configurado' | 'Estado não reconhecido'
+  badgeTone: 'partial' | 'open' | 'overdue'
+  verificationNote: 'Disponibilidade operacional não verificada'
+}
+
+function resolveProviderReadiness(status: string): ProviderReadinessDisplay {
+  if (status === 'configured') {
+    return {
+      badgeLabel: 'Configurado',
+      badgeTone: 'partial',
+      verificationNote: 'Disponibilidade operacional não verificada',
+    }
+  }
+  if (status === 'not_configured') {
+    return {
+      badgeLabel: 'Não configurado',
+      badgeTone: 'open',
+      verificationNote: 'Disponibilidade operacional não verificada',
+    }
+  }
+  return {
+    badgeLabel: 'Estado não reconhecido',
+    badgeTone: 'overdue',
+    verificationNote: 'Disponibilidade operacional não verificada',
+  }
+}
+
+function formatCollectionChannel(channel: PlatformConfiguration['primary_collection_channel']): string {
+  if (channel === 'email_whatsapp') return 'E-mail + WhatsApp'
+  if (channel === 'whatsapp') return 'WhatsApp'
+  return 'E-mail'
+}
+
+function formatDocumentTypeLabel(docType: string): string {
+  if (docType === 'terms' || docType === 'terms_of_service') return 'Termos de Uso'
+  if (docType === 'privacy' || docType === 'privacy_policy') return 'Privacidade'
+  if (docType === 'dpa' || docType === 'data_processing') return 'DPA (LGPD)'
+  return docType
+}
+
+function renderTermStatusBadge(status: PlatformTermVersion['status']) {
+  if (status === 'published') {
+    return <span className="status ok">Publicado</span>
+  }
+  if (status === 'draft') {
+    return <span className="status open">Rascunho</span>
+  }
+  return <span className="status">Revogado</span>
+}
+
 export function MasterPlatformConfig({ client }: { client: SupabaseClient }) {
   const [config, setConfig] = useState<PlatformConfiguration | null>(null)
   const [terms, setTerms] = useState<PlatformTermVersion[] | null>(null)
@@ -26,14 +91,18 @@ export function MasterPlatformConfig({ client }: { client: SupabaseClient }) {
   const [error, setError] = useState('')
   const [denied, setDenied] = useState(false)
   const [revision, setRevision] = useState(0)
-  const [activeSection, setActiveSection] = useState<
-    'identity' | 'commercial' | 'billing' | 'communications' | 'legal' | 'integrations'
-  >('identity')
+  const [activeSection, setActiveSection] = useState<ConfigSection>('identity')
+
+  const requestSeqRef = useRef(0)
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([])
 
   useEffect(() => {
     let live = true
+    const reqId = ++requestSeqRef.current
     const controller = new AbortController()
 
+    setConfig(null)
+    setTerms(null)
     setLoading(true)
     setError('')
     setDenied(false)
@@ -43,21 +112,21 @@ export function MasterPlatformConfig({ client }: { client: SupabaseClient }) {
       loadPlatformTerms(client, controller.signal),
     ])
       .then(([cfg, trm]) => {
-        if (live) {
-          setConfig(cfg)
-          setTerms(trm)
-          setLoading(false)
-        }
+        if (!live || controller.signal.aborted || reqId !== requestSeqRef.current) return
+        setConfig(cfg)
+        setTerms(trm)
+        setLoading(false)
       })
-      .catch((err: any) => {
-        if (!live || controller.signal.aborted) return
-        const code = err?.code
+      .catch((err: unknown) => {
+        if (!live || controller.signal.aborted || reqId !== requestSeqRef.current) return
+        setConfig(null)
+        setTerms(null)
+        const code = (err as { code?: string })?.code
         if (code === '42501' || code === '28000') {
           setDenied(true)
         } else {
           setError(
-            err?.message ||
-              'Não foi possível consultar as configurações da plataforma. Acesso restrito a MASTER/MFA.'
+            'Não foi possível consultar as configurações da plataforma. Acesso restrito a MASTER/MFA.'
           )
         }
         setLoading(false)
@@ -69,27 +138,61 @@ export function MasterPlatformConfig({ client }: { client: SupabaseClient }) {
     }
   }, [client, revision])
 
+  function handleTabKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number) {
+    let targetIndex: number | null = null
+
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      targetIndex = (index + 1) % SECTIONS.length
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      targetIndex = (index - 1 + SECTIONS.length) % SECTIONS.length
+    } else if (event.key === 'Home') {
+      targetIndex = 0
+    } else if (event.key === 'End') {
+      targetIndex = SECTIONS.length - 1
+    } else if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      setActiveSection(SECTIONS[index].id)
+      return
+    }
+
+    if (targetIndex !== null) {
+      event.preventDefault()
+      const nextSection = SECTIONS[targetIndex]
+      setActiveSection(nextSection.id)
+      tabRefs.current[targetIndex]?.focus()
+    }
+  }
+
+  const ready = !loading && !denied && !error && config !== null && terms !== null
+  const billingReadiness = config ? resolveProviderReadiness(config.billing_provider_status) : null
+  const emailReadiness = config ? resolveProviderReadiness(config.email_provider_status) : null
+  const fiscalReadiness = config ? resolveProviderReadiness(config.fiscal_provider_status) : null
+
   return (
-    <div className="space-y-6" id="view-master-config">
+    <div className="master-config" data-view-id="view-master-config">
       {/* Title & Refresh */}
-      <section className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight text-slate-900">
-            Configurações da Plataforma
-          </h2>
-          <p className="text-sm text-slate-500">
-            Parâmetros globais de governança, identidade, cobrança e termos do SaaS Corsys.
-          </p>
+      <section className="panel">
+        <div className="section-title">
+          <div>
+            <p className="eyebrow">Governança Master · Parâmetros Globais</p>
+            <h2>Configurações da Plataforma</h2>
+            <p className="subtle">
+              Parâmetros globais de governança, identidade, cobrança e termos do SaaS Corsys (somente leitura · sem exposição de segredos).
+            </p>
+          </div>
+          <div className="master-config-badges">
+            <span className="badge">Master · AAL2</span>
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => setRevision(v => v + 1)}
+              aria-label="Atualizar configurações da plataforma"
+            >
+              <RefreshCw size={16} aria-hidden="true" />
+              Atualizar
+            </button>
+          </div>
         </div>
-        <button
-          type="button"
-          className="secondary inline-flex items-center gap-1.5 px-3 py-2 text-sm self-start md:self-auto"
-          onClick={() => setRevision(v => v + 1)}
-          aria-label="Atualizar configurações da plataforma"
-        >
-          <RefreshCw size={16} aria-hidden="true" />
-          Atualizar
-        </button>
       </section>
 
       {denied && (
@@ -98,151 +201,106 @@ export function MasterPlatformConfig({ client }: { client: SupabaseClient }) {
         </p>
       )}
 
-      {error && (
+      {!denied && error && (
         <p role="alert" className="message error">
           {error}
         </p>
       )}
 
-      {loading && !denied && (
-        <p role="status" className="py-8 text-center text-slate-500 text-sm">
+      {loading && !denied && !error && (
+        <p role="status" className="panel subtle">
           Consultando configurações da plataforma sob governança Master…
         </p>
       )}
 
-      {config && (
+      {ready && config && terms && (
         <>
           {/* Section Navigation Tabs */}
           <div
-            className="flex flex-wrap gap-2 border-b pb-2"
+            className="master-config-tabs"
             role="tablist"
             aria-label="Seções de configuração"
           >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeSection === 'identity'}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                activeSection === 'identity'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
-              data-v33-config-section="identity"
-              onClick={() => setActiveSection('identity')}
-            >
-              Identidade / Fiscal
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeSection === 'commercial'}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                activeSection === 'commercial'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
-              data-v33-config-section="commercial"
-              onClick={() => setActiveSection('commercial')}
-            >
-              Regras Comerciais
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeSection === 'billing'}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                activeSection === 'billing'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
-              data-v33-config-section="billing"
-              onClick={() => setActiveSection('billing')}
-            >
-              Cobrança / Encargos
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeSection === 'communications'}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                activeSection === 'communications'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
-              data-v33-config-section="communications"
-              onClick={() => setActiveSection('communications')}
-            >
-              Comunicação
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeSection === 'legal'}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                activeSection === 'legal'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
-              data-v33-config-section="legal"
-              onClick={() => setActiveSection('legal')}
-            >
-              Termos e Privacidade
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeSection === 'integrations'}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                activeSection === 'integrations'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
-              data-v33-config-section="integrations"
-              onClick={() => setActiveSection('integrations')}
-            >
-              Integrações
-            </button>
+            {SECTIONS.map((s, idx) => {
+              const isSelected = activeSection === s.id
+              return (
+                <button
+                  key={s.id}
+                  ref={el => {
+                    tabRefs.current[idx] = el
+                  }}
+                  id={`master-config-tab-${s.id}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={isSelected}
+                  aria-controls={`master-config-panel-${s.id}`}
+                  tabIndex={isSelected ? 0 : -1}
+                  className="master-config-tab"
+                  data-v33-config-section={s.id}
+                  onClick={() => setActiveSection(s.id)}
+                  onKeyDown={e => handleTabKeyDown(e, idx)}
+                >
+                  {s.label}
+                </button>
+              )
+            })}
           </div>
 
           {/* Section 1: Identidade / Fiscal */}
           {activeSection === 'identity' && (
-            <section className="panel space-y-4">
+            <section
+              id="master-config-panel-identity"
+              role="tabpanel"
+              aria-labelledby="master-config-tab-identity"
+              tabIndex={0}
+              className="panel master-config-panel"
+            >
               <div className="section-title">
-                <h3 className="flex items-center gap-2">
-                  <Building2 size={18} aria-hidden="true" />
+                <h3>
+                  <Building2 size={18} aria-hidden="true" style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '8px' }} />
                   Identidade e Cadastro Fiscal
                 </h3>
               </div>
-              <p className="subtle text-xs">
+              <p className="subtle">
                 Dados cadastrais da operadora da plataforma para emissão de faturas e identificação legal.
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                <div className="border rounded-md p-3 bg-slate-50">
-                  <span className="text-xs text-slate-500 block font-medium">Nome Fantasia</span>
-                  <strong className="text-slate-900">{config.trade_name || '—'}</strong>
+              <div className="master-config-grid">
+                <div className="master-config-card">
+                  <span className="master-config-label">Nome Fantasia</span>
+                  <strong className="master-config-value">{config.trade_name}</strong>
                 </div>
-                <div className="border rounded-md p-3 bg-slate-50">
-                  <span className="text-xs text-slate-500 block font-medium">Razão Social</span>
-                  <strong className="text-slate-900">{config.legal_name || 'Não informada'}</strong>
-                </div>
-                <div className="border rounded-md p-3 bg-slate-50">
-                  <span className="text-xs text-slate-500 block font-medium">CNPJ</span>
-                  <strong className="text-slate-900 font-mono">{config.tax_id || 'Não informado'}</strong>
-                </div>
-                <div className="border rounded-md p-3 bg-slate-50">
-                  <span className="text-xs text-slate-500 block font-medium">Endereço</span>
-                  <strong className="text-slate-900">{config.address_line || 'Não informado'}</strong>
-                </div>
-                <div className="border rounded-md p-3 bg-slate-50">
-                  <span className="text-xs text-slate-500 block font-medium">Cidade / UF</span>
-                  <strong className="text-slate-900">
-                    {config.city ? `${config.city} - ${config.state_code}` : 'Não informado'}
+                <div className="master-config-card">
+                  <span className="master-config-label">Razão Social</span>
+                  <strong className="master-config-value">
+                    {config.legal_name ?? 'Não informada'}
                   </strong>
                 </div>
-                <div className="border rounded-md p-3 bg-slate-50">
-                  <span className="text-xs text-slate-500 block font-medium">CEP</span>
-                  <strong className="text-slate-900 font-mono">{config.postal_code || 'Não informado'}</strong>
+                <div className="master-config-card">
+                  <span className="master-config-label">CNPJ</span>
+                  <strong className="master-config-value">
+                    {config.tax_id ?? 'Não informado'}
+                  </strong>
+                </div>
+                <div className="master-config-card">
+                  <span className="master-config-label">Endereço</span>
+                  <strong className="master-config-value">
+                    {config.address_line ?? 'Não informado'}
+                  </strong>
+                </div>
+                <div className="master-config-card">
+                  <span className="master-config-label">Cidade / UF</span>
+                  <strong className="master-config-value">
+                    {config.city && config.state_code
+                      ? `${config.city} - ${config.state_code}`
+                      : config.city ?? config.state_code ?? 'Não informado'}
+                  </strong>
+                </div>
+                <div className="master-config-card">
+                  <span className="master-config-label">CEP</span>
+                  <strong className="master-config-value">
+                    {config.postal_code ?? 'Não informado'}
+                  </strong>
                 </div>
               </div>
             </section>
@@ -250,162 +308,198 @@ export function MasterPlatformConfig({ client }: { client: SupabaseClient }) {
 
           {/* Section 2: Regras Comerciais */}
           {activeSection === 'commercial' && (
-            <section className="panel space-y-4">
+            <section
+              id="master-config-panel-commercial"
+              role="tabpanel"
+              aria-labelledby="master-config-tab-commercial"
+              tabIndex={0}
+              className="panel master-config-panel"
+            >
               <div className="section-title">
-                <h3 className="flex items-center gap-2">
-                  <Sliders size={18} aria-hidden="true" />
+                <h3>
+                  <Sliders size={18} aria-hidden="true" style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '8px' }} />
                   Regras Comerciais Padrão
                 </h3>
               </div>
-              <p className="subtle text-xs">
+              <p className="subtle">
                 Parâmetros aplicados a novas assinaturas, ressalvadas condições expressas em contratos individuais.
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div className="border rounded-md p-3 bg-slate-50">
-                  <span className="text-xs text-slate-500 block font-medium">Período de Testes (Trial)</span>
-                  <strong className="text-slate-900 text-lg">{config.default_trial_days} dias</strong>
+              <div className="master-config-grid">
+                <div className="master-config-card">
+                  <span className="master-config-label">Período de Testes (Trial)</span>
+                  <strong className="master-config-value-lg">
+                    {config.default_trial_days} dias
+                  </strong>
                 </div>
-                <div className="border rounded-md p-3 bg-slate-50">
-                  <span className="text-xs text-slate-500 block font-medium">Dia de Vencimento Padrão</span>
-                  <strong className="text-slate-900 text-lg">Dia {config.default_due_day}</strong>
+                <div className="master-config-card">
+                  <span className="master-config-label">Dia de Vencimento Padrão</span>
+                  <strong className="master-config-value-lg">
+                    Dia {config.default_due_day}
+                  </strong>
                 </div>
-                <div className="border rounded-md p-3 bg-slate-50">
-                  <span className="text-xs text-slate-500 block font-medium">Tolerância (Grace Period)</span>
-                  <strong className="text-slate-900 text-lg">{config.default_grace_days} dias</strong>
+                <div className="master-config-card">
+                  <span className="master-config-label">Tolerância (Grace Period)</span>
+                  <strong className="master-config-value-lg">
+                    {config.default_grace_days} dias
+                  </strong>
                 </div>
-                <div className="border rounded-md p-3 bg-slate-50">
-                  <span className="text-xs text-slate-500 block font-medium">Retenção Pós-Cancelamento</span>
-                  <strong className="text-slate-900 text-lg">{config.default_retention_days} dias</strong>
+                <div className="master-config-card">
+                  <span className="master-config-label">Retenção Pós-Cancelamento</span>
+                  <strong className="master-config-value-lg">
+                    {config.default_retention_days} dias
+                  </strong>
                 </div>
+              </div>
+
+              <div className="callout">
+                <strong>Isolamento contratual:</strong> Alterações futuras nestes parâmetros aplicam-se apenas a novos contratos ou renovações expressas, preservando snapshots de versões de planos vigentes.
               </div>
             </section>
           )}
 
           {/* Section 3: Cobrança / Encargos */}
           {activeSection === 'billing' && (
-            <section className="panel space-y-4">
+            <section
+              id="master-config-panel-billing"
+              role="tabpanel"
+              aria-labelledby="master-config-tab-billing"
+              tabIndex={0}
+              className="panel master-config-panel"
+            >
               <div className="section-title">
-                <h3 className="flex items-center gap-2">
-                  <DollarSign size={18} aria-hidden="true" />
+                <h3>
+                  <DollarSign size={18} aria-hidden="true" style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '8px' }} />
                   Cobrança e Encargos da Plataforma
                 </h3>
               </div>
-              <p className="subtle text-xs">
+              <p className="subtle">
                 Padronização de numeração de faturas e canais de notificação.
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                <div className="border rounded-md p-3 bg-slate-50">
-                  <span className="text-xs text-slate-500 block font-medium">Prefixo das Faturas SaaS</span>
-                  <strong className="text-slate-900 font-mono text-base">{config.invoice_prefix}</strong>
+              <div className="master-config-grid">
+                <div className="master-config-card">
+                  <span className="master-config-label">Prefixo das Faturas SaaS</span>
+                  <strong className="master-config-value-lg">{config.invoice_prefix}</strong>
                 </div>
-                <div className="border rounded-md p-3 bg-slate-50">
-                  <span className="text-xs text-slate-500 block font-medium">Canal Principal de Cobrança</span>
-                  <strong className="text-slate-900 capitalize">
-                    {config.primary_collection_channel === 'email_whatsapp'
-                      ? 'E-mail + WhatsApp'
-                      : config.primary_collection_channel}
+                <div className="master-config-card">
+                  <span className="master-config-label">Canal Principal de Cobrança</span>
+                  <strong className="master-config-value">
+                    {formatCollectionChannel(config.primary_collection_channel)}
                   </strong>
                 </div>
               </div>
 
-              <div className="bg-slate-50 border rounded-md p-4 text-xs text-slate-600 space-y-1">
-                <p className="font-semibold text-slate-800">Conformidade e Limites Legais:</p>
-                <p>
-                  Os encargos moratórios (juros e multa) são calculados conforme a minuta contratual e os limites
-                  estabelecidos pela legislação aplicável. Renegociações geram novos títulos sem sobrescrever
-                  o histórico da fatura originária.
-                </p>
+              <div className="callout">
+                <strong>Conformidade e Limites Legais:</strong> Os encargos moratórios (juros e multa) são calculados conforme a minuta contratual e os limites estabelecidos pela legislação aplicável. Renegociações geram novos títulos sem sobrescrever o histórico da fatura originária.
               </div>
             </section>
           )}
 
           {/* Section 4: Comunicação */}
           {activeSection === 'communications' && (
-            <section className="panel space-y-4">
+            <section
+              id="master-config-panel-communications"
+              role="tabpanel"
+              aria-labelledby="master-config-tab-communications"
+              tabIndex={0}
+              className="panel master-config-panel"
+            >
               <div className="section-title">
-                <h3 className="flex items-center gap-2">
-                  <Mail size={18} aria-hidden="true" />
+                <h3>
+                  <Mail size={18} aria-hidden="true" style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '8px' }} />
                   Canais Oficiais de Comunicação
                 </h3>
               </div>
-              <p className="subtle text-xs">
+              <p className="subtle">
                 Contatos divulgados aos clientes para emissão de cobranças e atendimento técnico.
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-                <div className="border rounded-md p-3 bg-slate-50">
-                  <span className="text-xs text-slate-500 block font-medium">E-mail de Cobrança / Faturamento</span>
-                  <strong className="text-slate-900 font-mono">{config.billing_email || 'Não informado'}</strong>
+              <div className="master-config-grid">
+                <div className="master-config-card">
+                  <span className="master-config-label">E-mail de Cobrança / Faturamento</span>
+                  <strong className="master-config-value">
+                    {config.billing_email ?? 'Não informado'}
+                  </strong>
                 </div>
-                <div className="border rounded-md p-3 bg-slate-50">
-                  <span className="text-xs text-slate-500 block font-medium">E-mail de Suporte</span>
-                  <strong className="text-slate-900 font-mono">{config.support_email || 'Não informado'}</strong>
+                <div className="master-config-card">
+                  <span className="master-config-label">E-mail de Suporte</span>
+                  <strong className="master-config-value">
+                    {config.support_email ?? 'Não informado'}
+                  </strong>
                 </div>
-                <div className="border rounded-md p-3 bg-slate-50">
-                  <span className="text-xs text-slate-500 block font-medium">Telefone / WhatsApp de Suporte</span>
-                  <strong className="text-slate-900 font-mono">{config.support_phone || 'Não informado'}</strong>
+                <div className="master-config-card">
+                  <span className="master-config-label">Telefone / WhatsApp de Suporte</span>
+                  <strong className="master-config-value">
+                    {config.support_phone ?? 'Não informado'}
+                  </strong>
                 </div>
+              </div>
+
+              <div className="callout">
+                <strong>Governança de disparos:</strong> Envios transacionais operam exclusivamente no servidor via fila persistida e Edge Functions autenticadas, sem credenciais SMTP ou tokens de mensageria expostos no cliente.
               </div>
             </section>
           )}
 
           {/* Section 5: Termos e Privacidade */}
           {activeSection === 'legal' && (
-            <section className="panel space-y-4">
+            <section
+              id="master-config-panel-legal"
+              role="tabpanel"
+              aria-labelledby="master-config-tab-legal"
+              tabIndex={0}
+              className="panel master-config-panel"
+            >
               <div className="section-title">
-                <h3 className="flex items-center gap-2">
-                  <FileText size={18} aria-hidden="true" />
+                <h3>
+                  <FileText size={18} aria-hidden="true" style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '8px' }} />
                   Termos de Uso e Políticas de Privacidade
                 </h3>
               </div>
-              <p className="subtle text-xs">
-                Documentos jurídicos versionados por vigência determinística. Versões publicadas preservam histórico
-                imutável.
+              <p className="subtle">
+                Documentos jurídicos versionados por vigência determinística. Versões publicadas preservam histórico imutável.
               </p>
 
-              {!terms || terms.length === 0 ? (
-                <p className="text-sm text-slate-500 py-4">Nenhum termo versionado cadastrado.</p>
+              {terms.length === 0 ? (
+                <div className="callout" role="status">
+                  Nenhum termo versionado cadastrado.
+                </div>
               ) : (
-                <div className="overflow-x-auto max-w-full min-w-0 border rounded-md">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-slate-50 border-b text-slate-600 font-semibold text-xs uppercase tracking-wider">
+                <div
+                  className="finance-table"
+                  role="region"
+                  aria-label="Tabela de termos e políticas versionadas"
+                  tabIndex={0}
+                >
+                  <table>
+                    <caption>
+                      Histórico de versões de Termos de Serviço, Política de Privacidade e DPA
+                    </caption>
+                    <thead>
                       <tr>
-                        <th className="py-3 px-3">Documento</th>
-                        <th className="py-3 px-3">Versão</th>
-                        <th className="py-3 px-3">Estado</th>
-                        <th className="py-3 px-3">Vigência a partir de</th>
-                        <th className="py-3 px-3">Vigência até</th>
+                        <th scope="col">Documento</th>
+                        <th scope="col">Tipo</th>
+                        <th scope="col">Versão</th>
+                        <th scope="col">Estado</th>
+                        <th scope="col">Vigência a partir de</th>
+                        <th scope="col">Vigência até</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y text-slate-700">
+                    <tbody>
                       {terms.map(t => (
-                        <tr key={t.id} className="hover:bg-slate-50 transition-colors">
-                          <td className="py-3 px-3 font-medium text-slate-900">{t.title}</td>
-                          <td className="py-3 px-3 font-mono">{t.version_number}</td>
-                          <td className="py-3 px-3">
-                            <span
-                              className={`inline-block px-2 py-0.5 text-xs rounded-full font-medium ${
-                                t.status === 'published'
-                                  ? 'bg-emerald-100 text-emerald-800'
-                                  : t.status === 'draft'
-                                  ? 'bg-amber-100 text-amber-800'
-                                  : 'bg-slate-100 text-slate-700'
-                              }`}
-                            >
-                              {t.status === 'published'
-                                ? 'Publicado'
-                                : t.status === 'draft'
-                                ? 'Rascunho'
-                                : 'Revogado'}
-                            </span>
+                        <tr key={t.id}>
+                          <th scope="row">{t.title}</th>
+                          <td>{formatDocumentTypeLabel(t.document_type)}</td>
+                          <td>
+                            <code>{t.version_number}</code>
                           </td>
-                          <td className="py-3 px-3 text-slate-500">
-                            {new Date(t.effective_at).toLocaleDateString('pt-BR')}
-                          </td>
-                          <td className="py-3 px-3 text-slate-500">
-                            {t.valid_to ? new Date(t.valid_to).toLocaleDateString('pt-BR') : 'Indeterminada'}
+                          <td>{renderTermStatusBadge(t.status)}</td>
+                          <td>{new Date(t.effective_at).toLocaleDateString('pt-BR')}</td>
+                          <td>
+                            {t.valid_to
+                              ? new Date(t.valid_to).toLocaleDateString('pt-BR')
+                              : 'Indeterminada'}
                           </td>
                         </tr>
                       ))}
@@ -417,107 +511,92 @@ export function MasterPlatformConfig({ client }: { client: SupabaseClient }) {
           )}
 
           {/* Section 6: Integrações */}
-          {activeSection === 'integrations' && (
-            <section className="panel space-y-4">
+          {activeSection === 'integrations' && billingReadiness && emailReadiness && fiscalReadiness && (
+            <section
+              id="master-config-panel-integrations"
+              role="tabpanel"
+              aria-labelledby="master-config-tab-integrations"
+              tabIndex={0}
+              className="panel master-config-panel"
+            >
               <div className="section-title">
-                <h3 className="flex items-center gap-2">
-                  <Lock size={18} aria-hidden="true" />
+                <h3>
+                  <Lock size={18} aria-hidden="true" style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '8px' }} />
                   Status das Integrações Externas
                 </h3>
               </div>
-              <p className="subtle text-xs">
-                Controle de prontidão dos serviços integrados. Credenciais e tokens de API permanecem
-                estritamente no servidor e nunca são exibidos no frontend.
+              <p className="subtle">
+                Controle declarativo de configuração dos serviços integrados. Credenciais e tokens de API permanecem estritamente no servidor e nunca são exibidos no frontend.
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-                <div className="border rounded-md p-4 bg-slate-50 space-y-2">
-                  <span className="text-xs font-semibold text-slate-700 block">
-                    Gateway de Pagamentos (Billing Provider)
-                  </span>
-                  <div className="flex items-center gap-2">
-                    {config.billing_provider_status === 'configured' ? (
-                      <>
-                        <CheckCircle size={16} className="text-emerald-600" aria-hidden="true" />
-                        <span className="text-xs font-medium text-emerald-800">Conectado</span>
-                      </>
-                    ) : (
-                      <>
-                        <AlertTriangle size={16} className="text-amber-600" aria-hidden="true" />
-                        <span className="text-xs font-medium text-amber-800">
-                          {config.billing_provider_status === 'not_configured'
-                            ? 'Pendente de homologação'
-                            : config.billing_provider_status}
-                        </span>
-                      </>
+              <div className="master-config-list">
+                <div className="master-config-item">
+                  <div className="master-config-item-copy">
+                    <h4>Gateway de Pagamentos (Billing Provider)</h4>
+                    <p className="master-config-meta">
+                      PIX, Boleto e Webhooks operam mediante provedor comercial homologado no servidor.
+                    </p>
+                  </div>
+                  <div className="master-config-badges">
+                    <span className={`status ${billingReadiness.badgeTone}`}>
+                      {billingReadiness.badgeLabel}
+                    </span>
+                    <span className="status">
+                      {billingReadiness.verificationNote}
+                    </span>
+                    {config.billing_provider_status === 'not_configured' && (
+                      <span className="status">Pendente de homologação</span>
                     )}
                   </div>
-                  <p className="text-xs text-slate-400">
-                    PIX, Boleto e Webhooks aguardam definição de provedor comercial.
-                  </p>
                 </div>
 
-                <div className="border rounded-md p-4 bg-slate-50 space-y-2">
-                  <span className="text-xs font-semibold text-slate-700 block">
-                    Serviço de E-mail Transacional
-                  </span>
-                  <div className="flex items-center gap-2">
-                    {config.email_provider_status === 'configured' ? (
-                      <>
-                        <CheckCircle size={16} className="text-emerald-600" aria-hidden="true" />
-                        <span className="text-xs font-medium text-emerald-800">Conectado</span>
-                      </>
-                    ) : (
-                      <>
-                        <AlertTriangle size={16} className="text-amber-600" aria-hidden="true" />
-                        <span className="text-xs font-medium text-amber-800">
-                          {config.email_provider_status === 'not_configured'
-                            ? 'Não configurado'
-                            : config.email_provider_status}
-                        </span>
-                      </>
-                    )}
+                <div className="master-config-item">
+                  <div className="master-config-item-copy">
+                    <h4>Serviço de E-mail Transacional</h4>
+                    <p className="master-config-meta">
+                      Envios de convites e lembretes operam via fila persistida no servidor.
+                    </p>
                   </div>
-                  <p className="text-xs text-slate-400">
-                    Envios de convites e lembretes operam via fila persistida.
-                  </p>
+                  <div className="master-config-badges">
+                    <span className={`status ${emailReadiness.badgeTone}`}>
+                      {emailReadiness.badgeLabel}
+                    </span>
+                    <span className="status">
+                      {emailReadiness.verificationNote}
+                    </span>
+                  </div>
                 </div>
 
-                <div className="border rounded-md p-4 bg-slate-50 space-y-2">
-                  <span className="text-xs font-semibold text-slate-700 block">
-                    Emissão Fiscal (NFS-e)
-                  </span>
-                  <div className="flex items-center gap-2">
-                    {config.fiscal_provider_status === 'configured' ? (
-                      <>
-                        <CheckCircle size={16} className="text-emerald-600" aria-hidden="true" />
-                        <span className="text-xs font-medium text-emerald-800">Conectado</span>
-                      </>
-                    ) : (
-                      <>
-                        <AlertTriangle size={16} className="text-amber-600" aria-hidden="true" />
-                        <span className="text-xs font-medium text-amber-800">
-                          {config.fiscal_provider_status === 'not_configured'
-                            ? 'Não configurado'
-                            : config.fiscal_provider_status}
-                        </span>
-                      </>
-                    )}
+                <div className="master-config-item">
+                  <div className="master-config-item-copy">
+                    <h4>Emissão Fiscal (NFS-e)</h4>
+                    <p className="master-config-meta">
+                      Integração com prefeituras para transmissão de notas fiscais de serviço.
+                    </p>
                   </div>
-                  <p className="text-xs text-slate-400">
-                    Integração com prefeituras para notas fiscais de serviço.
-                  </p>
+                  <div className="master-config-badges">
+                    <span className={`status ${fiscalReadiness.badgeTone}`}>
+                      {fiscalReadiness.badgeLabel}
+                    </span>
+                    <span className="status">
+                      {fiscalReadiness.verificationNote}
+                    </span>
+                  </div>
                 </div>
+              </div>
+
+              <div className="callout">
+                <strong>Sem falsa prontidão:</strong> O valor <code>configured</code> reflete apenas registro declarativo na tabela <code>saas_platform_configuration</code> e não comprova conectividade operacional em tempo real.
               </div>
             </section>
           )}
 
-          <p className="subtle text-xs text-slate-400">
-            Última atualização registrada: {new Date(config.updated_at).toLocaleString('pt-BR')}. Modificações de
-            configurações globais exigem RPC de governança administrativa aprovada com auditoria.
+          <p className="subtle">
+            Última atualização registrada: {new Date(config.updated_at).toLocaleString('pt-BR')}. Modificações de configurações globais exigem RPC de governança administrativa aprovada com auditoria.
           </p>
         </>
       )}
     </div>
   )
 }
+

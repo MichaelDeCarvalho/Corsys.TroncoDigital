@@ -1,3 +1,55 @@
+## M06.02 — Configurações da Plataforma (`view-master-config`): implementação F1–F5 e testes concluídos no Gemini (19/11/2026)
+
+**Implementação consolidada de F1–F5 e testes automatizados CONCLUÍDOS no Gemini AI Studio. CI pós-push e homologação autenticada no Cloudflare DEV permanecem PENDENTES.** M06.02 geral **EM_EXECUCAO**. Planos SaaS, Cobrança SaaS, drawer transversal, chamados Master e Dashboard Mobile não reabertos.
+
+### Diretriz operacional e revisão de origem
+
+- **Diretriz operacional do proprietário:** Gemini AI Studio definido como agente prioritário para diagnóstico, implementação, revisão local e testes automatizados/executáveis disponíveis no ambiente; ChatGPT Work reservado para homologação independente autenticada no Cloudflare DEV e verificações indisponíveis no Gemini.
+- **Revisão de origem:** branch `main`, HEAD **`3da4f1e1656da23736c38c63b70f8f3d41828ea8`** (PR documental #65 integrado; revisão funcional anterior **`025d165da1e587c40170ec967b9ce16ccb7e6b4e`**, CI `44651527695` 3/3 PASS, 598 testes em 85 arquivos, Workers Builds `4a69d852-ffaf-4ecf-8ad0-08930ddc6d2c` SUCCESS).
+
+### Diagnóstico e correções implementadas (F1–F5)
+
+1. **F1 — Eliminação de dados obsoletos e estados fail-closed (`src/components/MasterPlatformConfig.tsx`):**
+   - Ao iniciar a consulta ou atualizar (`revision` / troca de `client`), `config` e `terms` são limpos imediatamente (`setConfig(null)`, `setTerms(null)`), impedindo retenção visual de dados obsoletos durante `loading`, `error` ou `denied` (`42501` / `28000`).
+   - As abas e os painéis de configuração só são renderizados quando **ambas** as consultas (`loadPlatformConfiguration` e `loadPlatformTerms`) concluem com sucesso e validação aprovada (`!loading && !denied && !error && config !== null && terms !== null`). Falha em qualquer uma das duas consultas bloqueia a exibição parcial.
+   - Controle de concorrência com `AbortController` + contador monotônico de requisição (`requestSeqRef`) descarta respostas atrasadas ou abortadas.
+   - Mensagens de erro de falha genérica são sanitizadas na fronteira de apresentação, sem expor mensagens técnicas internas do backend, preservando a recuperação pelo botão `Atualizar`.
+2. **F2 — Acessibilidade completa das 6 abas (`src/components/MasterPlatformConfig.tsx`):**
+   - Implementado o padrão WAI-ARIA Tabs completo para as seis seções (`identity`, `commercial`, `billing`, `communications`, `legal`, `integrations`): `role="tablist"`, `role="tab"`, `id="master-config-tab-${id}"`, `aria-selected`, `aria-controls="master-config-panel-${id}"`, `tabIndex` roving (`0` na aba ativa, `-1` nas inativas) e `role="tabpanel"` com `id="master-config-panel-${id}"` e `aria-labelledby="master-config-tab-${id}"`.
+   - Apenas o painel da seção ativa é montado no DOM, eliminando controles ocultos na ordem de tabulação.
+   - Navegação por teclado nas abas com ativação imediata e transferência de foco para `ArrowRight`, `ArrowLeft`, `ArrowDown`, `ArrowUp`, `Home` e `End` (circular), além de `Enter`, `Space` e clique.
+   - A seção ativa (`activeSection`) é preservada após atualização bem-sucedida (`Atualizar`).
+3. **F3 — Consistência visual com o tema escuro CorSys e responsividade (`src/components/MasterPlatformConfig.tsx`, `src/styles.css`):**
+   - Removidas todas as classes claras incompatíveis (`bg-slate-50`, `text-slate-900`, `text-slate-700`, `bg-slate-100`, `bg-blue-600`, `bg-emerald-100`, `bg-amber-100`) em favor de tokens e classes do tema escuro CorSys (`.panel`, `.section-title`, `.callout`, `.status`, `.badge`, `.finance-table`, `.master-config-*` com `var(--surface)`, `var(--text)`, `var(--muted)`, `var(--gold)`, `var(--border-soft)`).
+   - Distinção visual explícita entre aba selecionada (`[aria-selected="true"]` com fundo `rgba(197, 168, 128, .14)` e borda dourada translúcida) e foco de teclado (`:focus-visible` com `outline: 2px solid var(--gold)`, `outline-offset: 2px` e `box-shadow`).
+   - Tabela de termos envolvida em região nomeada rolável por teclado (`className="finance-table" role="region" aria-label="Tabela de termos e políticas versionadas" tabIndex={0}`), `overflow-wrap: anywhere` em valores longos (endereços, e-mails, CNPJ, razão social) e eliminação de ID duplicado `#view-master-config` quando montado dentro de `MasterConsole`.
+4. **F4 — Minimização e validação proporcional de dados (`src/lib/master-config.ts`):**
+   - Substituído `.select('*')` em `loadPlatformConfiguration` pela projeção explícita `PLATFORM_CONFIGURATION_SELECT` restrita aos campos não secretos necessários à tela (excluindo `updated_by`).
+   - Reconciliada a projeção `PLATFORM_TERMS_SELECT` (`id,document_type,version,status,effective_at,valid_to`) com o schema PostgreSQL real de `public.saas_terms_versions` (`20261002201717_202609080006_saas_platform.sql` e `20261002202042_202609090014_v33_saas_control_plane.sql`), onde a coluna versionada é `version` e não há coluna `title` na tabela física, mantendo compatibilidade normalizada com `version_number` e `title` dos contratos e testes existentes.
+   - Adicionados validadores determinísticos fail-closed `validatePlatformConfiguration` e `validatePlatformTerms`: invariante `singleton === true`, inteiros e limites do schema (`default_trial_days >= 0`, `default_grace_days >= 0`, `default_retention_days >= 0`, `default_due_day` entre `1` e `28`), `primary_collection_channel in ('email', 'whatsapp', 'email_whatsapp')`, `status in ('draft', 'published', 'retired')`, timestamps válidos, `valid_to > effective_at` quando presente e rejeição de IDs duplicados.
+5. **F5 — Prontidão de integrações sem falsa confirmação (`src/components/MasterPlatformConfig.tsx`):**
+   - Removido o rótulo enganoso `Conectado` quando `*_provider_status === 'configured'`.
+   - Mapeamento determinístico sem falsa prontidão:
+     - `'configured'` → `Configurado` + `Disponibilidade operacional não verificada`.
+     - `'not_configured'` → `Não configurado` + `Disponibilidade operacional não verificada` (e tag complementar `Pendente de homologação` no Gateway de Pagamentos).
+     - Valor desconhecido → `Estado não reconhecido` + `Disponibilidade operacional não verificada` (sem ecoar string bruta não confiável na interface).
+
+### Reconciliação V35 (`view-master-config`) e limites do escopo
+
+- Mantido o recorte estritamente somente leitura sob governança Master/AAL2, cobrindo as 6 seções da V35 (`identity`, `commercial`, `billing`, `communications`, `legal`, `integrations`).
+- Não foram adicionados botões mortos (`Editar configurações`, `Revisar`), modais demonstrativos sem contrato backend auditado nem mutações de banco/Auth/RLS. A edição persistente de configurações globais e o fluxo de revisão de documentos permanecem registrados como lacunas residuais da tela integral frente ao protótipo demonstrativo V35.
+
+### Testes e verificações executados no Gemini
+
+- `npx vitest run src/components/MasterPlatformConfig.test.tsx`: **12/12 PASS (exit 0)** — 3 testes existentes preservados + 9 novos testes cobrindo F1–F5.
+- Suíte completa Vitest: **607/607 testes aprovados em 85 arquivos (exit 0)**.
+- `npm run typecheck` (`tsc --noEmit`): **PASS (exit 0)**.
+- `npm run build` (`vite build`): **PASS (exit 0)**.
+- `npx wrangler deploy --dry-run --config wrangler.dev.jsonc`: **PASS (exit 0)**.
+- **Pendente após push:** confirmação do GitHub Actions CI no repositório remoto e homologação autenticada Master/AAL2 no Cloudflare DEV pelo ChatGPT Work.
+
+---
+
 ## M06.02 — Cobrança SaaS: recorte de consulta/filtros/acessibilidade aprovado (19/11/2026)
 
 **Aceite funcional CONCLUIDO somente no recorte disponível de consulta, filtros, estados observáveis, teclado e responsividade. Cobrança SaaS integral NÃO HOMOLOGADA.** Sem defeito funcional reproduzido; operações financeiras, casos indisponíveis e lacunas V35 permanecem separados. M06.02 geral EM_EXECUCAO. Planos, drawer, chamados Master e Dashboard Mobile não reabertos.

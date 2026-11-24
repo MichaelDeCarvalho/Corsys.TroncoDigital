@@ -368,3 +368,25 @@ p { line-height: 1.6; }
 .onboarding-document { white-space: pre-wrap; overflow-wrap: anywhere; margin-block: 1rem; line-height: 1.6; }
 .onboarding-hash { overflow-wrap: anywhere; }
 .onboarding-acceptance form { display: grid; gap: 1rem; justify-items: start; }
+
+.master-config { display: grid; gap: 20px; min-width: 0; max-width: 100%; }
+.master-config-tabs { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border-soft); min-width: 0; max-width: 100%; }
+.master-config-tab { background: transparent; color: var(--muted); border: 1px solid transparent; border-radius: 9px; padding: 9px 14px; font-size: .85rem; font-weight: 500; min-height: 42px; transition: background-color .16s ease, color .16s ease, border-color .16s ease; overflow-wrap: anywhere; }
+.master-config-tab:hover { background: rgba(255, 255, 255, .04); color: var(--text); }
+.master-config-tab[aria-selected="true"] { background: rgba(197, 168, 128, .14); color: var(--text); border-color: rgba(197, 168, 128, .34); font-weight: 600; }
+.master-config-tab:focus-visible, .master-config-tab[aria-selected="true"]:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; box-shadow: 0 0 0 1px rgba(197, 168, 128, .35); }
+.master-config-panel { min-width: 0; max-width: 100%; }
+.master-config-panel:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.master-config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 14px; min-width: 0; }
+.master-config-card { border: 1px solid var(--border-soft); border-radius: 12px; padding: 16px; background: var(--surface); min-width: 0; overflow-wrap: anywhere; }
+.master-config-card-wide { grid-column: 1 / -1; }
+.master-config-label { display: block; color: var(--muted); font-size: .73rem; text-transform: uppercase; letter-spacing: .07em; font-weight: 600; margin-bottom: 6px; overflow-wrap: anywhere; }
+.master-config-value { display: block; color: var(--text); font-size: 1rem; font-weight: 600; overflow-wrap: anywhere; word-break: break-word; }
+.master-config-value-lg { display: block; color: var(--gold); font-size: 1.35rem; font-weight: 650; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.master-config-meta { color: var(--muted); font-size: .8rem; margin-top: 6px; margin-bottom: 0; overflow-wrap: anywhere; }
+.master-config-list { display: grid; gap: 12px; min-width: 0; }
+.master-config-item { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 16px; border: 1px solid var(--border-soft); border-radius: 12px; background: var(--surface); min-width: 0; }
+.master-config-item-copy { flex: 1 1 220px; min-width: 0; overflow-wrap: anywhere; }
+.master-config-item-copy h4 { margin: 0 0 4px; color: var(--text); font-size: .95rem; font-weight: 600; overflow-wrap: anywhere; }
+.master-config-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+
