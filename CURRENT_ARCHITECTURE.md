@@ -1,6 +1,6 @@
 ## Incremento vigente — 25/11/2026
 
-RPC aditiva save_platform_identity e tabelas/RPCs de onboarding acceptance instaladas no DEV; mapeamento Git→versão remota em docs/V35_MIGRATION_RECONCILIATION_DEV.md. MASTER/AAL2 e ACLs verificados. Edge onboarding-invite permanece v1: atualizar apenas após verificar ONBOARDING_APP_ORIGIN e redirect Auth, preservando verify_jwt=true. DRE apresentada como gerencial; cálculos preservados. PROD isolado/vazio continua preparação sem deploy. Evidência e limites em SESSION_HANDOFF.md.
+RPC aditiva save_platform_identity e tabelas/RPCs de onboarding acceptance instaladas no DEV; mapeamento Git→versão remota em docs/V35_MIGRATION_RECONCILIATION_DEV.md. MASTER/AAL2 e ACLs verificados. Edge onboarding-invite ACTIVE v3, verify_jwt=true; ONBOARDING_APP_ORIGIN e callback restrito ao DEV configurados e relidos. Fontes publicadas idênticas ao Git; jornada de aceite real ainda pendente. DRE apresentada como gerencial; cálculos preservados. PROD isolado/vazio continua preparação sem deploy. Evidência e limites em SESSION_HANDOFF.md.
 
 ---
 
