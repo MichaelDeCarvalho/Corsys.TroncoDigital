@@ -386,9 +386,14 @@ describe('Workspace V35 dashboard modes, shortcuts and KPI navigation', () => {
     await screen.findByRole('heading', { name: 'Atalhos e Ações Rápidas' }, { timeout: 8000 })
 
     // Verify non-intercepted RPCs (e.g., read_tenant_daily_cash_flow) continue resolving via origRpcImpl without recursion
-    expect(base.rpc).toHaveBeenCalledWith(
-      'read_tenant_daily_cash_flow',
-      expect.objectContaining({ p_organization_id: 'org-a' }),
+    await waitFor(
+      () => {
+        expect(base.rpc).toHaveBeenCalledWith(
+          'read_tenant_daily_cash_flow',
+          expect.objectContaining({ p_organization_id: 'org-a' }),
+        )
+      },
+      { timeout: 8000 },
     )
     expect((await screen.findAllByText(/R\$\s?850,00/)).length).toBeGreaterThan(0)
 
