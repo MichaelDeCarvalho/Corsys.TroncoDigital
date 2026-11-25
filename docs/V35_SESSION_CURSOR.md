@@ -1,3 +1,33 @@
+## Cursor ativo — M06.01 / conciliação (25/11/2026)
+
+- PR #67: reconciliação documental + quatro novos testes de bloqueio/recuperação da UI; 12/12 PASS local em jsdom com cliente simulado e fontes da base `fed69b8`; implementação de produção intacta.
+- **Próximo passo:** gate independente em navegador DEV, somente leitura e falhas injetadas apenas em respostas locais, conforme [aceite delimitado](V35_M0201_FINANCIAL_RECONCILIATION.md). Exige ferramenta com interceptação seletiva e extrato de teste existente elegível. Não gerar fatos nem alterar usuários/limites remotos; se indisponível, registrar bloqueio.
+- CI `fed69b8` do PR #67: static/onboarding/frontend PASS, observado nesta retomada. CI da nova revisão deve ser conferido separadamente; sem merge/deploy neste incremento.
+- M06.01/M06.03 EM_EXECUCAO; gate DEV específico NOT EVALUATED. M06.02 CONCLUIDO e ressalvas preservados. Não repetir timezone/Grupo A/C01–C05.
+- Evidência detalhada, requisito original, limites de consultas independentes e ambiente local no início de `V35_M0201_FINANCIAL_RECONCILIATION.md` e `SESSION_HANDOFF.md`.
+
+---
+
+## Reconciliação M06.01/M06.03 — 25/11/2026
+
+Base: `62a6ba87bd30b85bee4f6aa640b25bd3b02aae90`. Esta atualização corrige o controle de execução; não altera código, schema, permissões ou ambientes.
+
+- **VERIFICADO nesta retomada:** main na revisão acima; CI [45686141566](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/45686141566) concluído com static/onboarding/frontend SUCCESS e check Workers Builds DEV SUCCESS. Isso não constitui nova homologação do runtime.
+- **VERIFICADO por leitura administrativa DEV:** histórico com 79 migrations, incluindo `20261115184137_v35_tenant_timezone_financial_dates`; presentes `private.is_valid_iana_timezone`, `private.tenant_current_date_at` e `private.tenant_current_date`. O arquivo Git permanece `20261115120000_v35_tenant_timezone_financial_dates.sql`. Não reaplicar nem renomear.
+- **Evidência anterior preservada:** teste PostgreSQL transacional de timezone registrado em [reconciliação de migrations](V35_MIGRATION_RECONCILIATION_DEV.md); Grupo A HTTP somente leitura 5/5 PASS fornecido pelo proprietário em 15/11, conforme [registro](V35_HTTP_READONLY_GATE_20261115.md). Não reexecutados nesta retomada.
+- **M06.02 permanece CONCLUIDO**, com paginação visual além da primeira página NOT EVALUATED e risco residual de deadlock `40P01` não eliminado. C01–C05 PASS em PostgreSQL descartável não equivalem a todos os cenários de concorrência/recuperação da V35.
+- **M06.01/M06.03 permanecem EM_EXECUCAO.** A aplicação de timezone e o Grupo A deixam de ser pendências. Restam os aceites por requisito das 21 telas, Grupo B persistente no recorte ainda não comprovado e recuperação/regressões não cobertas pelas evidências existentes.
+- Nenhum teste de produto, migration, deploy, operação financeira, convite ou acesso PROD foi executado neste incremento documental. A existência das funções não é uma nova prova comportamental.
+
+### Cursor ativo
+
+- **M06.01 — view-tesouraria / conciliação M02.02-A:** confrontar requisito original, implementação e evidências; delimitar aceite pendente de bloqueio por leitura truncada/incoerente. Gemini para revisão e testes locais; Work para homologação independente autenticada, quando necessária e autorizada.
+- Próxima saída: requisito → evidência reutilizada → lacuna → menor teste faltante → autorização necessária. Não executar Grupo B, migrations, publicações ou registros financeiros com esta autorização documental.
+- M06.03 consome o aceite e mantém separados os gates de recuperação, persistência e demais fluxos. Não reabrir M06.02.
+- Este registro supersede instruções históricas abaixo de aplicar timezone ou repetir Grupo A. Histórico preservado. CI e integração desta proposta serão acompanhados no PR.
+
+---
+
 ## M06.02 — Encerramento Documental: `CONCLUIDO` com ressalvas registradas (`view-master-planos`, 25/11/2026)
 
 - **Base verificada:** `534eb6b4b7ea0860288e3dfe6d6f6ec93a1c0239` (CI GitHub Actions **`45529859036` 3/3 PASS**: `static` PASS, `onboarding` PASS com `C01–C05` + integridade relacional/auditoria PASS em `postgres:17`, `frontend` PASS `625/625`; Cloudflare **Workers Builds DEV** **SUCCESS**, Build ID `3ca9d183-730d-4f76-868c-faca67a5054b`, Version ID `0f6747d8-2461-4d54-bef5-6f94725590d9`).

@@ -1,3 +1,44 @@
+## M06.01 — Conciliação M02.02-A: aceite automatizado da tela (25/11/2026)
+
+Base de código inspecionada: `fed69b828177b1ab575aa63967e9959eab6929b3` (PR #67). Mudança restrita a testes e registros; nenhum componente, serviço, RPC ou migration alterado.
+
+**Requisito:** `view-tesouraria`, comparação sistema × extrato e correspondências/status, em `V35_PILOT_V35_INVENTORY.md`; ADR-0027 exige falha explícita ao exceder consultas e proíbe operar sobre amostra parcial. O arquivo OFX/CSV (`view-tesouraria-F001`) e os gates de importação/validação/desfazer já homologados não são reabertos.
+
+**Implementação existente:** `loadBankDetail` valida contagens exatas das linhas/vínculos/estornos, restringe estornos aos vínculos do extrato em lotes de 100 e compara valores ativos em centavos com o total das linhas. O componente limpa o detalhe e só apresenta correspondência/desfazimento após leitura válida. Leituras independentes não oferecem snapshot transacional único.
+
+**Lacuna de evidência fechada localmente:** quatro cenários de componente com o serviço real e cliente simulado: contagem incompleta de linhas, de vínculos, de estornos e divergência entre vínculos ativos e total da linha. Em cada cenário: alerta sanitizado; controles de conciliar/desfazer ausentes; zero RPC de escrita; recuperação pelo botão Atualizar com dados completos/coerentes; controles reaparecem bloqueados até confirmação; zero escrita durante recuperação.
+
+**Execução local: 12/12 PASS, exit 0** (oito testes anteriores + quatro novos), Node v24.20.0/Vitest 5.0.5/jsdom, cópia isolada dos fontes da revisão-base, dependências já instaladas. Configuração local mínima com JSX automático e aliases para dependências; não foi usado o arquivo Vite integral do projeto. A tentativa inicial com o plugin React falhou ao carregar `vite/internal`; a configuração mínima permitiu executar os testes sem alterar toolchain do repositório. Typecheck, build e suíte integral desta alteração: não executados localmente; verificar CI da nova revisão, sem reutilizar o PASS do commit anterior como resultado desta alteração.
+
+**Limite:** testes de componente não comprovam PostgREST/RLS real, limite remoto, isolamento por JWT ou navegador autenticado. O gate DEV específico continua NOT EVALUATED. M06.01/M06.03 EM_EXECUCAO; M06.02 CONCLUIDO preservado.
+
+### Próximo aceite independente delimitado
+
+Work: confirmar sessão autorizada/Loja e extrato de teste já existente; somente leitura. Se o navegador de teste permitir interceptação seletiva das respostas dessas consultas, observar o estado real antes/durante/depois do refresh e aplicar os quatro cenários acima somente nas respostas locais ao browser. Não alterar servidor, limites, roles, RPCs ou fatos financeiros; não clicar importar/validar/conciliar/desfazer. Remover interceptações, atualizar e confirmar recuperação sem chamadas RPC de escrita. Se a ferramenta não permitir interceptação observável ou faltar extrato de teste elegível, registrar BLOCKED/NOT EVALUATED; não criar fixture persistente implicitamente.
+
+Aceite: erro sanitizado e controles indisponíveis em cada resposta incompleta/incoerente; reaparecimento somente após leitura completa, com confirmações obrigatórias ainda ativas; nenhuma mutação de rede. Esse experimento observa a UI em navegador, não comprova o limite real do PostgREST nem snapshot atômico. Qualquer necessidade de seed/mutação deve vir com escopo, IDs/dados e cleanup para autorização própria.
+
+---
+
+## Reconciliação M06.01/M06.03 — 25/11/2026
+
+Base: `62a6ba87bd30b85bee4f6aa640b25bd3b02aae90`. Esta atualização corrige o controle de execução; não altera código, schema, permissões ou ambientes.
+
+- **VERIFICADO nesta retomada:** main na revisão acima; CI [45686141566](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/45686141566) concluído com static/onboarding/frontend SUCCESS e check Workers Builds DEV SUCCESS. Isso não constitui nova homologação do runtime.
+- **VERIFICADO por leitura administrativa DEV:** histórico com 79 migrations, incluindo `20261115184137_v35_tenant_timezone_financial_dates`; presentes `private.is_valid_iana_timezone`, `private.tenant_current_date_at` e `private.tenant_current_date`. O arquivo Git permanece `20261115120000_v35_tenant_timezone_financial_dates.sql`. Não reaplicar nem renomear.
+- **Evidência anterior preservada:** teste PostgreSQL transacional de timezone registrado em [reconciliação de migrations](docs/V35_MIGRATION_RECONCILIATION_DEV.md); Grupo A HTTP somente leitura 5/5 PASS fornecido pelo proprietário em 15/11, conforme [registro](docs/V35_HTTP_READONLY_GATE_20261115.md). Não reexecutados nesta retomada.
+- **M06.02 permanece CONCLUIDO**, com paginação visual além da primeira página NOT EVALUATED e risco residual de deadlock `40P01` não eliminado. C01–C05 PASS em PostgreSQL descartável não equivalem a todos os cenários de concorrência/recuperação da V35.
+- **M06.01/M06.03 permanecem EM_EXECUCAO.** A aplicação de timezone e o Grupo A deixam de ser pendências. Restam os aceites por requisito das 21 telas, Grupo B persistente no recorte ainda não comprovado e recuperação/regressões não cobertas pelas evidências existentes.
+- Nenhum teste de produto, migration, deploy, operação financeira, convite ou acesso PROD foi executado neste incremento documental. A existência das funções não é uma nova prova comportamental.
+
+### Próxima execução delimitada
+
+Micro ativa: **M06.01**, reconciliação por requisito de **Caixa e Bancos / conciliação (view-tesouraria)**, começando pelo gate específico de truncamento/incoerência M02.02-A. Gemini deve conferir inventário original, código e testes já existentes e produzir apenas a lacuna de aceite; Work executa homologação independente autenticada somente no DEV, dentro da autorização correspondente. Não gerar fatos financeiros nem injetar falhas remotamente nesta autorização documental. Primeiro reutilizar evidências equivalentes; só propor teste novo para lacuna identificada. M06.03 deve consumir essa evidência sem duplicar os gates A/B, comerciais ou de timezone aprovados. Recuperação M05.02 e decisões M01/M03/M05 continuam dependências próprias, sem presumir sua conclusão.
+
+Critério do próximo recorte: identificar requisito original, comportamento sob leitura completa/truncada/incoerente, prova já existente e teste ainda necessário; listar dados, ações e cleanup antes de qualquer pedido de autorização remota. Sem reconstrução da tela nem refatoração. Estado deste incremento: proposta documental em branch/PR, integração e CI da proposta a conferir no PR; o CI acima pertence exclusivamente à base.
+
+---
+
 ## M06.02 — Encerramento Documental Condicionado: `CONCLUIDO` com ressalvas (`534eb6b4`, 25/11/2026)
 
 **Microentrega `M06.02` consolidada como `CONCLUIDO` (estado oficial da Seção 2 de `docs/V35_EXECUTION_BOARD.md`, com ressalvas explícitas registradas separadamente), após comprovação remota de CI `45529859036` 3/3 PASS e Workers Builds DEV SUCCESS sobre `534eb6b4b7ea0860288e3dfe6d6f6ec93a1c0239`. Zero alteração em RPCs, frontend de produção, migrations ou bancos DEV/PROD.**
