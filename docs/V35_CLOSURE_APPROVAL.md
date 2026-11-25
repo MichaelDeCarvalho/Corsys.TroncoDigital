@@ -1,3 +1,9 @@
+## Atualização de execução — 25/11/2026
+
+Aprovação permanece válida com as quatro ressalvas. PRs #68/#69 integrados; DRE Gerencial e editor Master entregues em código/testes. Migrations de identidade e aceite aplicadas somente DEV; cadastro real adiado ao final. Nenhuma limpeza/PROD. Estado técnico, versões, evidências e bloqueios em ../SESSION_HANDOFF.md e V35_MIGRATION_RECONCILIATION_DEV.md. O checkpoint inicial abaixo é histórico.
+
+---
+
 # CORSYS V35 — Aprovação consolidada e ressalvas vinculantes
 Identificador: AC-V35-20261125-v1 — aprovação com ressalvas em 25/11/2026.  
 Estado: **APROVADO_COM_RESSALVAS — EXECUÇÃO DEV AUTORIZADA**.  

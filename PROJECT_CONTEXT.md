@@ -1,3 +1,9 @@
+## Estado vigente — 25/11/2026
+
+AC-V35-20261125-v1 aprovado com as quatro ressalvas em docs/V35_CLOSURE_APPROVAL.md. DRE Gerencial e editor Master/MFA integrados nos PRs #68/#69; dados reais da prestadora somente ao final. M01.03 e editor aplicados exclusivamente DEV; nenhum cliente/termo/convite criado nem dado apagado. Macros não promovidas automaticamente. Estado/evidências e bloqueio de configuração da Edge em SESSION_HANDOFF.md.
+
+---
+
 ## Editor Master da identidade da prestadora — 25/11/2026
 
 Implementação da ressalva A04/E03: formulário de identidade em MasterPlatformConfig e RPC save_platform_identity, somente MASTER/AAL2, allowlist de dez campos, nulos para opcionais, lock/CAS de updated_at, audit de nomes de campos sem valores pessoais, sem editar política comercial/termos/contratos. Resposta incerta exige atualização/reconciliação antes de novo envio. CNPJ numérico e alfanumérico aceitos em formato (sem afirmar consulta/validação cadastral oficial). Fonte de formato: Receita Federal, https://www.gov.br/receitafederal/pt-br/acesso-a-informacao/acoes-e-programas/programas-e-atividades/cnpj-alfanumerico .
