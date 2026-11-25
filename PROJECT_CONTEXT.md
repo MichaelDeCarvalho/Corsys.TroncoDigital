@@ -1,6 +1,6 @@
 ## Estado vigente — 25/11/2026
 
-AC-V35-20261125-v1 aprovado com as quatro ressalvas em docs/V35_CLOSURE_APPROVAL.md. DRE Gerencial e editor Master/MFA integrados nos PRs #68/#69; dados reais da prestadora somente ao final. M01.03 e editor aplicados exclusivamente DEV; nenhum cliente/termo/convite criado nem dado apagado. Macros não promovidas automaticamente. Estado/evidências e bloqueio de configuração da Edge em SESSION_HANDOFF.md.
+AC-V35-20261125-v1 aprovado com as quatro ressalvas em docs/V35_CLOSURE_APPROVAL.md. DRE Gerencial e editor Master/MFA integrados nos PRs #68/#69; dados reais da prestadora somente ao final. M01.03 e editor aplicados exclusivamente DEV; nenhum cliente/termo/convite criado nem dado apagado. Macros não promovidas automaticamente. Configuração Edge/origem/redirect resolvida; evidências e jornada restante em SESSION_HANDOFF.md.
 
 ---
 

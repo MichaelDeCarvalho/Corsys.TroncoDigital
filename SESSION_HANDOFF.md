@@ -1,3 +1,16 @@
+## Onboarding — configuração DEV resolvida (25/11/2026)
+
+- **VERIFIED:** acesso ao projeto szqkdekwhzxsoxorgvaz restabelecido pelo proprietário; Site URL já correto. Callback adicionado e relido após nova navegação: https://corsys-tronco-digital-dev.corsys1.workers.dev/onboarding/accept?run_id=* . Allowlist com duas entradas, preservada a raiz anterior. Wildcard somente no identificador da execução; nenhum host genérico.
+- **VERIFIED:** ONBOARDING_APP_ORIGIN criada com https://corsys-tronco-digital-dev.corsys1.workers.dev, digest SHA-256 a45a025924010e8728fd3d8d8d738481faac02e96500ec61f267b8d3d189dd4f. Valor é origem pública, nenhuma credencial foi alterada.
+- **VERIFIED:** onboarding-invite ACTIVE versão 3, verify_jwt=true, bundle 3506f98ccbf4f4b1e8cea46c1fe6aa9f1577bf8737d49120d45914e0446c7370. index.ts e dispatch.mjs publicados e relidos idênticos às fontes Git aprovadas (normalização de finais de linha). A versão retornada pelo servidor é registrada como observada, sem inferir histórico da versão 2.
+- **VERIFIED:** navegação real à URL da função sem Authorization retornou corpo UNAUTHORIZED_NO_AUTH_HEADER / Missing authorization header. Nenhum status HTTP foi capturado por essa observação. O shell falhou por conectividade e não conta como evidência HTTP.
+- **VERIFIED:** SMTP customizado existente habilitado, host smtp.resend.com, porta 465, nome CorSys Tronco Digital. Não ler/substituir senha, alterar remetente ou concluir entrega sem teste. saas_onboarding_runs=0; uma versão comercial publicada existente. RPC accept_onboarding_invite(uuid,uuid,text,boolean) e finish_onboarding_invite_with_identity(uuid,uuid,uuid) confirmadas presentes. Consulta inicial com assinatura diferente retornou null e não indicava ausência da RPC.
+- **NOT EVALUATED:** envio, entrega, callback autenticado, aceite, vínculo/recibo/auditoria e replay da jornada M01.04. Nenhum convite foi enviado, nenhum cliente/fixture/termo publicado e nenhuma migration adicional ou operação PROD executada.
+- **Próxima atividade:** preparar documento/execução de homologação claramente fictícios no DEV conforme autorização consolidada; usar somente destinatário e limite E05 aprovados. Revisão jurídica permanece gate do uso real. Recepção de link e autenticação/credenciais ficam com o proprietário; não acessar inbox, OTP ou tokens. Não repetir os testes PostgreSQL aprovados para comprovar entrega de e-mail.
+- **Evidência de configuração:** https://supabase.com/docs/guides/auth/redirect-urls (consultada em 25/11/2026). Configuração imediata fechada; M01/M01.04 não concluídas por esse recorte. Este registro supersede o bloqueio de conta/origem/Edge v1 das notas históricas abaixo.
+
+---
+
 ## Checkpoint vigente — execução aprovada (25/11/2026)
 
 Este registro supersede somente estados históricos divergentes abaixo. Autorização vinculante: AC-V35-20261125-v1, com as quatro ressalvas do proprietário em docs/V35_CLOSURE_APPROVAL.md. Não pedir nova aprovação para atividades DEV já abrangidas.
