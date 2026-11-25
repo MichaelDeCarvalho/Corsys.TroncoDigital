@@ -1,3 +1,13 @@
+## Cursor ativo — M06.01 / conciliação (25/11/2026)
+
+- PR #67: reconciliação documental + quatro novos testes de bloqueio/recuperação da UI; 12/12 PASS local em jsdom com cliente simulado e fontes da base `fed69b8`; implementação de produção intacta.
+- **Próximo passo:** gate independente em navegador DEV, somente leitura e falhas injetadas apenas em respostas locais, conforme [aceite delimitado](V35_M0201_FINANCIAL_RECONCILIATION.md). Exige ferramenta com interceptação seletiva e extrato de teste existente elegível. Não gerar fatos nem alterar usuários/limites remotos; se indisponível, registrar bloqueio.
+- CI `fed69b8` do PR #67: static/onboarding/frontend PASS, observado nesta retomada. CI da nova revisão deve ser conferido separadamente; sem merge/deploy neste incremento.
+- M06.01/M06.03 EM_EXECUCAO; gate DEV específico NOT EVALUATED. M06.02 CONCLUIDO e ressalvas preservados. Não repetir timezone/Grupo A/C01–C05.
+- Evidência detalhada, requisito original, limites de consultas independentes e ambiente local no início de `V35_M0201_FINANCIAL_RECONCILIATION.md` e `SESSION_HANDOFF.md`.
+
+---
+
 ## Reconciliação M06.01/M06.03 — 25/11/2026
 
 Base: `62a6ba87bd30b85bee4f6aa640b25bd3b02aae90`. Esta atualização corrige o controle de execução; não altera código, schema, permissões ou ambientes.

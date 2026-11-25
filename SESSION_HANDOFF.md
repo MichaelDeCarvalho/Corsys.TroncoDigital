@@ -1,3 +1,25 @@
+## M06.01 — Conciliação M02.02-A: aceite automatizado da tela (25/11/2026)
+
+Base de código inspecionada: `fed69b828177b1ab575aa63967e9959eab6929b3` (PR #67). Mudança restrita a testes e registros; nenhum componente, serviço, RPC ou migration alterado.
+
+**Requisito:** `view-tesouraria`, comparação sistema × extrato e correspondências/status, em `V35_PILOT_V35_INVENTORY.md`; ADR-0027 exige falha explícita ao exceder consultas e proíbe operar sobre amostra parcial. O arquivo OFX/CSV (`view-tesouraria-F001`) e os gates de importação/validação/desfazer já homologados não são reabertos.
+
+**Implementação existente:** `loadBankDetail` valida contagens exatas das linhas/vínculos/estornos, restringe estornos aos vínculos do extrato em lotes de 100 e compara valores ativos em centavos com o total das linhas. O componente limpa o detalhe e só apresenta correspondência/desfazimento após leitura válida. Leituras independentes não oferecem snapshot transacional único.
+
+**Lacuna de evidência fechada localmente:** quatro cenários de componente com o serviço real e cliente simulado: contagem incompleta de linhas, de vínculos, de estornos e divergência entre vínculos ativos e total da linha. Em cada cenário: alerta sanitizado; controles de conciliar/desfazer ausentes; zero RPC de escrita; recuperação pelo botão Atualizar com dados completos/coerentes; controles reaparecem bloqueados até confirmação; zero escrita durante recuperação.
+
+**Execução local: 12/12 PASS, exit 0** (oito testes anteriores + quatro novos), Node v24.20.0/Vitest 5.0.5/jsdom, cópia isolada dos fontes da revisão-base, dependências já instaladas. Configuração local mínima com JSX automático e aliases para dependências; não foi usado o arquivo Vite integral do projeto. A tentativa inicial com o plugin React falhou ao carregar `vite/internal`; a configuração mínima permitiu executar os testes sem alterar toolchain do repositório. Typecheck, build e suíte integral desta alteração: não executados localmente; verificar CI da nova revisão, sem reutilizar o PASS do commit anterior como resultado desta alteração.
+
+**Limite:** testes de componente não comprovam PostgREST/RLS real, limite remoto, isolamento por JWT ou navegador autenticado. O gate DEV específico continua NOT EVALUATED. M06.01/M06.03 EM_EXECUCAO; M06.02 CONCLUIDO preservado.
+
+### Próximo aceite independente delimitado
+
+Work: confirmar sessão autorizada/Loja e extrato de teste já existente; somente leitura. Se o navegador de teste permitir interceptação seletiva das respostas dessas consultas, observar o estado real antes/durante/depois do refresh e aplicar os quatro cenários acima somente nas respostas locais ao browser. Não alterar servidor, limites, roles, RPCs ou fatos financeiros; não clicar importar/validar/conciliar/desfazer. Remover interceptações, atualizar e confirmar recuperação sem chamadas RPC de escrita. Se a ferramenta não permitir interceptação observável ou faltar extrato de teste elegível, registrar BLOCKED/NOT EVALUATED; não criar fixture persistente implicitamente.
+
+Aceite: erro sanitizado e controles indisponíveis em cada resposta incompleta/incoerente; reaparecimento somente após leitura completa, com confirmações obrigatórias ainda ativas; nenhuma mutação de rede. Esse experimento observa a UI em navegador, não comprova o limite real do PostgREST nem snapshot atômico. Qualquer necessidade de seed/mutação deve vir com escopo, IDs/dados e cleanup para autorização própria.
+
+---
+
 ## Reconciliação M06.01/M06.03 — 25/11/2026
 
 Base: `62a6ba87bd30b85bee4f6aa640b25bd3b02aae90`. Esta atualização corrige o controle de execução; não altera código, schema, permissões ou ambientes.

@@ -1,3 +1,9 @@
+## Atualização do aceite view-tesouraria — 25/11/2026
+
+M02.02-A: quatro novos cenários de componente confirmam ausência dos controles de conciliar/desfazer após contagens incompletas de linhas/vínculos/estornos ou totais incoerentes, zero RPC de escrita e recuperação pelo controle real Atualizar. **12/12 PASS local** em jsdom/cliente simulado; sem alteração de produção. Testes usam serviços reais da base `fed69b8`; CI da nova revisão a conferir no PR #67. [Rastreabilidade, limites e roteiro DEV](V35_M0201_FINANCIAL_RECONCILIATION.md). Homologação autenticada DEV desse recorte **NOT EVALUATED**; status integral da tela e M06.01/M06.03 não promovidos. Próximo passo: experimento somente leitura em navegador com interceptação seletiva local e extrato de teste existente; indisponibilidade não autoriza seed nem mutação.
+
+---
+
 ## Aceites M06.01/M06.03 reconciliados — 25/11/2026
 
 Base `62a6ba87bd30b85bee4f6aa640b25bd3b02aae90`. M06.02 CONCLUIDO; M06.01/M06.03 EM_EXECUCAO. Esta tabela identifica o próximo trabalho e limites das evidências, sem promover status integral nem invalidar homologações anteriores. Onde consta “conferir”, há falta de rastreabilidade por requisito, não defeito demonstrado. Registros de homologação recentes prevalecem sobre pendências históricas da matriz abaixo.

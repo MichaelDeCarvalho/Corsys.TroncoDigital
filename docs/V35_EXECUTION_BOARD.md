@@ -1,3 +1,9 @@
+## M06.01 — Evidência local de conciliação e próximo gate (25/11/2026)
+
+Quatro novos cenários UI da M02.02-A fecharam a lacuna automatizada de bloqueio/recuperação sob leitura incompleta/incoerente: **12/12 PASS local** com fontes da base `fed69b8`, serviço real e cliente simulado. Sem alteração de componente/serviço ou ambiente. CI do incremento a conferir no PR #67. Gate DEV específico permanece NOT EVALUATED e não será substituído por esses testes. [Requisito, evidência e próximo experimento](V35_M0201_FINANCIAL_RECONCILIATION.md). M06.01/M06.03 seguem EM_EXECUCAO; M06.02 CONCLUIDO preservado. Notas anteriores de “próxima reconciliação do código” foram atendidas neste recorte; próximo ato é o aceite independente delimitado, sem novas operações financeiras.
+
+---
+
 ## Reconciliação M06.01/M06.03 — 25/11/2026
 
 Base: `62a6ba87bd30b85bee4f6aa640b25bd3b02aae90`. Esta atualização corrige o controle de execução; não altera código, schema, permissões ou ambientes.

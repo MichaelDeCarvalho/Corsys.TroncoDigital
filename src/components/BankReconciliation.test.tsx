@@ -11,17 +11,18 @@ function fixture(status='validated'){
   v_bank_reconciliation_lines:[{organization_id:org,statement_line_id:line,statement_import_id:id,transaction_date:'2026-09-01',description:'PIX DEV',amount:'250.00',matched_amount:'0',reconciliation_status:'unmatched',integrity_ok:true}],
   bank_reconciliation_matches:[],bank_reconciliation_match_reversals:[],v_financial_account_movements:[{organization_id:org,financial_account_id:account,source_id:payment,movement_type:'member_payment',movement_date:'2026-09-01',signed_amount:'250.00'}],
  }
+ const counts:Record<string,number>={}
  const rpc=vi.fn().mockResolvedValue({data:id,error:null})
  const from=vi.fn((name:string)=>{
   let selected: string[] | undefined
   const q={select:()=>q,eq:()=>q,in:(field:string,ids:string[])=>{if(field==='match_id')selected=ids;return q},gte:()=>q,lte:()=>q,order:()=>q,limit:()=>q,abortSignal:()=>{
    const values=data[name] as {match_id?:string}[]
    const result=selected?values.filter(row=>row.match_id&&selected?.includes(row.match_id)):values
-   return Promise.resolve({data:result.slice(0,1000),count:result.length,error:null})
+   return Promise.resolve({data:result.slice(0,1000),count:counts[name]??result.length,error:null})
   }}
   return q
  })
- return {client:{rpc,from} as unknown as SupabaseClient,rpc,data,statement}
+ return {client:{rpc,from} as unknown as SupabaseClient,rpc,data,counts,statement}
 }
 async function choose(){
  await screen.findByRole('option',{name:/teste.csv/})
@@ -100,4 +101,49 @@ describe('bank match completeness',()=>{
   data.bank_reconciliation_match_reversals=[]
   await expect(loadBankDetail(client,org,statement,new AbortController().signal)).rejects.toThrow('Inconsistent bank match totals')
  })
+})
+
+describe('bank reconciliation fail-closed UI',()=>{
+ const match='10000000-0000-4000-8000-000000000001'
+ const errorMessage='Consulta incompleta ou inconsistente. Nenhuma conciliação foi autorizada.'
+ it.each(['lines','matches','reversals','totals'] as const)(
+  'withholds match and reverse actions for invalid %s, then recovers after a complete refresh',
+  async scenario=>{
+   const f=fixture()
+   const originalLines=f.data.v_bank_reconciliation_lines
+   if(scenario==='lines')f.counts.v_bank_reconciliation_lines=2
+   if(scenario==='matches')f.counts.bank_reconciliation_matches=1
+   if(scenario==='reversals'){
+    f.data.bank_reconciliation_matches=[{id:match,organization_id:org,statement_line_id:line,matched_amount:'1.00'}]
+    f.data.bank_reconciliation_match_reversals=[{match_id:match,organization_id:org}]
+    f.counts.bank_reconciliation_match_reversals=2
+   }
+   if(scenario==='totals'){
+    f.data.v_bank_reconciliation_lines=[{...(originalLines[0] as object),matched_amount:'1.00',reconciliation_status:'partial'}]
+   }
+   render(<BankReconciliation client={f.client} organizationId={org}/>)
+   await screen.findByRole('option',{name:/teste.csv/})
+   fireEvent.change(screen.getByLabelText('Extrato para revisar'),{target:{value:id}})
+   expect(await screen.findByRole('alert')).toHaveTextContent(errorMessage)
+   expect(screen.queryByRole('group',{name:'Correspondência manual'})).not.toBeInTheDocument()
+   expect(screen.queryByRole('group',{name:'Desfazer correspondência'})).not.toBeInTheDocument()
+   expect(screen.queryByRole('button',{name:'Confirmar correspondência'})).not.toBeInTheDocument()
+   expect(screen.queryByRole('button',{name:/Desfazer vínculo/})).not.toBeInTheDocument()
+   expect(f.rpc).not.toHaveBeenCalled()
+
+   // Recover through the real refresh control, with complete and consistent facts.
+   for(const key of Object.keys(f.counts))delete f.counts[key]
+   f.data.v_bank_reconciliation_lines=originalLines
+   f.data.bank_reconciliation_matches=[{id:match,organization_id:org,statement_line_id:line,matched_amount:'1.00'}]
+   f.data.bank_reconciliation_match_reversals=[]
+   f.data.v_bank_reconciliation_lines=[{...(originalLines[0] as object),matched_amount:'1.00',reconciliation_status:'partial'}]
+   fireEvent.click(screen.getByRole('button',{name:'Atualizar conciliação'}))
+   await screen.findByRole('group',{name:'Correspondência manual'})
+   expect(screen.getByRole('group',{name:'Desfazer correspondência'})).toBeInTheDocument()
+   expect(screen.getByRole('button',{name:'Confirmar correspondência'})).toBeDisabled()
+   expect(screen.getByRole('button',{name:`Desfazer vínculo ${match}`})).toBeDisabled()
+   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+   expect(f.rpc).not.toHaveBeenCalled()
+  },
+ )
 })
