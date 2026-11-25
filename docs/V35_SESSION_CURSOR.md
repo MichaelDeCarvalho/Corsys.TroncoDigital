@@ -1,3 +1,11 @@
+## Editor Master da identidade da prestadora — 25/11/2026
+
+Implementação da ressalva A04/E03: formulário de identidade em MasterPlatformConfig e RPC save_platform_identity, somente MASTER/AAL2, allowlist de dez campos, nulos para opcionais, lock/CAS de updated_at, audit de nomes de campos sem valores pessoais, sem editar política comercial/termos/contratos. Resposta incerta exige atualização/reconciliação antes de novo envio. CNPJ numérico e alfanumérico aceitos em formato (sem afirmar consulta/validação cadastral oficial). Fonte de formato: Receita Federal, https://www.gov.br/receitafederal/pt-br/acesso-a-informacao/acoes-e-programas/programas-e-atividades/cnpj-alfanumerico .
+
+Migration nova 20261125210000_v35_platform_identity_master_edit.sql preparada; ainda NÃO APLICADA no DEV neste registro. Teste PostgreSQL descartável real incluído no CI (DDL rollback, negativas, allowlist, CAS, atomicidade e auditoria). TypeScript PASS; PlatformIdentityEditor/MasterPlatformConfig 18/18 PASS locais. PostgreSQL/CI do novo incremento a conferir; não são substituídos por mock. Nenhum dado de identidade existente atualizado. Rollback de UI: retirar o editor; função aditiva pode permanecer sem uso até forward-fix, sem apagar audit.
+
+PR #68 integrado em 4031452307e771d526e9082dc2a67c59282ff486 após 3/3 PASS; aprovação com ressalvas persistida em docs/V35_CLOSURE_APPROVAL.md e ADR-0050. DRE gerencial entregue na revisão anterior; cadastro real permanece ao final. Próximo gate: CI PostgreSQL e aplicação aditiva exclusivamente DEV após preflight/read-back. PROD/limpeza continuam fora da operação corrente.
+
 ## Aprovação consolidada com ressalvas — 25/11/2026
 
 Fonte vinculante: [V35_CLOSURE_APPROVAL.md](V35_CLOSURE_APPROVAL.md). Pacote AC-V35-20261125-v1 aprovado pelo proprietário, com DRE **gerencial** (oficial pelo contador), sigilo de todo conteúdo, cadastro real da prestadora ao final em editor Master/MFA, início comercial sem fatos de homologação e conta QA isolada no DEV. Dados reais ainda ausentes não bloqueiam desenvolvimento. Diário/Razão não foram excluídos pela ressalva sobre DRE; mantêm gates próprios. Autonomia DEV aprovada; implantação PROD depende do gate final. Nenhuma limpeza/reset agora.
