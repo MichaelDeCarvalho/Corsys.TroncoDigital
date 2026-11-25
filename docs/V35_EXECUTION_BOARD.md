@@ -1,3 +1,11 @@
+## M06.02 — Gate Final de Concorrência Comercial em CI Descartável (`view-master-planos`, 24/11/2026)
+
+- **Entrega codificada (`b59721e7`):** implementado `scripts/check_commercial_concurrency_pg.py` (`C01–C05` + `55P03` + verificação anti-`40P01` + integridade de `saas_master_audit_logs`) e integrado ao job `onboarding` de `.github/workflows/foundation-checks.yml` usando o serviço PostgreSQL 17 descartável (`commercial_concurrency_gate`).
+- **Preservação e segurança:** utiliza exclusivamente as definições SQL reais do repositório (incluindo `20261124220000_v35_commercial_draft_audit_logs.sql`), trava contra uso em Supabase DEV/PROD e mantém inalteradas todas as RPCs e migrations baseline.
+- **Estado operacional:** validação estática/extração SQL aprovada localmente; execução runtime em PostgreSQL 17 permanece **`NOT EVALUATED`** localmente (sem `psql`/`docker`), aguardando execução do GitHub Actions após push. **`M06.02` permanece `EM_EXECUCAO`.**
+
+---
+
 ## M06.02 — Consolidação Pós-Migration ADR-0049 no DEV (`view-master-planos`, 24/11/2026)
 
 - **Ativação exclusiva DEV (`szqkdekwhzxsoxorgvaz`):** arquivo `20261124220000_v35_commercial_draft_audit_logs.sql` (base `765a8a661f7375a22183f17c35036a297f4c1e79`) aplicado sob versão **`20261125002909_v35_commercial_draft_audit_logs`** (`SUCCESS`, PROD não alterado), com **`COMMERCIAL_DRAFT_AUDIT_ROLLBACK_PASS`**, `SECURITY DEFINER`, `anon` sem `EXECUTE`, `MASTER/AAL2` preservado e zero mutação persistente nos dados/auditoria.

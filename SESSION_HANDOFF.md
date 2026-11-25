@@ -1,3 +1,24 @@
+## M06.02 — Gate Final de Concorrência Comercial em PostgreSQL Descartável (`view-master-planos`, 24/11/2026)
+
+**Implementado o teste automatizado multi-sessão `scripts/check_commercial_concurrency_pg.py` (`C01–C05`) integrado ao PostgreSQL 17 descartável do CI (`.github/workflows/foundation-checks.yml`), sobre a base `b59721e71e7201e8270b3f01ae42b15fd88606ad`. Execução runtime em PostgreSQL permanece `NOT EVALUATED` localmente por ausência de `psql`/`docker` (aguarda execução no GitHub Actions após push); `M06.02` permanece `EM_EXECUCAO`.**
+
+### 1. Escopo implementado (`scripts/check_commercial_concurrency_pg.py`, `.github/workflows/foundation-checks.yml`)
+- **Fonte SQL real:** extrai DDL, constraints, triggers e RPCs reais das migrations (`202609040001`..`20261010010836` e `20261124220000_v35_commercial_draft_audit_logs.sql`), validando primeiro `BEGIN ... ROLLBACK` da ADR-0049 antes da carga na base descartável `commercial_concurrency_gate`.
+- **Contenção real multi-conexão:** usa duas conexões independentes (`psql`), `lock_timeout`/`statement_timeout` controlados, barreira por `pg_advisory_lock` após a RPC da Sessão 1 e verificação obrigatória via `pg_stat_activity` (`wait_event_type = 'Lock'`) + `pg_locks` (`NOT granted`) + `pg_blocking_pids`, falhando se a contenção esperada não ocorrer ou se surgir deadlock `40P01`.
+- **Cenários cobertos:**
+  - `C01`: edição simultânea em `update_saas_plan_version_draft` (serialização, integridade de entitlements/auditoria e timeout controlado `55P03` com zero vazamento).
+  - `C02`: `update_saas_plan_version_draft` × `publish_saas_plan_version` nos dois sentidos (bloqueio `23503` pós-publicação sem sobrescrita e publicação preservando edição concluída antes).
+  - `C03`: `create_saas_plan_successor_draft` simultânea (numeração sequencial `2`/`3` sem colisão nem falsa idempotência, e continuidade `4` sem lacuna após `ROLLBACK`).
+  - `C04`: `update_saas_plan_version_draft` × `set_saas_plan_active` nos dois sentidos (preservação conjunta de campos comerciais, flag `active` e logs de auditoria sem lost update).
+  - `C05`: `update_saas_plan_version_draft` / `publish_saas_plan_version` × `delete_saas_plan_if_unused` (`delete` após `update` sem órfãos, `update` pós-`delete` rejeitado com `23503`, e `delete` pós-`publish` bloqueado com `55000` sem bypass).
+- **Preservação:** zero execução contra Supabase DEV/PROD, zero alteração nas RPCs de produção, zero alteração nas 66 migrations baseline e sem novos serviços ou dependências externas no workflow.
+
+### 2. Limites e próximo passo
+- **Local (`NOT EVALUATED` para runtime PostgreSQL):** ambiente sem `psql`/`docker`; `py_compile`, extração das declarações SQL, `check_v35_preservation.py`, typecheck/lint/build e testes JS comerciais verificados localmente.
+- **Próximo passo:** push para executar `.github/workflows/foundation-checks.yml` (job `onboarding`, etapa `Commercial concurrency PostgreSQL gate`) no GitHub Actions (`postgres:17`) e confirmar `C01–C05 PASS` antes de qualquer conclusão da etapa.
+
+---
+
 ## M06.02 — Consolidação Pós-Migration ADR-0049 no DEV e Alinhamento da UI (`view-master-planos`, 24/11/2026)
 
 **ADR-0049 aplicada exclusivamente no Supabase DEV (`szqkdekwhzxsoxorgvaz`, versão remota `20261125002909_v35_commercial_draft_audit_logs`, arquivo Git `20261124220000_v35_commercial_draft_audit_logs.sql` em `765a8a661f7375a22183f17c35036a297f4c1e79`), validada com `COMMERCIAL_DRAFT_AUDIT_ROLLBACK_PASS` e textos informativos da interface atualizados no Gemini; `M06.02` permanece `EM_EXECUCAO` aguardando sync/push, CI, Cloudflare DEV e homologação independente no Work.**

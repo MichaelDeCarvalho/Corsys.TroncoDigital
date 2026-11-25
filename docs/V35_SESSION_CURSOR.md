@@ -1,3 +1,13 @@
+## M06.02 — Gate Final de Concorrência Comercial (`view-master-planos`, 24/11/2026)
+
+- **Base verificada:** `b59721e71e7201e8270b3f01ae42b15fd88606ad` (ADR-0049 aplicada/homologada no DEV, eventos 39–44 confirmados, CI anterior 625/625 PASS).
+- **Implementado no Gemini:** `scripts/check_commercial_concurrency_pg.py` (cenários `C01–C05`, duas conexões PostgreSQL independentes, observação de `pg_stat_activity`/`pg_locks`, `lock_timeout`/`statement_timeout`, verificação de `40P01`/`23503`/`55000`/`55P03` e auditoria) integrado ao job `onboarding` de `.github/workflows/foundation-checks.yml` (`commercial_concurrency_gate` em `postgres:17`).
+- **Limites preservados:** zero alteração nas RPCs de produção, nas 66 migrations baseline ou nos bancos DEV/PROD; execução runtime PostgreSQL permanece **`NOT EVALUATED`** localmente (ausência de `psql`/`docker`), não sendo declarada `PASS` até a execução no CI.
+- **Estado:** **`M06.02` permanece `EM_EXECUCAO`.**
+- **Próximo passo:** push e execução real do job `onboarding` (`Commercial concurrency PostgreSQL gate`) no GitHub Actions para confirmar `C01–C05 PASS` em PostgreSQL 17 descartável.
+
+---
+
 ## M06.02 — Consolidação Pós-Migration ADR-0049 no DEV (`view-master-planos`, 24/11/2026)
 
 - **Base verificada:** `765a8a661f7375a22183f17c35036a297f4c1e79`; arquivo Git `supabase/migrations/20261124220000_v35_commercial_draft_audit_logs.sql` aplicado exclusivamente no Supabase DEV (`szqkdekwhzxsoxorgvaz`) sob versão **`20261125002909_v35_commercial_draft_audit_logs`** (PROD intacto).

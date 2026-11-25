@@ -1,3 +1,15 @@
+## SEC-M0602-02 — Gate Automatizado de Concorrência Comercial em PostgreSQL Descartável (24/11/2026 — preparado para CI)
+
+- **Escopo:** `scripts/check_commercial_concurrency_pg.py` e `.github/workflows/foundation-checks.yml` (job `onboarding`, banco descartável `commercial_concurrency_gate` em `postgres:17`, base `b59721e71e7201e8270b3f01ae42b15fd88606ad`). Nenhuma operação contra DEV (`szqkdekwhzxsoxorgvaz`) ou PROD e nenhuma alteração nas RPCs de produção nem nas 66 migrations baseline.
+- **Proteções verificáveis no script (reconstruindo DDL/triggers/funções reais do repositório, inclusive ADR-0049):**
+  1. **Trava fail-closed contra alvos não descartáveis:** recusa execução caso host/DSN/banco referencie ambiente remoto (`supabase.co`, `szqkdekwhzxsoxorgvaz`, `pooler`) ou nome sem sufixo `_gate`/`_test`/`_trial`.
+  2. **Observação real de contenção multi-sessão:** duas conexões independentes (`psql`) com `lock_timeout`/`statement_timeout` controlados, barreira por `pg_advisory_lock` após a RPC da Sessão 1 e verificação obrigatória em `pg_stat_activity` (`wait_event_type = 'Lock'`) + `pg_locks` (`NOT granted`) + `pg_blocking_pids`, falhando se a contenção não ocorrer.
+  3. **Matriz `C01–C05`:** edição simultânea de rascunho + `55P03` por timeout (`C01`), edição vs publicação + rejeição `23503` pós-publicação (`C02`), criação simultânea de sucessoras + segurança após rollback (`C03`), edição vs `set_saas_plan_active` sem lost update (`C04`), edição/publicação vs `delete_saas_plan_if_unused` sem órfãos e sem bypass (`55000`) (`C05`), além de verificação explícita contra `40P01` e trilha em `saas_master_audit_logs`.
+- **Nota estrutural preservada em `C05`:** `update_saas_plan_version_draft` bloqueia `saas_plan_versions -> saas_plans` (em planos ainda sem versão publicada) e `delete_saas_plan_if_unused` bloqueia `saas_plans -> saas_plan_versions`; embora a contenção sequenciada sob lock completo serialize sem órfãos nem bypass (`23503`/`55000`), a inversão estrutural preexistente permanece documentada como risco teórico estreito de `40P01` (com rollback seguro pelo PostgreSQL) caso duas sessões intercalem exatamente entre o 1º e o 2º lock.
+- **Status de evidência:** compilação Python e extração SQL validadas localmente; execução em PostgreSQL real permanece **`NOT EVALUATED`** localmente (ausência de `psql`/`docker`), pendente do workflow `.github/workflows/foundation-checks.yml` no GitHub Actions.
+
+---
+
 ## SEC-M0602-01 — Evidência pós-ativação DEV da ADR-0049 (`20261125002909`, 24/11/2026)
 
 - **Escopo ativado no DEV (`szqkdekwhzxsoxorgvaz`):** arquivo Git `supabase/migrations/20261124220000_v35_commercial_draft_audit_logs.sql` (base `765a8a661f7375a22183f17c35036a297f4c1e79`) aplicado exclusivamente no Supabase DEV sob versão **`20261125002909_v35_commercial_draft_audit_logs`**. PROD não alterado.
