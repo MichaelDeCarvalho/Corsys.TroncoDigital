@@ -1,3 +1,7 @@
+## Estado de ambiente reconciliado — 25/11/2026
+
+Sobre `62a6ba87bd30b85bee4f6aa640b25bd3b02aae90`, a leitura do DEV confirmou a migration de timezone sob `20261115184137` e as três funções privadas canônicas presentes. O arquivo Git `20261115120000` permanece intacto. CI `45686141566` e Workers Builds DEV SUCCESS confirmados. Esta nota corrige referências antigas a aplicação pendente; não modifica arquitetura nem declara nova homologação. Ver reconciliação vigente no início de `PROJECT_CONTEXT.md` e plano de aceite em `docs/V35_SCREEN_PARITY_MATRIX.md`.
+
 ## V35 M06.02 — Encerramento Técnico e Evidência de Concorrência/CI (`534eb6b4`, 25/11/2026)
 
 - **Gates remotos verificados sobre `534eb6b4b7ea0860288e3dfe6d6f6ec93a1c0239`:** GitHub Actions **`45529859036` 3/3 PASS** (`static` PASS, `onboarding` PASS com `Commercial concurrency PostgreSQL gate` **`C01–C05` PASS** e integridade relacional/auditoria de `saas_plan_version_entitlements`, `saas_plan_versions` e `saas_master_audit_logs` PASS em `postgres:17` descartável, e `frontend` PASS com `625/625` testes + `wrangler deploy --config wrangler.dev.jsonc --dry-run`) e Cloudflare **Workers Builds DEV** **SUCCESS** (Build ID `3ca9d183-730d-4f76-868c-faca67a5054b`, Version ID `0f6747d8-2461-4d54-bef5-6f94725590d9`).

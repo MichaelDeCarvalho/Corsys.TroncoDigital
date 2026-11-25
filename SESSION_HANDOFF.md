@@ -1,3 +1,22 @@
+## Reconciliação M06.01/M06.03 — 25/11/2026
+
+Base: `62a6ba87bd30b85bee4f6aa640b25bd3b02aae90`. Esta atualização corrige o controle de execução; não altera código, schema, permissões ou ambientes.
+
+- **VERIFICADO nesta retomada:** main na revisão acima; CI [45686141566](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/45686141566) concluído com static/onboarding/frontend SUCCESS e check Workers Builds DEV SUCCESS. Isso não constitui nova homologação do runtime.
+- **VERIFICADO por leitura administrativa DEV:** histórico com 79 migrations, incluindo `20261115184137_v35_tenant_timezone_financial_dates`; presentes `private.is_valid_iana_timezone`, `private.tenant_current_date_at` e `private.tenant_current_date`. O arquivo Git permanece `20261115120000_v35_tenant_timezone_financial_dates.sql`. Não reaplicar nem renomear.
+- **Evidência anterior preservada:** teste PostgreSQL transacional de timezone registrado em [reconciliação de migrations](docs/V35_MIGRATION_RECONCILIATION_DEV.md); Grupo A HTTP somente leitura 5/5 PASS fornecido pelo proprietário em 15/11, conforme [registro](docs/V35_HTTP_READONLY_GATE_20261115.md). Não reexecutados nesta retomada.
+- **M06.02 permanece CONCLUIDO**, com paginação visual além da primeira página NOT EVALUATED e risco residual de deadlock `40P01` não eliminado. C01–C05 PASS em PostgreSQL descartável não equivalem a todos os cenários de concorrência/recuperação da V35.
+- **M06.01/M06.03 permanecem EM_EXECUCAO.** A aplicação de timezone e o Grupo A deixam de ser pendências. Restam os aceites por requisito das 21 telas, Grupo B persistente no recorte ainda não comprovado e recuperação/regressões não cobertas pelas evidências existentes.
+- Nenhum teste de produto, migration, deploy, operação financeira, convite ou acesso PROD foi executado neste incremento documental. A existência das funções não é uma nova prova comportamental.
+
+### Próxima execução delimitada
+
+Micro ativa: **M06.01**, reconciliação por requisito de **Caixa e Bancos / conciliação (view-tesouraria)**, começando pelo gate específico de truncamento/incoerência M02.02-A. Gemini deve conferir inventário original, código e testes já existentes e produzir apenas a lacuna de aceite; Work executa homologação independente autenticada somente no DEV, dentro da autorização correspondente. Não gerar fatos financeiros nem injetar falhas remotamente nesta autorização documental. Primeiro reutilizar evidências equivalentes; só propor teste novo para lacuna identificada. M06.03 deve consumir essa evidência sem duplicar os gates A/B, comerciais ou de timezone aprovados. Recuperação M05.02 e decisões M01/M03/M05 continuam dependências próprias, sem presumir sua conclusão.
+
+Critério do próximo recorte: identificar requisito original, comportamento sob leitura completa/truncada/incoerente, prova já existente e teste ainda necessário; listar dados, ações e cleanup antes de qualquer pedido de autorização remota. Sem reconstrução da tela nem refatoração. Estado deste incremento: proposta documental em branch/PR, integração e CI da proposta a conferir no PR; o CI acima pertence exclusivamente à base.
+
+---
+
 ## M06.02 — Encerramento Documental Condicionado: `CONCLUIDO` com ressalvas (`534eb6b4`, 25/11/2026)
 
 **Microentrega `M06.02` consolidada como `CONCLUIDO` (estado oficial da Seção 2 de `docs/V35_EXECUTION_BOARD.md`, com ressalvas explícitas registradas separadamente), após comprovação remota de CI `45529859036` 3/3 PASS e Workers Builds DEV SUCCESS sobre `534eb6b4b7ea0860288e3dfe6d6f6ec93a1c0239`. Zero alteração em RPCs, frontend de produção, migrations ou bancos DEV/PROD.**

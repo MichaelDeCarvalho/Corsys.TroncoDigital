@@ -1,3 +1,43 @@
+## Aceites M06.01/M06.03 reconciliados — 25/11/2026
+
+Base `62a6ba87bd30b85bee4f6aa640b25bd3b02aae90`. M06.02 CONCLUIDO; M06.01/M06.03 EM_EXECUCAO. Esta tabela identifica o próximo trabalho e limites das evidências, sem promover status integral nem invalidar homologações anteriores. Onde consta “conferir”, há falta de rastreabilidade por requisito, não defeito demonstrado. Registros de homologação recentes prevalecem sobre pendências históricas da matriz abaixo.
+
+**Já resolvidos:** timezone DEV `20261115184137` (Git `20261115120000`; três funções privadas presentes); teste transacional registrado em [reconciliação](V35_MIGRATION_RECONCILIATION_DEV.md); Grupo A [5/5 PASS](V35_HTTP_READONLY_GATE_20261115.md); concorrência comercial C01–C05 PASS em PostgreSQL descartável. CI base [45686141566](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/45686141566) 3/3 PASS e Workers Builds DEV SUCCESS confirmados. Nada disso foi reexecutado nesta reconciliação.
+
+| Tela | Aceite a rastrear | Evidência a preservar / lacuna ou dependência |
+|---|---|---|
+| view-master | Consulta/indicadores Master | Reutilizar CI e QA existentes; conferir apenas requisitos sem aceite explícito. |
+| view-master-clientes | Onboarding e Cliente 360 | M01.03/04: termos, ativação e convite controlado; dependência externa, sem envio autorizado. |
+| view-master-cobranca | Ciclos, emissão e composição | Filtros/consulta já têm aceite delimitado; faturas/ciclos e ações sem prova exigem escopo/autorização próprios. |
+| view-master-planos | Ciclo comercial | Preservar apresentação e operações homologadas/eventos 39/40/42/43/44; demais mutações só se requisito/evidência realmente faltarem. Paginação visual e deadlock são ressalvas separadas, sem reabrir M06.02. |
+| view-master-operacao | Operação, auditoria e sessões | Preservar chamados/disclosure e Grupo A; Grupo B de sessões temporárias permanece sem aceite deste roteiro, conferir evidência equivalente antes de repetir. |
+| view-master-config | Configurações da plataforma | Confrontar registros recentes de F1–F5 com requisitos; tabela histórica não prova pendência de QA já encerrado. |
+| view-chamados | Chamados da Loja | HOMOLOGADO_DEV no recorte; reutilizar, sem novas respostas/chamados de teste. |
+| view-dashboard | Indicadores e modos | Timezone aplicada; preservar QA mobile/atalhos. Identificar só lacuna por requisito, sem repetir jornadas aprovadas. |
+| view-integrantes | Cadastro e configuração | Preservar testes e QA existentes; reconciliar ações persistidas por requisito. |
+| view-financeiro | Cobranças, pagamentos, acordos, Ágape/Mútua | Reutilizar gates SQL/HTTP por fluxo; identificar ações faltantes sem gerar novos fatos. |
+| view-inadimplencia | Faixas, paginação e exportação | Timezone aplicada; distinguir cobertura SQL/HTTP e aceite de filtros/exportação por requisito. |
+| view-tesouraria | Conciliação e Caixa/Bancos — próximo recorte | M02.02-A: comprovar bloqueio seguro em leitura truncada/incoerente; CI/testes existentes não substituem gate DEV específico. Primeiro delimitar cobertura existente e teste mínimo faltante. |
+| view-fluxo-caixa | Movimentos, ranking e saldo | Preservar Grupo A e Projetado homologado; coerência financeira específica depende de evidência, sem presumir conclusão integral. |
+| view-contas-pagar | Aprovações e operações institucionais | Reutilizar HTTP A/B/mensal/estorno; conferir só requisitos sem evidência equivalente. |
+| view-contas-receber | Operações institucionais | Reutilizar SQL/HTTP mensal/anual/reversões; rastrear faltantes por requisito. |
+| view-dre | Rubricas contábeis | BLOQUEADO pela decisão contábil #43; não inferir Receita Bruta/Deduções/Receita Líquida. |
+| view-plano-contas | Publicação e estrutura | M03.01: JWT real, concorrência e UX final sem homologação integral registrada; publicar plano exige autorização própria. |
+| view-config-dre | Períodos, políticas e orçamento | Confrontar testes e gates anteriores; não alterar períodos/políticas para obter evidência. |
+| view-relatorios | Diário/Razão e exportação integral | BLOQUEADO pela decisão contábil #43; exportações atuais são recortes. |
+| view-cadastros | RBAC administrativo | HOMOLOGADO_DEV no recorte; preservar HTTP/UI e não alterar roles. |
+| view-configuracoes | Identidade e privacidade | M05.01 depende de decisão jurídica/retenção/portabilidade; não anonimizar nem excluir dados. |
+
+### Recorte seguinte e condição de conclusão
+
+**M06.01 / view-tesouraria / M02.02-A:** Gemini deve confrontar inventário original, `BankReconciliation.tsx`, serviço correspondente e testes existentes. Entregar o vínculo requisito → implementação → evidência e o menor cenário faltante de leitura completa/truncada/incoerente. Work fica para eventual homologação autenticada independente no DEV após delimitar ações/dados e autorização pertinente. Não reconstruir a tela, ampliar RPCs ou criar fixtures financeiras nesta revisão documental.
+
+**M06.03:** reutilizar as provas acima e conferir Grupo B persistente de `dev-gate/tests/negative-http-authorization.mjs` (flag e variável de autorização permanecem obrigatórias), recuperação M05.02 e regressões dos fluxos sem aceite. Ausência de nova evidência é NOT EVALUATED; gate comercial descartável não fecha recuperação global. O PR #50 tem evidência histórica de restore descartável; integração/ambiente operacional exigem verificação própria antes de conclusão.
+
+**Ressalvas preservadas:** paginação visual de auditoria além da primeira página NOT EVALUATED; risco residual de deadlock `40P01` não eliminado. Não converter essas ressalvas em reabertura de M06.02 nem corrigir RPCs automaticamente.
+
+---
+
 ## M06.02 — Consolidação Pós-Migration ADR-0049 no DEV (`view-master-planos`, 24/11/2026)
 
 - **Auditoria SQL ativada em DEV (`20261125002909_v35_commercial_draft_audit_logs`):** `update_saas_plan_version_draft`, `create_saas_plan_successor_draft` e `update_saas_promotion_draft` agora gravam evento transacional em `saas_master_audit_logs`, com validação **`COMMERCIAL_DRAFT_AUDIT_ROLLBACK_PASS`** no DEV (`szqkdekwhzxsoxorgvaz`, `MASTER + AAL2` preservado, PROD intacto).
@@ -141,7 +181,7 @@ Disclosure, Enter/Space, tabulação, foco efetivo em Recolher e retorno ao Deta
 
 ## Legenda canônica de status
 - `HOMOLOGADO_DEV`: fluxo principal validado em Supabase DEV (`szqkdekwhzxsoxorgvaz`) com evidência registrada.
-- `IMPLEMENTADO_E_TESTADO`: UI, serviços e testes unitários/integração Vitest aprovados localmente sobre contratos já existentes no DEV (aguardando aceite HTTP/RBAC/AAL2 real e/ou aplicação da migration `20261115120000` de timezone no DEV).
+- `IMPLEMENTADO_E_TESTADO`: UI, serviços e testes unitários/integração Vitest aprovados localmente sobre contratos já existentes no DEV (o aceite deve ser conferido por requisito; timezone aplicada no DEV como `20261115184137` e Grupo A 5/5 PASS não promovem a tela integral).
 - `IMPLEMENTADO_PENDENTE_DEV`: UI, serviços e testes locais aprovados, mas dependente de migration e/ou Edge Function ainda **não aplicadas** no DEV.
 - `BLOQUEADO_DECISAO`: fluxo entregue em recorte seguro, mas completude integral depende de definição de negócio/contábil/jurídica externa.
 - `BLOQUEADO_INFRAESTRUTURA`: depende de ambiente PROD, secrets, cluster PostgreSQL dedicado ou ativação fora deste workspace.
@@ -155,11 +195,11 @@ Disclosure, Enter/Space, tabulação, foco efetivo em Recolher e retorno ao Deta
 | 5 | `view-master-operacao` | Operação / Suporte | `MasterOperations.tsx`, `MasterSupportQueue.tsx`, `MasterAudit.tsx`, `MasterSupportSessions` | `HOMOLOGADO_DEV` | M04.03-C (`20261112015957`), Auditoria Master (`20261102000933`), P0 Suporte e jobs (`20261113230344`) no DEV; clique mobile `320 px` corrigido (`ResponsiveLayout.test.tsx`); acessibilidade da expansão de detalhes em `MasterSupportQueue.tsx` (`aria-expanded`, `aria-controls`, retorno de foco no `Recolher`, `MasterSupportQueue.test.tsx` 12/12 PASS; disclosure homologado em d859b16 e conversas Master/Loja A–D homologadas em f9f900a, com limites no registro de encerramento acima); gate HTTP read-only AAL1/AAL2 pronto em `npm run test:negative-auth:readonly --prefix dev-gate` |
 | 6 | `view-master-config` | Configurações da Plataforma | `MasterPlatformConfig.tsx`, `src/lib/master-config.ts` | `IMPLEMENTADO_E_TESTADO` | Vitest PASS (`MasterPlatformConfig.test.tsx` 12/12); parâmetros globais protegidos por Master/AAL2; F1–F5 implementadas (fail-closed sem dados obsoletos, WAI-ARIA Tabs completo nas 6 seções com teclado circular, tema escuro CorSys, projeção explícita e validação de schema, integrações sem falsa prontidão); CI pós-push e QA autenticado DEV pendentes |
 | 7 | `view-chamados` | Chamados | `Chamados.tsx` (`src/lib/support.ts`, `v_saas_support_ticket_metrics`) | `HOMOLOGADO_DEV` | M04.03-C homologada DEV + correção SLA e escopo tenant (`support.test.ts`, `Chamados.test.tsx` PASS); tabelas com `max-w-full min-w-0` |
-| 8 | `view-dashboard` | Painel Geral da Tesouraria | `Workspace.tsx`, `FinancialDashboard.tsx`, `DailyCashFlow.tsx` | `IMPLEMENTADO_E_TESTADO` | Responsividade 320/390/768/1440 px homologada pelo Work; 6 KPIs, 3 modos (`aria-pressed`), atalhos e `.mobile-nav` ≤5 itens; **P1 timezone (`ADR-0048`) implementada em `20261115120000_v35_tenant_timezone_financial_dates.sql` (aguarda aplicação no DEV)** |
+| 8 | `view-dashboard` | Painel Geral da Tesouraria | `Workspace.tsx`, `FinancialDashboard.tsx`, `DailyCashFlow.tsx` | `IMPLEMENTADO_E_TESTADO` | Responsividade 320/390/768/1440 px homologada pelo Work; 6 KPIs, 3 modos (`aria-pressed`), atalhos e `.mobile-nav` ≤5 itens; **P1 timezone (`ADR-0048`) implementada em `20261115120000_v35_tenant_timezone_financial_dates.sql` (aplicada no DEV sob `20261115184137`; preservar evidência transacional já registrada)** |
 | 9 | `view-integrantes` | Integrantes | `Members.tsx`, `MemberForm.tsx`, `MemberConfiguration.tsx` (`v_member_communication_status`) | `IMPLEMENTADO_E_TESTADO` | Vitest PASS (`Members.test.tsx`); responsividade 320/390/768/1440 px homologada pelo Work; termos usam `private.tenant_current_date` em `20261115120000` |
 | 10 | `view-financeiro` | Financeiro dos Integrantes | `Finance.tsx`, `MemberPayments.tsx`, `ManualCharges.tsx`, `MonthlyChargeGeneration.tsx`, `MemberAgreements.tsx`, `AgapeEvents.tsx`, `MutualBatches.tsx` | `IMPLEMENTADO_E_TESTADO` | Vitest PASS; `initialSection` integrado aos atalhos do Dashboard; responsividade 320/390/768/1440 px homologada pelo Work; `private.tenant_current_date` em `20261115120000` |
-| 11 | `view-inadimplencia` | Inadimplência | `DelinquencyReport.tsx`, `delinquency-report.ts`, `delinquency-export.ts` | `IMPLEMENTADO_E_TESTADO` | Migration aplicada no DEV (`20261113230430`); responsividade 320/390/768/1440 px homologada pelo Work; **P1 timezone (`ADR-0048`) implementada em `20261115120000_v35_tenant_timezone_financial_dates.sql` (aguarda aplicação no DEV)** |
-| 12 | `view-tesouraria` | Caixa e Bancos | `Tesouraria.tsx`, `TreasuryBalances.tsx`, `AccountTransfers.tsx`, `BankReconciliation.tsx` | `IMPLEMENTADO_E_TESTADO` | Vitest PASS; M02.02-A (conciliação por lotes + integridade) integrada em código; `private.tenant_current_date` em `20261115120000`; aguarda gate HTTP read-only M02.03 |
+| 11 | `view-inadimplencia` | Inadimplência | `DelinquencyReport.tsx`, `delinquency-report.ts`, `delinquency-export.ts` | `IMPLEMENTADO_E_TESTADO` | Migration aplicada no DEV (`20261113230430`); responsividade 320/390/768/1440 px homologada pelo Work; **P1 timezone (`ADR-0048`) implementada em `20261115120000_v35_tenant_timezone_financial_dates.sql` (aplicada no DEV sob `20261115184137`; preservar evidência transacional já registrada)** |
+| 12 | `view-tesouraria` | Caixa e Bancos | `Tesouraria.tsx`, `TreasuryBalances.tsx`, `AccountTransfers.tsx`, `BankReconciliation.tsx` | `IMPLEMENTADO_E_TESTADO` | Vitest PASS; M02.02-A (conciliação por lotes + integridade) integrada em código; `private.tenant_current_date` em `20261115120000`; Grupo A HTTP read-only 5/5 PASS; gate específico da conciliação truncada/incoerente M02.02-A permanece pendente |
 | 13 | `view-fluxo-caixa` | Fluxo de Caixa | `FluxoCaixa.tsx`, `DailyCashFlow.tsx`, `CashFlowMovementDetail.tsx` | `IMPLEMENTADO_E_TESTADO` | Migration M02.02-D aplicada no DEV (`20261113230306`); responsividade 320/390/768/1440 px homologada pelo Work; gate HTTP read-only 5/5 PASS (15/11/2026); aviso do modo Projetado corrigido (`var(--surface-2)`, commit `34291d4`, CI `45463715864` 3/3 PASS) e aprovado em navegador real a 390 e 1024 px com período preservado de 02/11 a 24/11/2026 (`FluxoCaixa.test.tsx` 4/4 PASS) |
 | 14 | `view-contas-pagar` | Contas a Pagar | `ContasPagar.tsx`, `PayableApprovals.tsx`, `ApprovalHistory.tsx`, `InstitutionalMonthly.tsx`, `InstitutionalReversals.tsx` | `IMPLEMENTADO_E_TESTADO` | Vitest PASS; fluxos HTTP A/B mensal/estorno/aprovação validados previamente no DEV |
 | 15 | `view-contas-receber` | Contas a Receber | `ContasReceber.tsx`, `InstitutionalOperations.tsx` | `IMPLEMENTADO_E_TESTADO` | Vitest PASS; operações institucionais mensais/anuais/reversões com testes SQL/HTTP prévios |
