@@ -1,3 +1,9 @@
+## Verificação vigente — 25/11/2026
+
+Editor Master: CI PostgreSQL PLATFORM_IDENTITY_PG_PASS e aplicação DEV verificadas, sem UPDATE direto authenticated/EXECUTE anon, CAS/lock e auditoria mínima. M01.03 aplicada sem dados: identidade ligada ao convite, termos versionados e ACLs conferidos. Jornada runtime NOT EVALUATED; Edge v1 deve aguardar configuração segura antes de atualização. Não houve limpeza nem operação PROD. Sigilo amplo aprovado nas minutas, sem publicação jurídica presumida. Evidências e riscos completos em SESSION_HANDOFF.md.
+
+---
+
 ## Editor Master da identidade da prestadora — 25/11/2026
 
 Implementação da ressalva A04/E03: formulário de identidade em MasterPlatformConfig e RPC save_platform_identity, somente MASTER/AAL2, allowlist de dez campos, nulos para opcionais, lock/CAS de updated_at, audit de nomes de campos sem valores pessoais, sem editar política comercial/termos/contratos. Resposta incerta exige atualização/reconciliação antes de novo envio. CNPJ numérico e alfanumérico aceitos em formato (sem afirmar consulta/validação cadastral oficial). Fonte de formato: Receita Federal, https://www.gov.br/receitafederal/pt-br/acesso-a-informacao/acoes-e-programas/programas-e-atividades/cnpj-alfanumerico .

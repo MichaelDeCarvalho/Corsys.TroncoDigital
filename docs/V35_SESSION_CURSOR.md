@@ -1,3 +1,9 @@
+## Cursor vigente — Lote 02 / M01.03 (25/11/2026)
+
+Main de entrega e87c1f5c0e6a9b2f1c74c1b8ba9a6ca17d7cffac; PRs #67/#68/#69 integrados, #50 SUPERSEDIDO. CI main static/onboarding/frontend SUCCESS; 634 testes no incremento. SQL identidade e aceite aplicado DEV (81 arquivos/81 versões, 11 timestamps distintos). Não reaplicar. Workers Builds SUCCESS; navegação DRE e abrir/fechar editor Master observados no navegador sem gravação. Verificar ONBOARDING_APP_ORIGIN e redirect Auth antes de atualizar Edge v1, mantendo JWT. Enquanto bloqueado, prosseguir requisitos independentes autorizados. M06.02 CONCLUIDO preservado; conciliação por injeção seletiva BLOCKED pela ferramenta. Nenhum reset/PROD. Checkpoint completo: ../SESSION_HANDOFF.md; autorização: V35_CLOSURE_APPROVAL.md.
+
+---
+
 ## Editor Master da identidade da prestadora — 25/11/2026
 
 Implementação da ressalva A04/E03: formulário de identidade em MasterPlatformConfig e RPC save_platform_identity, somente MASTER/AAL2, allowlist de dez campos, nulos para opcionais, lock/CAS de updated_at, audit de nomes de campos sem valores pessoais, sem editar política comercial/termos/contratos. Resposta incerta exige atualização/reconciliação antes de novo envio. CNPJ numérico e alfanumérico aceitos em formato (sem afirmar consulta/validação cadastral oficial). Fonte de formato: Receita Federal, https://www.gov.br/receitafederal/pt-br/acesso-a-informacao/acoes-e-programas/programas-e-atividades/cnpj-alfanumerico .

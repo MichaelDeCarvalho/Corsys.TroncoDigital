@@ -1,3 +1,16 @@
+## Estado vigente — 25/11/2026, após autorização consolidada
+
+**VERIFIED:** 81 arquivos SQL no Git e 81 versões no DEV. M01.03 deixou de ser migration pendente; a jornada e a função Edge têm gates separados, conforme SESSION_HANDOFF.md. Baseline de 66 arquivos preservada.
+
+| Divergência adicional | Arquivo Git | Versão remota DEV | Evidência |
+|---|---|---|---|
+| 10 | 20261125210000_v35_platform_identity_master_edit.sql | 20261125210340 | apply SUCCESS; função/ACL/fingerprint e auditoria conferidos; PostgreSQL descartável PLATFORM_IDENTITY_PG_PASS |
+| 11 | 20261109233000_v35_onboarding_acceptance.sql | 20261125210405 | apply SUCCESS; tabelas vazias, RPCs/ACL conferidas; CI M01.03 PASS |
+
+As nove divergências anteriores permanecem válidas. São 15 arquivos após os 66 baseline: quatro timestamps idênticos e onze mapeados. Não reaplicar SQL já instalado; não renomear arquivos nem executar migration repair/db reset/db push para forçar igualdade de timestamps. Histórico abaixo permanece como evidência anterior, supersedido nos totais e na pendência M01.03.
+
+---
+
 # Plano de Reconciliação de Migrations — Repositório vs Supabase DEV
 
 **Data de registro:** 2026-11-13  
