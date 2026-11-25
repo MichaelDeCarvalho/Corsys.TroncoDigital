@@ -399,7 +399,9 @@ def main() -> None:
         exists_check + "\nbegin;\n" + adr0049_sql + "\n" + exists_check + "\nrollback;\n" + exists_check,
         app="conc-adr0049-rb",
     )
-    assert rb_res == "f|f\nt|t\nf|f", f"ADR-0049 DDL rollback mismatch: {rb_res!r}"
+    assert rb_res == "false|false\ntrue|true\nfalse|false", (
+        f"ADR-0049 DDL rollback mismatch: {rb_res!r}"
+    )
     sql("begin;\n" + adr0049_sql + "\ncommit;", app="conc-adr0049-apply")
     print("PASS schema bootstrap and ADR-0049 DDL rollback/apply")
 
