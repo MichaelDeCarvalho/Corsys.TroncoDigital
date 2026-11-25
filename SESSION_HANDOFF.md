@@ -1,3 +1,15 @@
+## M01.04 — fixture e provisionamento real (25/11/2026)
+
+- Setup administrativo autorizado E04/E05: execução 1a05dfcd-f4bd-4e7d-b123-7bbe48989a51, idempotência qa-onboarding-20261125-01, Loja CORSYS QA ONBOARDING 20261125, destino exclusivo michael.c.carvalho+corsys-v35-qa@gmail.com. Rascunho inserido por SQL para fixture, sem atribuir ao setup evidência de autenticação real.
+- Documento exclusivamente fictício/sem efeito contratual: QA-V35-20261125-01, ID 2c14e411-28e1-407c-a9d8-4d60e1b88ac3, hash f85d4513fecac3bad4dc0b598d72576887928cdd71223b0d1bd6b376ef30716c conferido no banco, vigência até 27/11/2026 20:37:02 BRT. Publicado somente no DEV, sem termo real concorrente; não transportar para PROD. Inclui sigilo e menção discreta aprovados. Documento/auditoria imutáveis são preservados; expiração impede uso posterior. Antes de nova versão publicada, respeitar janela não sobreposta.
+- VERIFIED no navegador: Master/MFA existente carregou o rascunho, confirmação PROVISIONAR e comando Criar Loja e assinatura concluíram. Read-back: organization_id 91217b7c-bcc4-4b3c-89cb-e09a49b88bbc, run awaiting_invite/invite, job c2366adc-e369-4807-a4e5-6e9f10ff4b12 queued, recibos 0. Plano legado DEV de R$0 preservado; assinatura fictícia R$0, teste 7 dias, início 01/12/2026; nenhuma cobrança.
+- Lacuna encontrada no fluxo: MasterOnboarding mostrava apenas rascunhos e não acionava a Edge. Implementado OnboardingInviteSender para execuções aguardando convite, trava de clique/reenvio após resposta incerta/sucesso e texto que distingue aceite do serviço de entrega. Servidor mantém claim/lease e autorizações originais; atualizar página nunca autoriza novo disparo da fila já reservada.
+- CORS aditivo limitado à ONBOARDING_APP_ORIGIN, preflight sem claim/envio; demais origens recusadas; autenticação JWT e RPC Master/AAL2 preservadas. Verificação da API invoke pela implementação instalada de functions-js (URL construída com functionName).
+- Testes novos/direcionados: UI 11/11 PASS em dois arquivos; função 4/4 PASS (inclui CORS, negativas, concorrência e falha ambígua). CI/typecheck/deploy deste incremento ainda devem ser confirmados antes de homologar o envio.
+- Nenhum e-mail enviado neste checkpoint. Próximo ato: CI, integrar e atualizar Edge compatível com cors.mjs, conferir build DEV, disparar uma vez pelo botão real e observar estado durável. Se houver resultado incerto, reconciliar antes de novo envio. Limite E05: até 10, consumidos 0. Inbox/link/senha/MFA do destinatário continuam sob controle do proprietário. Não declarar jornada completa antes do recibo, vínculo, auditoria e replay comprovados.
+
+---
+
 ## Onboarding — configuração DEV resolvida (25/11/2026)
 
 - **VERIFIED:** acesso ao projeto szqkdekwhzxsoxorgvaz restabelecido pelo proprietário; Site URL já correto. Callback adicionado e relido após nova navegação: https://corsys-tronco-digital-dev.corsys1.workers.dev/onboarding/accept?run_id=* . Allowlist com duas entradas, preservada a raiz anterior. Wildcard somente no identificador da execução; nenhum host genérico.

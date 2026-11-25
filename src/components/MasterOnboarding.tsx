@@ -2,6 +2,7 @@ import {useEffect,useRef,useState,type FormEvent} from 'react'
 import type {SupabaseClient} from '@supabase/supabase-js'
 import {loadMasterOnboarding,validateOnboardingDraft,type OnboardingDraft,type OnboardingPlan} from '../lib/master-onboarding'
 import {formatMoney} from '../lib/finance-data'
+import {OnboardingInviteSender} from './OnboardingInviteSender'
 
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 type Command={name:'create_master_onboarding_draft_idempotent'|'provision_saas_onboarding_database';args:Record<string,unknown>}
@@ -107,6 +108,7 @@ export function MasterOnboarding({client}:{client:SupabaseClient}){
   {uncertain&&<button type="button" className="secondary" disabled={pending}
    onClick={()=>{if(cmd.current)void run(cmd.current)}}>Verificar envio</button>}
   {!runs||!plans?(!error&&<p role="status">Consultando implantação da plataforma…</p>):<>
+   <OnboardingInviteSender client={client} runs={runs}/>
    <h4>Rascunhos em andamento</h4>
    {!draft.length?<p>Nenhum rascunho pendente.</p>:<>
     <label htmlFor="master-onboarding-select">Consultar rascunho</label>

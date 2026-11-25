@@ -1,3 +1,9 @@
+## M01.04 — andamento vigente (25/11/2026)
+
+Fixture não contratual preparada no DEV e Loja fictícia provisionada com Master/MFA real. Convite ainda queued; nenhum envio. Lacuna da ação de envio corrigida em OnboardingInviteSender, com CORS restrito e bloqueio de repetição incerta; evidências, manifesto/expiração da fixture e gates de CI/deploy/envio em SESSION_HANDOFF.md. M01 segue EM_EXECUCAO. Sem migrations adicionais, mudanças em clientes existentes ou PROD. ADR-0052 registra o recorte.
+
+---
+
 ## Incremento vigente — 25/11/2026
 
 RPC aditiva save_platform_identity e tabelas/RPCs de onboarding acceptance instaladas no DEV; mapeamento Git→versão remota em docs/V35_MIGRATION_RECONCILIATION_DEV.md. MASTER/AAL2 e ACLs verificados. Edge onboarding-invite ACTIVE v3, verify_jwt=true; ONBOARDING_APP_ORIGIN e callback restrito ao DEV configurados e relidos. Fontes publicadas idênticas ao Git; jornada de aceite real ainda pendente. DRE apresentada como gerencial; cálculos preservados. PROD isolado/vazio continua preparação sem deploy. Evidência e limites em SESSION_HANDOFF.md.
