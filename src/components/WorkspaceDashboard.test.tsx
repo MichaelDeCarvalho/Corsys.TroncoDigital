@@ -240,7 +240,7 @@ describe('Workspace V35 dashboard modes, shortcuts and KPI navigation', () => {
       ['Contas a Receber', 'Contas a Receber'],
       ['Tesouraria', 'Tesouraria'],
       ['Fluxo de Caixa', 'Fluxo de Caixa'],
-      ['DRE Contábil', 'DRE Contábil'],
+      ['DRE Gerencial', 'DRE Gerencial'],
       ['Chamados', 'Atendimento'],
     ]
 

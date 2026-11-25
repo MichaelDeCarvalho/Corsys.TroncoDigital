@@ -1,3 +1,11 @@
+## Aprovação consolidada com ressalvas — 25/11/2026
+
+Fonte vinculante: [V35_CLOSURE_APPROVAL.md](docs/V35_CLOSURE_APPROVAL.md). Pacote AC-V35-20261125-v1 aprovado pelo proprietário, com DRE **gerencial** (oficial pelo contador), sigilo de todo conteúdo, cadastro real da prestadora ao final em editor Master/MFA, início comercial sem fatos de homologação e conta QA isolada no DEV. Dados reais ainda ausentes não bloqueiam desenvolvimento. Diário/Razão não foram excluídos pela ressalva sobre DRE; mantêm gates próprios. Autonomia DEV aprovada; implantação PROD depende do gate final. Nenhuma limpeza/reset agora.
+
+Lote 01: PR #67 integrado em f9e1f56cb4ecc78ba454acfff5dbe7e28c561d96 após CI 581ba2f 3/3 PASS. PR #50 fechado como SUPERSEDIDO: fixture e lockfile já idênticos à main, runner endurecido e teste presentes; sem merge do diff antigo. Preservadas evidências e estados das macros, inclusive M06.02 CONCLUIDO.
+
+Neste incremento, identificação gerencial em navegação, telas, configurações e títulos/escopo de exportações; retirada alegação de validade fiscal pela publicação de plano. Cálculos/RPCs/segurança inalterados. TypeScript PASS; 38/38 testes focados em cinco arquivos PASS localmente. Editor de identidade ainda é lacuna a executar, não declarado pronto. Registro de aprovação inclui as minutas com sigilo reforçado; uso jurídico real continua condicionado aos gates existentes.
+
 ## SEC-M0602-03 — Fechamento M06.02: Gate de Concorrência `C01–C05` PASS em CI, Homologação DEV e Risco Residual de Deadlock (25/11/2026)
 
 - **Evidência de execução confirmada (`534eb6b4b7ea0860288e3dfe6d6f6ec93a1c0239`, CI `45529859036` 3/3 PASS, Workers Builds DEV Build `3ca9d183-730d-4f76-868c-faca67a5054b` / Version `0f6747d8-2461-4d54-bef5-6f94725590d9` SUCCESS):**

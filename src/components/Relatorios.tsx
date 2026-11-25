@@ -489,7 +489,7 @@ function TenantReports({ client, organizationId }: { client: SupabaseClient; org
     }
     if (activeTab === 'fechamento' && dreEntries && !fechamentoLoading && !fechamentoError) return {
       ...base, filters: `Competência: ${reportCompetence}`,
-      scope: 'DRE agregada por conta na competência consultada; não equivale ao livro diário.',
+      scope: 'DRE gerencial agregada por conta na competência consultada. A demonstração contábil oficial é elaborada pelo contador.',
       headers: ['Competência', 'Plano', 'Código', 'Conta', 'Natureza', 'Classificação', 'Valor assinado'],
       rows: dreEntries.map(row => [row.accounting_period, row.accounting_plan_id, row.account_code, row.account_description, row.nature, row.operational_classification ?? '', safeDreValue(row.signed_amount)]),
     }
@@ -849,10 +849,10 @@ function TenantReports({ client, organizationId }: { client: SupabaseClient; org
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>C. Fechamento Mensal e DRE por Competência</h3>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <button type="button" className="quiet" disabled={exportBusy} onClick={() => handleExtendedExportRequest('PDF', 'DRE Contábil')}>
+                <button type="button" className="quiet" disabled={exportBusy} onClick={() => handleExtendedExportRequest('PDF', 'DRE Gerencial')}>
                   PDF
                 </button>
-                <button type="button" className="quiet" disabled={exportBusy} onClick={() => handleExtendedExportRequest('XLSX', 'DRE Contábil')}>
+                <button type="button" className="quiet" disabled={exportBusy} onClick={() => handleExtendedExportRequest('XLSX', 'DRE Gerencial')}>
                   XLSX
                 </button>
               </div>

@@ -237,8 +237,8 @@ export function DreConfig({ client, organizationId, onNavigate }: DreConfigProps
     <div className="view active" id="view-config-dre">
       <div className="hero">
         <div>
-          <h2>Configurações da DRE</h2>
-          <p>Diagnóstico contábil, cobertura de mapeamentos e parâmetros da Demonstração do Resultado.</p>
+          <h2>Configurações da DRE Gerencial</h2>
+          <p>Diagnóstico de classificação, cobertura de mapeamentos e parâmetros da DRE Gerencial. A DRE contábil oficial é elaborada pelo contador.</p>
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
           <button
@@ -326,7 +326,7 @@ export function DreConfig({ client, organizationId, onNavigate }: DreConfigProps
                   </p>
                   {activePlan.status === 'draft' && (
                     <p style={{ color: '#b45309', marginTop: '6px', fontSize: '0.85rem' }}>
-                      <em>Atenção: Este plano está em modo rascunho. Para que tenha validade fiscal e contábil, é necessário publicá-lo no Plano de Contas.</em>
+                      <em>Atenção: Este plano está em modo rascunho. Publique o plano de classificação para utilizá-lo nos fatos da Loja. A publicação no sistema não certifica validade fiscal ou contábil.</em>
                     </p>
                   )}
                 </div>

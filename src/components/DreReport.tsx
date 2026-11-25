@@ -33,8 +33,8 @@ export function DreReport({client,organizationId}:{client:SupabaseClient;organiz
  }
  const months=rows?summarizeDre(rows):[]
  return <section className="panel dre-report" aria-label="DRE por competência">
-  <h2>DRE — registros contábeis realizados</h2>
-  <p className="subtle">Receitas e despesas contabilizadas, com seus códigos e naturezas históricas.
+  <h2>DRE Gerencial por competência</h2>
+  <p className="subtle">Receitas e despesas dos fatos registrados, com seus códigos e naturezas históricas. Relatório gerencial para apoiar decisões da Loja. A DRE contábil oficial é elaborada pelo contador.
    Esta visão não é extrato de caixa e não inclui orçamento nem projeções futuras.</p>
   <form aria-label="Consultar DRE" onSubmit={submit}>
    <fieldset disabled={loading}>
@@ -48,11 +48,11 @@ export function DreReport({client,organizationId}:{client:SupabaseClient;organiz
   {error&&<p role="alert" className="message error">{error}</p>}
   {loading&&<p role="status">Consultando dados contábeis…</p>}
   {rows&&!loading&&<>
-   <p className="subtle">Período: {range}. Informações classificadas e registradas na contabilidade.</p>
+   <p className="subtle">Período: {range}. Informações classificadas a partir dos fatos registrados para a análise gerencial.</p>
    {!rows.length?<p>Nenhum lançamento contabilizado de resultado para este período.</p>:<>
     <h3>Resultado por competência</h3>
     <p className="subtle">A receita é apresentada pelo valor assinado das contas históricas. Receita bruta, deduções e receita líquida exigem classificação própria.</p>
-    <div className="finance-table" role="region" aria-label="Resultado contábil por competência" tabIndex={0}>
+    <div className="finance-table" role="region" aria-label="Resultado gerencial por competência" tabIndex={0}>
      <table><thead><tr><th>Competência</th><th>Receitas</th><th>Custos</th><th>Despesas</th><th>Resultado antes do financeiro</th><th>Resultado financeiro</th><th>Resultado</th></tr></thead>
       <tbody>{months.map(m=><tr key={m.month}>
        <th scope="row">{m.month.slice(0,7)}</th>
@@ -72,7 +72,7 @@ export function DreReport({client,organizationId}:{client:SupabaseClient;organiz
     </div>
    </>}
    <p className="subtle">Os valores são derivados de fatos contábeis, incluindo ajustes e cancelamentos,
-    conforme a competência original. Não confunda saldo financeiro, crédito de integrante e resultado contábil.
+    conforme a competência original. Saldo financeiro, crédito de integrante e resultado gerencial são medidas distintas.
     A consulta aceita no máximo 12 competências e bloqueia resultados acima de 1.500 linhas para evitar totais incompletos.</p>
   </>}
  </section>
