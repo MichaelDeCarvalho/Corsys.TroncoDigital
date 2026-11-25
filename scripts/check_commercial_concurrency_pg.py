@@ -626,7 +626,7 @@ def main() -> None:
         master_2,
         f"select public.update_saas_plan_version_draft('{c05b_ver}', 'C05b Fantasma', 'conc_c05b_x', 333.00, 'monthly', 0, 7, '2027-01-01', '{{\"y\": 99}}'::jsonb);",
     )
-    assert r1.returncode == 0 and r1.stdout.strip() == "t", r1.stderr
+    assert r1.returncode == 0 and r1.stdout in ("t\n\nt", "t\nt"), (r1.stdout, r1.stderr)
     assert r2.returncode != 0 and r2.sqlstate == "23503", (r2.sqlstate, r2.stderr)
     assert sql(f"select count(*) from public.saas_plans where id = '{c05b_plan}';") == "0"
     assert sql(f"select count(*) from public.saas_plan_versions where plan_id = '{c05b_plan}';") == "0"
