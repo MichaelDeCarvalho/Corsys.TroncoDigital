@@ -1,6 +1,6 @@
 ## Posição vigente — 25/11/2026
 
-Lote 01: PRs #67/#68/#69 integrados; #50 SUPERSEDIDO sem merge. Lote 02/M01.03: SQL aplicado DEV, jornada de convite/aceite ainda pendente de configuração Edge/redirect e homologação. Entrega A04 da M04: editor Master implementado, testes CI PASS e SQL aplicado; interação real NOT EVALUATED. M06.02 permanece CONCLUIDO; M06.01/M06.03 EM_EXECUCAO. Nenhuma macro adicional encerrada. Autorização consolidada em V35_CLOSURE_APPROVAL.md; evidências e próximo ato em ../SESSION_HANDOFF.md.
+Lote 01: PRs #67/#68/#69 integrados; #50 SUPERSEDIDO sem merge. Lote 02/M01.03: SQL aplicado DEV, jornada de convite/aceite ainda pendente de configuração Edge/redirect e homologação. Entrega A04 da M04: editor Master implementado, testes CI PASS e SQL aplicado; abertura/fechamento do editor real VERIFIED sem gravação; gravação pela UI NOT EVALUATED. M06.02 permanece CONCLUIDO; M06.01/M06.03 EM_EXECUCAO. Nenhuma macro adicional encerrada. Autorização consolidada em V35_CLOSURE_APPROVAL.md; evidências e próximo ato em ../SESSION_HANDOFF.md.
 
 ---
 

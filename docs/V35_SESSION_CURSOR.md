@@ -1,6 +1,6 @@
 ## Cursor vigente — Lote 02 / M01.03 (25/11/2026)
 
-Main de entrega e87c1f5c0e6a9b2f1c74c1b8ba9a6ca17d7cffac; PRs #67/#68/#69 integrados, #50 SUPERSEDIDO. CI main static/onboarding/frontend SUCCESS; 634 testes no incremento. SQL identidade e aceite aplicado DEV (81 arquivos/81 versões, 11 timestamps distintos). Não reaplicar. Conferir Workers Builds; verificar ONBOARDING_APP_ORIGIN e redirect Auth antes de atualizar Edge v1, mantendo JWT. Enquanto bloqueado, prosseguir requisitos independentes autorizados. M06.02 CONCLUIDO preservado; conciliação por injeção seletiva BLOCKED pela ferramenta. Nenhum reset/PROD. Checkpoint completo: ../SESSION_HANDOFF.md; autorização: V35_CLOSURE_APPROVAL.md.
+Main de entrega e87c1f5c0e6a9b2f1c74c1b8ba9a6ca17d7cffac; PRs #67/#68/#69 integrados, #50 SUPERSEDIDO. CI main static/onboarding/frontend SUCCESS; 634 testes no incremento. SQL identidade e aceite aplicado DEV (81 arquivos/81 versões, 11 timestamps distintos). Não reaplicar. Workers Builds SUCCESS; navegação DRE e abrir/fechar editor Master observados no navegador sem gravação. Verificar ONBOARDING_APP_ORIGIN e redirect Auth antes de atualizar Edge v1, mantendo JWT. Enquanto bloqueado, prosseguir requisitos independentes autorizados. M06.02 CONCLUIDO preservado; conciliação por injeção seletiva BLOCKED pela ferramenta. Nenhum reset/PROD. Checkpoint completo: ../SESSION_HANDOFF.md; autorização: V35_CLOSURE_APPROVAL.md.
 
 ---
 
