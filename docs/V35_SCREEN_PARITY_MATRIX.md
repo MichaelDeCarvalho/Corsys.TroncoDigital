@@ -1,3 +1,10 @@
+## M06.02 — Consolidação Pós-Migration ADR-0049 no DEV (`view-master-planos`, 24/11/2026)
+
+- **Auditoria SQL ativada em DEV (`20261125002909_v35_commercial_draft_audit_logs`):** `update_saas_plan_version_draft`, `create_saas_plan_successor_draft` e `update_saas_promotion_draft` agora gravam evento transacional em `saas_master_audit_logs`, com validação **`COMMERCIAL_DRAFT_AUDIT_ROLLBACK_PASS`** no DEV (`szqkdekwhzxsoxorgvaz`, `MASTER + AAL2` preservado, PROD intacto).
+- **UI sincronizada (`MasterPlanLifecycle.tsx`, `MasterPromotions.tsx`):** parágrafos informativos alinhados pós-ativação; concorrência entre duas sessões (`NOT EVALUATED`) e homologação operacional autenticada no DEV pendentes (`view-master-planos` permanece `IMPLEMENTADO_E_TESTADO`; `M06.02` segue `EM_EXECUCAO`).
+
+---
+
 ## M06.02 — Correção de integridade no Ciclo de Vida Comercial (`view-master-planos`, 24/11/2026)
 
 - **Integridade F1/F2 (`MasterPlanLifecycle.tsx`, `MasterPromotions.tsx`, `src/lib/master-commercial.ts`):** bloqueada repetição cega (`retryable: false`) e imposto travamento até reconciliação manual em falha de rede incerta para `update_saas_plan_version_draft`, `set_saas_plan_active`, `update_saas_promotion_draft` e `set_saas_promotion_series_active`; leitura `loadPlanVersionEntitlements` endurecida em modo fail-closed contra linhas de outro `plan_version_id`, chaves inválidas/duplicadas e payloads incompletos.

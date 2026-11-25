@@ -1,3 +1,14 @@
+## M06.02 — Consolidação Pós-Migration ADR-0049 no DEV (`view-master-planos`, 24/11/2026)
+
+- **Base verificada:** `765a8a661f7375a22183f17c35036a297f4c1e79`; arquivo Git `supabase/migrations/20261124220000_v35_commercial_draft_audit_logs.sql` aplicado exclusivamente no Supabase DEV (`szqkdekwhzxsoxorgvaz`) sob versão **`20261125002909_v35_commercial_draft_audit_logs`** (PROD intacto).
+- **Evidências DEV confirmadas:** aplicação `SUCCESS`; 3 RPCs atualizadas com `SECURITY DEFINER`, `anon` sem `EXECUTE` e `MASTER/AAL2` preservado; **`COMMERCIAL_DRAFT_AUDIT_ROLLBACK_PASS`** sem alterações persistentes em dados de negócio ou contagem de auditoria.
+- **UI alinhada (`MasterPlanLifecycle.tsx`, `MasterPromotions.tsx`):** ajustados apenas os textos informativos sobre auditoria transacional em `saas_master_audit_logs` para edição de rascunho de plano, criação de sucessora de plano e edição de rascunho promocional; formulários, RPCs, contratos, validações e layout intactos.
+- **Reconciliação de migrations (`docs/V35_MIGRATION_RECONCILIATION_DEV.md`):** registrada divergência `#9` (`20261124220000` → `20261125002909`) sem alterar `#1`–`#8`, sem renomear o arquivo no Git e preservando `20261109233000_v35_onboarding_acceptance.sql` pendente.
+- **Pendências preservadas:** concorrência simultânea entre duas sessões permanece **`NOT EVALUATED`**; homologação operacional autenticada no DEV permanece pendente (`M06.02` segue `EM_EXECUCAO`).
+- **Próximo passo:** sync/push, verificação do GitHub Actions e publicação automática no Cloudflare DEV, e homologação independente no Work em `view-master-planos`.
+
+---
+
 ## M06.02 — Revisão Final da Migration de Auditoria Comercial (`view-master-planos`, 24/11/2026 — preparado, sem apply remoto)
 
 - **Base de partida:** HEAD `dea48d9ca522e91de90dee2f307cf1249ac3be63` (CI `45488251975` **3/3 PASS**, **625/625 testes**, Cloudflare DEV `1f514b33`).

@@ -1,3 +1,11 @@
+## M06.02 — Consolidação Pós-Migration ADR-0049 no DEV (`view-master-planos`, 24/11/2026)
+
+- **Ativação exclusiva DEV (`szqkdekwhzxsoxorgvaz`):** arquivo `20261124220000_v35_commercial_draft_audit_logs.sql` (base `765a8a661f7375a22183f17c35036a297f4c1e79`) aplicado sob versão **`20261125002909_v35_commercial_draft_audit_logs`** (`SUCCESS`, PROD não alterado), com **`COMMERCIAL_DRAFT_AUDIT_ROLLBACK_PASS`**, `SECURITY DEFINER`, `anon` sem `EXECUTE`, `MASTER/AAL2` preservado e zero mutação persistente nos dados/auditoria.
+- **Alinhamento UI e reconciliação:** textos informativos atualizados em `MasterPlanLifecycle.tsx` e `MasterPromotions.tsx`; divergência `#9` (`20261124220000` → `20261125002909`) registrada em `docs/V35_MIGRATION_RECONCILIATION_DEV.md` preservando `#1`–`#8`, nome do arquivo Git e pendência de `20261109233000`.
+- **Estado operacional:** concorrência simultânea entre duas sessões permanece **`NOT EVALUATED`**; homologação operacional autenticada no DEV pendente pós-sync/push e deploy Cloudflare DEV. **`M06.02` permanece `EM_EXECUCAO`.**
+
+---
+
 ## M06.02 — Revisão Final da Migration de Auditoria Comercial (`view-master-planos`, 24/11/2026 — preparado)
 
 - **Artefatos produzidos (`ADR-0049`):** `supabase/migrations/20261124220000_v35_commercial_draft_audit_logs.sql` e `supabase/tests/test_commercial_draft_audit_rollback.sql`, cobrindo auditoria transacional em `public.saas_master_audit_logs` para `update_saas_plan_version_draft` (`saas_plan_version.draft_updated`), `create_saas_plan_successor_draft` (`saas_plan_version.successor_draft`) e `update_saas_promotion_draft` (`saas_promotion.draft_updated`).

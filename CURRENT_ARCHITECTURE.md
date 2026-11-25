@@ -1,3 +1,12 @@
+## V35 M06.02 — Consolidação Pós-Migration ADR-0049 no DEV e Alinhamento da UI (24/11/2026)
+
+- **Ativação confirmada exclusivamente no Supabase DEV (`szqkdekwhzxsoxorgvaz`, sem alterações em PROD):**
+  - Arquivo versionado em `765a8a661f7375a22183f17c35036a297f4c1e79`: `supabase/migrations/20261124220000_v35_commercial_draft_audit_logs.sql`.
+  - Versão aplicada remotamente no DEV: **`20261125002909_v35_commercial_draft_audit_logs`** (divergência de timestamp registrada em `docs/V35_MIGRATION_RECONCILIATION_DEV.md`, preservando o nome do arquivo no Git e os oito registros históricos anteriores).
+  - Validação PostgreSQL no DEV: aplicação `SUCCESS`; três RPCs atualizadas (`update_saas_plan_version_draft`, `create_saas_plan_successor_draft`, `update_saas_promotion_draft`) presentes no catálogo com `SECURITY DEFINER`, `anon` sem permissão de execução e controle `MASTER + AAL2` preservado; teste transacional `test_commercial_draft_audit_rollback.sql` aprovado com **`COMMERCIAL_DRAFT_AUDIT_ROLLBACK_PASS`**, mantendo dados de negócio e contagem de auditoria preservados após `ROLLBACK`.
+- **Alinhamento pós-ativação da interface (`src/components/MasterPlanLifecycle.tsx`, `src/components/MasterPromotions.tsx`):** atualizados exclusivamente os textos informativos descritivos para refletir auditoria transacional em `saas_master_audit_logs` também na edição de rascunho de plano, criação de versão sucessora de plano e edição de rascunho promocional, preservando formulários, RPCs, contratos, validações e layout.
+- **Pendências explícitas:** concorrência simultânea real entre duas sessões permanece **`NOT EVALUATED`**, e a homologação operacional autenticada no navegador DEV (`Work`) permanece pendente (`M06.02` segue `EM_EXECUCAO`).
+
 ## V35 M06.02 — Auditoria Transacional e Validação Estrita do Ciclo de Vida Comercial (`ADR-0049`, 24/11/2026 — preparado, sem aplicação remota)
 
 - **Escopo preparado sobre a base `dea48d9ca522e91de90dee2f307cf1249ac3be63`:** migration aditiva `supabase/migrations/20261124220000_v35_commercial_draft_audit_logs.sql` e teste transacional `ROLLBACK` `supabase/tests/test_commercial_draft_audit_rollback.sql` fechando a lacuna de auditoria em `public.saas_master_audit_logs` para `public.update_saas_plan_version_draft` (`saas_plan_version.draft_updated`), `public.create_saas_plan_successor_draft` (`saas_plan_version.successor_draft`) e `public.update_saas_promotion_draft` (`saas_promotion.draft_updated`), mantendo todas as 66 migrations do manifesto baseline inalteradas.

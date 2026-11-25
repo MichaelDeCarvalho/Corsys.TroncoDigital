@@ -1,3 +1,24 @@
+## M06.02 — Consolidação Pós-Migration ADR-0049 no DEV e Alinhamento da UI (`view-master-planos`, 24/11/2026)
+
+**ADR-0049 aplicada exclusivamente no Supabase DEV (`szqkdekwhzxsoxorgvaz`, versão remota `20261125002909_v35_commercial_draft_audit_logs`, arquivo Git `20261124220000_v35_commercial_draft_audit_logs.sql` em `765a8a661f7375a22183f17c35036a297f4c1e79`), validada com `COMMERCIAL_DRAFT_AUDIT_ROLLBACK_PASS` e textos informativos da interface atualizados no Gemini; `M06.02` permanece `EM_EXECUCAO` aguardando sync/push, CI, Cloudflare DEV e homologação independente no Work.**
+
+### 1. Evidências confirmadas no Supabase DEV (`szqkdekwhzxsoxorgvaz`)
+- Aplicação da migration `20261125002909_v35_commercial_draft_audit_logs`: **SUCCESS** (PROD não alterado).
+- Três RPCs atualizadas presentes no catálogo (`update_saas_plan_version_draft`, `create_saas_plan_successor_draft`, `update_saas_promotion_draft`), `SECURITY DEFINER` preservado, `anon` sem permissão de execução e controle `MASTER/AAL2` preservado.
+- Teste PostgreSQL transacional aprovado (**`COMMERCIAL_DRAFT_AUDIT_ROLLBACK_PASS`**), com dados de negócio e contagem de `saas_master_audit_logs` preservados após `ROLLBACK` (zero mutação persistente).
+- Divergência de timestamp (`20261124220000` no Git vs `20261125002909` no DEV) registrada como item `#9` em `docs/V35_MIGRATION_RECONCILIATION_DEV.md` sem alterar os itens `#1`–`#8`, sem renomear a migration do GitHub e mantendo `20261109233000_v35_onboarding_acceptance.sql` pendente.
+
+### 2. Atualização da interface (somente texto informativo)
+- `src/components/MasterPlanLifecycle.tsx`: parágrafo informativo atualizado para registrar que criação inicial idempotente, edição de rascunho, criação de versão sucessora, publicação, ativação/desativação e exclusão gravam evento transacional em `saas_master_audit_logs`.
+- `src/components/MasterPromotions.tsx`: parágrafo informativo atualizado para registrar que criação/sucessora idempotente, edição de rascunho promocional, publicação, ativação/desativação e exclusão gravam evento transacional em `saas_master_audit_logs`.
+- Nenhuma alteração em formulários, RPCs, contratos, validações, layout, regras comerciais, Auth, MFA, RLS, RBAC ou preços/planos/ofertas.
+
+### 3. Pendências preservadas para homologação independente no Work
+- Concorrência simultânea real entre duas sessões permanece **`NOT EVALUATED`**.
+- Homologação operacional autenticada no navegador DEV (após sync/push, GitHub Actions PASS e deploy automático no Cloudflare DEV) permanece pendente; **não** declarar `M06.02` integralmente homologada nesta rodada.
+
+---
+
 ## M06.02 — Revisão Final da Migration de Auditoria Comercial (`view-master-planos`, 24/11/2026 — preparado para revisão)
 
 **Revisão final da proposta SQL de auditoria para `update_saas_plan_version_draft`, `create_saas_plan_successor_draft` e `update_saas_promotion_draft` CONCLUÍDA localmente no Gemini sobre `dea48d9ca522e91de90dee2f307cf1249ac3be63` (CI `45488251975` 3/3 PASS, 625/625 testes). Nenhuma migration aplicada em DEV/PROD e nenhuma operação comercial remota executada; `M06.02` segue `EM_EXECUCAO`.**

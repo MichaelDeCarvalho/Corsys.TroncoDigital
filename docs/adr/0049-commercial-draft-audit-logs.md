@@ -1,8 +1,8 @@
 # ADR-0049: Auditoria Transacional, Ordem de Locks e Proteção de Entitlements nas RPCs de Rascunho e Sucessora Comercial
 
-- **Status:** proposta (preparada localmente em disco para revisão; **não aplicada** em DEV/PROD)
+- **Status:** aplicada exclusivamente no Supabase DEV (`szqkdekwhzxsoxorgvaz`, versão remota **`20261125002909_v35_commercial_draft_audit_logs`**, originada de `supabase/migrations/20261124220000_v35_commercial_draft_audit_logs.sql`); PROD não alterado
 - **Data:** 2026-11-24
-- **Contexto relacionado:** M06.02 (`view-master-planos`), Ciclo de Vida Comercial V35 (`20261002202107`, `20261010010836`, `20261010210329`, `20261010211529`, `20261102000933`)
+- **Contexto relacionado:** M06.02 (`view-master-planos`), Ciclo de Vida Comercial V35 (`20261002202107`, `20261010010836`, `20261010210329`, `20261010211529`, `20261102000933`), `765a8a661f7375a22183f17c35036a297f4c1e79`
 
 ## Contexto
 
@@ -53,18 +53,18 @@ Criar exclusivamente a migration aditiva `supabase/migrations/20261124220000_v35
 ## Consequências, Trade-offs e Riscos
 
 - **Positivas:** 100% das mutações comerciais da tela `view-master-planos` passam a registrar trilha imutável em `saas_master_audit_logs`; elimina risco de perda de entitlements por `NULL` e previne deadlock AB-BA com publicação.
-- **Limitações / Riscos:** sem PostgreSQL ativo no ambiente local atual, a execução do script `supabase/tests/test_commercial_draft_audit_rollback.sql` e a contenção real entre duas sessões paralelas permanecem `NÃO AVALIADAS` até aplicação controlada no DEV. Os textos informativos da UI (`MasterPlanLifecycle.tsx:378` e `MasterPromotions.tsx:339`) devem ser atualizados apenas após a ativação da migration no DEV para não exibir informação divergente do runtime.
+- **Limitações / Riscos:** no Supabase DEV (`szqkdekwhzxsoxorgvaz`), o teste transacional `supabase/tests/test_commercial_draft_audit_rollback.sql` foi executado com **`COMMERCIAL_DRAFT_AUDIT_ROLLBACK_PASS`** (3 RPCs atualizadas com `SECURITY DEFINER`, `anon` sem `EXECUTE`, controle `MASTER + AAL2` preservado, dados de negócio e contagem de auditoria intactos após `ROLLBACK`). Permanece **`NOT EVALUATED`** a contenção simultânea real entre duas sessões paralelas, bem como a homologação operacional autenticada no navegador DEV. Os textos informativos em `MasterPlanLifecycle.tsx` e `MasterPromotions.tsx` foram alinhados pós-ativação DEV nesta consolidação.
 
 ## Impacto em Segurança e Dados
 
 - Nenhuma ampliação de permissões/RLS ou exposição de `saas_master_audit_logs` (leitura segue exclusiva de `list_master_audit_events` para `MASTER + AAL2`, omitindo `metadata`).
-- Nenhuma tabela nova e nenhuma alteração retroativa em registros existentes.
+- Nenhuma tabela nova e nenhuma alteração retroativa em registros existentes; PROD não alterado.
 
 ## Rollout e Rollback
 
-- **Rollout DEV:** pré-checar versões aplicadas no DEV, executar revisão SQL, aplicar exclusivamente a migration aditiva `20261124220000_v35_commercial_draft_audit_logs.sql`, rodar `supabase/tests/test_commercial_draft_audit_rollback.sql` em transação `ROLLBACK` e verificar grants (`anon` sem EXECUTE, `authenticated` com EXECUTE + `require_platform_staff('MASTER')`). Após ativação bem-sucedida, alinhar os textos informativos em `MasterPlanLifecycle.tsx` e `MasterPromotions.tsx`.
+- **Rollout DEV concluído (`20261125002909`):** migration `20261124220000_v35_commercial_draft_audit_logs.sql` aplicada com sucesso no DEV (`szqkdekwhzxsoxorgvaz`), divergência de timestamp registrada em `docs/V35_MIGRATION_RECONCILIATION_DEV.md` sem renomear o arquivo no Git, e cópias da UI alinhadas pós-ativação em `MasterPlanLifecycle.tsx` e `MasterPromotions.tsx`. Homologação operacional autenticada no DEV permanece pendente.
 - **Rollback:** criar nova migration forward-only restaurando as definições anteriores de `20261002202107_202609100016_v35_plan_promotion_lifecycle.sql` para as três funções (preservando os logs já gravados em `saas_master_audit_logs`, cuja tabela é append-only/imutável).
 
 ## PR / Commit relacionado
 
-- Preparado localmente sobre `main` (`dea48d9ca522e91de90dee2f307cf1249ac3be63`), aguardando revisão, push e CI antes de qualquer aplicação no Supabase DEV.
+- Migration versionada e auditada sobre `main` (`765a8a661f7375a22183f17c35036a297f4c1e79`), aplicada exclusivamente ao DEV sob versão `20261125002909_v35_commercial_draft_audit_logs`; consolidação pós-migration da UI e documentos aguardando sync/push, CI e homologação independente no Work.

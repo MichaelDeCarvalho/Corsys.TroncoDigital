@@ -375,7 +375,7 @@ export function MasterPlanLifecycle({
    <button className="secondary" type="button" disabled={pending||uncertain}
     onClick={()=>{setSuccess('');setRevision(v=>v+1);if(reconcileRequired)onCatalogChange?.()}}>Atualizar rascunhos</button>
   </div>
-  <p className="subtle">Os comandos exigem MASTER com MFA. Criar ou editar um rascunho não altera assinaturas vigentes nem migra clientes. Criação inicial idempotente, publicação, ativação/desativação e exclusão registram evento em saas_master_audit_logs; edição de rascunho e sucessora de plano registram autoria/atualização na versão.</p>
+  <p className="subtle">Os comandos exigem MASTER com MFA. Criar ou editar um rascunho não altera assinaturas vigentes nem migra clientes. Criação inicial idempotente, edição de rascunho, criação de versão sucessora, publicação, ativação/desativação e exclusão registram evento transacional em saas_master_audit_logs.</p>
   {success&&<p role="status">{success}</p>}
   {error&&<p role="alert" className="message error">{error}</p>}
   {uncertain&&<button type="button" className="secondary" disabled={pending}

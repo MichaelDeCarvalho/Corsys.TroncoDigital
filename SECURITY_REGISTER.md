@@ -1,3 +1,13 @@
+## SEC-M0602-01 — Evidência pós-ativação DEV da ADR-0049 (`20261125002909`, 24/11/2026)
+
+- **Escopo ativado no DEV (`szqkdekwhzxsoxorgvaz`):** arquivo Git `supabase/migrations/20261124220000_v35_commercial_draft_audit_logs.sql` (base `765a8a661f7375a22183f17c35036a297f4c1e79`) aplicado exclusivamente no Supabase DEV sob versão **`20261125002909_v35_commercial_draft_audit_logs`**. PROD não alterado.
+- **Evidências de segurança confirmadas no PostgreSQL DEV:**
+  - Três RPCs presentes e atualizadas (`update_saas_plan_version_draft`, `create_saas_plan_successor_draft`, `update_saas_promotion_draft`), preservando `SECURITY DEFINER`, `search_path = ''`, `anon` sem `EXECUTE` e controle obrigatório `MASTER + AAL2`.
+  - Suíte transacional `test_commercial_draft_audit_rollback.sql` aprovada no DEV com **`COMMERCIAL_DRAFT_AUDIT_ROLLBACK_PASS`**, sem alteração persistente em registros comerciais nem na contagem de `saas_master_audit_logs` após `ROLLBACK`.
+- **Limites residuais preservados:** concorrência simultânea real entre duas sessões permanece **`NOT EVALUATED`**, e a homologação operacional autenticada no navegador DEV (`Work`) permanece pendente.
+
+---
+
 ## SEC-M0602-01 — Auditoria transacional, ordem de locks e proteção de entitlements no Ciclo de Vida Comercial (24/11/2026 — preparado)
 
 - **Escopo:** `supabase/migrations/20261124220000_v35_commercial_draft_audit_logs.sql`, `supabase/tests/test_commercial_draft_audit_rollback.sql` e `docs/adr/0049-commercial-draft-audit-logs.md`.

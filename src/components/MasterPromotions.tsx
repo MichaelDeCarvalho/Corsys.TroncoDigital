@@ -336,7 +336,7 @@ export function MasterPromotions({
    <button className="secondary" type="button" disabled={pending||uncertain}
     onClick={()=>{setSuccess('');setRevision(v=>v+1);if(reconcileRequired)onCatalogChange?.()}}>Atualizar ofertas</button>
   </div>
-  <p className="subtle">Operações restritas ao MASTER com MFA. Criar ou editar rascunho não concede benefício nem altera contratos existentes. Criação/sucessora idempotente, publicação, ativação/desativação e exclusão registram evento em saas_master_audit_logs; edição de rascunho atualiza updated_at na versão.</p>
+  <p className="subtle">Operações restritas ao MASTER com MFA. Criar ou editar rascunho não concede benefício nem altera contratos existentes. Criação/sucessora idempotente, edição de rascunho promocional, publicação, ativação/desativação e exclusão registram evento transacional em saas_master_audit_logs.</p>
   {success&&<p role="status">{success}</p>}
   {error&&<p role="alert" className="message error">{error}</p>}
   {uncertain&&<button type="button" disabled={pending} className="secondary"
