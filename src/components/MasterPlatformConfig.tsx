@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { PlatformIdentityEditor } from './PlatformIdentityEditor'
 import {
   Building2,
   FileText,
@@ -177,7 +178,7 @@ export function MasterPlatformConfig({ client }: { client: SupabaseClient }) {
             <p className="eyebrow">Governança Master · Parâmetros Globais</p>
             <h2>Configurações da Plataforma</h2>
             <p className="subtle">
-              Parâmetros globais de governança, identidade, cobrança e termos do SaaS Corsys (somente leitura · sem exposição de segredos).
+              Parâmetros globais de governança, identidade, cobrança e termos do SaaS Corsys. Identidade editável pelo Master; regras e integrações em consulta, sem exposição de segredos.
             </p>
           </div>
           <div className="master-config-badges">
@@ -264,6 +265,8 @@ export function MasterPlatformConfig({ client }: { client: SupabaseClient }) {
             <p className="subtle">
               Dados cadastrais da operadora da plataforma para emissão de faturas e identificação legal.
             </p>
+
+            <PlatformIdentityEditor key={config.updated_at} client={client} config={config} onSaved={() => setRevision(v => v + 1)} />
 
             <div className="master-config-grid">
               <div className="master-config-card">

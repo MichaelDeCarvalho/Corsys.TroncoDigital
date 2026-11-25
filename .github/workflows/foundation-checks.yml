@@ -73,6 +73,13 @@ jobs:
           createdb -h 127.0.0.1 -p 55432 -U postgres commercial_concurrency_gate
           python3 scripts/check_commercial_concurrency_pg.py
 
+      - name: Platform identity PostgreSQL gate
+        env:
+          PGPASSWORD: onboarding-ci
+        run: |
+          createdb -h 127.0.0.1 -p 55432 -U postgres platform_identity_gate
+          python3 scripts/check_platform_identity_pg.py
+
   frontend:
     runs-on: ubuntu-latest
     timeout-minutes: 10
