@@ -62,7 +62,7 @@ export function Finance({ client, organizationId, initialSection }: { client: Su
     <div className="finance-sections" role="group" aria-label="Consultas financeiras">
       {(Object.keys(financeSources) as FinanceKind[]).map(id => <button type="button" className="secondary" key={id} aria-pressed={kind === id} onClick={() => setKind(id)}>{financeSources[id].label}</button>)}
       <button type="button" className="secondary" aria-pressed={kind === 'memberPayments'} onClick={() => setKind('memberPayments')}>Pagamentos de integrantes</button>
-      <button type="button" className="secondary" aria-pressed={kind === 'dre'} onClick={() => setKind('dre')}>DRE contábil</button>
+      <button type="button" className="secondary" aria-pressed={kind === 'dre'} onClick={() => setKind('dre')}>DRE gerencial</button>
       <button type="button" className="secondary" aria-pressed={kind === 'institutional'} onClick={() => setKind('institutional')}>Operações institucionais</button>
       <button type="button" className="secondary" aria-pressed={kind === 'institutionalMonthly'} onClick={() => setKind('institutionalMonthly')}>Recorrências institucionais</button>
       <button type="button" className="secondary" aria-pressed={kind === 'approvals'} onClick={() => setKind('approvals')}>Aprovação de despesas</button>

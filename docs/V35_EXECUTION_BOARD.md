@@ -1,3 +1,11 @@
+## Aprovação consolidada com ressalvas — 25/11/2026
+
+Fonte vinculante: [V35_CLOSURE_APPROVAL.md](V35_CLOSURE_APPROVAL.md). Pacote AC-V35-20261125-v1 aprovado pelo proprietário, com DRE **gerencial** (oficial pelo contador), sigilo de todo conteúdo, cadastro real da prestadora ao final em editor Master/MFA, início comercial sem fatos de homologação e conta QA isolada no DEV. Dados reais ainda ausentes não bloqueiam desenvolvimento. Diário/Razão não foram excluídos pela ressalva sobre DRE; mantêm gates próprios. Autonomia DEV aprovada; implantação PROD depende do gate final. Nenhuma limpeza/reset agora.
+
+Lote 01: PR #67 integrado em f9e1f56cb4ecc78ba454acfff5dbe7e28c561d96 após CI 581ba2f 3/3 PASS. PR #50 fechado como SUPERSEDIDO: fixture e lockfile já idênticos à main, runner endurecido e teste presentes; sem merge do diff antigo. Preservadas evidências e estados das macros, inclusive M06.02 CONCLUIDO.
+
+Neste incremento, identificação gerencial em navegação, telas, configurações e títulos/escopo de exportações; retirada alegação de validade fiscal pela publicação de plano. Cálculos/RPCs/segurança inalterados. TypeScript PASS; 38/38 testes focados em cinco arquivos PASS localmente. Editor de identidade ainda é lacuna a executar, não declarado pronto. Registro de aprovação inclui as minutas com sigilo reforçado; uso jurídico real continua condicionado aos gates existentes.
+
 ## M06.01 — Evidência local de conciliação e próximo gate (25/11/2026)
 
 Quatro novos cenários UI da M02.02-A fecharam a lacuna automatizada de bloqueio/recuperação sob leitura incompleta/incoerente: **12/12 PASS local** com fontes da base `fed69b8`, serviço real e cliente simulado. Sem alteração de componente/serviço ou ambiente. CI do incremento a conferir no PR #67. Gate DEV específico permanece NOT EVALUATED e não será substituído por esses testes. [Requisito, evidência e próximo experimento](V35_M0201_FINANCIAL_RECONCILIATION.md). M06.01/M06.03 seguem EM_EXECUCAO; M06.02 CONCLUIDO preservado. Notas anteriores de “próxima reconciliação do código” foram atendidas neste recorte; próximo ato é o aceite independente delimitado, sem novas operações financeiras.

@@ -10,10 +10,10 @@ export function DreView({ client, organizationId }: { client: SupabaseClient; or
     <div className="dre-view">
       <section className="panel">
         <div className="section-title">
-          <h2>DRE — Demonstração do Resultado do Exercício</h2>
+          <h2>DRE Gerencial</h2>
         </div>
         <p className="subtle">
-          Visão econômica por competência contábil. A DRE reflete os fatos geradores no período, diferindo do fluxo de caixa operacional.
+          Visão gerencial do resultado por competência para apoiar as decisões da Loja. A DRE contábil oficial é elaborada pelo contador. O resultado gerencial considera os fatos do período e difere do fluxo de caixa.
         </p>
 
         {/* Sub-Tabs */}

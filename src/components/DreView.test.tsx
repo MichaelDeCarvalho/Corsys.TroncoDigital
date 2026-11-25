@@ -32,7 +32,9 @@ describe('DreView', () => {
     const { client } = mockClient()
     render(<DreView client={client} organizationId="org-1" />)
 
-    expect(screen.getByText('DRE — Demonstração do Resultado do Exercício')).toBeInTheDocument()
+    expect(screen.getByText('DRE Gerencial')).toBeInTheDocument()
+
+    expect(screen.getAllByText(/A DRE contábil oficial é elaborada pelo contador/).length).toBeGreaterThan(0)
 
     // Switch tab
     const budgetTab = screen.getByRole('button', { name: 'Orçado × Realizado' })
