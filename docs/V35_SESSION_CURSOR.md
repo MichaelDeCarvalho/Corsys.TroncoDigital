@@ -1,3 +1,15 @@
+## M06.02 — Encerramento Documental: `CONCLUIDO` com ressalvas registradas (`view-master-planos`, 25/11/2026)
+
+- **Base verificada:** `534eb6b4b7ea0860288e3dfe6d6f6ec93a1c0239` (CI GitHub Actions **`45529859036` 3/3 PASS**: `static` PASS, `onboarding` PASS com `C01–C05` + integridade relacional/auditoria PASS em `postgres:17`, `frontend` PASS `625/625`; Cloudflare **Workers Builds DEV** **SUCCESS**, Build ID `3ca9d183-730d-4f76-868c-faca67a5054b`, Version ID `0f6747d8-2461-4d54-bef5-6f94725590d9`).
+- **Evidências DEV (`szqkdekwhzxsoxorgvaz`, release `46499507`):** ADR-0049 aplicada sob `20261125002909_v35_commercial_draft_audit_logs`, homologação operacional autenticada **MASTER/AAL2 PASS**, eventos comerciais **39, 40 e 42** + exclusões controladas **43 e 44** confirmados em `saas_master_audit_logs`, catálogo restaurado sem resíduos comerciais observados e paginação SQL em duas páginas **PASS**.
+- **Ressalvas registradas:**
+  - Paginação visual além da primeira página: **`NOT EVALUATED`**.
+  - Risco teórico residual de deadlock (`40P01`) por ordenação inversa de locks em `C05` (`update_saas_plan_version_draft` `saas_plan_versions -> saas_plans` × `delete_saas_plan_if_unused` `saas_plans -> saas_plan_versions`): **não eliminado** (mitigado por rollback fail-closed do PostgreSQL, mantendo RPCs intactas).
+- **Estado oficial:** **`M06.02` marcada como `CONCLUIDO`** (a governança em `V35_EXECUTION_BOARD.md` §2 não possui `CONCLUIDA_COM_RESSALVAS`, registrando-se as ressalvas separadamente). Macro `M06` permanece `EM_EXECUCAO`.
+- **Próxima microentrega ativa:** **`M06.01` / `M06.03`** — aplicação controlada de `supabase/migrations/20261115120000_v35_tenant_timezone_financial_dates.sql` (`ADR-0048`) no DEV mediante autorização e fechamento do gate final por risco (`M02.03` / `M04.03` / `M06.03`).
+
+---
+
 ## M06.02 — Gate Final de Concorrência Comercial (`view-master-planos`, 24/11/2026)
 
 - **Base verificada:** `b59721e71e7201e8270b3f01ae42b15fd88606ad` (ADR-0049 aplicada/homologada no DEV, eventos 39–44 confirmados, CI anterior 625/625 PASS).

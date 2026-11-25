@@ -1,3 +1,9 @@
+## V35 M06.02 — Encerramento Técnico e Evidência de Concorrência/CI (`534eb6b4`, 25/11/2026)
+
+- **Gates remotos verificados sobre `534eb6b4b7ea0860288e3dfe6d6f6ec93a1c0239`:** GitHub Actions **`45529859036` 3/3 PASS** (`static` PASS, `onboarding` PASS com `Commercial concurrency PostgreSQL gate` **`C01–C05` PASS** e integridade relacional/auditoria de `saas_plan_version_entitlements`, `saas_plan_versions` e `saas_master_audit_logs` PASS em `postgres:17` descartável, e `frontend` PASS com `625/625` testes + `wrangler deploy --config wrangler.dev.jsonc --dry-run`) e Cloudflare **Workers Builds DEV** **SUCCESS** (Build ID `3ca9d183-730d-4f76-868c-faca67a5054b`, Version ID `0f6747d8-2461-4d54-bef5-6f94725590d9`).
+- **Homologação operacional DEV (`szqkdekwhzxsoxorgvaz`, Cloudflare DEV `46499507`):** ADR-0049 (`20261125002909_v35_commercial_draft_audit_logs`) validada com homologação autenticada **MASTER/AAL2 PASS**, eventos comerciais **39, 40 e 42** + exclusões controladas **43 e 44** em `saas_master_audit_logs`, catálogo restaurado sem resíduos comerciais observados e paginação SQL em duas páginas **PASS** (`M06.02` marcada como `CONCLUIDO` com ressalvas no quadro de execução; macro `M06` segue `EM_EXECUCAO`).
+- **Limitações/ressalvas mantidas sem alteração das RPCs:** paginação visual além da primeira página permanece **`NOT EVALUATED`**; permanece **não eliminado** o risco teórico residual de deadlock (`40P01`) por ordenação inversa de locks entre `update_saas_plan_version_draft` (`saas_plan_versions -> saas_plans` em plano sem versão publicada) e `delete_saas_plan_if_unused` (`saas_plans -> saas_plan_versions`), mitigado por rollback determinístico fail-closed do PostgreSQL sem corrupção.
+
 ## V35 M06.02 — Consolidação Pós-Migration ADR-0049 no DEV e Alinhamento da UI (24/11/2026)
 
 - **Ativação confirmada exclusivamente no Supabase DEV (`szqkdekwhzxsoxorgvaz`, sem alterações em PROD):**

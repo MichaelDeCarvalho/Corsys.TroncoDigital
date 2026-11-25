@@ -1,3 +1,26 @@
+## M06.02 — Encerramento Documental Condicionado: `CONCLUIDO` com ressalvas (`534eb6b4`, 25/11/2026)
+
+**Microentrega `M06.02` consolidada como `CONCLUIDO` (estado oficial da Seção 2 de `docs/V35_EXECUTION_BOARD.md`, com ressalvas explícitas registradas separadamente), após comprovação remota de CI `45529859036` 3/3 PASS e Workers Builds DEV SUCCESS sobre `534eb6b4b7ea0860288e3dfe6d6f6ec93a1c0239`. Zero alteração em RPCs, frontend de produção, migrations ou bancos DEV/PROD.**
+
+### 1. Gates remotos confirmados (`534eb6b4b7ea0860288e3dfe6d6f6ec93a1c0239`)
+- **GitHub Actions [`45529859036`](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/45529859036) — 3/3 PASS:**
+  - `static`: **PASS** (JS syntax & DEV guard tests, SQL grammar, Preserve V35 baseline).
+  - `onboarding`: **PASS** (inclui `Commercial concurrency PostgreSQL gate` com cenários **`C01–C05` PASS** em `postgres:17` descartável `commercial_concurrency_gate` + integridade relacional e de auditoria de `saas_plan_version_entitlements`, `saas_plan_versions` e `saas_master_audit_logs` **PASS**).
+  - `frontend`: **PASS** (`625/625` testes em Vitest após estabilização assíncrona em `WorkspaceDashboard.test.tsx` + `wrangler deploy --config wrangler.dev.jsonc --dry-run`).
+- **Cloudflare Workers Builds DEV (`Workers Builds: corsys-tronco-digital-dev`):** **SUCCESS** em `2026-11-25T02:03:25Z` (Build ID `3ca9d183-730d-4f76-868c-faca67a5054b`, Version ID `0f6747d8-2461-4d54-bef5-6f94725590d9`).
+
+### 2. Homologação operacional autenticada DEV e auditoria confirmadas
+- **Ambiente DEV (`szqkdekwhzxsoxorgvaz`, Cloudflare DEV release `46499507` / ADR-0049 versão `20261125002909_v35_commercial_draft_audit_logs`):** homologação operacional autenticada **MASTER/AAL2 PASS**.
+- **Trilha confirmada em `public.saas_master_audit_logs`:** eventos comerciais **39, 40 e 42** (`draft_updated` / `successor_draft` / promoção) e eventos **43 e 44** de exclusão controlada verificados.
+- **Estado pós-homologação:** catálogo comercial restaurado sem resíduos observados; paginação SQL em duas páginas **PASS**.
+
+### 3. Ressalvas e riscos residuais preservados
+- **Paginação visual além da primeira página na interface:** **`NOT EVALUATED`**.
+- **Risco teórico residual de deadlock (`40P01`) em `C05`:** permanece **não eliminado** o interleaving inverso preexistente entre `update_saas_plan_version_draft` (`saas_plan_versions -> saas_plans` quando não há versão publicada) e `delete_saas_plan_if_unused` (`saas_plans -> saas_plan_versions`); as RPCs permanecem intactas e o PostgreSQL falha fechado com rollback `40P01` sem corrupção.
+- **Macroetapa `M06`:** segue **`EM_EXECUCAO`** até fechamento de `M06.01` e `M06.03` (incluindo aplicação controlada de `20261115120000_v35_tenant_timezone_financial_dates.sql` no DEV).
+
+---
+
 ## M06.02 — Gate Final de Concorrência Comercial em PostgreSQL Descartável (`view-master-planos`, 24/11/2026)
 
 **Implementado o teste automatizado multi-sessão `scripts/check_commercial_concurrency_pg.py` (`C01–C05`) integrado ao PostgreSQL 17 descartável do CI (`.github/workflows/foundation-checks.yml`), sobre a base `b59721e71e7201e8270b3f01ae42b15fd88606ad`. Execução runtime em PostgreSQL permanece `NOT EVALUATED` localmente por ausência de `psql`/`docker` (aguarda execução no GitHub Actions após push); `M06.02` permanece `EM_EXECUCAO`.**

@@ -1,3 +1,14 @@
+## SEC-M0602-03 — Fechamento M06.02: Gate de Concorrência `C01–C05` PASS em CI, Homologação DEV e Risco Residual de Deadlock (25/11/2026)
+
+- **Evidência de execução confirmada (`534eb6b4b7ea0860288e3dfe6d6f6ec93a1c0239`, CI `45529859036` 3/3 PASS, Workers Builds DEV Build `3ca9d183-730d-4f76-868c-faca67a5054b` / Version `0f6747d8-2461-4d54-bef5-6f94725590d9` SUCCESS):**
+  - Gate `Commercial concurrency PostgreSQL gate` (`scripts/check_commercial_concurrency_pg.py`) aprovado em instância descartável `postgres:17` (`commercial_concurrency_gate`): bootstrap + rollback `ADR-0049` PASS, negativas `MASTER/AAL2` PASS, cenários **`C01–C05` PASS** e verificação de integridade relacional e de auditoria (`saas_plan_version_entitlements`, `saas_plan_versions`, `saas_master_audit_logs`) **PASS**.
+  - Homologação operacional autenticada **MASTER/AAL2** no Supabase DEV (`szqkdekwhzxsoxorgvaz`, Cloudflare DEV `46499507`): **PASS**, com eventos comerciais **39, 40 e 42** e exclusões controladas **43 e 44** gravados em `saas_master_audit_logs`, catálogo restaurado sem resíduos observados e paginação SQL em duas páginas **PASS** (paginação visual além da 1ª página: **`NOT EVALUATED`**).
+- **Risco residual explícito — **NÃO ELIMINADO** (Deadlock `40P01` por ordenação inversa de locks em `C05`):**
+  - `update_saas_plan_version_draft` adquire lock em `saas_plan_versions -> saas_plans` (em planos ainda sem versão publicada), enquanto `delete_saas_plan_if_unused` adquire lock em `saas_plans -> saas_plan_versions`.
+  - Embora `C01–C05` serialize corretamente sem corrupção, órfãos nem bypass (`23503`/`55000`), a inversão estrutural preexistente permanece **não eliminada** (RPCs não alteradas); caso duas transações concorrentes intercalem exatamente entre o 1º e o 2º lock, o PostgreSQL aplica detecção determinística e falha fechada com rollback `40P01` sem violação de integridade.
+
+---
+
 ## SEC-M0602-02 — Gate Automatizado de Concorrência Comercial em PostgreSQL Descartável (24/11/2026 — preparado para CI)
 
 - **Escopo:** `scripts/check_commercial_concurrency_pg.py` e `.github/workflows/foundation-checks.yml` (job `onboarding`, banco descartável `commercial_concurrency_gate` em `postgres:17`, base `b59721e71e7201e8270b3f01ae42b15fd88606ad`). Nenhuma operação contra DEV (`szqkdekwhzxsoxorgvaz`) ou PROD e nenhuma alteração nas RPCs de produção nem nas 66 migrations baseline.
