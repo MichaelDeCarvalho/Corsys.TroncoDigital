@@ -384,9 +384,22 @@ def main() -> None:
 
     # Verify ADR-0049 migration cleanly rolls back and applies cleanly
     assert not re.search(r"(?im)^\s*(begin|commit|rollback|start\s+transaction)\s*;", adr0049_sql)
-    exists_check = "select pg_get_functiondef(to_regprocedure('public.update_saas_plan_version_draft(uuid,text,text,numeric,text,integer,integer,date,jsonb)')) like '%saas_master_audit_logs%';"
-    rb_res = sql("begin;\n" + adr0049_sql + "\n" + exists_check + "\nrollback;\n" + exists_check, app="conc-adr0049-rb")
-    assert rb_res == "t\nf", f"ADR-0049 DDL rollback mismatch: {rb_res!r}"
+    adr0049_sigs = (
+        "public.update_saas_plan_version_draft(uuid,text,text,numeric,text,integer,integer,date,jsonb)",
+        "public.create_saas_plan_successor_draft(uuid,numeric,text,integer,integer,date,jsonb)",
+        "public.update_saas_promotion_draft(uuid,text,text,text,numeric,text,integer,timestamptz,timestamptz,text,integer,boolean)",
+    )
+    exists_expr = " and ".join(f"to_regprocedure('{sig}') is not null" for sig in adr0049_sigs)
+    audit_expr = " and ".join(
+        f"coalesce(pg_get_functiondef(to_regprocedure('{sig}')) like '%saas_master_audit_logs%', false)"
+        for sig in adr0049_sigs
+    )
+    exists_check = f"select ({exists_expr})::text || '|' || ({audit_expr})::text;"
+    rb_res = sql(
+        exists_check + "\nbegin;\n" + adr0049_sql + "\n" + exists_check + "\nrollback;\n" + exists_check,
+        app="conc-adr0049-rb",
+    )
+    assert rb_res == "f|f\nt|t\nf|f", f"ADR-0049 DDL rollback mismatch: {rb_res!r}"
     sql("begin;\n" + adr0049_sql + "\ncommit;", app="conc-adr0049-apply")
     print("PASS schema bootstrap and ADR-0049 DDL rollback/apply")
 
