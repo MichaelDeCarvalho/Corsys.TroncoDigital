@@ -1,3 +1,9 @@
+## M01.04 — andamento vigente (25/11/2026)
+
+Fixture não contratual preparada no DEV e Loja fictícia provisionada com Master/MFA real. Convite ainda queued; nenhum envio. Lacuna da ação de envio corrigida em OnboardingInviteSender, com CORS restrito e bloqueio de repetição incerta; evidências, manifesto/expiração da fixture e gates de CI/deploy/envio em SESSION_HANDOFF.md. M01 segue EM_EXECUCAO. Sem migrations adicionais, mudanças em clientes existentes ou PROD. ADR-0052 registra o recorte.
+
+---
+
 ## Verificação vigente — 25/11/2026
 
 Editor Master: CI PostgreSQL PLATFORM_IDENTITY_PG_PASS e aplicação DEV verificadas, sem UPDATE direto authenticated/EXECUTE anon, CAS/lock e auditoria mínima. M01.03 aplicada sem dados: identidade ligada ao convite, termos versionados e ACLs conferidos. Jornada runtime NOT EVALUATED; Edge v1 deve aguardar configuração segura antes de atualização. Não houve limpeza nem operação PROD. Sigilo amplo aprovado nas minutas, sem publicação jurídica presumida. Evidências e riscos completos em SESSION_HANDOFF.md.

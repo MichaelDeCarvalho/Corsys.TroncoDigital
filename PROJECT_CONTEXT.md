@@ -1,3 +1,9 @@
+## M01.04 — andamento vigente (25/11/2026)
+
+Fixture não contratual preparada no DEV e Loja fictícia provisionada com Master/MFA real. Convite ainda queued; nenhum envio. Lacuna da ação de envio corrigida em OnboardingInviteSender, com CORS restrito e bloqueio de repetição incerta; evidências, manifesto/expiração da fixture e gates de CI/deploy/envio em SESSION_HANDOFF.md. M01 segue EM_EXECUCAO. Sem migrations adicionais, mudanças em clientes existentes ou PROD. ADR-0052 registra o recorte.
+
+---
+
 ## Estado vigente — 25/11/2026
 
 AC-V35-20261125-v1 aprovado com as quatro ressalvas em docs/V35_CLOSURE_APPROVAL.md. DRE Gerencial e editor Master/MFA integrados nos PRs #68/#69; dados reais da prestadora somente ao final. M01.03 e editor aplicados exclusivamente DEV; nenhum cliente/termo/convite criado nem dado apagado. Macros não promovidas automaticamente. Configuração Edge/origem/redirect resolvida; evidências e jornada restante em SESSION_HANDOFF.md.

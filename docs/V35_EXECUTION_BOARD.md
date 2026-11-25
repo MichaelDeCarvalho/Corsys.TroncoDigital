@@ -1,3 +1,9 @@
+## M01.04 — andamento vigente (25/11/2026)
+
+Fixture não contratual preparada no DEV e Loja fictícia provisionada com Master/MFA real. Convite ainda queued; nenhum envio. Lacuna da ação de envio corrigida em OnboardingInviteSender, com CORS restrito e bloqueio de repetição incerta; evidências, manifesto/expiração da fixture e gates de CI/deploy/envio em ../SESSION_HANDOFF.md. M01 segue EM_EXECUCAO. Sem migrations adicionais, mudanças em clientes existentes ou PROD. ADR-0052 registra o recorte.
+
+---
+
 ## Posição vigente — 25/11/2026
 
 Lote 01: PRs #67/#68/#69 integrados; #50 SUPERSEDIDO sem merge. Lote 02/M01.03: SQL aplicado DEV, jornada de convite/aceite ainda pendente de homologação da jornada (Edge v3/origem/redirect já conferidos). Entrega A04 da M04: editor Master implementado, testes CI PASS e SQL aplicado; abertura/fechamento do editor real VERIFIED sem gravação; gravação pela UI NOT EVALUATED. M06.02 permanece CONCLUIDO; M06.01/M06.03 EM_EXECUCAO. Nenhuma macro adicional encerrada. Autorização consolidada em V35_CLOSURE_APPROVAL.md; evidências e próximo ato em ../SESSION_HANDOFF.md.

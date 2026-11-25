@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.117.2";
 import { dispatch } from "./dispatch.mjs";
+import { withInviteCors } from "./cors.mjs";
 
 const url = Deno.env.get("SUPABASE_URL");
 const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
@@ -15,7 +16,7 @@ if (appOrigin && (appOrigin.protocol !== "https:" || appOrigin.href !== appOrigi
   throw new Error("Invalid onboarding app origin");
 }
 
-Deno.serve((request) => !appOrigin
+Deno.serve(withInviteCors((request: Request) => !appOrigin
   ? Response.json({ outcome: "dispatch_unavailable" }, { status: 503 })
   : dispatch(request, {
   async authorize(authorization: string) {
@@ -50,4 +51,4 @@ Deno.serve((request) => !appOrigin
     if (error) throw error;
     return data === true;
   },
-}));
+}), appOrigin?.origin ?? null));

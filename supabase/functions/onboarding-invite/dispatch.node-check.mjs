@@ -1,6 +1,19 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { dispatch } from "./dispatch.mjs";
+import { withInviteCors } from "./cors.mjs";
+
+test('CORS permits only the configured origin and never authorizes a dispatch', async () => {
+ const origin='https://dev.example.test';let calls=0;
+ const handler=withInviteCors(async()=>{calls++;return Response.json({outcome:'forbidden'},{status:403})},origin);
+ const preflight=await handler(new Request('https://api.example.test',{method:'OPTIONS',headers:{Origin:origin}}));
+ assert.equal(preflight.status,204);assert.equal(calls,0);
+ assert.equal(preflight.headers.get('Access-Control-Allow-Origin'),origin);
+ assert.equal((await handler(new Request('https://api.example.test',{headers:{Origin:'https://foreign.example.test'}}))).status,403);assert.equal(calls,0);
+ const denied=await handler(new Request('https://api.example.test',{method:'POST',headers:{Origin:origin}}));
+ assert.equal(denied.status,403);assert.equal(denied.headers.get('Access-Control-Allow-Origin'),origin);assert.equal(calls,1);
+ const server=await handler(new Request('https://api.example.test'));assert.equal(server.headers.get('Access-Control-Allow-Origin'),null);
+});
 
 const runId = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
 const request = (run = runId, token = "Bearer test") =>
