@@ -115,6 +115,7 @@ def build_schema_sql() -> tuple[str, str]:
     commands = source("202609040005_financial_commands")
     saas_platform = source("202609080006_saas_platform")
     saas_security = source("202609080007_saas_security")
+    accounting = source("202609080008_post_v31_accounting_domain")
     refinements = source("202609080011_saas_commercial_refinements")
     v33 = source("202609090014_v33_saas_control_plane")
     v34 = source("202609100015_v34_master_operations")
@@ -169,6 +170,7 @@ def build_schema_sql() -> tuple[str, str]:
         trigger(foundation, "organizations_set_updated_at"),
         table(foundation, "organization_settings"),
         trigger(foundation, "organization_settings_set_updated_at"),
+        extract(accounting, r"alter table public\.organization_settings\s+add column if not exists postal_code", r";"),
         table(foundation, "permissions"),
         extract(foundation, r"insert into public\.permissions \(code, description\) values", r";"),
         table(foundation, "roles"),

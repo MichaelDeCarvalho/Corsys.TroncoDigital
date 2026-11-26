@@ -554,10 +554,10 @@ def run_pg_gate() -> None:
           ('{acc_mem_adv}', '{org_a}', '{plan_a}', '2.1.01.01', 'Adiantamentos de Integrantes', 'patrimonial', 'analytic', null, true),
           ('{acc_inst_pay}', '{org_a}', '{plan_a}', '2.1.02.01', 'Obrigações a Pagar', 'patrimonial', 'analytic', null, true),
           ('{acc_open_contra}', '{org_a}', '{plan_a}', '2.9.01.01', 'Contrapartida Abertura', 'patrimonial', 'analytic', null, true),
-          ('{acc_rev_mens}', '{org_a}', '{plan_a}', '3.1.01.01', 'Mensalidades', 'revenue', 'analytic', null, true),
-          ('{acc_rev_zero}', '{org_a}', '{plan_a}', '3.1.02.01', 'Doações Eventuais', 'revenue', 'analytic', null, true),
-          ('{acc_ded}', '{org_a}', '{plan_a}', '3.9.01.01', 'Descontos Concedidos', 'revenue', 'analytic', null, true),
-          ('{acc_exp_admin}', '{org_a}', '{plan_a}', '4.2.01.01', 'Despesas Administrativas', 'expense', 'analytic', 'administrative', true),
+          ('{acc_rev_mens}', '{org_a}', '{plan_a}', '3.1.01.01', 'Mensalidades', 'revenue', 'analytic', 'recurring', true),
+          ('{acc_rev_zero}', '{org_a}', '{plan_a}', '3.1.02.01', 'Doações Eventuais', 'revenue', 'analytic', 'ad_hoc', true),
+          ('{acc_ded}', '{org_a}', '{plan_a}', '3.9.01.01', 'Descontos Concedidos', 'revenue', 'analytic', 'ad_hoc', true),
+          ('{acc_exp_admin}', '{org_a}', '{plan_a}', '4.2.01.01', 'Despesas Administrativas', 'expense', 'analytic', 'fixed', true),
           ('{acc_draft_ctrl}', '{org_a}', '{plan_draft}', '1.1.02.01', 'Contribuições Rascunho', 'patrimonial', 'analytic', null, true);
 
         insert into public.financial_account_accounting_mappings (id, organization_id, accounting_plan_id, financial_account_id, accounting_account_id) values
@@ -568,7 +568,7 @@ def run_pg_gate() -> None:
     def as_actor(actor: str | None) -> str:
         if actor is None:
             return "set role anon;"
-        return f"set role authenticated; select set_config('qa.actor', '{actor}', true);"
+        return f"set role authenticated; set qa.actor = '{actor}';"
 
     # 3. Role mapping governance: permissions, nature validation, concurrency, idempotency, immutability
     sql(as_actor(None) + f"select public.set_accounting_plan_role_mapping_idempotent('{org_a}','{plan_draft}','member_receivable_control','{acc_draft_ctrl}',null,'Setup','k1');", "42501")

@@ -153,6 +153,13 @@ def run_pg_gate() -> None:
         insert into public.financial_categories(id, organization_id, name, domain) values ('{cat_a}', '{org_a}', 'Mensalidade', 'member_receivable');
         insert into public.payment_methods(id, organization_id, name) values ('{pm_a}', '{org_a}', 'PIX');
         insert into public.financial_accounts(id, organization_id, name, account_type) values ('{fa_a}', '{org_a}', 'Caixa QA', 'cash');
+        insert into public.accounting_plans(id, organization_id, name, status, valid_from, valid_to)
+        values ('00000000-0000-4000-8000-000000000901', '{org_a}', 'Plano QA M05', 'draft', date '2026-01-01', date '2026-12-31');
+        insert into public.accounting_accounts(id, organization_id, accounting_plan_id, code, description, row_type, nature, operational_classification)
+        values ('00000000-0000-4000-8000-000000000902', '{org_a}', '00000000-0000-4000-8000-000000000901', '3.1.01', 'Receita QA M05', 'analytic', 'revenue', 'recurring');
+        insert into public.financial_category_account_mappings(organization_id, accounting_plan_id, category_id, accounting_account_id)
+        values ('{org_a}', '00000000-0000-4000-8000-000000000901', '{cat_a}', '00000000-0000-4000-8000-000000000902');
+        update public.accounting_plans set status='published', published_at=now() where id='00000000-0000-4000-8000-000000000901';
         insert into public.charges(organization_id, member_id, category_id, source_kind, description, competence, issue_date, due_date, accounting_period, unit_amount, original_amount)
         values ('{org_a}', '{member_a}', '{cat_a}', 'manual', 'Mensalidade QA', '2026-11-01', '2026-11-01', '2026-11-10', '2026-11-01', 120.50, 120.50);
         insert into public.documents(id, organization_id, storage_path, original_filename, mime_type, size_bytes, sha256, classification)
