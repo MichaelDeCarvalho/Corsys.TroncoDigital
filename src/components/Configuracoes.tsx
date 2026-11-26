@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { TenantPrivacyPortabilityPanel } from './TenantPrivacyPortabilityPanel'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import {
   CreditCard,
@@ -12,6 +13,7 @@ import {
   Calendar,
 } from 'lucide-react'
 import { TenantIdentity } from './TenantIdentity'
+import { readTenantCommercialStatus, type TenantCommercialStatus } from '../lib/master-subscriptions'
 import type { Page } from './AppShell'
 
 export interface SubscriptionData {
@@ -141,6 +143,7 @@ export function Configuracoes({
   const [auditError, setAuditError] = useState('')
 
   const [refreshKey, setRefreshKey] = useState(0)
+  const [commercialStatus, setCommercialStatus] = useState<TenantCommercialStatus | null>(null)
 
   // 1. Carregar Assinatura SaaS
   useEffect(() => {
@@ -225,6 +228,9 @@ export function Configuracoes({
     }
 
     fetchSubscription()
+    void readTenantCommercialStatus(client, organizationId)
+      .then((res) => { if (active) setCommercialStatus(res) })
+      .catch(() => { if (active) setCommercialStatus(null) })
 
     return () => {
       active = false
@@ -474,6 +480,52 @@ export function Configuracoes({
               </div>
             </div>
 
+            {commercialStatus && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+                <div className="panel metric" style={{ margin: 0, background: 'var(--surface-2, #1C2028)' }}>
+                  <p>Usuários ativos (assentos)</p>
+                  <strong style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    {commercialStatus.active_users} / {commercialStatus.max_admin_users ?? 'Ilimitado'}
+                  </strong>
+                  <span className="subtle">contas ativas da Loja (Master e Suporte não consomem assentos)</span>
+                </div>
+
+                {commercialStatus.scheduled_change && (
+                  <div className="panel" role="status" style={{ margin: 0, padding: '10px 14px', borderLeft: '3px solid #3b82f6' }}>
+                    <strong>Troca prospectiva de plano agendada</strong>
+                    <p className="subtle" style={{ margin: '4px 0 0' }}>
+                      Vigência em {formatDate(commercialStatus.scheduled_change.effective_at)} (dia 1 do mês seguinte) —{' '}
+                      {commercialStatus.scheduled_change.target_plan_name || commercialStatus.scheduled_change.change_type}
+                      {commercialStatus.scheduled_change.target_price !== null
+                        ? ` · ${formatMoney(commercialStatus.scheduled_change.target_price, currencyCode)}`
+                        : ''}
+                      {commercialStatus.scheduled_change.target_max_admin_users !== null
+                        ? ` · limite ${commercialStatus.scheduled_change.target_max_admin_users} usuários`
+                        : ''}
+                    </p>
+                  </div>
+                )}
+
+                {commercialStatus.export_window_until && (
+                  <div className="panel" role="status" style={{ margin: 0, padding: '10px 14px', borderLeft: '3px solid #f59e0b' }}>
+                    <strong>Janela de exportação pós-cancelamento (D01)</strong>
+                    <p className="subtle" style={{ margin: '4px 0 0' }}>
+                      Dados preservados em modo de leitura e exportação por 90 dias, até {formatDate(commercialStatus.export_window_until)}.
+                    </p>
+                  </div>
+                )}
+
+                {!commercialStatus.write_allowed && (
+                  <div className="panel" role="alert" style={{ margin: 0, padding: '10px 14px', borderLeft: '3px solid #dc2626' }}>
+                    <strong>Escritas operacionais temporariamente bloqueadas</strong>
+                    <p className="subtle" style={{ margin: '4px 0 0' }}>
+                      Leituras, exportações e atendimento por Chamados permanecem liberados.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Informações de vigência contratual */}
             <div
               style={{
@@ -618,108 +670,11 @@ export function Configuracoes({
             <Lock size={20} style={{ color: 'var(--gold, #C5A880)' }} aria-hidden="true" />
             <h3>Privacidade e Conformidade (LGPD)</h3>
           </div>
-          <span className="subtle">Gestão de dados e políticas de segurança</span>
+          <span className="subtle">Gestão de dados, portabilidade e retenção</span>
         </div>
 
-        <p className="subtle" style={{ marginBottom: '16px' }}>
-          O CorSys Tronco Digital adota isolamento estrito por tenant no nível do banco de dados (Row Level Security). As solicitações de titular de dados e exportações em lote seguem o protocolo da plataforma Master SaaS.
-        </p>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div
-            style={{
-              padding: '12px 16px',
-              borderRadius: '8px',
-              border: '1px solid var(--border-soft, rgba(148, 163, 184, .12))',
-              background: 'var(--surface-2, #1C2028)',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '8px',
-            }}
-          >
-            <div>
-              <strong>Exportação Integral de Dados (Portabilidade LGPD)</strong>
-              <p className="subtle" style={{ margin: '2px 0 0', fontSize: '0.85rem' }}>
-                Geração de pacote seguro com histórico contábil, integrantes e cadastros da Loja.
-              </p>
-            </div>
-            <span
-              className="pill"
-              style={{
-                backgroundColor: '#fef9c3',
-                color: '#713f12',
-                fontWeight: 600,
-              }}
-            >
-              Em homologação na plataforma Master
-            </span>
-          </div>
-
-          <div
-            style={{
-              padding: '12px 16px',
-              borderRadius: '8px',
-              border: '1px solid var(--border-soft, rgba(148, 163, 184, .12))',
-              background: 'var(--surface-2, #1C2028)',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '8px',
-            }}
-          >
-            <div>
-              <strong>Anonimização e Exclusão de Titular</strong>
-              <p className="subtle" style={{ margin: '2px 0 0', fontSize: '0.85rem' }}>
-                Direito ao esquecimento de dados pessoais, ressalvados prazos de guarda contábil e fiscal.
-              </p>
-            </div>
-            <span
-              className="pill"
-              style={{
-                backgroundColor: '#fef9c3',
-                color: '#713f12',
-                fontWeight: 600,
-              }}
-            >
-              Exige solicitação via Suporte
-            </span>
-          </div>
-
-          <div
-            style={{
-              padding: '12px 16px',
-              borderRadius: '8px',
-              border: '1px solid var(--border-soft, rgba(148, 163, 184, .12))',
-              background: 'var(--surface-2, #1C2028)',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '8px',
-            }}
-          >
-            <div>
-              <strong>Restauração de Snapshot / Backup Pontual</strong>
-              <p className="subtle" style={{ margin: '2px 0 0', fontSize: '0.85rem' }}>
-                Restauração de ponto no tempo com aprovação e auditoria transacional Master.
-              </p>
-            </div>
-            <span
-              className="pill"
-              style={{
-                backgroundColor: '#fef9c3',
-                color: '#713f12',
-                fontWeight: 600,
-              }}
-            >
-              Operação restrita Master AAL2
-            </span>
-          </div>
-        </div>
-      </section>
+        <TenantPrivacyPortabilityPanel client={client} organizationId={organizationId} />
+            </section>
     </div>
   )
 }

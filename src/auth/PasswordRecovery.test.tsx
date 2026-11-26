@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { vi } from 'vitest'
 import { NewPassword, RecoveryRequest } from './PasswordRecovery'
+import { useAuth } from './useAuth'
 
 const password = 'fixture-password-123'
 function mockClient() {
@@ -72,5 +73,29 @@ describe('Password recovery', () => {
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
     expect(screen.queryByText('backend-private-detail')).not.toBeInTheDocument()
     expect(screen.getByLabelText('Nova senha', { selector: 'input' })).toHaveValue('')
+  })
+  it('displays D05 privileged recovery guidance without exposing credentials', () => {
+    const mock = mockClient()
+    render(<RecoveryRequest client={mock.client} onBack={vi.fn()} />)
+    expect(screen.getByText(/dupla evidência pela governança Master/i)).toBeInTheDocument()
+    expect(screen.getByText(/Nenhuma senha ou OTP é enviada/i)).toBeInTheDocument()
+  })
+  it('flags expired/reused recovery redirect errors (otp_expired) in useAuth without trusting stale links', async () => {
+    window.history.replaceState(null, '', '/?error=access_denied&error_code=otp_expired')
+    const authClient = {
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
+        onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })),
+        signOut: vi.fn().mockResolvedValue({ error: null }),
+      },
+    } as unknown as SupabaseClient
+    let latestState: ReturnType<typeof useAuth> | null = null
+    function Harness() {
+      latestState = useAuth(authClient)
+      return <span>{latestState.recoveryError ? 'expired' : 'ok'}</span>
+    }
+    render(<Harness />)
+    expect(await screen.findByText('expired')).toBeInTheDocument()
+    window.history.replaceState(null, '', '/')
   })
 })

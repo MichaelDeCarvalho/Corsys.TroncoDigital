@@ -15,6 +15,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "deploy:dev": "npm run build && wrangler deploy --config wrangler.dev.jsonc",
+    "test:m0203:homologation": "node scripts/homologate_m0203_dev.mjs",
     "check": "npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
@@ -33,6 +34,7 @@
     "@types/react-dom": "19.0.3",
     "@vitejs/plugin-react": "5.0.4",
     "jsdom": "27.0.0",
+    "playwright": "^1.65.1",
     "tailwindcss": "4.1.14",
     "typescript": "5.8.2",
     "vite": "6.4.5",

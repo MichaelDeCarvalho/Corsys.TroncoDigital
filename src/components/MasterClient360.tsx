@@ -2,6 +2,7 @@ import {useEffect,useState} from 'react'
 import type {SupabaseClient} from '@supabase/supabase-js'
 import {formatDate,formatMoney} from '../lib/finance-data'
 import {loadMasterClient360,type MasterClient360} from '../lib/master-client-360'
+import {MasterSubscriptionLifecyclePanel} from './MasterSubscriptionLifecyclePanel'
 export function MasterClient360({client,tenants,initialOrganizationId='',onOpenBilling,onOpenSupport}:{
  client:SupabaseClient;tenants:Array<{organization_id:string;organization_name:string}>
  initialOrganizationId?:string
@@ -12,8 +13,12 @@ export function MasterClient360({client,tenants,initialOrganizationId='',onOpenB
  const [state,setState]=useState<MasterClient360|null>(null)
  const [error,setError]=useState(''),[denied,setDenied]=useState(false)
  const [revision,setRevision]=useState(0)
+ const [showLifecycle,setShowLifecycle]=useState(false)
  useEffect(()=>{
-  if(organization&&!tenants.some(t=>t.organization_id===organization))setOrganization('')
+  if(organization&&!tenants.some(t=>t.organization_id===organization)){
+   setOrganization('')
+   setShowLifecycle(false)
+  }
  },[organization,tenants])
  useEffect(()=>{
   let live=true;setState(null);setError('');setDenied(false)
@@ -35,7 +40,7 @@ export function MasterClient360({client,tenants,initialOrganizationId='',onOpenB
   <p className="subtle">Consulta exclusiva MASTER com MFA. Mostra contrato, assinatura, títulos SaaS e chamados do cliente; não exibe saldos privados dos integrantes e não cria sessões em nome da Loja.</p>
   <label htmlFor="master-client-360-tenant">Loja cliente</label>
   <select id="master-client-360-tenant" value={organization}
-   onChange={e=>setOrganization(e.target.value)}>
+   onChange={e=>{setOrganization(e.target.value);setShowLifecycle(false)}}>
    <option value="">Selecione uma Loja</option>
    {tenants.map(t=><option key={t.organization_id} value={t.organization_id}>{t.organization_name}</option>)}
   </select>
@@ -49,17 +54,32 @@ export function MasterClient360({client,tenants,initialOrganizationId='',onOpenB
    <p>Contato financeiro: {state.billing_email??'Não informado'}</p>
    <p>Assinatura: <strong>{state.subscription_status??'Não cadastrada'}</strong> · Início: {state.subscription_start?formatDate(state.subscription_start):'—'} · Fim do período: {state.subscription_end?formatDate(state.subscription_end):'—'}</p>
    <div className="metric-grid">
-    <article className="panel metric"><p>Faturas SaaS emitidas</p><strong>{state.invoices_total}</strong></article>
-    <article className="panel metric"><p>Saldo comercial em aberto</p><strong>{formatMoney(Number(state.invoices_open_amount))}</strong></article>
-    <article className="panel metric"><p>Saldo comercial vencido</p><strong>{formatMoney(Number(state.invoices_overdue_amount))}</strong></article>
-    <article className="panel metric"><p>Chamados do cliente</p><strong>{state.tickets_total}</strong></article>
-    <article className="panel metric"><p>Chamados ainda abertos</p><strong>{state.tickets_open}</strong></article>
+    <article className="panel metric"><p>Faturas SaaS emitidas</p><strong className="tabular-nums">{state.invoices_total}</strong></article>
+    <article className="panel metric"><p>Saldo comercial em aberto</p><strong className="tabular-nums">{formatMoney(Number(state.invoices_open_amount))}</strong></article>
+    <article className="panel metric"><p>Saldo comercial vencido</p><strong className="tabular-nums">{formatMoney(Number(state.invoices_overdue_amount))}</strong></article>
+    <article className="panel metric"><p>Chamados do cliente</p><strong className="tabular-nums">{state.tickets_total}</strong></article>
+    <article className="panel metric"><p>Chamados ainda abertos</p><strong className="tabular-nums">{state.tickets_open}</strong></article>
    </div>
    <div className="finance-sections" role="group" aria-label="Ações do Cliente 360">
     {onOpenBilling&&<button type="button" className="secondary" onClick={()=>onOpenBilling(state.organization_id)}>Ver cobranças desta Loja</button>}
     {onOpenSupport&&<button type="button" className="secondary" onClick={()=>onOpenSupport(state.organization_id)}>Ver chamados desta Loja</button>}
+    <button
+     type="button"
+     className="secondary"
+     aria-expanded={showLifecycle}
+     onClick={()=>setShowLifecycle(v=>!v)}
+    >
+     {showLifecycle?'Ocultar gestão do ciclo':'Gerenciar ciclo comercial'}
+    </button>
    </div>
-   <p className="subtle">Atualizado em {formatDate(state.as_of)}. Valores refletem apenas o faturamento SaaS, não a tesouraria institucional. Não há alterações automáticas em contrato, cobrança, conta ou suporte.</p>
+   {showLifecycle&&(
+    <MasterSubscriptionLifecyclePanel
+     client={client}
+     organizationId={state.organization_id}
+     onChanged={()=>setRevision(v=>v+1)}
+    />
+   )}
+   <p className="subtle">Atualizado em {formatDate(state.as_of)}. Valores refletem apenas o faturamento SaaS, não a tesouraria institucional. As ações de ciclo comercial exigem perfil MASTER com MFA e motivo registrado.</p>
   </>}
  </section>
 }

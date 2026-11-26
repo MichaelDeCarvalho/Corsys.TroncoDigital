@@ -35,6 +35,9 @@ export function RecoveryRequest({ client, onBack }: { client: SupabaseClient; on
         {error && <p role="alert" className="message error">{error}</p>}
         <button className="primary wide" disabled={pending}>{pending ? 'Enviando…' : 'Enviar link de recuperação'}</button>
       </form>}
+    <p className="subtle" style={{ marginTop: '12px', fontSize: '0.82rem' }}>
+      Contas privilegiadas ou com MFA comprometido exigem validação com dupla evidência pela governança Master e novo cadastro do fator pelo titular. Nenhuma senha ou OTP é enviada por chat ou suporte.
+    </p>
     <button type="button" disabled={pending} onClick={onBack}>Voltar ao acesso</button>
   </div></main>
 }

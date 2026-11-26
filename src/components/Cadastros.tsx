@@ -13,6 +13,7 @@ import {
   type TenantRole,
   type TenantUserSummary
 } from '../lib/tenant-rbac'
+import { readTenantSeatUsage, type TenantSeatUsage } from '../lib/master-subscriptions'
 
 export function Cadastros({
   members,
@@ -35,6 +36,24 @@ export function Cadastros({
   const [loadingRbac, setLoadingRbac] = useState(false)
   const [rbacError, setRbacError] = useState('')
   const [rbacReloadTrigger, setRbacReloadTrigger] = useState(0)
+  const [seatUsage, setSeatUsage] = useState<TenantSeatUsage | null>(null)
+  const [seatLoading, setSeatLoading] = useState(false)
+  const [seatError, setSeatError] = useState('')
+
+  const handleLoadSeatUsage = async () => {
+    if (!client || !organizationId || seatLoading) return
+    setSeatLoading(true)
+    setSeatError('')
+    try {
+      const usage = await readTenantSeatUsage(client, organizationId)
+      setSeatUsage(usage)
+      if (!usage) setSeatError('Limite de assentos indisponível para esta assinatura.')
+    } catch {
+      setSeatError('Não foi possível consultar o limite de assentos do plano.')
+    } finally {
+      setSeatLoading(false)
+    }
+  }
 
   // Modal / Action State
   const [actionModal, setActionModal] = useState<{
@@ -210,7 +229,9 @@ export function Cadastros({
           ? (err as { message: string }).message
           : 'Falha ao alterar perfil do usuário.'
 
-      if (msg.includes('last administrator') || msg.includes('último administrador')) {
+      if (msg.toLowerCase().includes('plan seat limit reached') || msg.toLowerCase().includes('limite de usuários ativos')) {
+        setActionError('Limite de usuários ativos do plano contratado atingido. Solicite upgrade ou ajuste os vínculos ativos.')
+      } else if (msg.includes('last administrator') || msg.includes('último administrador')) {
         setActionError('Não é possível remover o único administrador da Loja.')
       } else if (msg.includes('self-elevation')) {
         setActionError('Autoelevação de privilégios não permitida.')
@@ -342,6 +363,33 @@ export function Cadastros({
             <p className="subtle" style={{ marginBottom: '1rem' }}>
               As permissões de acesso (administração, tesouraria, consulta, integrante) são gerenciadas no servidor através de políticas RLS e funções RPC controladas.
             </p>
+            {client && organizationId && (
+              <div style={{ marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="secondary"
+                    disabled={seatLoading}
+                    onClick={() => void handleLoadSeatUsage()}
+                  >
+                    {seatLoading ? 'Consultando assentos…' : seatUsage ? 'Atualizar assentos do plano' : 'Consultar assentos do plano'}
+                  </button>
+                  {seatUsage && (
+                    <span role="status" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      <strong>Usuários ativos da Loja: </strong>
+                      {seatUsage.active_users} / {seatUsage.max_admin_users ?? 'Ilimitado'}
+                      {seatUsage.plan_name ? ` — Plano ${seatUsage.plan_name}` : ''}
+                    </span>
+                  )}
+                </div>
+                {seatError && <p role="alert" className="message error" style={{ margin: 0 }}>{seatError}</p>}
+                {seatUsage?.over_limit && (
+                  <p role="alert" className="message error" style={{ margin: 0 }}>
+                    Uso de assentos acima do limite contratual; novas atribuições exigem adequação.
+                  </p>
+                )}
+              </div>
+            )}
 
             {actionSuccess && (
               <p role="status" className="message success" style={{ marginBottom: '1rem' }}>

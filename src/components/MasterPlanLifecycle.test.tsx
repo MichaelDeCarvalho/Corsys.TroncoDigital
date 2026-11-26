@@ -271,3 +271,30 @@ describe('Master plan version lifecycle',()=>{
   expect(screen.getByRole('button',{name:'Criar somente rascunho'})).toBeEnabled()
  })
 })
+
+describe('Master plan lifecycle M04 commercial presets', () => {
+ it('applies R$125/3 users and R$180/10 users templates into draft fields without publishing', async () => {
+  const { client, rpc } = fixture()
+  render(<MasterPlanLifecycle client={client} />)
+  await screen.findByLabelText('Código interno')
+
+  fireEvent.click(screen.getByRole('button', { name: 'Aplicar modelo R$ 125 · 3 usuários' }))
+  expect(screen.getByLabelText('Código interno')).toHaveValue('corsys_essencial_125')
+  expect(screen.getByLabelText('Preço (R$)')).toHaveValue('125,00')
+  expect(screen.getByLabelText('Limite de usuários ativos (max_admin_users)')).toHaveValue(3)
+
+  fireEvent.click(screen.getByRole('button', { name: 'Aplicar modelo R$ 180 · 10 usuários' }))
+  expect(screen.getByLabelText('Código interno')).toHaveValue('corsys_profissional_180')
+  expect(screen.getByLabelText('Preço (R$)')).toHaveValue('180,00')
+  expect(screen.getByLabelText('Limite de usuários ativos (max_admin_users)')).toHaveValue(10)
+
+  fireEvent.submit(screen.getByRole('form', { name: 'Criar rascunho SaaS' }))
+  await screen.findByText('Rascunho comercial confirmado. Ainda não está publicado.')
+  expect(rpc).toHaveBeenCalledWith('create_master_plan_draft_idempotent', expect.objectContaining({
+   p_code: 'corsys_profissional_180',
+   p_price: '180.00',
+   p_entitlements: expect.objectContaining({ max_admin_users: 10 }),
+  }))
+  expect(rpc).not.toHaveBeenCalledWith('publish_master_plan_draft_idempotent', expect.anything())
+ })
+})

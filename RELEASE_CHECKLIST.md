@@ -1,5 +1,16 @@
 # RELEASE CHECKLIST — V35
 
+## Candidato final — 26/11/2026
+
+- [x] Patch cumulativo validado por SHA-256 e aplicado sobre `83e362d2`. PR [#76](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/pull/76).
+- [x] Instalação limpa com npm, TypeScript, 98 arquivos e 692 testes Vitest, build Vite, DEV Gate 13/13 e validação estrutural da V35.
+- [x] Reconciliados onboarding e dados da prestadora no Supabase DEV. As versões aplicadas são `20261125210405` e `20261125210340`.
+- [ ] Aprovar todos os gates obrigatórios na revisão final, com migrations reais em PostgreSQL 17 descartável.
+- [ ] Aplicar e conferir M03, M04, M05 e Storage privado no Supabase DEV. Publicar a Edge Function antes do merge que aciona o Worker DEV.
+- [ ] Homologar os quatro aceites M02.03, M03 a M05 e a paridade das 21 telas em navegador autenticado.
+- [ ] Concluir ensaio operacional de recuperação e registrar RPO/RTO medidos, conforme [runbook](docs/V35_FINAL_HOMOLOGATION_RUNBOOK.md).
+- [ ] Registrar aprovação jurídica, validação contábil da issue #43 e autorização específica de produção.
+
 ## Atualização de homologação — 15/11/2026
 
 - [x] **Gate de autorização HTTP somente leitura em DEV — 5/5 PASS**, evidência de terminal fornecida pelo proprietário ([relatório](docs/V35_HTTP_READONLY_GATE_20261115.md)): Loja A↔B, usuário sem `finance.read`, Master AAL1 negado, Master AAL2/TOTP positivo.

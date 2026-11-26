@@ -433,3 +433,169 @@ describe('Workspace V35 dashboard modes, shortcuts and KPI navigation', () => {
     })
   })
 })
+
+describe('Workspace M04 tenant notices (read-only support session, past_due, suspended, D01)', () => {
+  it('displays active read_only support session banner and suspended/D01 commercial notices', async () => {
+    const orgUuid = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+    const base = createWorkspaceClient()
+    const origFromImpl = (base.client.from as unknown as { getMockImplementation: () => ((table: string) => unknown) | undefined }).getMockImplementation()!
+    ;(base.client.from as ReturnType<typeof vi.fn>).mockImplementation((table: string) => {
+      const overrideRows =
+        table === 'organizations'
+          ? [{ id: orgUuid, name: 'Loja Alpha', status: 'active' }]
+          : table === 'members'
+          ? [{ id: 'm-1', organization_id: orgUuid, full_name: 'Carlos Silva', status: 'active' }]
+          : table === 'financial_accounts'
+          ? [{ id: 'acc-1', organization_id: orgUuid, name: 'Banco Principal', kind: 'bank', active: true }]
+          : table === 'financial_categories'
+          ? [{ id: 'cat-1', organization_id: orgUuid, name: 'Mensalidade', direction: 'inflow', active: true }]
+          : null
+      if (overrideRows) {
+        const builder: Record<string, unknown> = {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          neq: vi.fn().mockReturnThis(),
+          gte: vi.fn().mockReturnThis(),
+          lte: vi.fn().mockReturnThis(),
+          in: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          limit: vi.fn().mockReturnThis(),
+          range: vi.fn().mockReturnThis(),
+          abortSignal: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({ data: overrideRows[0] ?? null, error: null }),
+          then: (resolve: (v: unknown) => void) => Promise.resolve({ data: overrideRows, error: null }).then(resolve),
+        }
+        return builder
+      }
+      return origFromImpl(table)
+    })
+    const origRpcImpl = base.rpc.getMockImplementation()!
+    base.rpc.mockImplementation((name: string, params?: Record<string, unknown>) => {
+      if (name === 'read_tenant_active_support_session') {
+        return Promise.resolve({
+          data: {
+            organization_id: orgUuid,
+            active: true,
+            scope: 'read_only',
+            expires_at: '2026-11-26T15:15:00Z',
+          },
+          error: null,
+        })
+      }
+      if (name === 'read_tenant_commercial_status') {
+        return Promise.resolve({
+          data: {
+            organization_id: orgUuid,
+            subscription_id: 'sub-1',
+            subscription_status: 'suspended',
+            commercial_status: 'suspended',
+            access_override: 'none',
+            write_allowed: false,
+            plan_id: 'p1',
+            plan_code: 'corsys_essencial_125',
+            plan_name: 'Corsys Essencial',
+            plan_version_id: 'v1',
+            contract_price: 125,
+            active_users: 2,
+            max_admin_users: 3,
+            current_period_start: '2026-11-01',
+            current_period_end: '2026-11-30',
+            billing_anchor_day: 10,
+            past_due_since: '2026-11-11T00:00:00Z',
+            grace_until: '2026-11-18T23:59:59Z',
+            cancel_at_period_end: false,
+            canceled_at: null,
+            export_window_until: null,
+            open_amount: '125.00',
+            overdue_amount: '125.00',
+            scheduled_change: null,
+          },
+          error: null,
+        })
+      }
+      return origRpcImpl(name, params)
+    })
+
+    render(<Workspace client={base.client} user={user} onSignOut={vi.fn()} />)
+    expect(await screen.findByText(/Sessão de suporte da plataforma ativa \(somente leitura\)/, {}, { timeout: 8000 })).toBeInTheDocument()
+    expect(await screen.findByText(/Assinatura suspensa — modo somente leitura/)).toBeInTheDocument()
+  })
+
+  it("keeps write_allowed=true and displays C03 grace-expired overdue warning while past_due after grace_until before manual suspension", async () => {
+    const orgUuid = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+    const base = createWorkspaceClient()
+    const origFromImpl = (base.client.from as unknown as { getMockImplementation: () => ((table: string) => unknown) | undefined }).getMockImplementation()!
+    ;(base.client.from as ReturnType<typeof vi.fn>).mockImplementation((table: string) => {
+      const overrideRows =
+        table === "organizations"
+          ? [{ id: orgUuid, name: "Loja Alpha", status: "active" }]
+          : table === "members"
+          ? [{ id: "m-1", organization_id: orgUuid, full_name: "Carlos Silva", status: "active" }]
+          : table === "financial_accounts"
+          ? [{ id: "acc-1", organization_id: orgUuid, name: "Banco Principal", kind: "bank", active: true }]
+          : table === "financial_categories"
+          ? [{ id: "cat-1", organization_id: orgUuid, name: "Mensalidade", direction: "inflow", active: true }]
+          : null
+      if (overrideRows) {
+        const builder: Record<string, unknown> = {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          neq: vi.fn().mockReturnThis(),
+          gte: vi.fn().mockReturnThis(),
+          lte: vi.fn().mockReturnThis(),
+          in: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          limit: vi.fn().mockReturnThis(),
+          range: vi.fn().mockReturnThis(),
+          abortSignal: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({ data: overrideRows[0] ?? null, error: null }),
+          then: (resolve: (v: unknown) => void) => Promise.resolve({ data: overrideRows, error: null }).then(resolve),
+        }
+        return builder
+      }
+      return origFromImpl(table)
+    })
+
+    const origRpcImpl = base.rpc.getMockImplementation()!
+    base.rpc.mockImplementation((name: string, params?: Record<string, unknown>) => {
+      if (name === "read_tenant_commercial_status") {
+        return Promise.resolve({
+          data: {
+            organization_id: orgUuid,
+            subscription_id: "sub-1",
+            subscription_status: "past_due",
+            commercial_status: "past_due",
+            access_override: "none",
+            write_allowed: true,
+            plan_id: "p1",
+            plan_code: "corsys_essencial_125",
+            plan_name: "Corsys Essencial",
+            plan_version_id: "v1",
+            contract_price: 125,
+            active_users: 2,
+            max_admin_users: 3,
+            current_period_start: "2026-11-01",
+            current_period_end: "2026-11-30",
+            billing_anchor_day: 10,
+            past_due_since: "2026-11-01T00:00:00Z",
+            grace_until: "2026-11-08T23:59:59Z",
+            cancel_at_period_end: false,
+            canceled_at: null,
+            export_window_until: null,
+            open_amount: "125.00",
+            overdue_amount: "125.00",
+            scheduled_change: null,
+          },
+          error: null,
+        })
+      }
+      return origRpcImpl(name, params)
+    })
+
+    render(<Workspace client={base.client} user={user} onSignOut={vi.fn()} />)
+    expect(
+      await screen.findByText(/Fatura SaaS em atraso — tolerância encerrada \(sujeita a suspensão manual C03\)/, {}, { timeout: 8000 }),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/Assinatura suspensa — modo somente leitura/)).not.toBeInTheDocument()
+  })
+})

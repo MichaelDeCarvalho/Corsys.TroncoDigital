@@ -94,6 +94,9 @@ describe('MasterOperations (view-master-operacao)', () => {
       expect(within(screen.getByRole('table')).getByText('generate_invoice')).toBeInTheDocument()
       expect(within(screen.getByRole('table')).getByText('evaluate_dunning')).toBeInTheDocument()
       expect(screen.getByText('EMAIL_PROVIDER_UNAVAILABLE')).toBeInTheDocument()
+      const summaryStrip = screen.getByLabelText('Resumo operacional de jobs')
+      expect(within(summaryStrip).getByText('Exibidos na página')).toBeInTheDocument()
+      expect(within(summaryStrip).getByText('Falhas na página')).toBeInTheDocument()
     })
   })
 
@@ -121,5 +124,12 @@ describe('MasterOperations (view-master-operacao)', () => {
 
     expect(screen.getByText(/Boundary de Segurança e Imutabilidade Financeira/i)).toBeInTheDocument()
     expect(screen.getByText(/somente leitura \(read_only\)/i)).toBeInTheDocument()
+  })
+
+  it('switches to Privacidade e Segurança tab and renders M05 Master governance panel', () => {
+    render(<MasterOperations client={mockClient} />)
+    fireEvent.click(screen.getByRole('tab', { name: /Privacidade e Segurança/i }))
+    expect(screen.getByTestId('master-privacy-ops-panel')).toBeInTheDocument()
+    expect(screen.getByText(/Privacidade, Backups, Recuperação e Incidentes/i)).toBeInTheDocument()
   })
 })

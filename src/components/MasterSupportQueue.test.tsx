@@ -299,3 +299,87 @@ describe('Master operational support queue',()=>{
   expect(screen.queryByText('Histórico & Detalhes — Chamado #1001')).not.toBeInTheDocument()
  })
 })
+
+describe('Master support queue M04 SLA, filters, internal tickets, internal notes & lazy triage', () => {
+ it('filters tickets client-side by scope and status, creates internal ticket, adds internal note and runs lazy triage', async () => {
+  const tid2 = 'c412dda8-4ef0-4c58-9d3b-b8fee14ec699'
+  const staffId = 'd412dda8-4ef0-4c58-9d3b-b8fee14ec688'
+  const internalTicket = {
+   ...ticket,
+   id: tid2,
+   ticket_seq: 1002,
+   organization_id: null,
+   ticket_scope: 'internal',
+   subject: 'Auditoria interna de conciliação',
+   status: 'working',
+   opened_by_display: 'Operador Master',
+  }
+  const rpc = vi.fn(async (name: string) => {
+   if (name === 'list_platform_support_staff') {
+    return { data: [{ user_id: staffId, role: 'SUPPORT' }], error: null }
+   }
+   return { data: 'faaf76e4-d796-430f-929f-71df5beaf832', error: null }
+  })
+  const from = vi.fn((table: string) => {
+   const chain = {
+    select: () => chain, order: () => chain, eq: () => chain, limit: () => chain, range: () => chain,
+    abortSignal: () => Promise.resolve({
+     data: table === 'v_saas_support_ticket_metrics'
+      ? [ticket, internalTicket]
+      : table === 'saas_support_ticket_events'
+       ? []
+       : [message],
+     error: null,
+    }),
+   }
+   return chain
+  })
+  render(<MasterSupportQueue client={{ from, rpc } as unknown as SupabaseClient} />)
+  await screen.findByText('Dúvida sobre tesouraria')
+  expect(screen.getAllByText(/Atendido/).length).toBeGreaterThan(0)
+
+  // Client-side scope filter
+  fireEvent.change(screen.getByLabelText('Filtrar escopo do chamado'), { target: { value: 'internal' } })
+  expect(screen.queryByText('Dúvida sobre tesouraria')).not.toBeInTheDocument()
+  expect(screen.getByText('Auditoria interna de conciliação')).toBeInTheDocument()
+  fireEvent.change(screen.getByLabelText('Filtrar escopo do chamado'), { target: { value: 'all' } })
+
+  // Create internal ticket
+  fireEvent.click(screen.getByRole('button', { name: '+ Novo chamado interno' }))
+  fireEvent.change(screen.getByLabelText('Assunto interno'), { target: { value: 'Verificar job recorrente' } })
+  fireEvent.change(screen.getByLabelText('Descrição / nota inicial restrita'), { target: { value: 'Conferir logs de cobrança manual' } })
+  fireEvent.submit(screen.getByRole('form', { name: 'Criar chamado interno' }))
+  await waitFor(() => {
+   expect(rpc).toHaveBeenCalledWith('create_saas_internal_ticket_idempotent', expect.objectContaining({
+    p_subject: 'Verificar job recorrente',
+   }))
+  })
+
+  // Select tenant ticket -> rpc NOT called for staff yet; add internal note and then open lazy triage
+  fireEvent.click(screen.getAllByRole('button', { name: 'Ver conversa' })[0])
+  await screen.findByText('Resposta registrada de suporte')
+  expect(rpc).not.toHaveBeenCalledWith('list_platform_support_staff')
+
+  fireEvent.change(screen.getByLabelText('Nota interna'), { target: { value: 'Validado internamente com tesouraria' } })
+  fireEvent.submit(screen.getByRole('form', { name: 'Registrar nota interna restrita' }))
+  await waitFor(() => {
+   expect(rpc).toHaveBeenCalledWith('add_master_support_internal_note_idempotent', expect.objectContaining({
+    p_ticket_id: tid,
+    p_note: 'Validado internamente com tesouraria',
+   }))
+  })
+
+  fireEvent.click(screen.getByRole('button', { name: 'Triagem e atribuição' }))
+  await waitFor(() => expect(rpc).toHaveBeenCalledWith('list_platform_support_staff'))
+  fireEvent.change(screen.getByLabelText('Operador responsável'), { target: { value: staffId } })
+  fireEvent.change(screen.getByLabelText('Prioridade'), { target: { value: 'high' } })
+  fireEvent.submit(screen.getByRole('form', { name: 'Triagem e atribuição do chamado' }))
+  await waitFor(() => {
+   expect(rpc).toHaveBeenCalledWith('assign_master_support_ticket_idempotent', expect.objectContaining({
+    p_ticket_id: tid,
+    p_assigned_staff_user_id: staffId,
+    p_priority: 'high',
+   }))
+  })
+ })
+})

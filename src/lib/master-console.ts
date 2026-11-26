@@ -49,12 +49,14 @@ export async function loadMasterOverview(client:SupabaseClient){
  if(error)throw error
  return validateMasterOverview(data)
 }
-export type MasterTenantFilters={search:string;status:'all'|'active'|'past_due';plan:string}
+export type MasterTenantStatusFilter='all'|'trialing'|'active'|'past_due'|'suspended'|'cancel_scheduled'|'canceled'
+export type MasterTenantFilters={search:string;status:MasterTenantStatusFilter;plan:string}
 export const DEFAULT_MASTER_TENANT_FILTERS:MasterTenantFilters={search:'',status:'all',plan:''}
+const allowedTenantStatuses = new Set(['all','trialing','active','past_due','suspended','cancel_scheduled','canceled'])
 export async function loadMasterTenants(client:SupabaseClient,page:number,filters:MasterTenantFilters=DEFAULT_MASTER_TENANT_FILTERS){
  if(!Number.isSafeInteger(page)||page<0||page>800)throw Error('Invalid Master page')
  const search=filters.search.trim(),plan=filters.plan.trim()
- if(search.length>100||plan.length>100||!['all','active','past_due'].includes(filters.status))
+ if(search.length>100||plan.length>100||!allowedTenantStatuses.has(filters.status))
   throw Error('Invalid Master tenant filter')
  const filtered=search.length>0||plan.length>0||filters.status!=='all'
  const {data,error}=await client.rpc(filtered?'search_platform_master_tenants':'list_platform_master_tenants',
