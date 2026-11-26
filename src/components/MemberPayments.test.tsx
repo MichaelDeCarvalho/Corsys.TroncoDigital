@@ -152,4 +152,188 @@ describe('Member payment lifecycle',()=>{
   records.v_payment_balances=[{...records.v_payment_balances[0] as Record<string,unknown>,member_id:'other'}]
   await expect(loadMemberLedger(client,'org',member,new AbortController().signal)).rejects.toThrow()
  })
+ it('hides FIFO allocation when no payment has available credit and keeps manual allocation',async()=>{
+  const {client}=fixture({available:'0.00'})
+  render(<MemberPayments client={client} organizationId="org"/>)
+  await selectMember()
+  expect(screen.getByRole('form',{name:'Alocar pagamento à cobrança'})).toBeInTheDocument()
+  expect(screen.queryByRole('form',{name:'Baixar pelos débitos mais antigos (FIFO)'})).not.toBeInTheDocument()
+ })
+ it('requires explicit confirmation, calls allocate_payment_fifo and updates credit, charges and allocations on success',async()=>{
+  const {client,rpc,records}=fixture()
+  rpc.mockImplementation(async()=>{
+   records.v_payment_balances=[{
+    payment_id:payment,organization_id:'org',member_id:member,payment_date:'2030-01-09',
+    amount:'90.00',allocated_amount:'90.00',available_amount:'0.00',
+    is_reversed:false,integrity_ok:true,
+   }]
+   records.v_charge_balances=[{
+    charge_id:charge,organization_id:'org',member_id:member,
+    description:'Mensalidade Teste',due_date:'2030-01-10',open_amount:'70.00',
+    is_cancelled:false,integrity_ok:true,
+   }]
+   return {data:0,error:null}
+  })
+  render(<MemberPayments client={client} organizationId="org"/>)
+  await selectMember()
+  expect(screen.getByRole('form',{name:'Alocar pagamento à cobrança'})).toBeInTheDocument()
+  const fifoForm=screen.getByRole('form',{name:'Baixar pelos débitos mais antigos (FIFO)'})
+  const submitButton=within(fifoForm).getByRole('button',{name:'Baixar pelos débitos mais antigos (FIFO)'})
+  expect(submitButton).toBeDisabled()
+  fireEvent.submit(fifoForm)
+  expect(rpc).not.toHaveBeenCalled()
+  fireEvent.change(within(fifoForm).getByLabelText('Pagamento elegível para FIFO'),{target:{value:payment}})
+  fireEvent.change(within(fifoForm).getByLabelText('Competência contábil'),{target:{value:'2030-01'}})
+  expect(submitButton).toBeDisabled()
+  fireEvent.click(within(fifoForm).getByLabelText('Confirmar baixa automática pelos débitos mais antigos (FIFO)'))
+  expect(submitButton).toBeEnabled()
+  fireEvent.click(submitButton)
+  await screen.findByText(/Baixa FIFO confirmada\./)
+  await screen.findByText(/O extrato foi atualizado\./)
+  expect(rpc).toHaveBeenCalledTimes(1)
+  expect(rpc).toHaveBeenCalledWith('allocate_payment_fifo',{
+   p_organization_id:'org',
+   p_payment_id:payment,
+   p_accounting_period:'2030-01-01',
+  })
+  await waitFor(()=>{
+   expect(screen.getByText(/Mensalidade Teste — vence .* — em aberto R\$\s*70,00/)).toBeInTheDocument()
+   expect(screen.queryByRole('form',{name:'Baixar pelos débitos mais antigos (FIFO)'})).not.toBeInTheDocument()
+  })
+  const paymentsTable=screen.getByRole('region',{name:'Pagamentos consultados'})
+  expect(within(paymentsTable).getAllByText(/R\$\s*90,00/).length).toBeGreaterThanOrEqual(2)
+  expect(within(paymentsTable).getByText(/R\$\s*0,00/)).toBeInTheDocument()
+ })
+ it('keeps financial actions blocked while post-FIFO ledger read is pending or fails and recovers without repeating RPC',async()=>{
+  const {client,rpc,records}=fixture()
+  let ledgerLoads=0
+  let resolveSecondRead!:((value:{data:unknown;error:unknown})=>void)
+  const baseFrom=client.from
+  ;(client as unknown as {from:ReturnType<typeof vi.fn>}).from=vi.fn((table:string)=>{
+   if(table==='v_charge_balances'){
+    ledgerLoads++
+    if(ledgerLoads===2){
+     const chain={select:()=>chain,eq:()=>chain,order:()=>chain,limit:()=>chain,
+      abortSignal:()=>new Promise(resolve=>{resolveSecondRead=resolve})}
+     return chain
+    }
+   }
+   return baseFrom(table)
+  })
+  rpc.mockImplementationOnce(async()=>{
+   records.v_payment_balances=[{
+    payment_id:payment,organization_id:'org',member_id:member,payment_date:'2030-01-09',
+    amount:'90.00',allocated_amount:'90.00',available_amount:'0.00',
+    is_reversed:false,integrity_ok:true,
+   }]
+   records.v_charge_balances=[{
+    charge_id:charge,organization_id:'org',member_id:member,
+    description:'Mensalidade Teste',due_date:'2030-01-10',open_amount:'70.00',
+    is_cancelled:false,integrity_ok:true,
+   }]
+   return {data:0,error:null}
+  })
+  render(<MemberPayments client={client} organizationId="org"/>)
+  await selectMember()
+  const fifoForm=screen.getByRole('form',{name:'Baixar pelos débitos mais antigos (FIFO)'})
+  fireEvent.change(within(fifoForm).getByLabelText('Pagamento elegível para FIFO'),{target:{value:payment}})
+  fireEvent.change(within(fifoForm).getByLabelText('Competência contábil'),{target:{value:'2030-01'}})
+  fireEvent.click(within(fifoForm).getByLabelText('Confirmar baixa automática pelos débitos mais antigos (FIFO)'))
+  fireEvent.submit(fifoForm)
+  await screen.findByText(/Baixa FIFO confirmada\..*O extrato está sendo atualizado\./)
+  await waitFor(()=>expect(ledgerLoads).toBe(2))
+  expect(screen.getByLabelText('Integrante')).toBeDisabled()
+  expect(screen.queryByRole('form',{name:'Registrar pagamento de integrante'})).not.toBeInTheDocument()
+  resolveSecondRead({data:null,error:new Error('ledger read failed')})
+  await screen.findByText('O extrato está indisponível. Faça uma nova consulta para conferir os saldos, sem repetir a operação.')
+  expect(screen.getByText(/Baixa FIFO confirmada\./)).toBeInTheDocument()
+  expect(screen.getByLabelText('Integrante')).toBeDisabled()
+  expect(screen.queryByRole('form',{name:'Registrar pagamento de integrante'})).not.toBeInTheDocument()
+  expect(rpc).toHaveBeenCalledTimes(1)
+  fireEvent.click(screen.getByRole('button',{name:'Nova consulta'}))
+  await screen.findByText(/Baixa FIFO confirmada\. Crédito restante: R\$\s*0,00\. O extrato foi atualizado\./)
+  expect(screen.getByLabelText('Integrante')).toBeEnabled()
+  expect(screen.getByRole('form',{name:'Registrar pagamento de integrante'})).toBeInTheDocument()
+  expect(screen.getByText(/Mensalidade Teste — vence .* — em aberto R\$\s*70,00/)).toBeInTheDocument()
+  expect(rpc).toHaveBeenCalledTimes(1)
+ })
+ it('blocks duplicate FIFO submissions while the RPC call is in flight',async()=>{
+  const {client,rpc}=fixture()
+  let resolveRpc!:((value:{data:number;error:null})=>void)
+  rpc.mockImplementation(()=>new Promise(resolve=>{resolveRpc=resolve}))
+  render(<MemberPayments client={client} organizationId="org"/>)
+  await selectMember()
+  const fifoForm=screen.getByRole('form',{name:'Baixar pelos débitos mais antigos (FIFO)'})
+  const submitButton=within(fifoForm).getByRole('button',{name:'Baixar pelos débitos mais antigos (FIFO)'})
+  fireEvent.change(within(fifoForm).getByLabelText('Pagamento elegível para FIFO'),{target:{value:payment}})
+  fireEvent.change(within(fifoForm).getByLabelText('Competência contábil'),{target:{value:'2030-01'}})
+  fireEvent.click(within(fifoForm).getByLabelText('Confirmar baixa automática pelos débitos mais antigos (FIFO)'))
+  fireEvent.click(submitButton)
+  expect(submitButton).toBeDisabled()
+  fireEvent.click(submitButton)
+  fireEvent.submit(fifoForm)
+  expect(rpc).toHaveBeenCalledTimes(1)
+  resolveRpc({data:10,error:null})
+  await screen.findByText(/Baixa FIFO confirmada\..*O extrato foi atualizado\./)
+ })
+ it('handles FIFO permission and concurrency errors without retrying',async()=>{
+  const {client,rpc}=fixture()
+  rpc.mockResolvedValueOnce({data:null,error:{code:'55P03',message:'lock timeout'}})
+  render(<MemberPayments client={client} organizationId="org"/>)
+  await selectMember()
+  const fifoForm=screen.getByRole('form',{name:'Baixar pelos débitos mais antigos (FIFO)'})
+  fireEvent.change(within(fifoForm).getByLabelText('Pagamento elegível para FIFO'),{target:{value:payment}})
+  fireEvent.change(within(fifoForm).getByLabelText('Competência contábil'),{target:{value:'2030-01'}})
+  fireEvent.click(within(fifoForm).getByLabelText('Confirmar baixa automática pelos débitos mais antigos (FIFO)'))
+  fireEvent.submit(fifoForm)
+  await screen.findByText('O registro foi alterado. Atualize antes de realizar nova operação.')
+  expect(rpc).toHaveBeenCalledTimes(1)
+  expect(screen.queryByRole('button',{name:'Verificar envio'})).not.toBeInTheDocument()
+  expect(within(screen.getByRole('form',{name:'Baixar pelos débitos mais antigos (FIFO)'}))
+   .getByRole('button',{name:'Baixar pelos débitos mais antigos (FIFO)'})).toBeDisabled()
+ })
+ it('reloads ledger state after an uncertain FIFO response before allowing another attempt',async()=>{
+  const {client,rpc,records}=fixture()
+  let ledgerLoads=0
+  const baseFrom=client.from
+  ;(client as unknown as {from:ReturnType<typeof vi.fn>}).from=vi.fn((table:string)=>{
+   if(table==='v_charge_balances'){
+    ledgerLoads++
+    if(ledgerLoads===2){
+     const chain={select:()=>chain,eq:()=>chain,order:()=>chain,limit:()=>chain,
+      abortSignal:()=>Promise.resolve({data:null,error:new Error('reload failed')})}
+     return chain
+    }
+   }
+   return baseFrom(table)
+  })
+  rpc.mockRejectedValueOnce(new Error('network timeout')).mockResolvedValueOnce({data:0,error:null})
+  render(<MemberPayments client={client} organizationId="org"/>)
+  await selectMember()
+  const fifoForm=screen.getByRole('form',{name:'Baixar pelos débitos mais antigos (FIFO)'})
+  fireEvent.change(within(fifoForm).getByLabelText('Pagamento elegível para FIFO'),{target:{value:payment}})
+  fireEvent.change(within(fifoForm).getByLabelText('Competência contábil'),{target:{value:'2030-01'}})
+  fireEvent.click(within(fifoForm).getByLabelText('Confirmar baixa automática pelos débitos mais antigos (FIFO)'))
+  fireEvent.submit(fifoForm)
+  await screen.findByText('Não foi possível recarregar o extrato após resposta incerta. Recarregue os dados antes de tentar novamente.')
+  expect(rpc).toHaveBeenCalledTimes(1)
+  expect(screen.queryByRole('button',{name:'Verificar envio'})).not.toBeInTheDocument()
+  expect(screen.queryByRole('form',{name:'Baixar pelos débitos mais antigos (FIFO)'})).not.toBeInTheDocument()
+  records.v_payment_balances=[{
+   payment_id:payment,organization_id:'org',member_id:member,payment_date:'2030-01-09',
+   amount:'90.00',allocated_amount:'60.00',available_amount:'30.00',
+   is_reversed:false,integrity_ok:true,
+  }]
+  fireEvent.click(screen.getByRole('button',{name:'Recarregar dados'}))
+  await screen.findByText('Resposta anterior da baixa FIFO foi incerta; os dados foram recarregados. Confira crédito, títulos e alocações antes de uma nova tentativa.')
+  const reloadedFifoForm=screen.getByRole('form',{name:'Baixar pelos débitos mais antigos (FIFO)'})
+  const confirmBox=within(reloadedFifoForm).getByLabelText('Confirmar baixa automática pelos débitos mais antigos (FIFO)') as HTMLInputElement
+  expect(confirmBox.checked).toBe(false)
+  fireEvent.change(within(reloadedFifoForm).getByLabelText('Pagamento elegível para FIFO'),{target:{value:payment}})
+  fireEvent.change(within(reloadedFifoForm).getByLabelText('Competência contábil'),{target:{value:'2030-01'}})
+  fireEvent.click(confirmBox)
+  fireEvent.submit(reloadedFifoForm)
+  await screen.findByText(/Baixa FIFO confirmada\..*O extrato foi atualizado\./)
+  expect(rpc).toHaveBeenCalledTimes(2)
+ })
 })
