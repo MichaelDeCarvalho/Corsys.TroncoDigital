@@ -1,3 +1,11 @@
+## Etapa vigente — M02.03 (25/11/2026)
+
+Onboarding M01.04 homologado no DEV. Convite real, aceite do destinatário, vínculo ADMIN apenas na Loja fictícia, um recibo com hash conferido, um evento e replay SQL sem duplicação. Reabertura visual na sessão do destinatário não observada pelo agente. Revisão jurídica e publicação de documentos oficiais permanecem em gates próprios. Evidências no [PR #72](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/pull/72).
+
+Próxima etapa: M02.03, aceite financeiro focal em DEV. Gemini conduz desenvolvimento e testes executáveis no ambiente dele. Work/Codex fazem validações com sessão real ou ferramentas indisponíveis no Gemini. Reusar Grupo A 5/5 e demais gates equivalentes. Priorizar correção/estorno e concorrência acordo × FIFO, com fixture isolada e autorização E04/B06, preservando fatos existentes. Só abrir correção de produto com divergência reproduzida. M06.01/M06.03 continuam abertas e M06.02 segue concluída. Produção exige gate separado. Respostas ao proprietário terminam com o status de M00–M07.
+
+---
+
 ## M01.04 — andamento vigente (25/11/2026)
 
 Fixture não contratual preparada no DEV e Loja fictícia provisionada com Master/MFA real. Convite ainda queued; nenhum envio. Lacuna da ação de envio corrigida em OnboardingInviteSender, com CORS restrito e bloqueio de repetição incerta; evidências, manifesto/expiração da fixture e gates de CI/deploy/envio em ../SESSION_HANDOFF.md. M01 segue EM_EXECUCAO. Sem migrations adicionais, mudanças em clientes existentes ou PROD. ADR-0052 registra o recorte.

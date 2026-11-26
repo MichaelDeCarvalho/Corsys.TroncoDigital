@@ -1,3 +1,11 @@
+## Etapa vigente — M02.03 (25/11/2026)
+
+Onboarding M01.04 homologado no DEV. Convite real, aceite do destinatário, vínculo ADMIN apenas na Loja fictícia, um recibo com hash conferido, um evento e replay SQL sem duplicação. Reabertura visual na sessão do destinatário não observada pelo agente. Revisão jurídica e publicação de documentos oficiais permanecem em gates próprios. Evidências no [PR #72](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/pull/72).
+
+Próxima etapa: M02.03, aceite financeiro focal em DEV. Gemini conduz desenvolvimento e testes executáveis no ambiente dele. Work/Codex fazem validações com sessão real ou ferramentas indisponíveis no Gemini. Reusar Grupo A 5/5 e demais gates equivalentes. Priorizar correção/estorno e concorrência acordo × FIFO, com fixture isolada e autorização E04/B06, preservando fatos existentes. Só abrir correção de produto com divergência reproduzida. M06.01/M06.03 continuam abertas e M06.02 segue concluída. Produção exige gate separado. Respostas ao proprietário terminam com o status de M00–M07.
+
+---
+
 ## M01.04 — andamento vigente (25/11/2026)
 
 Fixture não contratual preparada no DEV e Loja fictícia provisionada com Master/MFA real. Convite ainda queued; nenhum envio. Lacuna da ação de envio corrigida em OnboardingInviteSender, com CORS restrito e bloqueio de repetição incerta; evidências, manifesto/expiração da fixture e gates de CI/deploy/envio em ../SESSION_HANDOFF.md. M01 segue EM_EXECUCAO. Sem migrations adicionais, mudanças em clientes existentes ou PROD. ADR-0052 registra o recorte.
@@ -254,7 +262,7 @@ Cada microentrega tem **um único ID permanente**. Não promover por inferência
 | ID | Macroetapa | Condição de conclusão | Estado atual |
 |---|---|---|---|
 | M00 | Controle de execução e continuidade | Plano, cursor e protocolo de revisão incorporados | CONCLUIDO |
-| M01 | Onboarding, identidades e convites | Provisionamento → convite → aceite → vínculo de Loja/papel/termos, autorizado e recuperável | EM_EXECUCAO; SQL de aceite aplicado DEV, Edge v3/origem/redirect verificados; jornada real pendente |
+| M01 | Onboarding, identidades e convites | Provisionamento, convite, aceite e vínculo verificáveis | HOMOLOGADO_DEV no fluxo fictício M01.04; documentos oficiais ainda pendentes |
 | M02 | Operações financeiras da Loja | Todos os cenários V35 faltantes reconciliados e homologados; invariantes preservadas | EM_EXECUCAO; timezone aplicada DEV `20261115184137`; Grupo A 5/5 PASS; aceite financeiro específico ainda pendente |
 | M03 | Contabilidade, DRE e relatórios completos | Plano publicado com segurança, rubricas validadas, Diário/Razão e exportação integral | EM_EXECUCAO; B01–B05 aprovados com ressalvas, DRE Gerencial integrada; validação profissional e aceites próprios pendentes (#43) |
 | M04 | Operação Master SaaS | Catálogo, contratos, faturamento e suporte nos fluxos aprovados | PARCIAL_HOMOLOGADO_DEV |
@@ -273,10 +281,10 @@ Cada microentrega tem **um único ID permanente**. Não promover por inferência
 | M01.01 | Consumidor idempotente e autorizado do job `onboarding_invite` | INTEGRADO | PR #26 em `b32692dc`; migration DEV `20261109184607`, Edge ACTIVE v1/JWT; end-to-end JWT real/convite **não homologado**, sem envios |
 | M01.02 | Claim/lease, retry, expiração, deduplicação e reconciliação de envio Auth | INTEGRADO | PR #28, CI 3/3 PASS; migration DEV `20261109190747` aplicada, permissões/expiração/observação SQL rollback PASS; **retry permanece bloqueado** sem evidência externa e JWT HTTP real não testado |
 | M01.03 | Vínculo explícito à Loja, perfil inicial e aceite versionado | INTEGRADO_COM_GATES_PENDENTES | SQL aplicado DEV 20261125210405; PostgreSQL real CI PASS; UI no build DEV. Edge v3/JWT publicada, origem e redirect conferidos; jornada JWT real pendente. |
-| M01.04 | Homologar convite real DEV com usuário autorizado, negativas e auditoria | BLOQUEADO | Autorização E05 e destino/limite de teste aprovados; não pedir novamente. Configuração Edge v3/origem/redirect resolvida; documento de teste versionado e jornada ainda precisam preparação; termos de uso real conservam revisão profissional. JWT e credenciais não são operados pelo agente. |
+| M01.04 | Homologar convite real DEV com usuário autorizado, negativas e auditoria | HOMOLOGADO_DEV | PR #72: convite e aceite reais, vínculo isolado, recibo e auditoria únicos; replay validado em PostgreSQL |
 | M02.01 | Reconciliar operações financeiras e cadastros V35 | INTEGRADO | [Matriz de requisitos, código e gates](V35_M0201_FINANCIAL_RECONCILIATION.md), PR #33 integrado `a320ca9a`. |
 | M02.02 | Implementar lacunas financeiras confirmadas | INTEGRADO | A/B/C/D integradas: PR #34, #37, #38 e #40 / `86f1c626`; migration D aplicada em DEV (`20261113230306` em 13/11); Vitest `CashFlowSnapshot` ampliado (movimentos/estornos/`top_expenses`); aguarda gate DEV [V35_M0203_DEV_GATE.md](V35_M0203_DEV_GATE.md). |
-| M02.03 | Aceite funcional financeiro final sem repetir gates equivalentes | AGUARDA_AUTORIZACAO_DEV | Migration D `20261113230306` e timezone `20261115184137` aplicadas; Grupo A HTTP read-only 5/5 PASS em 15/11 (`V35_HTTP_READONLY_GATE_20261115.md`). Restam aceites financeiros específicos e operações persistentes sem evidência equivalente; autorização própria antes de executá-las. |
+| M02.03 | Aceite funcional financeiro final sem repetir gates equivalentes | EM_EXECUCAO | Grupo A HTTP read-only 5/5 preservado. Aceites faltantes dentro de E04/B06 com fixtures isoladas. Próximo recorte: correção/estorno e concorrência acordo × FIFO. |
 | M03.01 | Publicação versionada e idempotente do plano contábil | INTEGRADO_COM_GATES_PENDENTES | `AccountingPrepublication.tsx`, RPC `publish_validated_accounting_plan`, migrations DEV `20261009162535`/`20261009165809`, ADRs 0014/0015 e testes UI/SQL A/B rollback já presentes; read-back DEV confirma funções e grants. JWT real, concorrência e UX final não homologados; não reconstruir. |
 | M03.02 | Validar com regra de negócio as rubricas e mapeamentos contábeis V35 | EM_EXECUCAO | B01–B03 aprovados; DRE Gerencial obrigatória. Aplicar a classificação proposta sem inventar rubricas; validação profissional nos efeitos contábeis permanece gate da issue #43. Não solicitar de novo a decisão já aprovada. |
 | M03.03 | Completar DRE por rubricas e preservar competência/histórico | PARCIAL_INTEGRADO | PR #42 integrado `b9b0fb54`, CI #463 3/3 PASS; receita registrada, custo, despesas, resultado antes do financeiro e resultado financeiro; Receita Bruta/Deduções/Receita Líquida aguardam classificação por plano/competência [issue #43](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/issues/43); DEV não publicado. |

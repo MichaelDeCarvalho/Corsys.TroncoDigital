@@ -1,3 +1,11 @@
+## Etapa vigente — M02.03 (25/11/2026)
+
+Onboarding M01.04 homologado no DEV. Convite real, aceite do destinatário, vínculo ADMIN apenas na Loja fictícia, um recibo com hash conferido, um evento e replay SQL sem duplicação. Reabertura visual na sessão do destinatário não observada pelo agente. Revisão jurídica e publicação de documentos oficiais permanecem em gates próprios. Evidências no [PR #72](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/pull/72).
+
+Próxima etapa: M02.03, aceite financeiro focal em DEV. Gemini conduz desenvolvimento e testes executáveis no ambiente dele. Work/Codex fazem validações com sessão real ou ferramentas indisponíveis no Gemini. Reusar Grupo A 5/5 e demais gates equivalentes. Priorizar correção/estorno e concorrência acordo × FIFO, com fixture isolada e autorização E04/B06, preservando fatos existentes. Só abrir correção de produto com divergência reproduzida. M06.01/M06.03 continuam abertas e M06.02 segue concluída. Produção exige gate separado. Respostas ao proprietário terminam com o status de M00–M07.
+
+---
+
 ## M01.04 — fixture e provisionamento real (25/11/2026)
 
 - Setup administrativo autorizado E04/E05: execução 1a05dfcd-f4bd-4e7d-b123-7bbe48989a51, idempotência qa-onboarding-20261125-01, Loja CORSYS QA ONBOARDING 20261125, destino exclusivo michael.c.carvalho+corsys-v35-qa@gmail.com. Rascunho inserido por SQL para fixture, sem atribuir ao setup evidência de autenticação real.
