@@ -73,6 +73,18 @@ jobs:
           createdb -h 127.0.0.1 -p 55432 -U postgres commercial_concurrency_gate
           python3 scripts/check_commercial_concurrency_pg.py
 
+      - name: Financial agreement, FIFO and reversal PostgreSQL gate
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '55432'
+          PGUSER: postgres
+          PGPASSWORD: onboarding-ci
+          PGDATABASE: financial_integrity_gate
+        run: |
+          createdb -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" "$PGDATABASE"
+          python3 scripts/check_financial_agreement_fifo_reversal_pg.py --self-test-extract
+          python3 scripts/check_financial_agreement_fifo_reversal_pg.py
+
       - name: Platform identity PostgreSQL gate
         env:
           PGPASSWORD: onboarding-ci
