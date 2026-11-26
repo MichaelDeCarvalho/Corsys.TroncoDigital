@@ -238,6 +238,7 @@ def build_schema_sql() -> tuple[str, str]:
         trigger(refinements, "saas_invoice_voids_validate"),
         function(v33, "private", "has_aal2"),
         function(v33, "private", "is_platform_staff"),
+        extract(v33, r"alter table public\.saas_support_sessions\s+drop constraint if exists saas_support_sessions_scope_check", r";"),
         extract(v33, r"alter table public\.saas_support_sessions\s+add constraint saas_support_sessions_scope_check", r";"),
         function(v33, "private", "has_active_support_session"),
         function(v33, "private", "is_tenant_user"),

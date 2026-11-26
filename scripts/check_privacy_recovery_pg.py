@@ -98,6 +98,11 @@ def run_pg_gate() -> None:
         sql = migration.read_text(encoding="utf-8").replace(
             "revoke execute on function public.rls_auto_enable() from authenticated;", ""
         )
+        # The historical DEV fingerprint preflight is specific to the managed
+        # deployment. Execute its real replacement functions on this fresh PG.
+        if migration.name == "20261019205415_legacy_business_http_conflicts_pt409.sql":
+            _, end, sql = sql.partition("end $v35_preflight$;")
+            assert end, "historical DEV preflight marker missing"
         pg.sql(sql, app=f"m05-bootstrap-{migration.name[:14]}")
 
     body = extract_migration_body()

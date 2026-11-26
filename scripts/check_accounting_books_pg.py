@@ -334,6 +334,7 @@ def run_pg_gate() -> None:
         create table public.member_credits (
           id uuid primary key,
           organization_id uuid not null,
+          credit_kind text not null default 'opening_credit',
           accounting_period date not null,
           amount numeric(14,2) not null,
           reason text,
