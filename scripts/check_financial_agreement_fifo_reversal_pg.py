@@ -634,13 +634,13 @@ def main() -> None:
           ('{org_b}', 'Loja Sintetica B', 'active');
 
         insert into public.user_roles(organization_id, user_id, role_id)
-        select '{org_a}', '{actor_a1}', id from public.roles where organization_id = '{org_a}' and code = 'ADMIN'
+        select '{org_a}'::uuid, '{actor_a1}'::uuid, id from public.roles where organization_id = '{org_a}' and code = 'ADMIN'
         union all
-        select '{org_a}', '{actor_a2}', id from public.roles where organization_id = '{org_a}' and code = 'TREASURER'
+        select '{org_a}'::uuid, '{actor_a2}'::uuid, id from public.roles where organization_id = '{org_a}' and code = 'TREASURER'
         union all
-        select '{org_a}', '{viewer_a}', id from public.roles where organization_id = '{org_a}' and code = 'VIEWER'
+        select '{org_a}'::uuid, '{viewer_a}'::uuid, id from public.roles where organization_id = '{org_a}' and code = 'VIEWER'
         union all
-        select '{org_b}', '{actor_b}', id from public.roles where organization_id = '{org_b}' and code = 'ADMIN';
+        select '{org_b}'::uuid, '{actor_b}'::uuid, id from public.roles where organization_id = '{org_b}' and code = 'ADMIN';
 
         insert into public.financial_categories(id, organization_id, name, domain, active, allow_installments) values
           ('{cat_a}', '{org_a}', 'Mensalidade Sintetica', 'member_receivable', true, true),
