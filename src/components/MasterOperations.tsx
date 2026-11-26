@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { MasterSupportQueue } from './MasterSupportQueue'
 import { MasterAudit } from './MasterAudit'
+import { MasterPrivacyOpsPanel } from './MasterPrivacyOpsPanel'
 import {
   loadPlatformJobPage, platformJobStatuses, platformJobTypes,
   type PlatformJob, type PlatformJobFilters, type JobCursor,
@@ -28,7 +29,7 @@ import {
 } from '../lib/master-support-sessions'
 
 export function MasterOperations({ client, initialTicketOrganizationId = '' }: { client: SupabaseClient; initialTicketOrganizationId?: string }) {
-  const [activeTab, setActiveTab] = useState<'tickets' | 'health' | 'support' | 'team' | 'audit'>('tickets')
+  const [activeTab, setActiveTab] = useState<'tickets' | 'health' | 'support' | 'team' | 'audit' | 'privacy'>('tickets')
   const [jobs, setJobs] = useState<PlatformJob[] | null>(null)
   const [jobNextCursor, setJobNextCursor] = useState<JobCursor | null>(null)
   const [jobsLoading, setJobsLoading] = useState(false)
@@ -340,6 +341,20 @@ export function MasterOperations({ client, initialTicketOrganizationId = '' }: {
         >
           Auditoria Master
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'privacy'}
+          className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+            activeTab === 'privacy'
+              ? 'bg-blue-600 text-white'
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+          }`}
+          data-operation-tab="privacy"
+          onClick={() => setActiveTab('privacy')}
+        >
+          Privacidade e Segurança
+        </button>
       </div>
 
       {/* Tab 1: Chamados (MasterSupportQueue - Operação Funcional e Escrita Autorizada) */}
@@ -384,6 +399,26 @@ export function MasterOperations({ client, initialTicketOrganizationId = '' }: {
             <button type="button" className="secondary" onClick={clearJobFilters}>Limpar filtros</button>
           </form>
           {jobsError && <p role="alert" className="message error">{jobsError}</p>}
+          {jobs && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3" aria-label="Resumo operacional de jobs">
+              <div className="border rounded-md p-3 bg-slate-50">
+                <span className="text-xs text-slate-500 block">Exibidos na página</span>
+                <strong className="text-base text-slate-900 tabular-nums">{jobs.length}</strong>
+              </div>
+              <div className="border rounded-md p-3 bg-slate-50">
+                <span className="text-xs text-slate-500 block">Em fila / em execução</span>
+                <strong className="text-base text-slate-900 tabular-nums">
+                  {jobs.filter(j => ['queued', 'running', 'retrying'].includes(j.status)).length}
+                </strong>
+              </div>
+              <div className="border rounded-md p-3 bg-slate-50">
+                <span className="text-xs text-slate-500 block">Falhas na página</span>
+                <strong className="text-base text-red-700 tabular-nums">
+                  {jobs.filter(j => j.status === 'failed').length}
+                </strong>
+              </div>
+            </div>
+          )}
           {jobsLoading ? <p role="status" className="py-6 text-center text-slate-500 text-sm">
             Consultando histórico de jobs no servidor…
           </p> : jobs && !jobs.length ? (
@@ -629,6 +664,8 @@ export function MasterOperations({ client, initialTicketOrganizationId = '' }: {
       )}
 
       {activeTab === 'audit' && <MasterAudit client={client} />}
+
+      {activeTab === 'privacy' && <MasterPrivacyOpsPanel client={client} />}
 
     </div>
   )

@@ -91,3 +91,86 @@ export async function loadMasterTicketEvents(
  }
  return data as MasterTicketEvent[]
 }
+
+export type PlatformSupportStaff = {
+ user_id: string
+ role: 'MASTER' | 'SUPPORT'
+}
+
+export async function loadPlatformSupportStaff(client: SupabaseClient): Promise<PlatformSupportStaff[]> {
+ const { data, error } = await client.rpc('list_platform_support_staff')
+ if (error) throw error
+ if (!Array.isArray(data)) throw Error('Invalid platform staff list')
+ return data.filter(
+  (row): row is PlatformSupportStaff =>
+   Boolean(row && typeof row.user_id === 'string' && uuid.test(row.user_id) && ['MASTER', 'SUPPORT'].includes(String(row.role)))
+ )
+}
+
+export async function addMasterSupportInternalNote(
+ client: SupabaseClient,
+ input: { ticket_id: string; note: string; next_status?: string | null; idempotency_key: string }
+): Promise<string> {
+ if (!uuid.test(input.ticket_id)) throw Error('Chamado inválido')
+ const note = input.note.trim()
+ if (note.length < 1 || note.length > 5000) throw Error('Informe o texto da nota interna')
+ const { data, error } = await client.rpc('add_master_support_internal_note_idempotent', {
+  p_ticket_id: input.ticket_id,
+  p_note: note,
+  p_next_status: input.next_status || null,
+  p_idempotency_key: input.idempotency_key.trim(),
+ })
+ if (error) throw error
+ if (typeof data !== 'string' || !uuid.test(data)) throw Error('Unconfirmed internal note response')
+ return data
+}
+
+export async function assignMasterSupportTicket(
+ client: SupabaseClient,
+ input: {
+  ticket_id: string
+  assigned_staff_user_id?: string | null
+  priority?: 'low' | 'normal' | 'high' | 'urgent' | null
+  idempotency_key: string
+ }
+): Promise<string> {
+ if (!uuid.test(input.ticket_id)) throw Error('Chamado inválido')
+ if (input.assigned_staff_user_id && !uuid.test(input.assigned_staff_user_id)) throw Error('Operador inválido')
+ const { data, error } = await client.rpc('assign_master_support_ticket_idempotent', {
+  p_ticket_id: input.ticket_id,
+  p_assigned_staff_user_id: input.assigned_staff_user_id || null,
+  p_priority: input.priority || null,
+  p_idempotency_key: input.idempotency_key.trim(),
+ })
+ if (error) throw error
+ if (typeof data !== 'string' || !uuid.test(data)) throw Error('Unconfirmed ticket assignment response')
+ return data
+}
+
+export async function createMasterInternalTicket(
+ client: SupabaseClient,
+ input: {
+  related_organization_id?: string | null
+  subject: string
+  category: string
+  priority: 'low' | 'normal' | 'high' | 'urgent'
+  message: string
+  idempotency_key: string
+ }
+): Promise<string> {
+ if (input.related_organization_id && !uuid.test(input.related_organization_id)) throw Error('Loja relacionada inválida')
+ if (input.subject.trim().length < 3 || input.message.trim().length < 3) {
+  throw Error('Assunto e descrição do chamado interno obrigatórios')
+ }
+ const { data, error } = await client.rpc('create_saas_internal_ticket_idempotent', {
+  p_related_organization_id: input.related_organization_id || null,
+  p_subject: input.subject.trim(),
+  p_category: input.category,
+  p_priority: input.priority,
+  p_message: input.message.trim(),
+  p_idempotency_key: input.idempotency_key.trim(),
+ })
+ if (error) throw error
+ if (typeof data !== 'string' || !uuid.test(data)) throw Error('Unconfirmed internal ticket response')
+ return data
+}

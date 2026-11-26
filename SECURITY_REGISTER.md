@@ -648,3 +648,35 @@ M02.02-D sobre main 698dd1b. read_tenant_cash_flow_detail exige finance.read e p
 M04.03-B sobre main fefd376. A política anterior delega a is_platform_staff, cujo código versionado já verifica AAL2; a nova política exige o claim explicitamente. SELECT autenticado passa a usar lista de colunas diagnósticas, excluindo payload, idempotency_key e correlation_id. O histórico A mantém filtros e cursor; removido o leitor antigo sem consumidores. O PR preserva as permissões de service_role e as RPCs internas de onboarding. Gate PostgreSQL descartável com claims simuladas e testes de cursor; JWT real no DEV pendente.
 
 M04.03-C proposta: expor trilha cronológica de eventos do chamado no detalhe Master. Hoje a fila mostra tempos de primeira resposta/resolução e conversa, mas a interface não consulta saas_support_ticket_events. Reutilizar eventos existentes com escopo do chamado, autorização e campos sanitizados. Metas de SLA dependem de política explícita.
+
+---
+
+## M05 — Privacidade, Portabilidade, Retenção, Backup/Restore, Recuperação de Acesso e Incidentes (ADR-0055 · D01–D06)
+
+- **Portabilidade e exportação autenticada (`D02` — Entrega A):**
+  - Tabelas `public.tenant_portability_exports` e `public.tenant_portability_downloads` (imutável via `prevent_financial_mutation`) com RLS estrito por `organization_id` e perfil (`settings.manage`/`reports.export` para `organization_full`, `private.is_self_member` para `data_subject_package`).
+  - Expiração obrigatória em 24 horas (`expires_at`), hash criptográfico `payload_sha256` (`pg_catalog.sha256`), exclusão de secrets/tokens/credenciais/tickets internos/logs Master e neutralização de fórmula CSV após normalização `NFKC`.
+- **Direitos dos titulares, pseudonimização vs. anonimização e razão imutável (`D02`/`D03` — Entrega B):**
+  - Tabelas `public.tenant_privacy_requests` e `public.tenant_privacy_request_events` (imutável). Meta interna de triagem de 2 dias úteis (`private.add_business_days(clock_timestamp(), 2)` em `America/Sao_Paulo`).
+  - Distinção obrigatória entre `pseudonymized` (substituição de nome por UUID permanece reidentificável e mantém proteção), `anonymized_verified` (apenas categorias não contábeis sem risco residual) e `retained_by_law` (fatos do razão financeiro `financial_ledger` jamais são excluídos ou reescritos; tentativas de exclusão falham com `SQLSTATE 55000`).
+- **Temporalidade, janela pós-cancelamento de 90 dias e preservação legal (`D01`/`D03` — Entrega C):**
+  - Reconciliado com `private.tenant_write_allowed`: durante suspensão ou nos 90 dias após `canceled_at`, escrita financeira é bloqueada enquanto leitura e portabilidade permanecem abertas (`post_cancel_export_window`); após 90 dias, `archived_restricted` bloqueia novas exportações normais pelo tenant.
+  - `public.tenant_retention_holds` bloqueia descartes futuros sob preservação legal; `auto_purge_enabled = false`.
+- **Backup criptografado, rotação de 35 dias e restore seletivo descartável (`D04` — Entrega D):**
+  - Runner `scripts/run_v35_m05_backup_restore_trial.sh` + `scripts/test_v35_m05_runner_hardening.sh` + `scripts/v35_m05_single_tenant_recovery_check.sql` + `scripts/v35_m05_backup_manifest.py` + `public.saas_backup_restore_verifications` (`MASTER + AAL2`).
+  - RPO ≤ 24h e RTO ≤ 8h mantidos como metas (`target_unproven` até comprovação em ensaio descartável); restore seletivo da Loja A preserva a Loja B intocada e bloqueia reintrodução de contatos pseudonimizados.
+- **Recuperação privilegiada com dupla evidência e revogação (`D05` — Entrega E):**
+  - `public.saas_access_recovery_requests` + `register_privileged_recovery_decision_idempotent` (`MASTER + AAL2`) exigem dois operadores distintos (`verified_by_secondary <> verified_by_primary`), duas evidências distintas, novo MFA pelo titular (`requires_owner_mfa_reenroll = true`) e bloqueio de senhas/OTPs/tokens.
+  - `revoke_compromised_tenant_access_idempotent` revoga `user_roles` e `member_user_links` da conta comprometida na Loja preservando ledger e auditoria imutáveis.
+- **Monitoramento técnico mínimo e resposta a incidentes (`D06` — Entrega F):**
+  - `public.saas_operational_incidents` e `public.saas_operational_health_snapshots` (`MASTER + AAL2`), meta interna de notificação de 24 horas (`detected_at + interval '24 hours'`), responsável operacional inicial `Michael`, guarda mínima de 5 anos, bloqueio de padrões de segredos/CPF no resumo técnico, `continuous_monitoring_active: false` enquanto probe externo sem custo não estiver ativo e `external_legal_notice_automated: false`.
+
+---
+
+## M06 — Correções de Regressão Transversal e Fronteiras de Segurança Consolidadas
+
+- **Inadimplência e suspensão manual (`C03` — `private.tenant_write_allowed`):**
+  - Eliminado o bloqueio automático por decurso de `grace_until` enquanto `saas_subscriptions.status = 'past_due'`. O bloqueio de escrita ocorre exclusivamente após a transição manual auditada para `status = 'suspended'` (`suspend_saas_subscription_manual_idempotent`, `MASTER + AAL2`, que valida no servidor `grace_until <= now()` e saldo vencido aberto > 0).
+- **Portabilidade integral e fronteira de isolamento (`D02` — `create_tenant_portability_export_idempotent`):**
+  - Cobertura de 41 datasets do tenant autorizado (incluindo mapeamentos contábeis M03 e histórico comercial/suporte M04), filtrando estritamente `saas_support_tickets` para `ticket_scope = 'tenant'` e `saas_support_ticket_messages` para `visibility = 'customer'` (impedindo vazamento de notas internas e chamados internos Master).
+  - Manifesto declara explicitamente `binary_files_included: false` para `eligible_attachments` (inventário de metadados e hashes SHA-256, distinto do download binário de objetos do Storage privado).

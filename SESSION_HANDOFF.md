@@ -1,3 +1,84 @@
+### Integração do candidato e download privado
+
+- Base reconciliada no DEV: onboarding Git `20261109233000` → remoto `20261125210405`. Identidade Git `20261125210000` → remoto `20261125210340`. Preservar ambos.
+- O download binário exige implantação da migration `20261126181500` no DEV e da Edge Function `portability-attachment` com verificação de JWT. A origem é `PORTABILITY_APP_ORIGIN` ou a origem DEV de onboarding já configurada.
+- Somente o backend lê `tenant-documents`. A RPC vincula documento, objeto e hash ao pacote vigente. A Edge Function confere SHA-256 e tamanho (limite de 16 MiB) e registra o resultado antes de entregar o arquivo.
+- Registrar CI, migrations, publicação e aceites autenticados pelos resultados observados na revisão publicada.
+
+## M07 — Preparação do Release Candidate (`corsys-v35-release-candidate.patch`) e Runbook Final (`83e362d2`, 26/11/2026)
+
+- **Base de referência:** `83e362d246c65a118967931c39b87ffae1e4a8f4` (`main`, PR #75; árvore reconstruída localmente sem declarar igualdade criptográfica de objeto `.git` com o remoto). Preservados intactos os 4 patches individuais e `corsys-v35-consolidado-m06.patch`.
+- **Entrega técnica M07:**
+  1. **Portabilidade de binários de anexos elegíveis (`D02`):** implementada `public.authorize_tenant_portability_attachment_download(uuid, uuid, uuid)` em `20261126180000_v35_m05_privacy_retention_recovery.sql`, `downloadPortabilityAttachmentBinary` em `src/lib/privacy-portability.ts` e botão `Baixar binário do anexo` em `src/components/TenantPrivacyPortabilityPanel.tsx`. O manifesto JSON/CSV mantém `binary_files_included: false` (nunca tratando metadados como arquivo binário), e o download binário consulta o Storage privado (`tenant-documents`) com auditoria e verificação SHA-256 (falhando fechado caso o bucket/objeto não esteja provisionado).
+  2. **Runbook único para o Work (`docs/V35_FINAL_HOMOLOGATION_RUNBOOK.md`):** consolida checklist de release, ordem de integração e preflight/read-back das migrations sem reaplicar histórico antigo, plano de rollback, inventário de variáveis/secrets sem valores, separação entre gates automatizados e ensaios em navegador real para as 21 telas (`M02.03` a `M06.03`), pendências jurídicas/contábeis e limites/custos estimados da infraestrutura atual.
+- **Testes executados na árvore consolidada (`VERIFICADO`):** suíte Vitest completa do repositório (93 arquivos de teste), `tsc --noEmit`, `vite build`, `npm run check --prefix dev-gate` (13/13), `check_v35_preservation.py`, `test_v35_m05_runner_hardening.sh` (9/9), `v35_m05_backup_manifest.py --self-test` e `--self-test-extract` dos gates SQL M03/M04/M05. Runtime `postgres:17` (`psql`), `pglast`, apply DEV e homologação autenticada no navegador DEV permanecem **`NÃO AVALIADO`** localmente. **`M07` permanece `BLOQUEADO`**.
+
+---
+
+## M06 — Consolidação Técnica (M02.03 + M03 + M04 + M05) e Paridade Funcional Final (`83e362d2`, 26/11/2026)
+
+- **Base Git verificada (árvore isolada reconstruída sobre `83e362d246c65a118967931c39b87ffae1e4a8f4`, PR #75):** integrados na ordem obrigatória `1. M02.03 -> 2. M03 -> 3. M04 -> 4. M05`, preservando intactos os quatro patches individuais e exportando o candidato único `corsys-v35-consolidado-m06.patch`.
+- **Conflitos e regressões entre módulos resolvidos (`M06.01` / `M06.03`):**
+  1. **Regressão C03 em `private.tenant_write_allowed` (`20261126120000_v35_m04_master_saas_operations.sql` + `Workspace.tsx` + `check_master_saas_m04_pg.py` + `WorkspaceDashboard.test.tsx`):** removida a condição que bloqueava escritas automaticamente ao expirar `grace_until` enquanto `status = 'past_due'`; escritas permanecem liberadas com aviso de tolerância encerrada até suspensão manual (`suspend_saas_subscription_manual_idempotent`) pelo operador Master AAL2 (`status = 'suspended'`).
+  2. **Portabilidade integral `D02` (`20261126180000_v35_m05_privacy_retention_recovery.sql` + `privacy-portability.ts` + `TenantPrivacyPortabilityPanel.tsx` + `check_privacy_recovery_pg.py`):** `organization_full` expandido para 41 datasets cobrindo M02, M03 (`accounting_plans`, `accounting_accounts`, `accounting_plan_role_mappings`), M04 (`saas_subscriptions`, `saas_subscription_price_terms`, `saas_scheduled_subscription_changes`, `saas_invoices`, `saas_invoice_items`, `saas_payment_agreements`, `customer_support_tickets` e `customer_support_messages` restritos a `ticket_scope = 'tenant'` e `visibility = 'customer'`) e M05, além de ampliar `data_subject_package` com `member_credits`, `member_debt_agreements`, `member_debt_agreement_installments` e `tenant_privacy_requests`, declarando `binary_files_included: false` para diferenciar metadados/SHA-256 de anexos dos arquivos binários do Storage privado.
+  3. **Janela pós-cancelamento `D01` de 90 dias:** unificada entre `read_tenant_commercial_status` (M04) e `private.m05_retention_snapshot` (M05) para `canceled` e `cancel_scheduled` após `current_period_end`.
+  4. **Confronto das 21 telas (`docs/V35_SCREEN_PARITY_MATRIX.md`) e CI (`.github/workflows/foundation-checks.yml`):** todas as 21 telas classificadas sob a taxonomia M06.01 e todos os gates PostgreSQL 17 preservados no workflow.
+- **Evidências:** `VERIFICADO` para typecheck, suíte completa Vitest, build Vite, DEV Gate, `check_v35_preservation.py`, `test_v35_m05_runner_hardening.sh` (9/9 PASS), `v35_m05_backup_manifest.py --self-test` e `--self-test-extract` dos gates SQL. `NÃO AVALIADO` localmente para runtime `postgres:17` (`psql` ausente), AST `pglast`, aplicação no Supabase DEV e homologação autenticada DEV.
+
+---
+
+## Lote acelerado M05 — Privacidade, Recuperação e Segurança Operacional (26/11/2026)
+
+- **Escopo entregue (`ADR-0055`, decisões `D01`–`D06`):**
+  - **Entrega A (`D02` — Portabilidade):** `public.tenant_portability_exports` + `public.tenant_portability_downloads` (imutável), RPCs `create_tenant_portability_export_idempotent`, `list_tenant_portability_exports`, `download_tenant_portability_export`, manifesto com contagens e centavos exatos, dicionário de dados, metadados de anexos elegíveis, `payload_sha256`, expiração de 24h, CSV sanitizado (`NFKC` + anti-fórmula) e bloqueio explícito contra restauração automática por upload.
+  - **Entrega B (`D02`/`D03` — Direitos dos titulares):** `public.tenant_privacy_requests` + `public.tenant_privacy_request_events` (imutável), RPCs `register_tenant_privacy_request_idempotent`, `review_tenant_privacy_request_idempotent`, `list_tenant_privacy_requests`, triagem interna de 2 dias úteis (`private.add_business_days`), distinção formal entre `pseudonymized`, `anonymized_verified` e `retained_by_law`, e preservação estrita do razão financeiro imutável (`SQLSTATE 55000` contra exclusão/anonimização de ledger).
+  - **Entrega C (`D01`/`D03` — Retenção e encerramento contratual):** `public.tenant_retention_holds` + RPCs `read_tenant_retention_posture`, `place_tenant_legal_hold_idempotent`, `release_tenant_legal_hold_idempotent`; janela pós-cancelamento de 90 dias com leitura/portabilidade abertas e escrita financeira bloqueada (`private.tenant_write_allowed`), transição para `archived_restricted` após 90 dias e `auto_purge_enabled = false`.
+  - **Entrega D (`D04` — Backup e restore seletivo descartável):** preservado `scripts/run_v35_m05_backup_restore_trial.sh` (9/9 hardening PASS); adicionados `scripts/v35_m05_backup_manifest.py`, `scripts/v35_m05_single_tenant_recovery_check.sql` (restore seletivo da Loja A sem sobrescrever Loja B e bloqueio de reintrodução de contatos pseudonimizados) e `public.saas_backup_restore_verifications` (`MASTER + AAL2`, rotação ≤ 35 dias, metas RPO ≤ 24h / RTO ≤ 8h `target_unproven`).
+  - **Entrega E (`D05` — Recuperação de acesso):** detecção fail-closed de links expirados/reutilizados (`otp_expired` / `access_denied`) em `useAuth.ts`, `App.tsx` e `PasswordRecovery.tsx`; `public.saas_access_recovery_requests` + `register_privileged_recovery_decision_idempotent` (2 operadores distintos, 2 evidências distintas, novo MFA pelo titular obrigatório, bloqueio de senhas/OTPs/tokens) e `revoke_compromised_tenant_access_idempotent`.
+  - **Entrega F (`D06` — Monitoramento e incidentes):** `public.saas_operational_incidents` + `public.saas_operational_health_snapshots`, RPCs `read_master_operational_security_overview`, `record_operational_incident_idempotent`, `update_operational_incident_status_idempotent` (`MASTER + AAL2`, responsável `Michael`, meta interna de 24h, retenção de 5 anos, `continuous_monitoring_active: false` até probe externo ativo, sem notificação jurídica externa automática).
+- **Evidências:** `VERIFICADO` para typecheck, Vitest M05, build Vite, `check_v35_preservation.py`, `test_v35_m05_runner_hardening.sh` (9/9 PASS), `v35_m05_backup_manifest.py --self-test` e `check_privacy_recovery_pg.py --self-test-extract`. `NÃO AVALIADO` localmente para runtime PostgreSQL 17 (`psql` ausente no container), AST `pglast`, aplicação no Supabase DEV e homologação de e-mail real.
+
+---
+
+## M04 — Operação Master SaaS (`83e362d2`, 26/11/2026)
+
+- **Base verificada:** `83e362d246c65a118967931c39b87ffae1e4a8f4` (`main`, PR #75), isolada de `m0203-fechamento.patch` (`M02.03` mantida em `EM_EXECUCAO`) e `m03-contabilidade-relatorios.patch`. **`M06.02` preservada `CONCLUIDO`**.
+- **Implementado na M04 (`ADR-0054` / Entregas A–D):**
+  1. **Ciclo Comercial & Assentos (`C01`, `C02`, `C05`, `C07`):** modelos R$125 (3 ativos) e R$180 (10 ativos) sem autopublicação em `MasterPlanLifecycle.tsx`, controle de assentos excluindo `MASTER`/`SUPPORT` em `assign_tenant_user_role`/`accept_onboarding_invite` + consulta sob demanda em `Cadastros.tsx`, contratação expressa e troca prospectiva para o dia 1º do mês seguinte com preservação de `saas_subscription_price_terms` (`MasterSubscriptionLifecyclePanel.tsx`), aviso `C02` em `OnboardingAcceptance.tsx` e 7 status em `MasterConsole.tsx`.
+  2. **Cobrança Manual SaaS (`C04`):** emissão/prévia manual preservadas em `MasterBilling.tsx`, registro/alocação/estornos compensatórios de pagamentos, anulação bloqueada sob alocações ativas, ajustes, acordos sem encargos automáticos (`0%`), documentos fiscais externos e `Resumo SaaS` segregado.
+  3. **Inadimplência, Suspensão Manual & D01 (`C03`, `D01`):** `past_due` manual com 7 dias corridos, trava explícita antes de vencer a tolerância/saldo vencido, bloqueio de gravação mantendo leitura/exportações/suporte, reativação sob quitação/acordo, janela de 90 dias em cancelamento (`Configuracoes.tsx` + banners em `Workspace.tsx`).
+  4. **Suporte, SLA & Visibilidade (`C06`):** notas internas RLS, triagem/atribuição/chamado interno idempotentes e SLA comercial (Seg–Sex 09:00–18:00 BRT) em `MasterSupportQueue.tsx`, faixa sanitizada de Jobs em `MasterOperations.tsx`, e banner tenant de sessão `read_only` ativa em `Workspace.tsx`.
+  5. **Gate & Documentação:** `scripts/check_master_saas_m04_pg.py` adicionado em `.github/workflows/foundation-checks.yml`, `ADR-0054` e atualização documental.
+- **Limites honestos (`NOT EVALUATED` localmente):** ausência de `psql`/`postgres:17` e `pglast` mantém `check_sql.py`, `check_master_saas_m04_pg.py`, aplicação DEV da migration e homologação autenticada DEV como **`NOT EVALUATED`** (`M04` e `M04.01`–`M04.04` mantidos em `EM_EXECUCAO`).
+
+## M03 — Diário Contábil, Razão Contábil, DRE Gerencial B01 e Exportações Integrais (`83e362d2`, 26/11/2026)
+
+- **Base verificada:** `83e362d246c65a118967931c39b87ffae1e4a8f4` (`main`, PR #75). **Preservado integralmente** `m0203-fechamento.patch` (`112634` bytes, SHA-256 `7af47dea46e358b80385b0c3828163b314572e735c20d0450bdab5ddc3c9fbd5`). **`M02` e `M02.03` mantidas em `EM_EXECUCAO`** conforme diretriz do proprietário.
+- **Entregas implementadas (`ADR-0053`, isoladas em `m03-contabilidade-relatorios.patch`):**
+  1. **Anexo III & SQL (`supabase/migrations/20261126000000_v35_m03_accounting_books_and_dre.sql`):** tabela/RPC governada `accounting_plan_role_mappings` / `set_accounting_plan_role_mapping_idempotent`, projeção em partidas dobradas `private.tenant_accounting_journal`, Diário Contábil (`read_tenant_accounting_diary_summary` + `read_tenant_accounting_diary`), Razão Contábil (`read_tenant_accounting_ledger`) com saldo de abertura derivado exclusivamente de partidas anteriores (`prior_entries` ou `no_prior_entries_zero`), DRE Gerencial B01 (`read_tenant_dre_gerencial`) com cascata, contas ativas zeradas e comparativos reais, e travamento fail-closed (`integral_ok = false`) em lacunas/legados.
+  2. **Interface & Exportações Integrais (`src/lib/accounting-books.ts`, `src/lib/dre-report.ts`, `src/lib/report-export.ts`):** componentes `AccountingRoleMappings` (em `PlanoContas.tsx`), `AccountingDiary` e `AccountingLedger` (em `Relatorios.tsx`), e `DreGerencialPanel` (em `DreView.tsx` e `Relatorios.tsx`), com exportação integral XLSX multi-aba e impressão/PDF bloqueadas quando `!integral_ok` ou incompletas.
+  3. **Gate SQL descartável (`scripts/check_accounting_books_pg.py` + `.github/workflows/foundation-checks.yml`):** cobertura DDL rollback, negativas/isolamento A/B, governança Anexo III, conciliação Diário ↔ Razão ↔ DRE B01 em centavos e travamento fail-closed.
+- **Limites honestos (`NOT EVALUATED` localmente):** ausência de `psql`/`postgres` e `pglast` no ambiente local mantém `check_sql.py`, execução `postgres:17`, aplicação da migration em DEV, homologação autenticada DEV e validação contábil final (`#43`) como **`NOT EVALUATED`** até execução em CI/DEV.
+
+---
+
+## M02.03 — Fechamento DEV preparado sobre PR #75 (`83e362d2`, 25/11/2026)
+
+- **Base verificada:** `83e362d246c65a118967931c39b87ffae1e4a8f4` (**PR #75**, CI [`45744100435`](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/45744100435) 3/3 PASS) e **PR #74** `3e5fd691f32992c5d28897a0972b24adafcb1970` (CI [`45736383731`](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/actions/runs/45736383731) 3/3 PASS). Zero modificação em código de produção, RPCs, migrations ou PROD.
+- **Evidências já aprovadas e reaproveitadas (não repetir):**
+  - Grupo A HTTP somente leitura 5/5 PASS;
+  - Integridade transacional/concorrência em PostgreSQL descartável (`T1–T6` em `scripts/check_financial_agreement_fifo_reversal_pg.py`, PR #74): acordo × FIFO sobre os mesmos títulos nas duas ordens, preservação do principal sem duplicação e estornos de integrante e institucional PASS;
+  - Pagamento e baixa FIFO pela tela (`MemberPayments.tsx`, PR #75): confirmação/bloqueio até leitura íntegra do extrato sem repetição do RPC.
+- **Quatro aceites ainda pendentes de homologação autenticada no DEV (`QA_CLOSURE_*`, E04/B06/E06):**
+  1. **Acordo pela tela** (`MemberAgreements.tsx` + `MemberPayments.tsx`): R$ 100 + R$ 60 → 2 × R$ 80, saída dos originais da carteira aberta, pagamento de uma parcela e estorno reabrindo apenas a parcela estornada;
+  2. **Mensalidades** (`MemberConfiguration.tsx` + `MonthlyChargeGeneration.tsx`): regra geral, precedência de valor individual, isenção programada e reexecução idempotente sem duplicar cobranças;
+  3. **Quórum de dois aprovadores** (`ContasPagar.tsx` / `InstitutionalOperations.tsx` / `PayableApprovals.tsx`): dois usuários distintos bloqueados em `0/2` e `1/2`, liquidação liberada e concluída em `2/2`;
+  4. **Conciliação** (`BankReconciliation.tsx`): leitura incompleta simulada apenas no cliente Playwright, travamento completo da UI com zero RPCs de escrita e recuperação íntegra após remover a falha.
+- **Artefatos desta entrega:** `scripts/homologate_m0203_dev.mjs` (`npm run test:m0203:homologation` em modo visível `headless: false`, bloqueio ativo de Supabase não autorizado, validação de identidade, papéis `ADMIN`/`TREASURER` e UUID nas duas sessões antes de gravar, confirmação de interceptação e integridade completa na recuperação do S4), `scripts/prepare_dev_m0203_closure_qa.sql` (âncoras DEV + confirmação externa, saída via `NOTICE`/`pg_temp` sem `set_config` pós-rollback e status distinto `COMMITTED`/`DRY_RUN_ROLLED_BACK`/`FAILED_*`) e `scripts/cleanup_dev_m0203_closure_qa.sql` (`ROLLBACK` padrão; comprova ausência total dos vínculos da rodada inclusive `ADMIN`, diferencia `INITIAL_CLEANUP` de `IDEMPOTENT_RERUN` e preserva rascunhos preexistentes e trilha contábil).
+- **Estado:** **`M02` e `M02.03` permanecem `EM_EXECUCAO`** até a execução local autenticada dos 4 cenários no DEV (`szqkdekwhzxsoxorgvaz` / `corsys-tronco-digital-dev.corsys1.workers.dev`).
+
+---
+
 ## Etapa vigente — M02.03 (25/11/2026)
 
 Onboarding M01.04 homologado no DEV. Convite real, aceite do destinatário, vínculo ADMIN apenas na Loja fictícia, um recibo com hash conferido, um evento e replay SQL sem duplicação. Reabertura visual na sessão do destinatário não observada pelo agente. Revisão jurídica e publicação de documentos oficiais permanecem em gates próprios. Evidências no [PR #72](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/pull/72).

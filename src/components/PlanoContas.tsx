@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { AccountingPlans } from './AccountingPlans'
+import { AccountingRoleMappings } from './AccountingRoleMappings'
 import { FinancialStructure } from './FinancialStructure'
 import { TreasuryCatalogs } from './TreasuryCatalogs'
 
 export function PlanoContas({ client, organizationId }: { client: SupabaseClient; organizationId: string }) {
-  const [tab, setTab] = useState<'plano' | 'categorias' | 'contas' | 'pagamentos'>('plano')
+  const [tab, setTab] = useState<'plano' | 'papeis' | 'categorias' | 'contas' | 'pagamentos'>('plano')
 
   return (
     <div className="view active" id="view-plano-contas">
@@ -18,6 +19,7 @@ export function PlanoContas({ client, organizationId }: { client: SupabaseClient
 
       <div className="tab-buttons" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px' }}>
         <button type="button" className={tab === 'plano' ? 'primary' : 'secondary'} onClick={() => setTab('plano')}>Plano de Contas</button>
+        <button type="button" className={tab === 'papeis' ? 'primary' : 'secondary'} onClick={() => setTab('papeis')}>Papéis Contábeis (Anexo III)</button>
         <button type="button" className={tab === 'categorias' ? 'primary' : 'secondary'} onClick={() => setTab('categorias')}>Categorias e Regras</button>
         <button type="button" className={tab === 'contas' ? 'primary' : 'secondary'} onClick={() => setTab('contas')}>Contas e Fundos</button>
         <button type="button" className={tab === 'pagamentos' ? 'primary' : 'secondary'} onClick={() => setTab('pagamentos')}>Formas de Pagamento</button>
@@ -26,6 +28,12 @@ export function PlanoContas({ client, organizationId }: { client: SupabaseClient
       {tab === 'plano' && (
         <section className="panel">
           <AccountingPlans client={client} organizationId={organizationId} />
+        </section>
+      )}
+
+      {tab === 'papeis' && (
+        <section className="panel">
+          <AccountingRoleMappings client={client} organizationId={organizationId} />
         </section>
       )}
 

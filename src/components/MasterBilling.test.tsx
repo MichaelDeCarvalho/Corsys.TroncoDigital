@@ -391,3 +391,173 @@ describe('Master manual SaaS invoice issuance',()=>{
   expect(capturedKey2).toBe(capturedKey1)
  })
 })
+
+describe('Master billing M04 ledger operations, agreements, fiscal docs & summary', () => {
+ it('loads SaaS-segregated KPIs in Resumo SaaS mode via RPC', async () => {
+  const f = fixture();
+  (f.rpc as unknown as ReturnType<typeof vi.fn>).mockImplementation((fnName: string) => {
+   if (fnName === 'read_master_saas_financial_summary') {
+    return Promise.resolve({
+     data: {
+      organization_id: org,
+      active_invoices_count: 2,
+      total_billed: '305.00',
+      total_paid_allocated: '125.00',
+      total_open: '180.00',
+      total_overdue: '180.00',
+      voided_count: 1,
+      voided_amount: '125.00',
+      active_payments_count: 1,
+      total_received: '125.00',
+      total_unallocated_credit: '0.00',
+      as_of: '2026-11-26T10:00:00Z',
+     },
+     error: null,
+    })
+   }
+   return Promise.resolve({ data: null, error: null })
+  })
+  render(<MasterBilling client={f.client} tenants={tenants} initialOrganizationId={org} />)
+  await screen.findByText('DEV-0001')
+  fireEvent.click(screen.getByRole('button', { name: 'Resumo SaaS' }))
+  await screen.findByText('Resumo Financeiro SaaS (Loja selecionada)')
+  expect(screen.getByText(/Total faturado: R\$\s?305,00/)).toBeInTheDocument()
+  expect(screen.getAllByText(/R\$\s?180,00/).length).toBeGreaterThan(0)
+  expect(f.rpc).toHaveBeenCalledWith('read_master_saas_financial_summary', { p_organization_id: org })
+ })
+
+ it('registers SaaS payment, allocates credit, reverses allocation and supports idempotent Verificar envio retry', async () => {
+  const allocId = '99999999-9999-4999-8999-999999999999'
+  const rpc = vi.fn(async (fnName: string, _params?: Record<string, unknown>) => {
+   if (fnName === 'register_saas_payment_idempotent') return { data: payment.id, error: null }
+   if (fnName === 'allocate_saas_payment_idempotent') return { data: allocId, error: null }
+   if (fnName === 'reverse_saas_payment_allocation_idempotent') return { data: allocId, error: null }
+   return { data: allocId, error: null }
+  })
+  const from = vi.fn((table: string) => {
+   const chain = {
+    select: () => chain,
+    eq: () => chain,
+    ilike: () => chain,
+    order: () => chain,
+    range: () => chain,
+    limit: () => chain,
+    abortSignal: () => Promise.resolve({
+     data: table === 'v_saas_invoice_balances'
+      ? [inv]
+      : table === 'v_saas_payment_balances'
+       ? [payment]
+       : table === 'v_saas_active_payment_allocations'
+        ? [{ id: allocId, organization_id: org, payment_id: payment.id, invoice_id: invoice, amount: '60.00', created_at: '2026-10-09T12:00:00Z' }]
+        : [],
+     error: null,
+    }),
+   }
+   return chain
+  })
+
+  render(<MasterBilling client={{ from, rpc } as unknown as SupabaseClient} tenants={tenants} initialOrganizationId={org} />)
+  await screen.findByText('DEV-0001')
+  fireEvent.click(screen.getByRole('button', { name: 'Pagamentos SaaS' }))
+  await screen.findByText(/R\$\s?70,00/)
+
+  // Simulate uncertain error once during payment registration then retry via Verificar envio
+  rpc.mockRejectedValueOnce(new Error('network glitch'))
+  fireEvent.click(screen.getByRole('button', { name: '+ Registrar pagamento SaaS' }))
+  fireEvent.change(screen.getByLabelText('Valor recebido (R$)'), { target: { value: '125.00' } })
+  fireEvent.submit(screen.getByRole('form', { name: 'Registrar pagamento SaaS' }))
+  const retryBtn = await screen.findByRole('button', { name: 'Verificar envio' })
+  fireEvent.click(retryBtn)
+  await screen.findByText(/Registro de pagamento SaaS confirmado/)
+
+  const regCalls = rpc.mock.calls.filter(([n]) => n === 'register_saas_payment_idempotent')
+  expect(regCalls).toHaveLength(2)
+  expect(regCalls[1][1]).toEqual(regCalls[0][1])
+
+  // Open active allocations & reverse an allocation
+  fireEvent.click(screen.getByRole('button', { name: 'Gerenciar alocações ativas' }))
+  await screen.findByRole('button', { name: 'Estornar alocação' })
+  fireEvent.click(screen.getByRole('button', { name: 'Estornar alocação' }))
+  fireEvent.change(screen.getByLabelText(/Motivo do estorno da alocação/), { target: { value: 'Alocação em fatura incorreta' } })
+  fireEvent.submit(screen.getByRole('form', { name: 'Confirmar estorno de alocação' }))
+  await waitFor(() => {
+   expect(rpc).toHaveBeenCalledWith('reverse_saas_payment_allocation_idempotent', expect.objectContaining({
+    p_organization_id: org,
+    p_allocation_id: allocId,
+   }))
+  })
+ })
+
+ it('executes invoice adjustment, void, commercial agreement, external fiscal doc and loads Acordos e Fiscais', async () => {
+  const resUuid = '99999999-9999-4999-8999-999999999999'
+  const rpc = vi.fn(async (_fnName: string, _params?: Record<string, unknown>) => ({ data: resUuid, error: null }))
+  const from = vi.fn((table: string) => {
+   const chain = {
+    select: () => chain,
+    eq: () => chain,
+    ilike: () => chain,
+    order: () => chain,
+    range: () => chain,
+    limit: () => chain,
+    abortSignal: () => Promise.resolve({
+     data: table === 'v_saas_invoice_balances'
+      ? [inv]
+      : table === 'v_saas_invoice_charge_breakdown'
+       ? [breakdown]
+       : table === 'v_saas_payment_agreement_status'
+        ? [{ id: resUuid, organization_id: org, agreement_number: 'AC-SAAS-001', agreement_date: '2026-10-15', original_open_amount: '50.00', negotiated_amount: '50.00', down_payment: '0.00', installment_count: 1, charges_treatment: 'zero_charges', terms: 'Sem juros automáticos', derived_status: 'open', latest_event_at: null, created_at: '2026-10-15T10:00:00Z' }]
+        : table === 'saas_fiscal_documents'
+         ? [{ id: resUuid, organization_id: org, invoice_id: invoice, document_type: 'nfse', status: 'issued', document_number: 'NFSE-2026-99', external_reference: 'PREF-SP-99', issued_at: '2026-10-15T10:00:00Z', created_at: '2026-10-15T10:00:00Z' }]
+         : [],
+     error: null,
+    }),
+   }
+   return chain
+  })
+
+  render(<MasterBilling client={{ from, rpc } as unknown as SupabaseClient} tenants={tenants} initialOrganizationId={org} />)
+  await screen.findByText('DEV-0001')
+  fireEvent.click(screen.getByRole('button', { name: 'Ver composição' }))
+  await screen.findByText('Composição — DEV-0001')
+
+  // Apply discount adjustment
+  fireEvent.click(screen.getByRole('button', { name: 'Ajustar / Desconto' }))
+  fireEvent.change(screen.getByLabelText('Valor (R$)'), { target: { value: '25.00' } })
+  fireEvent.change(screen.getByLabelText('Justificativa'), { target: { value: 'Desconto comercial aprovado' } })
+  fireEvent.submit(screen.getByRole('form', { name: 'Ajustar fatura SaaS' }))
+  await screen.findByText(/Ajuste de fatura SaaS confirmad/)
+  expect(rpc).toHaveBeenCalledWith('apply_saas_invoice_adjustment_idempotent', expect.objectContaining({
+   p_invoice_id: invoice,
+   p_signed_amount: -25,
+  }))
+
+  // Re-open composition panel after revision reload & record commercial agreement
+  fireEvent.click(await screen.findByRole('button', { name: 'Ver composição' }))
+  await screen.findByText('Composição — DEV-0001')
+  fireEvent.click(screen.getByRole('button', { name: 'Registrar acordo' }))
+  fireEvent.change(screen.getByLabelText(/Parcelas/), { target: { value: '2026-11-20;50.00' } })
+  fireEvent.change(screen.getByLabelText(/Termos e justificativa/), { target: { value: 'Parcelamento em parcela única sem encargos' } })
+  fireEvent.submit(screen.getByRole('form', { name: 'Registrar acordo SaaS' }))
+  await screen.findByText(/Registro de acordo comercial SaaS confirmad/)
+  expect(rpc).toHaveBeenCalledWith('record_saas_payment_agreement_idempotent', expect.objectContaining({
+   p_invoice_ids: [invoice],
+  }))
+
+  // Re-open composition panel after revision reload & register external fiscal doc
+  fireEvent.click(await screen.findByRole('button', { name: 'Ver composição' }))
+  await screen.findByText('Composição — DEV-0001')
+  fireEvent.click(screen.getByRole('button', { name: 'Vincular doc. fiscal' }))
+  fireEvent.change(screen.getByLabelText('Número do documento'), { target: { value: 'NFSE-2026-99' } })
+  fireEvent.submit(screen.getByRole('form', { name: 'Vincular documento fiscal externo' }))
+  await screen.findByText(/Registro de documento fiscal SaaS confirmad/)
+  expect(rpc).toHaveBeenCalledWith('register_saas_fiscal_document_idempotent', expect.objectContaining({
+   p_invoice_id: invoice,
+   p_document_number: 'NFSE-2026-99',
+  }))
+
+  // Switch to Acordos e Fiscais view
+  fireEvent.click(screen.getByRole('button', { name: 'Acordos e Fiscais' }))
+  await screen.findByText('AC-SAAS-001')
+  expect(screen.getByText('NFSE-2026-99')).toBeInTheDocument()
+ })
+})

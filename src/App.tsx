@@ -132,6 +132,17 @@ export function ConnectedApp({ client }: { client: SupabaseClient }) {
       <OnboardingAcceptance key={auth.user.id + onboarding.runId} client={client} runId={onboarding.runId} />
     </div>
   }
+  if (auth.recoveryError) {
+    return (
+      <main className="session-screen">
+        <div className="panel">
+          <h1>Link de recuperação indisponível</h1>
+          <p role="alert">O link expirou, já foi utilizado ou não pôde ser validado. Solicite um novo e-mail.</p>
+          <a href={window.location.pathname}>Voltar ao acesso</a>
+        </div>
+      </main>
+    )
+  }
   if (auth.recovery) {
     if (auth.status === 'authenticated' && auth.user) {
       return (

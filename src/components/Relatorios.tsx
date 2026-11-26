@@ -8,8 +8,11 @@ import { loadAccountingCatalog, loadAccountingDetail, type Catalog, type Detail 
 import { formatDate, formatMoney, formatCompetence, statusLabels } from '../lib/finance-data'
 import { createReportWorkbook, downloadReport, printReport, type ReportSnapshot } from '../lib/report-export'
 import { DelinquencyReport } from './DelinquencyReport'
+import { AccountingDiary } from './AccountingDiary'
+import { AccountingLedger } from './AccountingLedger'
+import { DreGerencialPanel } from './DreGerencialPanel'
 
-type ReportTab = 'posicao' | 'recebimentos' | 'inadimplencia' | 'fechamento' | 'contabil'
+type ReportTab = 'posicao' | 'recebimentos' | 'inadimplencia' | 'fechamento' | 'diario' | 'razao' | 'contabil'
 
 /**
  * Escapes values for safe CSV download to prevent Formula Injection (CSV Injection).
@@ -626,6 +629,22 @@ function TenantReports({ client, organizationId }: { client: SupabaseClient; org
           </button>
           <button
             type="button"
+            className={activeTab === 'diario' ? 'primary' : 'secondary'}
+            aria-pressed={activeTab === 'diario'}
+            onClick={() => setActiveTab('diario')}
+          >
+            Diário Contábil
+          </button>
+          <button
+            type="button"
+            className={activeTab === 'razao' ? 'primary' : 'secondary'}
+            aria-pressed={activeTab === 'razao'}
+            onClick={() => setActiveTab('razao')}
+          >
+            Razão Contábil
+          </button>
+          <button
+            type="button"
             className={activeTab === 'contabil' ? 'primary' : 'secondary'}
             aria-pressed={activeTab === 'contabil'}
             onClick={() => setActiveTab('contabil')}
@@ -941,10 +960,28 @@ function TenantReports({ client, organizationId }: { client: SupabaseClient; org
                 )}
               </>
             )}
+
+            <div style={{ marginTop: '2rem' }}>
+              <DreGerencialPanel client={client} organizationId={organizationId} />
+            </div>
           </div>
         )}
 
-        {/* TAB 4: Exportação Contábil */}
+        {/* TAB 5: Diário Contábil */}
+        {activeTab === 'diario' && (
+          <div className="report-subview">
+            <AccountingDiary client={client} organizationId={organizationId} />
+          </div>
+        )}
+
+        {/* TAB 6: Razão Contábil */}
+        {activeTab === 'razao' && (
+          <div className="report-subview">
+            <AccountingLedger client={client} organizationId={organizationId} />
+          </div>
+        )}
+
+        {/* TAB 7: Exportação Contábil */}
         {activeTab === 'contabil' && (
           <div className="report-subview">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
@@ -1021,10 +1058,10 @@ function TenantReports({ client, organizationId }: { client: SupabaseClient; org
                 <div className="panel info-card" style={{ marginTop: '1.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                     <Info size={18} aria-hidden="true" />
-                    <strong>Diferenciação Modalidades de Exportação Contábil</strong>
+                    <strong>Livros Contábeis Gerenciais e Exportação Integral</strong>
                   </div>
                   <p className="subtle" style={{ fontSize: '0.85rem', lineHeight: '1.4' }}>
-                    O arquivo CSV acima exporta o <strong>Plano de Contas (Estrutura do Cadastro)</strong>. A exportação do <strong>Diário e Razão com Lançamentos Contábeis Classificados</strong> necessita do microserviço estendido de integração contábil no servidor.
+                    O arquivo acima exporta a estrutura do <strong>Plano de Contas</strong>. Para exportar integralmente os lançamentos em partidas dobradas do <strong>Diário Contábil</strong>, o saldo e movimentação do <strong>Razão Contábil</strong> ou a <strong>DRE Gerencial estruturada (B01)</strong> em PDF ou XLSX sem truncamento, utilize as abas dedicadas nesta tela (configurando os papéis do Anexo III em Plano de Contas).
                   </p>
                 </div>
               </>

@@ -1,3 +1,15 @@
+## M04 — Operação Master SaaS (`ADR-0054`, 26/11/2026)
+
+- **Banco (migration aditiva preparada, não aplicada remotamente):** `supabase/migrations/20261126120000_v35_m04_master_saas_operations.sql` adiciona `private.tenant_write_allowed` / `private.tenant_active_seat_count` / `private.tenant_seat_limit`, enforcement `C07` em `assign_tenant_user_role` e `accept_onboarding_invite`, ciclo comercial/inadimplência/suspensão manual/D01 (`confirm_saas_subscription_hiring_idempotent`, `schedule_saas_plan_change_idempotent`, `apply_scheduled_saas_plan_change_idempotent`, `mark_saas_subscription_past_due_idempotent`, `suspend_saas_subscription_manual_idempotent`, `reactivate_saas_subscription_idempotent`, `cancel_saas_subscription_idempotent`), ledger manual SaaS (`register_saas_payment_idempotent`, `allocate_saas_payment_idempotent`, `reverse_saas_payment_allocation_idempotent`, `reverse_saas_payment_idempotent`, `void_saas_invoice_idempotent`, `apply_saas_invoice_adjustment_idempotent`, `record_saas_payment_agreement_idempotent`, `register_saas_fiscal_document_idempotent`, `read_master_saas_financial_summary`) e suporte/triagem/aviso (`add_master_support_internal_note_idempotent`, `assign_master_support_ticket_idempotent`, `create_saas_internal_ticket_idempotent`, `list_platform_support_staff`, `read_tenant_active_support_session`) + 7 status em `search_platform_master_tenants`.
+- **Frontend & CI:** `src/lib/master-subscriptions.ts`, `src/lib/support-sla.ts`, `MasterSubscriptionLifecyclePanel.tsx`, modelos R$125/R$180 em `MasterPlanLifecycle.tsx`, ledger/acordos/`Resumo SaaS` em `MasterBilling.tsx`, SLA/triagem/notas internas em `MasterSupportQueue.tsx`, resumo de Jobs em `MasterOperations.tsx`, aviso `C02` em `OnboardingAcceptance.tsx`, assentos sob demanda em `Cadastros.tsx`, status comercial/D01 em `Configuracoes.tsx` e banners em `Workspace.tsx`; gate `scripts/check_master_saas_m04_pg.py` integrado em `.github/workflows/foundation-checks.yml`.
+
+## M03 — Livros Contábeis Gerenciais, Papéis Anexo III e DRE Gerencial B01 (`ADR-0053`, 26/11/2026)
+
+- **Banco (migration aditiva preparada, não aplicada remotamente):** `supabase/migrations/20261126000000_v35_m03_accounting_books_and_dre.sql` adiciona `public.accounting_plan_role_mappings`, `public.set_accounting_plan_role_mapping_idempotent`, a projeção `private.tenant_accounting_journal(uuid)` e as RPCs `read_tenant_accounting_diary_summary`, `read_tenant_accounting_diary`, `read_tenant_accounting_ledger` e `read_tenant_dre_gerencial` (`reports.read`), com fail-closed (`integral_ok = false`) para eventos sem mapeamento ou registros legados `non-posting`.
+- **Frontend e exportação integral:** `src/lib/accounting-books.ts`, `src/lib/dre-report.ts` e `src/lib/report-export.ts` validam centavos com `BigInt`, completude de paginação, continuidade de saldo `D`/`C` e aviso não fiscal obrigatório antes de habilitar XLSX multi-aba ou impressão/PDF (`AccountingRoleMappings`, `AccountingDiary`, `AccountingLedger`, `DreGerencialPanel`).
+
+---
+
 ## M01.04 — andamento vigente (25/11/2026)
 
 Fixture não contratual preparada no DEV e Loja fictícia provisionada com Master/MFA real. Convite ainda queued; nenhum envio. Lacuna da ação de envio corrigida em OnboardingInviteSender, com CORS restrito e bloqueio de repetição incerta; evidências, manifesto/expiração da fixture e gates de CI/deploy/envio em SESSION_HANDOFF.md. M01 segue EM_EXECUCAO. Sem migrations adicionais, mudanças em clientes existentes ou PROD. ADR-0052 registra o recorte.
@@ -518,3 +530,23 @@ M04.03 começa em PR separado: loadPlatformJobs limita aos 25 mais recentes sem 
 M04.03-B sobre main fefd376. A política anterior delega a is_platform_staff, cujo código versionado já verifica AAL2; a nova política exige o claim explicitamente. SELECT autenticado passa a usar lista de colunas diagnósticas, excluindo payload, idempotency_key e correlation_id. O histórico A mantém filtros e cursor; removido o leitor antigo sem consumidores. O PR preserva as permissões de service_role e as RPCs internas de onboarding. Gate PostgreSQL descartável com claims simuladas e testes de cursor; JWT real no DEV pendente.
 
 M04.03-C proposta: expor trilha cronológica de eventos do chamado no detalhe Master. Hoje a fila mostra tempos de primeira resposta/resolução e conversa, mas a interface não consulta saas_support_ticket_events. Reutilizar eventos existentes com escopo do chamado, autorização e campos sanitizados. Metas de SLA dependem de política explícita.
+
+---
+
+## M05 — Privacidade, Portabilidade, Retenção, Backup/Restore, Recuperação e Incidentes (ADR-0055)
+
+- **Migration:** `supabase/migrations/20261126180000_v35_m05_privacy_retention_recovery.sql` (10 tabelas novas com RLS fail-closed + 19 RPCs `SECURITY DEFINER` com `set search_path = ''`).
+- **Frontend Loja (`Configuracoes.tsx` — Seção 5):** `src/components/TenantPrivacyPortabilityPanel.tsx` e `src/lib/privacy-portability.ts` (Entregas A, B e C — D01 a D03).
+- **Frontend Master (`MasterOperations.tsx` — Aba `Privacidade e Segurança`):** `src/components/MasterPrivacyOpsPanel.tsx` e `src/lib/master-operations-m05.ts` (Entregas D, E e F — D04 a D06).
+- **Recuperação de Acesso (`src/auth/useAuth.ts`, `src/App.tsx`, `src/auth/PasswordRecovery.tsx`):** detecção fail-closed de links de recuperação expirados/reutilizados (`otp_expired` / `access_denied`) e diretriz de dupla evidência Master sem envio de credenciais/OTP.
+- **Gates e Scripts de Verificação:** `scripts/check_privacy_recovery_pg.py`, `scripts/v35_m05_backup_manifest.py`, `scripts/v35_m05_single_tenant_recovery_check.sql`, `scripts/run_v35_m05_backup_restore_trial.sh` e job `m05_privacy_recovery` em `.github/workflows/foundation-checks.yml`.
+
+---
+
+## Consolidação M06 — Integração Transversal M02.03 + M03 + M04 + M05
+
+- **Migrations consolidadas em ordem:**
+  - `20261126000000_v35_m03_accounting_books_and_dre.sql` (M03 — Anexo III, Diário, Razão e DRE Gerencial B01–B05)
+  - `20261126120000_v35_m04_master_saas_operations.sql` (M04 — Ciclo Comercial, Assentos C07, Ledger SaaS C04, Suspensão Manual C03 corrigida em `private.tenant_write_allowed` e Suporte/SLA C06)
+  - `20261126180000_v35_m05_privacy_retention_recovery.sql` (M05 — Portabilidade Integral D02 com 41 datasets incluindo dependências M02/M03/M04 e distinção `binary_files_included = false`, Direitos LGPD D03, Retenção D01 de 90 dias unificada com M04, Backup/Restore Seletivo D04, Recuperação Privilegiada D05 e Incidentes D06)
+- **Workflow CI consolidado (`.github/workflows/foundation-checks.yml`):** preserva integralmente todos os gates PostgreSQL 17 descartáveis (`onboarding_invite`, `cash_flow`, `commercial_concurrency`, `financial_integrity`, `platform_identity`, `accounting_books_gate`, `master_saas_m04_gate` e `m05_privacy_recovery`).

@@ -86,6 +86,7 @@ export function OnboardingAcceptance({ client, runId }: { client: SupabaseClient
       {state.kind === 'ready' && <>
         <p>Versão {state.terms.version}</p>
         <p className="onboarding-hash">SHA-256 <code>{state.terms.document_hash}</code></p>
+        <p className="subtle" aria-label="Condição comercial do convite">Avaliação (trial) até o fim do mês corrente; contratação paga expressa inicia a cobrança no dia 1 do mês seguinte.</p>
         <article className="onboarding-document" aria-label="Documento oficial">{state.terms.document_text}</article>
         <form onSubmit={event => { event.preventDefault(); void accept() }}>
           <label><input type="checkbox" checked={checked} disabled={saving}

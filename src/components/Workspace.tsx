@@ -21,6 +21,8 @@ import { Relatorios } from './Relatorios'
 import { DailyCashFlow } from './DailyCashFlow'
 import { Chamados } from './Chamados'
 import { loadOrganizations, loadTenantData, openTicket, type Organization, type TenantData } from '../lib/tenant-data'
+import { readTenantCommercialStatus, type TenantCommercialStatus } from '../lib/master-subscriptions'
+import { readTenantActiveSupportSession, type TenantActiveSupportSessionNotice } from '../lib/master-support-sessions'
 
 const statuses: Record<string, string> = { active: 'Ativo', inactive: 'Inativo', new: 'Novo', triage: 'Em triagem', working: 'Em atendimento', waiting_client: 'Aguardando retorno', resolved: 'Resolvido', closed: 'Fechado' }
 
@@ -87,6 +89,8 @@ function TenantPanel({ client, organization, page, financeSection, onNavigate }:
   const [memberSaved, setMemberSaved] = useState(false)
   const [dashboardMode, setDashboardMode] = useState<'consolidado' | 'movimentos' | 'saldo'>('consolidado')
   const [chartExpanded, setChartExpanded] = useState(false)
+  const [commercialNotice, setCommercialNotice] = useState<TenantCommercialStatus | null>(null)
+  const [supportSessionNotice, setSupportSessionNotice] = useState<TenantActiveSupportSessionNotice | null>(null)
   useEffect(() => {
     const controller = new AbortController()
     let active = true
@@ -94,10 +98,69 @@ function TenantPanel({ client, organization, page, financeSection, onNavigate }:
     loadTenantData(client, organization.id, controller.signal).then(result => { if (active) setData(result) }).catch(() => { if (active) setError('Não foi possível carregar os dados desta Loja. Tente novamente ou solicite a revisão do seu acesso.') }).finally(() => { if (active) setLoading(false) })
     return () => { active = false; controller.abort() }
   }, [client, organization.id, revision])
+  useEffect(() => {
+    let active = true
+    setCommercialNotice(null)
+    setSupportSessionNotice(null)
+    void Promise.allSettled([
+      readTenantCommercialStatus(client, organization.id),
+      readTenantActiveSupportSession(client, organization.id),
+    ]).then(([commRes, suppRes]) => {
+      if (!active) return
+      setCommercialNotice(commRes.status === 'fulfilled' ? commRes.value : null)
+      setSupportSessionNotice(suppRes.status === 'fulfilled' ? suppRes.value : null)
+    })
+    return () => { active = false }
+  }, [client, organization.id, revision])
   if (loading) return <p role="status" className="message">Carregando dados da Loja…</p>
   if (error || !data) return <div className="panel"><p role="alert" className="message error">{error}</p><button className="secondary" onClick={() => setRevision(value => value + 1)}>Tentar novamente</button></div>
   const open = data.tickets.filter(ticket => !['resolved', 'closed'].includes(ticket.status))
   return <>
+    {supportSessionNotice?.active && (
+      <div className="panel" role="status" aria-label="Aviso de sessão de suporte ativa" style={{ marginBottom: '12px', borderLeft: '4px solid #2563eb' }}>
+        <strong>Sessão de suporte da plataforma ativa (somente leitura)</strong>
+        <p className="subtle" style={{ margin: '4px 0 0' }}>
+          Acesso temporário auditado sem permissão de gravação financeira{supportSessionNotice.expires_at ? ` até ${new Date(supportSessionNotice.expires_at).toLocaleTimeString('pt-BR')}` : ''}.
+        </p>
+      </div>
+    )}
+    {commercialNotice && !commercialNotice.write_allowed && (
+      <div className="panel" role="alert" aria-label="Aviso de assinatura suspensa" style={{ marginBottom: '12px', borderLeft: '4px solid #dc2626' }}>
+        <strong>Assinatura suspensa — modo somente leitura</strong>
+        <p className="subtle" style={{ margin: '4px 0 0' }}>
+          Escritas operacionais e financeiras estão bloqueadas. Consulta de dados, exportações e abertura de Chamados continuam liberadas.
+        </p>
+      </div>
+    )}
+    {commercialNotice && commercialNotice.write_allowed && (commercialNotice.commercial_status === 'past_due' || commercialNotice.subscription_status === 'past_due') && (
+      <div className="panel" role="status" aria-label="Aviso de pendência comercial" style={{ marginBottom: '12px', borderLeft: '4px solid #d97706' }}>
+        <strong>
+          {commercialNotice.grace_until && new Date(commercialNotice.grace_until).getTime() <= Date.now()
+            ? 'Fatura SaaS em atraso — tolerância encerrada (sujeita a suspensão manual C03)'
+            : 'Fatura SaaS em atraso (período de tolerância de 7 dias corridos)'}
+        </strong>
+        <p className="subtle" style={{ margin: '4px 0 0' }}>
+          {commercialNotice.grace_until
+            ? new Date(commercialNotice.grace_until).getTime() <= Date.now()
+              ? `Prazo de tolerância encerrado em ${new Date(commercialNotice.grace_until).toLocaleDateString('pt-BR')}. Escritas permanecem ativas até confirmação e suspensão manual pela operação Master. `
+              : `Prazo de tolerância até ${new Date(commercialNotice.grace_until).toLocaleDateString('pt-BR')}. `
+            : ''}
+          Regularize ou negocie acordo com a plataforma antes da suspensão manual.
+        </p>
+      </div>
+    )}
+    {commercialNotice && (commercialNotice.commercial_status === 'cancel_scheduled' || commercialNotice.commercial_status === 'canceled') && (
+      <div className="panel" role="status" aria-label="Aviso de cancelamento e retenção D01" style={{ marginBottom: '12px', borderLeft: '4px solid #64748b' }}>
+        <strong>
+          {commercialNotice.commercial_status === 'cancel_scheduled' ? 'Cancelamento agendado para o fim do mês' : 'Assinatura cancelada — janela de exportação (D01)'}
+        </strong>
+        <p className="subtle" style={{ margin: '4px 0 0' }}>
+          {commercialNotice.export_window_until
+            ? `Dados preservados para leitura e exportação por 90 dias, até ${new Date(commercialNotice.export_window_until).toLocaleDateString('pt-BR')}.`
+            : 'Leitura e exportações permanecem disponíveis conforme política de retenção de 90 dias.'}
+        </p>
+      </div>
+    )}
     {page === 'structure' && <PlanoContas key={organization.id} client={client} organizationId={organization.id} />}
     {page === 'dre-config' && <DreConfig key={organization.id} client={client} organizationId={organization.id} onNavigate={onNavigate} />}
     {page === 'contas-pagar' && <ContasPagar key={organization.id} client={client} organizationId={organization.id} />}

@@ -97,6 +97,53 @@ export function MasterPlanLifecycle({
  const [success,setSuccess]=useState('')
 
  const guard=useRef(false),mounted=useRef(false),command=useRef<Command|null>(null)
+ const newCodeRef=useRef<HTMLInputElement|null>(null)
+ const newNameRef=useRef<HTMLInputElement|null>(null)
+ const newPriceRef=useRef<HTMLInputElement|null>(null)
+ const newIntervalRef=useRef<HTMLSelectElement|null>(null)
+ const newTrialRef=useRef<HTMLInputElement|null>(null)
+ const newGraceRef=useRef<HTMLInputElement|null>(null)
+ const newFromRef=useRef<HTMLInputElement|null>(null)
+ const newMaxUsersRef=useRef<HTMLInputElement|null>(null)
+ const newEntitlementsRef=useRef<HTMLTextAreaElement|null>(null)
+
+ function applyCommercialTemplate(preset:{code:string;name:string;price:string;maxUsers:number}){
+  if(newCodeRef.current)newCodeRef.current.value=preset.code
+  if(newNameRef.current)newNameRef.current.value=preset.name
+  if(newPriceRef.current)newPriceRef.current.value=preset.price
+  if(newIntervalRef.current)newIntervalRef.current.value='monthly'
+  if(newTrialRef.current)newTrialRef.current.value='14'
+  if(newGraceRef.current)newGraceRef.current.value='7'
+  if(newMaxUsersRef.current)newMaxUsersRef.current.value=String(preset.maxUsers)
+  if(newEntitlementsRef.current){
+   newEntitlementsRef.current.value=JSON.stringify({max_admin_users:preset.maxUsers,lodge_modules:'full'},null,2)
+  }
+  if(newFromRef.current&&!newFromRef.current.value){
+   const d=new Date()
+   newFromRef.current.value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`
+  }
+ }
+
+ function syncMaxUsersIntoEntitlements(rawVal:string){
+  if(!newEntitlementsRef.current)return
+  try{
+   const current=JSON.parse(newEntitlementsRef.current.value.trim()||'{}')
+   if(current&&typeof current==='object'&&!Array.isArray(current)){
+    const trimmed=rawVal.trim()
+    if(!trimmed){
+     delete (current as Record<string,unknown>).max_admin_users
+    }else{
+     const n=Number(trimmed)
+     if(Number.isSafeInteger(n)&&n>=1){
+      ;(current as Record<string,unknown>).max_admin_users=n
+     }
+    }
+    newEntitlementsRef.current.value=JSON.stringify(current,null,2)
+   }
+  }catch{
+   // leave user JSON untouched if malformed
+  }
+ }
 
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false}},[])
 
@@ -384,29 +431,44 @@ export function MasterPlanLifecycle({
    <form aria-label="Criar rascunho SaaS" onSubmit={create}>
     <fieldset disabled={locked}>
      <legend>Novo plano em rascunho</legend>
+     <div className="finance-sections" role="group" aria-label="Modelos comerciais V35 (apenas rascunho)" style={{marginBottom:'0.75rem'}}>
+      <button type="button" className="secondary" onClick={()=>applyCommercialTemplate({
+       code:'corsys_essencial_125',name:'Plano Essencial (3 usuários)',price:'125,00',maxUsers:3
+      })}>
+       Aplicar modelo R$ 125 · 3 usuários
+      </button>
+      <button type="button" className="secondary" onClick={()=>applyCommercialTemplate({
+       code:'corsys_profissional_180',name:'Plano Profissional (10 usuários)',price:'180,00',maxUsers:10
+      })}>
+       Aplicar modelo R$ 180 · 10 usuários
+      </button>
+     </div>
      <div className="member-form-grid">
       <div><label htmlFor="master-plan-code">Código interno</label>
-       <input id="master-plan-code" name="code" placeholder="essencial" maxLength={41} required/></div>
+       <input ref={newCodeRef} id="master-plan-code" name="code" placeholder="essencial" maxLength={41} required/></div>
       <div><label htmlFor="master-plan-name">Nome comercial</label>
-       <input id="master-plan-name" name="name" maxLength={120} required/></div>
+       <input ref={newNameRef} id="master-plan-name" name="name" maxLength={120} required/></div>
       <div><label htmlFor="master-plan-price">Preço (R$)</label>
-       <input id="master-plan-price" name="price" required inputMode="decimal" placeholder="125,00"/></div>
+       <input ref={newPriceRef} id="master-plan-price" name="price" required inputMode="decimal" placeholder="125,00"/></div>
       <div><label htmlFor="master-plan-interval">Periodicidade</label>
-       <select id="master-plan-interval" name="interval">
+       <select ref={newIntervalRef} id="master-plan-interval" name="interval">
         <option value="monthly">Mensal</option><option value="yearly">Anual</option>
         <option value="custom">Personalizada</option>
        </select></div>
       <div><label htmlFor="master-plan-trial">Dias de teste</label>
-       <input id="master-plan-trial" name="trial" type="number" min={0} max={365} defaultValue={0} required/></div>
+       <input ref={newTrialRef} id="master-plan-trial" name="trial" type="number" min={0} max={365} defaultValue={0} required/></div>
       <div><label htmlFor="master-plan-grace">Dias de tolerância</label>
-       <input id="master-plan-grace" name="grace" type="number" min={0} max={365} defaultValue={7} required/></div>
+       <input ref={newGraceRef} id="master-plan-grace" name="grace" type="number" min={0} max={365} defaultValue={7} required/></div>
       <div><label htmlFor="master-plan-from">Competência inicial</label>
-       <input id="master-plan-from" name="from" type="month" required/></div>
+       <input ref={newFromRef} id="master-plan-from" name="from" type="month" required/></div>
+      <div><label htmlFor="master-plan-max-users">Limite de usuários ativos (max_admin_users)</label>
+       <input ref={newMaxUsersRef} id="master-plan-max-users" type="number" min={1} max={1000} placeholder="Opcional (3 ou 10)"
+        onChange={e=>syncMaxUsersIntoEntitlements(e.target.value)}/></div>
      </div>
      <label htmlFor="master-plan-entitlements">Recursos do plano (JSON)</label>
-     <textarea id="master-plan-entitlements" name="entitlements" defaultValue="{}"
+     <textarea ref={newEntitlementsRef} id="master-plan-entitlements" name="entitlements" defaultValue="{}"
       rows={3} required aria-describedby="master-plan-entitlements-hint"/>
-     <p id="master-plan-entitlements-hint" className="subtle">Objeto JSON de parâmetros contratados. Use chaves definidas pelo contrato V35; um objeto vazio não atribui permissões automaticamente.</p>
+     <p id="master-plan-entitlements-hint" className="subtle">Objeto JSON de parâmetros contratados. Use chaves definidas pelo contrato V35 (como max_admin_users); todos os módulos da Loja são idênticos entre planos (C01).</p>
      <button className="primary" disabled={locked}>Criar somente rascunho</button>
     </fieldset>
    </form>

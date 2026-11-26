@@ -434,3 +434,46 @@ describe('Cadastros Component (Cadastros.tsx)', () => {
     expect(revokeButton).toHaveFocus()
   })
 })
+
+describe('Cadastros M04 seat usage & limit handling', () => {
+  it('loads seat usage on explicit check and shows localized message when plan seat limit is reached', async () => {
+    const base = createMockSupabaseClient()
+    const rpc = vi.fn(async (name: string) => {
+      if (name === 'read_tenant_seat_usage') {
+        return {
+          data: {
+            organization_id: ORG_ID,
+            active_users: 3,
+            max_admin_users: 3,
+            seats_remaining: 0,
+            over_limit: false,
+            plan_id: 'p1',
+            plan_version_id: 'v1',
+            plan_name: 'Corsys Essencial',
+            plan_code: 'corsys_essencial_125',
+            subscription_status: 'active',
+          },
+          error: null,
+        }
+      }
+      if (name === 'assign_tenant_user_role') {
+        return { data: null, error: { code: '55000', message: 'plan seat limit reached: max_admin_users=3' } }
+      }
+      return { data: USER_ID, error: null }
+    })
+    const client = { ...base, rpc } as unknown as SupabaseClient
+
+    render(<Cadastros members={sampleMembers} client={client} organizationId={ORG_ID} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Perfis e Permissões' }))
+    await screen.findByText('Perfis e Permissões da Conta (RBAC)')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Consultar assentos do plano' }))
+    expect(await screen.findByText(/3 \/ 3 — Plano Corsys Essencial/)).toBeInTheDocument()
+
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: TREASURER_ROLE_ID } })
+    fireEvent.click(screen.getByRole('button', { name: 'Atribuir' }))
+    fireEvent.change(await screen.findByLabelText(/Justificativa da alteração/), { target: { value: 'Teste limite plano' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar Alteração' }))
+    await screen.findByText(/Limite de usuários ativos do plano contratado atingido/)
+  })
+})

@@ -1,7 +1,13 @@
 import {useEffect,useRef,useState,useMemo,Fragment,type FormEvent} from 'react'
 import type {SupabaseClient} from '@supabase/supabase-js'
-import {loadMasterTickets,loadMasterTicketMessages,loadMasterTicketEvents,type MasterTicket,
- type MasterTicketMessage,type MasterTicketEvent} from '../lib/master-support'
+import {
+ loadMasterTickets,loadMasterTicketMessages,loadMasterTicketEvents,
+ loadPlatformSupportStaff,addMasterSupportInternalNote,assignMasterSupportTicket,createMasterInternalTicket,
+ type MasterTicket,type MasterTicketMessage,type MasterTicketEvent,type PlatformSupportStaff
+} from '../lib/master-support'
+import {evaluateTicketBusinessSla} from '../lib/support-sla'
+
+const DETERMINISTIC_CODES=new Set(['22023','23503','23505','42501','28000','55000'])
 
 export function MasterSupportQueue({client,initialOrganizationId=''}:{client:SupabaseClient;initialOrganizationId?:string}){
  const masterStorageKey = 'v35_master_ticket_search'
@@ -17,6 +23,10 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
    return ''
   }
  })
+ const [scopeFilter,setScopeFilter]=useState<'all'|'tenant'|'internal'>('all')
+ const [statusFilter,setStatusFilter]=useState('all')
+ const [priorityFilter,setPriorityFilter]=useState('all')
+
  const [selected,setSelected]=useState<MasterTicket|null>(null)
  const [expandedId,setExpandedId]=useState<string|null>(null)
  const [messages,setMessages]=useState<MasterTicketMessage[]|null>(null)
@@ -29,6 +39,38 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
  const [pending,setPending]=useState(false),[uncertain,setUncertain]=useState(false)
  const command=useRef<{args:Record<string,unknown>}|null>(null),guard=useRef(false),mounted=useRef(false)
  const detailButtonRefs=useRef<Record<string,HTMLButtonElement|null>>({})
+
+ // M04 internal notes, triage/assignment & internal ticket states
+ const [noteText,setNoteText]=useState('')
+ const [noteNextStatus,setNoteNextStatus]=useState('')
+ const [notePending,setNotePending]=useState(false)
+ const [noteUncertain,setNoteUncertain]=useState(false)
+ const [noteError,setNoteError]=useState('')
+ const [noteSuccess,setNoteSuccess]=useState(false)
+ const noteCmdRef=useRef<{ticketId:string;note:string;nextStatus:string|null;key:string}|null>(null)
+
+ const [showTriage,setShowTriage]=useState(false)
+ const [staffList,setStaffList]=useState<PlatformSupportStaff[]|null>(null)
+ const [staffError,setStaffError]=useState('')
+ const [triageStaffId,setTriageStaffId]=useState('')
+ const [triagePriority,setTriagePriority]=useState<'low'|'normal'|'high'|'urgent'>('normal')
+ const [triagePending,setTriagePending]=useState(false)
+ const [triageUncertain,setTriageUncertain]=useState(false)
+ const [triageError,setTriageError]=useState('')
+ const [triageSuccess,setTriageSuccess]=useState(false)
+ const triageCmdRef=useRef<{ticketId:string;staffId:string|null;priority:'low'|'normal'|'high'|'urgent'|null;key:string}|null>(null)
+
+ const [showInternalForm,setShowInternalForm]=useState(false)
+ const [intOrgId,setIntOrgId]=useState('')
+ const [intSubject,setIntSubject]=useState('')
+ const [intCategory,setIntCategory]=useState('operations')
+ const [intPriority,setIntPriority]=useState<'low'|'normal'|'high'|'urgent'>('normal')
+ const [intMessage,setIntMessage]=useState('')
+ const [intPending,setIntPending]=useState(false)
+ const [intUncertain,setIntUncertain]=useState(false)
+ const [intError,setIntError]=useState('')
+ const [intSuccess,setIntSuccess]=useState('')
+ const intCmdRef=useRef<{relatedOrg:string|null;subject:string;category:string;priority:'low'|'normal'|'high'|'urgent';message:string;key:string}|null>(null)
 
  useEffect(()=>{
   try{
@@ -43,10 +85,13 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
  const filteredRows=useMemo(()=>{
   if(!tickets?.rows)return []
   const term=search.trim().toLowerCase()
-  if(!term)return tickets.rows
   const cleanNum=term.replace(/^#/,'')
   const isNum=/^\d+$/.test(cleanNum)
   return tickets.rows.filter(ticket=>{
+   if(scopeFilter!=='all'&&ticket.ticket_scope!==scopeFilter)return false
+   if(statusFilter!=='all'&&ticket.status!==statusFilter)return false
+   if(priorityFilter!=='all'&&ticket.priority.toLowerCase()!==priorityFilter)return false
+   if(!term)return true
    if(isNum&&String(ticket.ticket_seq)===cleanNum)return true
    if(ticket.id.toLowerCase().includes(term))return true
    if(`#${ticket.ticket_seq}`.toLowerCase().includes(term))return true
@@ -58,7 +103,7 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
    if(ticket.ticket_scope&&ticket.ticket_scope.toLowerCase().includes(term))return true
    return false
   })
- },[tickets?.rows,search])
+ },[tickets?.rows,search,scopeFilter,statusFilter,priorityFilter])
 
  useEffect(()=>{
   if(expandedId&&tickets?.rows&&!filteredRows.some(ticket=>ticket.id===expandedId)){
@@ -70,6 +115,7 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
  useEffect(()=>{
   let live=true;const controller=new AbortController()
   setTickets(null);setTicketError('');setSelected(null);setExpandedId(null);setMessages(null);setEvents(null)
+  setShowTriage(false);setStaffList(null);setStaffError('')
   loadMasterTickets(client,page,controller.signal,organizationFilter)
    .then(t=>{if(live)setTickets(t)})
    .catch(()=>{if(live)setTicketError('Fila de suporte indisponível ou incompleta para esta autenticação.')})
@@ -88,6 +134,7 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
   }
   return()=>{live=false;controller.abort()}
  },[client,selected,threadRevision])
+
  async function run(next:{args:Record<string,unknown>}){
   if(guard.current)return
   command.current=command.current??next
@@ -126,6 +173,151 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
    p_idempotency_key:crypto.randomUUID(),
   }})
  }
+
+ async function runInternalNote(retry=false){
+  if(!selected||notePending)return
+  if(!retry){
+   const clean=noteText.trim()
+   if(!clean)return
+   noteCmdRef.current={ticketId:selected.id,note:clean,nextStatus:noteNextStatus||null,key:crypto.randomUUID()}
+  }
+  const cmd=noteCmdRef.current
+  if(!cmd)return
+  setNotePending(true);setNoteError('');setNoteSuccess(false)
+  try{
+   await addMasterSupportInternalNote(client,{
+    ticket_id:cmd.ticketId,
+    note:cmd.note,
+    next_status:cmd.nextStatus,
+    idempotency_key:cmd.key,
+   })
+   if(mounted.current){
+    noteCmdRef.current=null
+    setNoteUncertain(false)
+    setNoteSuccess(true)
+    setNoteText('')
+    setNoteNextStatus('')
+    setThreadRevision(v=>v+1)
+   }
+  }catch(e){
+   if(!mounted.current)return
+   const code=(e as {code?:string}|null)?.code
+   if(code&&DETERMINISTIC_CODES.has(code)){
+    noteCmdRef.current=null;setNoteUncertain(false)
+    setNoteError('Nota interna rejeitada pelo servidor. Revise os dados e permissões.')
+   }else{
+    setNoteUncertain(true)
+    setNoteError('Nota interna não confirmada. Use Verificar envio para reenviar com a mesma chave.')
+   }
+  }finally{if(mounted.current)setNotePending(false)}
+ }
+
+ async function openTriage(){
+  if(!selected)return
+  const next=!showTriage
+  setShowTriage(next)
+  setTriageError('');setTriageSuccess(false)
+  setTriagePriority((['low','normal','high','urgent'].includes(selected.priority)?selected.priority:'normal') as 'low'|'normal'|'high'|'urgent')
+  if(next&&!staffList){
+   setStaffError('')
+   try{
+    const list=await loadPlatformSupportStaff(client)
+    if(mounted.current)setStaffList(list)
+   }catch{
+    if(mounted.current)setStaffError('Não foi possível listar operadores autorizados da plataforma.')
+   }
+  }
+ }
+
+ async function runTriageSave(retry=false){
+  if(!selected||triagePending)return
+  if(!retry){
+   triageCmdRef.current={
+    ticketId:selected.id,
+    staffId:triageStaffId||null,
+    priority:triagePriority,
+    key:crypto.randomUUID(),
+   }
+  }
+  const cmd=triageCmdRef.current
+  if(!cmd)return
+  setTriagePending(true);setTriageError('');setTriageSuccess(false)
+  try{
+   await assignMasterSupportTicket(client,{
+    ticket_id:cmd.ticketId,
+    assigned_staff_user_id:cmd.staffId,
+    priority:cmd.priority,
+    idempotency_key:cmd.key,
+   })
+   if(mounted.current){
+    triageCmdRef.current=null
+    setTriageUncertain(false)
+    setTriageSuccess(true)
+    setRevision(v=>v+1)
+   }
+  }catch(e){
+   if(!mounted.current)return
+   const code=(e as {code?:string}|null)?.code
+   if(code&&DETERMINISTIC_CODES.has(code)){
+    triageCmdRef.current=null;setTriageUncertain(false)
+    setTriageError('Não foi possível salvar a triagem/atribuição.')
+   }else{
+    setTriageUncertain(true)
+    setTriageError('Triagem não confirmada. Use Verificar envio.')
+   }
+  }finally{if(mounted.current)setTriagePending(false)}
+ }
+
+ async function runCreateInternal(retry=false){
+  if(intPending)return
+  if(!retry){
+   const cleanSub=intSubject.trim()
+   const cleanMsg=intMessage.trim()
+   if(cleanSub.length<3||cleanMsg.length<3){
+    setIntError('Assunto e descrição com mínimo de 3 caracteres.')
+    return
+   }
+   intCmdRef.current={
+    relatedOrg:intOrgId.trim()||null,
+    subject:cleanSub,
+    category:intCategory,
+    priority:intPriority,
+    message:cleanMsg,
+    key:crypto.randomUUID(),
+   }
+  }
+  const cmd=intCmdRef.current
+  if(!cmd)return
+  setIntPending(true);setIntError('');setIntSuccess('')
+  try{
+   const id=await createMasterInternalTicket(client,{
+    related_organization_id:cmd.relatedOrg,
+    subject:cmd.subject,
+    category:cmd.category,
+    priority:cmd.priority,
+    message:cmd.message,
+    idempotency_key:cmd.key,
+   })
+   if(mounted.current){
+    intCmdRef.current=null
+    setIntUncertain(false)
+    setIntSuccess(`Chamado interno criado (${id.slice(0,8)}).`)
+    setIntOrgId('');setIntSubject('');setIntMessage('')
+    setRevision(v=>v+1)
+   }
+  }catch(e){
+   if(!mounted.current)return
+   const code=(e as {code?:string}|null)?.code
+   if(code&&DETERMINISTIC_CODES.has(code)){
+    intCmdRef.current=null;setIntUncertain(false)
+    setIntError('Chamado interno rejeitado pelo servidor.')
+   }else{
+    setIntUncertain(true)
+    setIntError('Criação do chamado interno não confirmada. Use Verificar envio.')
+   }
+  }finally{if(mounted.current)setIntPending(false)}
+ }
+
  const priorityLabelsMap: Record<string, string> = {
   urgent: 'Urgente',
   high: 'Alta',
@@ -158,10 +350,47 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
   `${Math.floor(Number(value)/60)} min`
  return <section className="panel" aria-label="Operação Master de suporte">
   <div className="section-title"><h2>Operação — chamados</h2>
-   <button className="secondary" type="button"
-    onClick={()=>{setPage(0);setRevision(v=>v+1)}}>Atualizar chamados</button>
+   <div style={{display:'flex',flexWrap:'wrap',gap:'0.5rem'}}>
+    <button className="secondary" type="button"
+     onClick={()=>{setPage(0);setRevision(v=>v+1)}}>Atualizar chamados</button>
+    <button className="secondary" type="button" aria-expanded={showInternalForm}
+     onClick={()=>{setShowInternalForm(v=>!v);setIntError('');setIntSuccess('');setIntUncertain(false)}}>
+     {showInternalForm?'Fechar chamado interno':'+ Novo chamado interno'}
+    </button>
+   </div>
   </div>
-  <p className="subtle">Chamados de clientes e internos são tratados separadamente. O histórico interno é restrito à plataforma. Tempo até primeira resposta e resolução são métricas de eventos reais, não contadores do navegador. Consulta somente leitura.</p>
+  <p className="subtle">Chamados de clientes e internos são tratados separadamente. Notas internas são invisíveis às Lojas. SLA comercial: 1 dia útil (09h–18h Seg–Sex America/Sao_Paulo = 540 min úteis).</p>
+
+  {showInternalForm&&<form aria-label="Criar chamado interno" onSubmit={e=>{e.preventDefault();void runCreateInternal(false)}} className="panel" style={{marginBottom:'1rem'}}>
+   <h3>Novo chamado interno da plataforma</h3>
+   <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(min(100%, 190px), 1fr))',gap:'0.75rem'}}>
+    <div><label htmlFor="master-int-subject">Assunto interno</label><input id="master-int-subject" required minLength={3} maxLength={180} value={intSubject} onChange={e=>setIntSubject(e.target.value)}/></div>
+    <div><label htmlFor="master-int-category">Categoria</label>
+     <select id="master-int-category" value={intCategory} onChange={e=>setIntCategory(e.target.value)}>
+      <option value="operations">Operações</option><option value="billing">Cobrança SaaS</option>
+      <option value="technical">Técnico</option><option value="access">Acesso / MFA</option>
+     </select>
+    </div>
+    <div><label htmlFor="master-int-priority">Prioridade inicial</label>
+     <select id="master-int-priority" value={intPriority} onChange={e=>setIntPriority(e.target.value as typeof intPriority)}>
+      <option value="low">Baixa</option><option value="normal">Média</option>
+      <option value="high">Alta</option><option value="urgent">Urgente</option>
+     </select>
+    </div>
+    <div><label htmlFor="master-int-org">Loja relacionada (UUID opcional)</label><input id="master-int-org" placeholder="Opcional" maxLength={36} value={intOrgId} onChange={e=>setIntOrgId(e.target.value)}/></div>
+   </div>
+   <div style={{marginTop:'0.75rem'}}>
+    <label htmlFor="master-int-msg">Descrição / nota inicial restrita</label>
+    <textarea id="master-int-msg" required minLength={3} maxLength={4000} rows={3} value={intMessage} onChange={e=>setIntMessage(e.target.value)}/>
+   </div>
+   {intError&&<p role="alert" className="message error" style={{marginTop:'0.5rem'}}>{intError}</p>}
+   {intSuccess&&<p role="status" className="message success" style={{marginTop:'0.5rem'}}>{intSuccess}</p>}
+   <div style={{marginTop:'0.75rem',display:'flex',gap:'0.5rem'}}>
+    <button type="submit" className="primary" disabled={intPending||intUncertain}>{intPending?'Registrando…':'Registrar chamado interno'}</button>
+    {intUncertain&&<button type="button" className="secondary" disabled={intPending} onClick={()=>void runCreateInternal(true)}>Verificar envio</button>}
+   </div>
+  </form>}
+
   {organizationFilter && (
    <div role="status" className="panel" style={{padding:'0.65rem',marginBottom:'0.75rem',display:'flex',flexWrap:'wrap',alignItems:'center',gap:'0.5rem'}}>
     <span>Chamados da Loja selecionada: <code>{organizationFilter}</code></span>
@@ -181,6 +410,27 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
      onChange={e=>setSearch(e.target.value)}
      className="w-full sm:w-80 px-3 py-1.5 text-sm border rounded-md"
     />
+    <select aria-label="Filtrar escopo do chamado" value={scopeFilter} onChange={e=>setScopeFilter(e.target.value as typeof scopeFilter)} className="px-2 py-1.5 text-sm border rounded-md">
+     <option value="all">Todos escopos</option>
+     <option value="tenant">Lojas clientes</option>
+     <option value="internal">Internos</option>
+    </select>
+    <select aria-label="Filtrar status do chamado" value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} className="px-2 py-1.5 text-sm border rounded-md">
+     <option value="all">Todos status</option>
+     <option value="new">Novo</option>
+     <option value="triage">Triagem</option>
+     <option value="working">Em atendimento</option>
+     <option value="waiting_client">Aguardando cliente</option>
+     <option value="resolved">Resolvido</option>
+     <option value="closed">Fechado</option>
+    </select>
+    <select aria-label="Filtrar prioridade do chamado" value={priorityFilter} onChange={e=>setPriorityFilter(e.target.value)} className="px-2 py-1.5 text-sm border rounded-md">
+     <option value="all">Todas prioridades</option>
+     <option value="urgent">Urgente</option>
+     <option value="high">Alta</option>
+     <option value="normal">Média</option>
+     <option value="low">Baixa</option>
+    </select>
     {search&&<button className="secondary text-xs px-2.5 py-1.5" type="button" onClick={()=>setSearch('')}>Limpar busca</button>}
    </div>
    {search.trim() && filteredRows.length > 0 && (
@@ -197,11 +447,12 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
    {!tickets.rows.length?<p>Nenhum chamado nesta página.</p>:
     !filteredRows.length?<p>Nenhum chamado encontrado para a busca "{search}".</p>:
     <div className="finance-table" role="region" aria-label="Fila de chamados da plataforma" tabIndex={0}>
-     <table><thead><tr><th>Chamado</th><th>Origem</th><th>Prioridade</th><th>Status</th><th>Primeira resposta</th><th>Detalhes</th></tr></thead>
+     <table><thead><tr><th>Chamado</th><th>Origem</th><th>Prioridade</th><th>Status</th><th>Primeira resposta</th><th>SLA (comercial)</th><th>Detalhes</th></tr></thead>
       <tbody>{filteredRows.map(ticket=>{
        const isHighlighted = Boolean(search.trim())
        const isExpanded = expandedId === ticket.id
        const detailsPanelId = `master-ticket-details-${ticket.id}`
+       const sla = evaluateTicketBusinessSla(ticket)
        return (
         <Fragment key={ticket.id}>
          <tr
@@ -216,6 +467,7 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
           <td>{ticket.ticket_scope==='internal'?'Interno':(ticket.opened_by_display||'Loja cliente')}</td>
           <td>{renderPriorityBadge(ticket.priority)}</td><td>{ticket.status}</td>
           <td>{elapsed(ticket.first_response_seconds)}</td>
+          <td style={{fontVariantNumeric:'tabular-nums'}}>{sla.label}</td>
           <td>
            <div className="flex items-center gap-1">
             <button
@@ -230,8 +482,10 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
              {isExpanded ? 'Ocultar' : 'Detalhes'}
             </button>
             <button className="secondary text-xs px-2 py-1" disabled={pending||uncertain} onClick={()=>{
-              if(selected!==ticket){setEvents(null);setEventsError('')}
+              if(selected!==ticket){setEvents(null);setEventsError('');setShowTriage(false)}
               setSelected(ticket);setReplyText('');setNextStatus('');setReplyError('');setReplySuccess(false)
+              setNoteText('');setNoteError('');setNoteSuccess(false);setNoteUncertain(false)
+              setTriageError('');setTriageSuccess(false);setTriageUncertain(false)
              }} type="button">
              Ver conversa
             </button>
@@ -246,7 +500,7 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
           className={isExpanded ? 'bg-slate-50 border-b' : undefined}
          >
           {isExpanded && (
-           <td colSpan={6} className="p-3 whitespace-normal" style={{whiteSpace:'normal',overflowWrap:'anywhere'}}>
+           <td colSpan={7} className="p-3 whitespace-normal" style={{whiteSpace:'normal',overflowWrap:'anywhere'}}>
             <div
              role="region"
              aria-label={`Histórico e detalhes do chamado #${ticket.ticket_seq}`}
@@ -264,6 +518,7 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
                 <li>• Última Atualização: {new Date(ticket.updated_at).toLocaleString('pt-BR')}</li>
                 <li>• Primeira Resposta: {elapsed(ticket.first_response_seconds)}</li>
                 <li>• Tempo de Resolução: {elapsed(ticket.resolution_seconds)}</li>
+                <li>• Prazo SLA (1 dia útil · 09h–18h BRT): {new Date(sla.dueAtIso).toLocaleString('pt-BR')} ({sla.label})</li>
                </ul>
               </div>
               <div>
@@ -283,8 +538,10 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
                Recolher
               </button>
               <button type="button" className="primary text-xs px-2.5 py-1" onClick={()=>{
-                if(selected!==ticket){setEvents(null);setEventsError('')}
+                if(selected!==ticket){setEvents(null);setEventsError('');setShowTriage(false)}
                 setSelected(ticket);setReplyText('');setNextStatus('');setReplyError('');setReplySuccess(false)
+                setNoteText('');setNoteError('');setNoteSuccess(false);setNoteUncertain(false)
+                setTriageError('');setTriageSuccess(false);setTriageUncertain(false)
                }}>Abrir conversa completa</button>
              </div>
             </div>
@@ -302,9 +559,41 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
      <button className="secondary" disabled={!tickets.hasNext} onClick={()=>setPage(v=>v+1)}>Próxima</button>
     </div>
     {selected&&<section className="panel" aria-label="Conversa de suporte selecionada">
-     <h3>{selected.subject} — {selected.ticket_scope==='internal'?'Chamado interno':'Chamado da Loja'}</h3>
-     <p className="subtle">Status: {selected.status}. Resolução:
-      {elapsed(selected.resolution_seconds)}.</p>
+     <div className="section-title">
+      <h3>{selected.subject} — {selected.ticket_scope==='internal'?'Chamado interno':'Chamado da Loja'}</h3>
+      <button type="button" className="secondary" aria-expanded={showTriage} onClick={()=>void openTriage()}>
+       {showTriage?'Fechar triagem':'Triagem e atribuição'}
+      </button>
+     </div>
+     <p className="subtle">Status: {selected.status}. Resolução: {elapsed(selected.resolution_seconds)}. SLA: {evaluateTicketBusinessSla(selected).label}.</p>
+
+     {showTriage&&<form aria-label="Triagem e atribuição do chamado" onSubmit={e=>{e.preventDefault();void runTriageSave(false)}} className="panel" style={{marginBottom:'1rem'}}>
+      <h4>Triagem e atribuição de operador</h4>
+      {staffError&&<p role="alert" className="message error">{staffError}</p>}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(min(100%, 190px), 1fr))',gap:'0.75rem'}}>
+       <div>
+        <label htmlFor="master-triage-staff">Operador responsável</label>
+        <select id="master-triage-staff" value={triageStaffId} onChange={e=>setTriageStaffId(e.target.value)}>
+         <option value="">Sem atribuição</option>
+         {(staffList??[]).map(s=><option key={s.user_id} value={s.user_id}>{s.role} · {s.user_id.slice(0,8)}</option>)}
+        </select>
+       </div>
+       <div>
+        <label htmlFor="master-triage-priority">Prioridade</label>
+        <select id="master-triage-priority" value={triagePriority} onChange={e=>setTriagePriority(e.target.value as typeof triagePriority)}>
+         <option value="low">Baixa</option><option value="normal">Média</option>
+         <option value="high">Alta</option><option value="urgent">Urgente</option>
+        </select>
+       </div>
+      </div>
+      {triageError&&<p role="alert" className="message error" style={{marginTop:'0.5rem'}}>{triageError}</p>}
+      {triageSuccess&&<p role="status" className="message success" style={{marginTop:'0.5rem'}}>Triagem salva com auditoria.</p>}
+      <div style={{marginTop:'0.5rem',display:'flex',gap:'0.5rem'}}>
+       <button type="submit" className="primary" disabled={triagePending||triageUncertain}>{triagePending?'Salvando…':'Salvar triagem'}</button>
+       {triageUncertain&&<button type="button" className="secondary" disabled={triagePending} onClick={()=>void runTriageSave(true)}>Verificar envio</button>}
+      </div>
+     </form>}
+
      {threadError&&<p role="alert" className="message error">{threadError}</p>}
      {!messages&&!threadError&&<p role="status">Consultando mensagens…</p>}
      {messages&&(messages.length? <ol className="support-messages">
@@ -361,8 +650,30 @@ export function MasterSupportQueue({client,initialOrganizationId=''}:{client:Sup
        onClick={()=>{if(command.current)void run(command.current)}}>Verificar envio</button>}
      </form>}
      {selected.ticket_scope==='internal'&&<p className="subtle">Chamado interno: resposta por este fluxo de clientes não é permitida.</p>}
+
+     <form aria-label="Registrar nota interna restrita" onSubmit={e=>{e.preventDefault();void runInternalNote(false)}} style={{marginTop:'1rem',paddingTop:'1rem',borderTop:'1px solid var(--border-soft, rgba(148,163,184,.12))'}}>
+      <fieldset disabled={notePending||noteUncertain}>
+       <legend>Nota interna restrita (nunca visível à Loja)</legend>
+       <label htmlFor="master-internal-note">Nota interna</label>
+       <textarea id="master-internal-note" required maxLength={5000} rows={3} value={noteText} onChange={e=>setNoteText(e.target.value)}/>
+       <label htmlFor="master-note-status">Atualizar status (opcional)</label>
+       <select id="master-note-status" value={noteNextStatus} onChange={e=>setNoteNextStatus(e.target.value)}>
+        <option value="">Manter situação atual</option>
+        <option value="new">Novo</option><option value="triage">Triagem</option>
+        <option value="working">Em atendimento</option>
+        <option value="waiting_client">Aguardando cliente</option>
+        <option value="resolved">Resolvido</option><option value="closed">Fechado</option>
+       </select>
+       <button className="secondary" type="submit" disabled={!noteText.trim()||notePending||noteUncertain}>
+        {notePending?'Salvando nota…':'Registrar nota interna'}
+       </button>
+      </fieldset>
+      {noteSuccess&&<p role="status" className="message success">Nota interna restrita registrada com auditoria.</p>}
+      {noteError&&<p role="alert" className="message error">{noteError}</p>}
+      {noteUncertain&&<button type="button" className="secondary" disabled={notePending} onClick={()=>void runInternalNote(true)}>Verificar envio</button>}
+     </form>
     </section>}
-    <p className="subtle">A fila mostra 25 chamados por página. Respostas de clientes e mudança de status nesta tela são autorizadas e idempotentes; atribuição de operador, notas internas e sessões de suporte precisam de fluxos próprios.</p>
+    <p className="subtle">A fila mostra 25 chamados por página. Respostas, notas internas, triagem e criação de chamados internos são idempotentes e auditadas; sessões de suporte somente leitura ficam na aba Sessões.</p>
   </>}
  </section>
 }

@@ -13,6 +13,7 @@ import {
   type MasterOverview,
   type MasterTenant,
   type MasterTenantFilters,
+  type MasterTenantStatusFilter,
   DEFAULT_MASTER_TENANT_FILTERS,
   loadMasterPlanOptions,
   type MasterPlanOption,
@@ -40,7 +41,7 @@ export function MasterConsole({ client }: { client: SupabaseClient }) {
   const [page, setPage] = useState(0)
   const [revision, setRevision] = useState(0)
   const [search, setSearch] = useState('')
-  const [status, setStatus] = useState<'all' | 'active' | 'past_due'>('all')
+  const [status, setStatus] = useState<MasterTenantStatusFilter>('all')
   const [plan, setPlan] = useState('')
   const [planOptions, setPlanOptions] = useState<MasterPlanOption[] | null>(null)
   const [planCatalogError, setPlanCatalogError] = useState('')
@@ -435,8 +436,8 @@ function TenantDirectorySection({
 }: {
   search: string
   setSearch: (v: string) => void
-  status: 'all' | 'active' | 'past_due'
-  setStatus: (v: 'all' | 'active' | 'past_due') => void
+  status: MasterTenantStatusFilter
+  setStatus: (v: MasterTenantStatusFilter) => void
   plan: string
   setPlan: (v: string) => void
   planOptions: MasterPlanOption[] | null
@@ -469,11 +470,15 @@ function TenantDirectorySection({
             <select
               id="master-search-status"
               value={status}
-              onChange={e => setStatus(e.target.value as 'all' | 'active' | 'past_due')}
+              onChange={e => setStatus(e.target.value as MasterTenantStatusFilter)}
             >
               <option value="all">Todos</option>
+              <option value="trialing">Em avaliação (Trial)</option>
               <option value="active">Ativo</option>
               <option value="past_due">Em atraso</option>
+              <option value="suspended">Suspensa</option>
+              <option value="cancel_scheduled">Cancelamento agendado</option>
+              <option value="canceled">Cancelada</option>
             </select>
           </div>
           <div>

@@ -1,3 +1,13 @@
+## M04 — Operação Master SaaS: Ciclo Comercial, Faturamento Manual, Inadimplência e Suporte (`ADR-0054`, 26/11/2026)
+
+Sobre `83e362d246c65a118967931c39b87ffae1e4a8f4` (`main`, PR #75), implementadas em pacote isolado (`m04-operacao-master-saas.patch`) as entregas **M04.01–M04.04** (`C01–C07` / `D01`): controle de assentos ativos (`3` / `10` excluindo `MASTER`/`SUPPORT`), contratação expressa e troca prospectiva de plano a partir do dia 1º do mês seguinte com preservação de `saas_subscription_price_terms`, faturamento manual SaaS completo (pagamentos, alocações, estornos compensatórios, anulação bloqueada sob alocação ativa, ajustes, acordos sem encargos automáticos, documentos fiscais externos e `Resumo SaaS` segregado), tolerância de 7 dias e suspensão manual preservando leitura/exportações/suporte + janela `D01` de 90 dias, notas internas RLS, triagem/atribuição, SLA comercial (Seg–Sex 09:00–18:00 `America/Sao_Paulo`), resumo sanitizado de Jobs e aviso tenant de sessão `read_only` ativa. Testes frontend Vitest, `typecheck`, build, preservação e `--self-test-extract` PASS locais; execução `postgres:17`, `pglast`, aplicação DEV e homologação autenticada DEV permanecem `NOT EVALUATED`. **`M02.03` segue `EM_EXECUCAO`** com `m0203-fechamento.patch` preservado intacto e **`M06.02` preservada `CONCLUIDO`**.
+
+## M03 — Contabilidade, DRE Gerencial B01 e Exportações Integrais (`ADR-0053`, 26/11/2026)
+
+Sobre `83e362d246c65a118967931c39b87ffae1e4a8f4`, implementadas em pacote isolado (`m03-contabilidade-relatorios.patch`) as entregas **M03.02 / M03.03 / M03.04** (papéis do Anexo III, Diário em partidas dobradas, Razão por conta com saldo inicial derivado de partidas anteriores, DRE Gerencial B01 e exportações integrais XLSX/PDF fail-closed). Testes frontend locais, `typecheck`, build, preservação e extração SQL aprovados; execução `postgres:17`, `pglast`, aplicação DEV, homologação autenticada DEV e revisão contábil da `#43` permanecem `NOT EVALUATED`. **`M02.03` segue `EM_EXECUCAO`** com `m0203-fechamento.patch` preservado intacto.
+
+---
+
 ## M01.04 — andamento vigente (25/11/2026)
 
 Fixture não contratual preparada no DEV e Loja fictícia provisionada com Master/MFA real. Convite ainda queued; nenhum envio. Lacuna da ação de envio corrigida em OnboardingInviteSender, com CORS restrito e bloqueio de repetição incerta; evidências, manifesto/expiração da fixture e gates de CI/deploy/envio em SESSION_HANDOFF.md. M01 segue EM_EXECUCAO. Sem migrations adicionais, mudanças em clientes existentes ou PROD. ADR-0052 registra o recorte.
@@ -598,3 +608,21 @@ M01.01 prepara despacho de convite por operador Master com MFA. Vínculo, papel 
 ## V35 M01.03 — vínculo e aceite
 
 M01.03 preparada sobre main 625a516a (PR #30). O Auth fornece o UUID ao finalizar o despacho. A RPC de aceite exige esse UUID autenticado, e-mail confirmado, perfil de sistema da própria Loja e, quando exigido, consentimento explícito à versão publicada vigente e ao hash. Vínculo, recibo, conclusão e auditoria são atômicos. Execuções antigas sem prova de identidade permanecem sem vínculo. Três testes locais do handler passaram. Gate PostgreSQL descartável incluído no CI. Ativação DEV aguarda aprovação.
+
+---
+
+## Lote M05 — Privacidade, Recuperação e Segurança Operacional (26/11/2026)
+
+- Implementadas as Entregas A–F da M05 (`M05.01` a `M05.03`, decisões `D01` a `D06`, `ADR-0055`) em árvore isolada sobre a base `83e362d246c65a118967931c39b87ffae1e4a8f4`, preservando integralmente os patches `m0203-fechamento.patch`, `m03-contabilidade-relatorios.patch` e `m04-operacao-master-saas.patch`.
+- M05 permanece `EM_EXECUCAO` até aplicação da migration `20261126180000_v35_m05_privacy_retention_recovery.sql` em PostgreSQL 17 descartável no CI / Supabase DEV (`szqkdekwhzxsoxorgvaz`), homologação de link real de recuperação por e-mail e medição da capacidade real de RPO/RTO na infraestrutura.
+
+---
+
+## Consolidação M06 — Versão Candidata V35 (M02.03 + M03 + M04 + M05 + M06.01/M06.03)
+
+- **Ordem de consolidação aplicada sobre a base `83e362d246c65a118967931c39b87ffae1e4a8f4` (`main`, PR #75):** `1. M02.03 -> 2. M03 -> 3. M04 -> 4. M05`.
+- **Artefatos individuais preservados byte a byte:** `m0203-fechamento.patch`, `m03-contabilidade-relatorios.patch`, `m04-operacao-master-saas.patch` e `m05-privacidade-recuperacao-seguranca.patch`.
+- **Correções transversais de regressão entre módulos (`M06.03`):**
+  1. `private.tenant_write_allowed` (`20261126120000_v35_m04_master_saas_operations.sql` + `Workspace.tsx`): corrigido para permitir escritas enquanto `status = 'past_due'` mesmo após o término da tolerância de 7 dias (`grace_until`), exigindo suspensão manual (`suspend_saas_subscription_manual_idempotent`) pelo operador Master AAL2 conforme decisão `C03`.
+  2. Portabilidade integral (`20261126180000_v35_m05_privacy_retention_recovery.sql` + `TenantPrivacyPortabilityPanel.tsx`): `organization_full` ampliado para 41 datasets cobrindo M02, M03 (`accounting_plans`, `accounting_accounts`, `accounting_plan_role_mappings`), M04 (`saas_subscriptions`, `saas_subscription_price_terms`, `saas_scheduled_subscription_changes`, `saas_invoices`, `saas_payment_agreements`, `customer_support_tickets` e `customer_support_messages` restritos a `ticket_scope = 'tenant'` e `visibility = 'customer'`) e M05, com distinção explícita no manifesto (`binary_files_included = false`) entre inventário de metadados/hashes SHA-256 de anexos elegíveis e objetos binários do Storage privado.
+  3. Janela pós-cancelamento `D01` de 90 dias unificada entre M04 (`read_tenant_commercial_status`) e M05 (`private.m05_retention_snapshot`) tanto para `canceled` quanto para `cancel_scheduled` após `current_period_end`.

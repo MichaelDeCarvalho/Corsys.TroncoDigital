@@ -92,6 +92,30 @@ jobs:
           createdb -h 127.0.0.1 -p 55432 -U postgres platform_identity_gate
           python3 scripts/check_platform_identity_pg.py
 
+      - name: Accounting books and DRE PostgreSQL gate
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '55432'
+          PGUSER: postgres
+          PGPASSWORD: onboarding-ci
+          PGDATABASE: accounting_books_gate
+        run: |
+          createdb -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" "$PGDATABASE"
+          python3 scripts/check_accounting_books_pg.py --self-test-extract
+          python3 scripts/check_accounting_books_pg.py
+
+      - name: Master SaaS M04 lifecycle, billing and support PostgreSQL gate
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '55432'
+          PGUSER: postgres
+          PGPASSWORD: onboarding-ci
+          PGDATABASE: master_saas_m04_gate
+        run: |
+          createdb -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" "$PGDATABASE"
+          python3 scripts/check_master_saas_m04_pg.py --self-test-extract
+          python3 scripts/check_master_saas_m04_pg.py
+
   frontend:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -111,3 +135,39 @@ jobs:
       - run: npm run check
       - name: Validate Cloudflare static bundle without uploading
         run: npx wrangler deploy --config wrangler.dev.jsonc --dry-run
+
+  m05_privacy_recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: onboarding-ci
+          POSTGRES_DB: privacy_recovery_gate
+        ports:
+          - 55432:5432
+        options: --health-cmd "pg_isready -U postgres -d privacy_recovery_gate" --health-interval 2s --health-timeout 3s --health-retries 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.12'
+      - name: M05 backup runner hardening and manifest tests
+        run: |
+          chmod +x scripts/run_v35_m05_backup_restore_trial.sh
+          bash scripts/test_v35_m05_runner_hardening.sh
+          python3 scripts/v35_m05_backup_manifest.py --self-test
+      - name: M05 privacy, retention, recovery & security PG17 gate
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '55432'
+          PGUSER: postgres
+          PGPASSWORD: onboarding-ci
+          PGDATABASE: privacy_recovery_gate
+        run: |
+          python3 scripts/check_privacy_recovery_pg.py --self-test-extract
+          python3 scripts/check_privacy_recovery_pg.py
+          psql -X -v ON_ERROR_STOP=1 -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" -f scripts/v35_m05_single_tenant_recovery_check.sql

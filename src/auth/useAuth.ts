@@ -6,7 +6,15 @@ const anonymous: AuthState = { status: 'anonymous', user: null, error: '' }
 
 export function useAuth(client: SupabaseClient) {
   // This flag controls presentation only. getUser still validates identity.
-  const recovery = useRef(typeof window !== 'undefined' && (
+  const recoveryError = useRef((() => {
+    if (typeof window === 'undefined') return false
+    const hashParams = new URLSearchParams(window.location.hash.slice(1))
+    const searchParams = new URLSearchParams(window.location.search)
+    const errCode = hashParams.get('error_code') ?? searchParams.get('error_code')
+    const err = hashParams.get('error') ?? searchParams.get('error')
+    return errCode === 'otp_expired' || (err === 'access_denied' && !!errCode)
+  })())
+  const recovery = useRef(typeof window !== 'undefined' && !recoveryError.current && (
     new URLSearchParams(window.location.hash.slice(1)).get('type') === 'recovery'
     || new URLSearchParams(window.location.search).get('auth') === 'recovery'
   ))
@@ -85,6 +93,6 @@ export function useAuth(client: SupabaseClient) {
     }
   }, [client])
 
-  return { ...state, recovery: recovery.current, retry: logoutFailed ? signOut : verify, signOut }
+  return { ...state, recovery: recovery.current, recoveryError: recoveryError.current, retry: logoutFailed ? signOut : verify, signOut }
 }
 

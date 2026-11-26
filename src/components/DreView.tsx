@@ -2,9 +2,10 @@ import { useState } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { DreReport } from './DreReport'
 import { BudgetReport } from './BudgetReport'
+import { DreGerencialPanel } from './DreGerencialPanel'
 
 export function DreView({ client, organizationId }: { client: SupabaseClient; organizationId: string }) {
-  const [activeTab, setActiveTab] = useState<'demonstrative' | 'budget'>('demonstrative')
+  const [activeTab, setActiveTab] = useState<'demonstrative' | 'structured' | 'budget'>('demonstrative')
 
   return (
     <div className="dre-view">
@@ -29,6 +30,14 @@ export function DreView({ client, organizationId }: { client: SupabaseClient; or
           <button
             className="secondary"
             type="button"
+            aria-pressed={activeTab === 'structured'}
+            onClick={() => setActiveTab('structured')}
+          >
+            DRE Estruturada (B01)
+          </button>
+          <button
+            className="secondary"
+            type="button"
             aria-pressed={activeTab === 'budget'}
             onClick={() => setActiveTab('budget')}
           >
@@ -38,6 +47,7 @@ export function DreView({ client, organizationId }: { client: SupabaseClient; or
       </section>
 
       {activeTab === 'demonstrative' && <DreReport key={organizationId} client={client} organizationId={organizationId} />}
+      {activeTab === 'structured' && <DreGerencialPanel key={organizationId} client={client} organizationId={organizationId} />}
       {activeTab === 'budget' && <BudgetReport key={organizationId} client={client} organizationId={organizationId} />}
     </div>
   )

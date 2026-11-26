@@ -155,3 +155,27 @@ export async function endMasterSupportSession(
 
   return data
 }
+
+export type TenantActiveSupportSessionNotice = {
+  organization_id: string
+  active: boolean
+  scope: string | null
+  expires_at: string | null
+}
+
+export function isValidTenantSupportNotice(data: unknown, orgId: string): data is TenantActiveSupportSessionNotice {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return false
+  const row = data as Record<string, unknown>
+  return row.organization_id === orgId && typeof row.active === 'boolean'
+}
+
+export async function readTenantActiveSupportSession(
+  client: SupabaseClient,
+  organizationId: string
+): Promise<TenantActiveSupportSessionNotice | null> {
+  const org = organizationId?.trim()
+  if (!org || !UUID_REGEX.test(org)) return null
+  const { data, error } = await client.rpc('read_tenant_active_support_session', { p_organization_id: org })
+  if (error || !isValidTenantSupportNotice(data, org)) return null
+  return data
+}

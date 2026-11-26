@@ -188,6 +188,61 @@ function createMockClient(options: MockOptions = {}) {
   return { client }
 }
 
+describe('Configuracoes Component M04 commercial status, seats & D01 retention', () => {
+  it('renders seat usage, scheduled change and D01 90-day export window when commercial RPC returns valid data', async () => {
+    const base = createMockClient()
+    const origRpc = base.client.rpc
+    ;(base.client as unknown as { rpc: ReturnType<typeof vi.fn> }).rpc = vi.fn((fnName: string, args?: Record<string, unknown>) => {
+      if (fnName === 'read_tenant_commercial_status') {
+        return Promise.resolve({
+          data: {
+            organization_id: ORG_ID,
+            subscription_id: 'sub-1',
+            subscription_status: 'canceled',
+            commercial_status: 'canceled',
+            access_override: 'none',
+            write_allowed: false,
+            plan_id: PLAN_ID,
+            plan_code: 'corsys_essencial_125',
+            plan_name: 'Corsys Essencial',
+            plan_version_id: VERSION_ID,
+            contract_price: 125,
+            active_users: 2,
+            max_admin_users: 3,
+            current_period_start: '2026-11-01',
+            current_period_end: '2026-11-30',
+            billing_anchor_day: 10,
+            past_due_since: null,
+            grace_until: null,
+            cancel_at_period_end: false,
+            canceled_at: '2026-11-20T00:00:00Z',
+            export_window_until: '2027-02-18T00:00:00Z',
+            open_amount: '0.00',
+            overdue_amount: '0.00',
+            scheduled_change: {
+              id: 'sc-1',
+              change_type: 'plan_change',
+              target_plan_version_id: VERSION_ID,
+              target_plan_name: 'Corsys Profissional',
+              target_price: 180,
+              target_max_admin_users: 10,
+              effective_at: '2026-12-01',
+            },
+          },
+          error: null,
+        })
+      }
+      return (origRpc as unknown as (fn: string, p?: Record<string, unknown>) => Promise<unknown>)(fnName, args)
+    })
+
+    render(<Configuracoes client={base.client} organizationId={ORG_ID} />)
+    expect(await screen.findByText('2 / 3')).toBeInTheDocument()
+    expect(screen.getByText(/Troca prospectiva de plano agendada/)).toBeInTheDocument()
+    expect(screen.getByText(/Janela de exportação pós-cancelamento \(D01\)/)).toBeInTheDocument()
+    expect(screen.getByText(/Escritas operacionais temporariamente bloqueadas/)).toBeInTheDocument()
+  })
+})
+
 describe('Configuracoes Component', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -278,13 +333,13 @@ describe('Configuracoes Component', () => {
     expect(onNavigateMock).toHaveBeenCalledWith('support')
   })
 
-  it('renders privacy section keeping unavailable features informed without mock simulation', async () => {
+  it('renders privacy portability, subject rights, and Master AAL2 restore boundary', async () => {
     const { client } = createMockClient()
     render(<Configuracoes client={client} organizationId={ORG_ID} />)
 
-    expect(await screen.findByText(/Exportação Integral de Dados \(Portabilidade LGPD\)/)).toBeInTheDocument()
-    expect(screen.getByText('Em homologação na plataforma Master')).toBeInTheDocument()
-    expect(screen.getByText('Exige solicitação via Suporte')).toBeInTheDocument()
+    expect(await screen.findByTestId('tenant-privacy-panel')).toBeInTheDocument()
+    expect(screen.getByText(/Exportação Integral e Pacote do Titular \(Portabilidade LGPD\)/)).toBeInTheDocument()
+    expect(screen.getByText(/Direitos dos Titulares, Pseudonimização e Guarda Contábil/)).toBeInTheDocument()
     expect(screen.getByText('Operação restrita Master AAL2')).toBeInTheDocument()
   })
 
