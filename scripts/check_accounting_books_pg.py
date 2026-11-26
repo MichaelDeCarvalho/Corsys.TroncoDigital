@@ -596,7 +596,7 @@ def run_pg_gate() -> None:
     sql(as_actor(user_admin_a) + f"select public.set_accounting_plan_role_mapping_idempotent('{org_a}','{plan_a}','member_receivable_control','{acc_bank}',null,'Stale','rk-stale');", "40001")
 
     # Publish plan_a; further role mapping mutations blocked with 55000
-    sql(f"update public.accounting_plans set status = 'published' where id = '{plan_a}';")
+    sql(f"update public.accounting_plans set status = 'published', published_at = now() where id = '{plan_a}';")
     sql(as_actor(user_admin_a) + f"select public.set_accounting_plan_role_mapping_idempotent('{org_a}','{plan_a}','member_receivable_control','{acc_bank}','{acc_mem_rec}','After publish','rk-pub');", "55000")
 
     # 4. Seed balanced double-entry facts across 2026-09 (opening/prior) and 2026-10 (current)
@@ -615,7 +615,7 @@ def run_pg_gate() -> None:
           ('{uid(504)}', '{org_a}', '{uid(503)}', '2026-10-01', 'decrease', 'discount', 20.00, 'Pontualidade', '2026-10-03T10:00:00Z');
         insert into public.payments values
           ('{uid(505)}', '{org_a}', '{fin_bank}', '2026-10-01', '2026-10-04', 'operational', 180.00, 'PIX-180', 'Pagamento Mensalidade', '2026-10-04T10:00:00Z');
-        insert into public.receivable_allocations values
+        insert into public.receivable_allocations (id, organization_id, charge_id, payment_id, accounting_period, amount, created_at) values
           ('{uid(506)}', '{org_a}', '{uid(503)}', '{uid(505)}', '2026-10-01', 180.00, '2026-10-04T10:05:00Z');
         insert into public.institutional_payables values
           ('{uid(507)}', '{org_a}', '{plan_a}', '{acc_exp_admin}', '2026-10-01', '2026-10-01', '2026-10-06', 'posted', 50.00, 'Material Expediente', '2026-10-06T10:00:00Z');

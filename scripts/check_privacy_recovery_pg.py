@@ -69,13 +69,9 @@ def self_test_extract() -> None:
     print(f"M05_SELF_TEST_EXTRACT_PASS: {len(required_objects)} objects verified cleanly")
 
 
-def run_pg_gate() -> None:
-    pg.PGDATABASE = "privacy_recovery_gate"
-    pg.assert_disposable_target()
-    assert pg.sql("select current_database()") == "privacy_recovery_gate"
-
+def bootstrap_product_history(until: Path, execute) -> None:
     # Model Supabase-managed primitives only. Replay the product migrations in order.
-    pg.sql("""
+    execute("""
         DO $$ BEGIN
           IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'anon') THEN CREATE ROLE anon; END IF;
           IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'authenticated') THEN CREATE ROLE authenticated; END IF;
@@ -92,8 +88,8 @@ def run_pg_gate() -> None:
           $$select (auth.jwt()->>'sub')::uuid$$;
         grant usage on schema auth to authenticated, anon;
     """)
-    for migration in sorted(MIGRATION_FILE.parent.glob("*.sql")):
-        if migration.name >= MIGRATION_FILE.name:
+    for migration in sorted(until.parent.glob("*.sql")):
+        if migration.name >= until.name:
             break
         sql = migration.read_text(encoding="utf-8").replace(
             "revoke execute on function public.rls_auto_enable() from authenticated;", ""
@@ -103,7 +99,15 @@ def run_pg_gate() -> None:
         if migration.name == "20261019205415_legacy_business_http_conflicts_pt409.sql":
             _, end, sql = sql.partition("end $v35_preflight$;")
             assert end, "historical DEV preflight marker missing"
-        pg.sql(sql, app=f"m05-bootstrap-{migration.name[:14]}")
+        execute(sql, app=f"product-bootstrap-{migration.name[:14]}")
+
+
+def run_pg_gate() -> None:
+    pg.PGDATABASE = "privacy_recovery_gate"
+    pg.assert_disposable_target()
+    assert pg.sql("select current_database()") == "privacy_recovery_gate"
+
+    bootstrap_product_history(MIGRATION_FILE, pg.sql)
 
     body = extract_migration_body()
     exists_check = "select to_regprocedure('public.create_tenant_portability_export_idempotent(uuid,text,uuid,text,text)') is not null;"
@@ -223,6 +227,26 @@ def run_pg_gate() -> None:
     pg.sql(actor(master1, "aal2") + f"select public.revoke_compromised_tenant_access_idempotent('{org_a}', '{admin_a}', 'Conta comprometida em QA isolado', 'k-revoke-1');")
     assert pg.sql(f"select count(*) from public.user_roles where organization_id='{org_a}' and user_id='{admin_a}'") == "0"
     assert pg.sql(f"select count(*) from public.charges where organization_id='{org_a}'") == "1"
+
+    # Storage platform table interface for the real release policy.
+    pg.sql("""
+        create schema storage;
+        create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint);
+        create table storage.objects(bucket_id text not null,name text not null);
+        alter table storage.objects enable row level security;
+        grant usage on schema storage to anon, authenticated, service_role;
+        grant select on storage.objects to anon, authenticated, service_role;
+        create policy broad_fixture_read on storage.objects for select to anon, authenticated using(true);
+        insert into storage.objects values ('tenant-documents','fixture/private'),('other-bucket','fixture/other');
+    """)
+    storage_migration = next(MIGRATION_FILE.parent.glob("20261126181500_*.sql"))
+    pg.sql(storage_migration.read_text(encoding="utf-8"))
+    assert pg.sql("select public::text || ':' || file_size_limit from storage.buckets where id='tenant-documents'") == "false:16777216"
+    for role in ("anon", "authenticated"):
+        assert pg.sql(f"set role {role}; select count(*) from storage.objects where bucket_id='tenant-documents';") == "0"
+        assert pg.sql(f"set role {role}; select count(*) from storage.objects where bucket_id='other-bucket';") == "1"
+    assert pg.sql("set role service_role; select count(*) from storage.objects where bucket_id='tenant-documents';") == "1"
+    print("PASS private bucket policy denies direct browser access, even with a permissive read policy")
 
     print("M05_PRIVACY_RECOVERY_PG_PASS: DDL rollback, A/B isolation, D01-D06 RPCs, AAL2, ledger immutability")
 

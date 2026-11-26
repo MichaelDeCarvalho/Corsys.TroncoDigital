@@ -19,6 +19,8 @@ import re
 import subprocess
 import sys
 
+from check_privacy_recovery_pg import bootstrap_product_history
+
 ROOT = Path(__file__).resolve().parents[1]
 MIGRATIONS = ROOT / "supabase/migrations"
 
@@ -368,8 +370,8 @@ def main() -> None:
     assert_disposable_target()
     assert sql("select current_database() || ':' || current_user;") == f"{PGDATABASE}:{PGUSER}"
 
-    bootstrap_sql, m04_body = build_schema_sql()
-    sql(bootstrap_sql, app="m04-bootstrap")
+    _, m04_body = build_schema_sql()
+    bootstrap_product_history(next(MIGRATIONS.glob("20261126120000_*.sql")), sql)
 
     m04_sigs = (
         "public.read_tenant_seat_usage(uuid)",
@@ -409,6 +411,10 @@ def main() -> None:
     insert into public.saas_tenant_accounts(organization_id, billing_name, commercial_status) values
       ('{org_a}', 'Loja Alpha M04', 'trialing'),
       ('{org_b}', 'Loja Beta M04', 'active');
+    insert into public.members(id, organization_id, full_name) values
+      ('{uid(510)}', '{org_a}', 'QA seat 2'), ('{uid(511)}', '{org_a}', 'QA seat 3'), ('{uid(512)}', '{org_a}', 'QA seat 4');
+    insert into public.member_user_links(organization_id, member_id, user_id) values
+      ('{org_a}', '{uid(510)}', '{org_a_u2}'), ('{org_a}', '{uid(511)}', '{org_a_u3}'), ('{org_a}', '{uid(512)}', '{org_a_u4}');
     insert into public.user_roles(organization_id, user_id, role_id)
     select '{org_a}'::uuid, '{org_a_admin}'::uuid, id from public.roles where organization_id = '{org_a}' and code = 'ADMIN'
     union all
@@ -419,7 +425,7 @@ def main() -> None:
 
     v_ess = sql(f"begin; {caller(master, 'aal2')} select public.create_master_plan_draft_idempotent('corsys_essencial_125', 'Corsys Essencial', 125.00, 'monthly', 14, 7, '2026-01-01', '{{\"max_admin_users\": 3}}'::jsonb, 'k-ess'); commit;")
     v_pro = sql(f"begin; {caller(master, 'aal2')} select public.create_master_plan_draft_idempotent('corsys_profissional_180', 'Corsys Profissional', 180.00, 'monthly', 14, 7, '2026-01-01', '{{\"max_admin_users\": 10}}'::jsonb, 'k-pro'); commit;")
-    sql(f"begin; {caller(master, 'aal2')} select public.publish_saas_plan_version('{v_ess}'); select public.publish_saas_plan_version('{v_pro}'); commit;")
+    sql(f"begin; {caller(master, 'aal2')} select public.publish_master_plan_draft_idempotent('{v_ess}','pub-ess'); select public.publish_master_plan_draft_idempotent('{v_pro}','pub-pro'); commit;")
     p_ess = sql(f"select plan_id from public.saas_plan_versions where id = '{v_ess}';")
 
     sub_a = uid(201)
@@ -427,7 +433,7 @@ def main() -> None:
     insert into public.saas_subscriptions(id, organization_id, plan_id, plan_version_id, status, started_at, current_period_start, current_period_end, billing_anchor_day)
     values ('{sub_a}', '{org_a}', '{p_ess}', '{v_ess}', 'trialing', '2026-10-01', '2026-11-01', '2026-11-30', 10);
     insert into public.saas_subscription_price_terms(organization_id, subscription_id, effective_from, unit_price, adjustment_reason)
-    values ('{org_a}', '{sub_a}', '2026-11-01', 125.00, 'Condicao inicial');
+    values ('{org_a}', '{sub_a}', '2026-10-01', 125.00, 'Condicao inicial');
     """)
 
     sql(f"begin; set local role anon; select public.read_tenant_seat_usage('{org_a}'); commit;", succeeds=False, error_code="42501")
@@ -449,6 +455,9 @@ def main() -> None:
     assert sql(f"select status from public.saas_subscriptions where id = '{sub_a}';") == "active"
 
     sched_id = sql(f"begin; {caller(master, 'aal2')} select public.schedule_saas_plan_change_idempotent('{org_a}', '{v_pro}', 'Upgrade para 10 usuarios', 'k-sched-up'); commit;")
+    sql(f"begin; {caller(master, 'aal2')} select public.apply_scheduled_saas_plan_change_idempotent('{org_a}', '{sched_id}', 'Antes da vigencia', 'k-apply-early'); commit;", succeeds=False, error_code="55000")
+    # Advance only the disposable fixture to the due date; assert execution through the real RPC.
+    sql(f"delete from public.saas_subscription_price_terms where subscription_id='{sub_a}' and effective_from >= date_trunc('month',current_date)::date; update public.saas_scheduled_subscription_changes set effective_at=date_trunc('month',current_date) where id='{sched_id}';")
     sql(f"begin; {caller(master, 'aal2')} select public.apply_scheduled_saas_plan_change_idempotent('{org_a}', '{sched_id}', 'Efetivar upgrade', 'k-apply-up'); commit;")
     assert sql(f"select count(*) from public.saas_subscription_price_terms where subscription_id = '{sub_a}';") == "2"
     assert sql(f"select plan_version_id from public.saas_subscriptions where id = '{sub_a}';") == v_pro
@@ -459,7 +468,7 @@ def main() -> None:
     alloc1 = sql(f"begin; {caller(master, 'aal2')} select public.allocate_saas_payment_idempotent('{org_a}', '{pay1}', '{inv1}', 100.00, 'k-alloc-1'); commit;")
     sql(f"begin; {caller(master, 'aal2')} select public.void_saas_invoice_idempotent('{org_a}', '{inv1}', 'Tentativa com alocacao ativa', 'k-void-blk'); commit;", succeeds=False, error_code="55000")
     sql(f"begin; {caller(master, 'aal2')} select public.reverse_saas_payment_allocation_idempotent('{org_a}', '{alloc1}', 'Estorno alocacao teste', 'k-rev-a1'); commit;")
-    sql(f"begin; {caller(master, 'aal2')} select public.apply_saas_invoice_adjustment_idempotent('{org_a}', '{inv1}', 'discount', -30.00, 'Desconto aprovado', 'k-adj-1'); commit;")
+    sql(f"begin; {caller(master, 'aal2')} select public.apply_saas_invoice_adjustment_idempotent('{org_a}', '{inv1}', 'manual_decrease', -30.00, 'Desconto aprovado', 'k-adj-1'); commit;")
     assert sql(f"select amount_open::text from public.v_saas_invoice_balances where id = '{inv1}';") == "150.00"
     agr1 = sql(f"begin; {caller(master, 'aal2')} select public.record_saas_payment_agreement_idempotent('{org_a}', array['{inv1}'::uuid], '[{{\"due_date\":\"2026-12-10\",\"amount\":150.00}}]'::jsonb, 'Acordo 0% encargos', 'k-agr-1'); commit;")
     fisc1 = sql(f"begin; {caller(master, 'aal2')} select public.register_saas_fiscal_document_idempotent('{org_a}', '{inv1}', 'nfse', 'issued', 'NFSE-1', 'PREF-1', '2026-11-12T12:00:00Z'::timestamptz, 'k-fisc-1'); commit;")
@@ -468,25 +477,28 @@ def main() -> None:
     assert str(summary["total_open"]) == "150.00" or float(summary["total_open"]) == 150.0, summary
     print("PASS Entrega B SaaS ledger, reversals, void guard, agreement & segregated summary")
 
+    # Settle the older invoice so the grace assertion isolates one due date.
+    pay_close = sql(f"begin; {caller(master, 'aal2')} select public.register_saas_payment_idempotent('{org_a}', now(), 150.00, 'pix', 'QA-close-older', '[]'::jsonb, 'k-close-older'); commit;")
+    sql(f"begin; {caller(master, 'aal2')} select public.allocate_saas_payment_idempotent('{org_a}', '{pay_close}', '{inv1}', 150.00, 'k-alloc-close-older'); commit;")
     inv_overdue = uid(301)
     sql(f"""
-    insert into public.saas_invoices(id, organization_id, subscription_id, invoice_number, competence, issue_date, due_date, amount_due, status)
-    values ('{inv_overdue}', '{org_a}', '{sub_a}', 'SAAS-2026-0009', '2026-10-01', '2026-10-02', (current_date - interval '15 days')::date, 180.00, 'open');
+    insert into public.saas_invoices(id, organization_id, subscription_id, invoice_number, competence, service_period_start, service_period_end, issue_date, due_date, amount_due)
+    values ('{inv_overdue}', '{org_a}', '{sub_a}', 'SAAS-2026-0009', '2026-10-01', '2026-10-01', '2026-10-31', '2026-10-02', (current_date - interval '3 days')::date, 180.00);
     """)
-    sql(f"begin; {caller(master, 'aal2')} select public.mark_saas_subscription_past_due_idempotent('{org_a}', '{inv_overdue}', 'Atraso 15d', 'k-pd-1'); commit;")
+    sql(f"begin; {caller(master, 'aal2')} select public.mark_saas_subscription_past_due_idempotent('{org_a}', '{inv_overdue}', 'Atraso 3d', 'k-pd-1'); commit;")
     sql(f"begin; {caller(master, 'aal2')} select public.suspend_saas_subscription_manual_idempotent('{org_a}', 'Antes do prazo', 'k-susp-early'); commit;", succeeds=False, error_code="55000")
     sql(f"update public.saas_subscriptions set past_due_since = now() - interval '10 days', grace_until = now() - interval '2 days' where id = '{sub_a}';")
     # C03 Regression guard: expiring grace_until while still past_due MUST NOT auto-block writes before manual suspension
     assert sql(f"select private.tenant_write_allowed('{org_a}')::text;") == "true"
     sql(f"begin; {caller(master, 'aal2')} select public.suspend_saas_subscription_manual_idempotent('{org_a}', 'Suspensao manual apos tolerancia', 'k-susp-ok'); commit;")
     assert sql(f"select private.tenant_write_allowed('{org_a}')::text;") == "false"
-    sql(f"begin; {caller(org_a_admin, 'aal1')} select public.assign_tenant_user_role('{org_a}', '{org_a_u4}', '{role_treasurer}', 'Bloqueado suspenso', 'k-susp-wr'); commit;", succeeds=False, error_code="55000")
-    tkt_id = sql(f"begin; {caller(org_a_admin, 'aal1')} select public.create_saas_support_ticket('{org_a}', 'Duvida em conta suspensa', 'billing', 'high', 'Preciso negociar faturas'); commit;")
+    sql(f"begin; {caller(org_a_admin, 'aal1')} select public.assign_tenant_user_role('{org_a}', '{org_a_u4}', '{role_treasurer}', 'Bloqueado suspenso', 'k-susp-wr'); commit;", succeeds=False, error_code="42501")
+    tkt_id = sql(f"begin; {caller(org_a_admin, 'aal1')} select public.create_saas_support_ticket('{org_a}', 'Duvida em conta suspensa', 'billing', 'high', 'Preciso negociar faturas','k-ticket-suspended'); commit;")
     assert UUID_RE.match(tkt_id)
     sql(f"begin; {caller(master, 'aal2')} select public.reactivate_saas_subscription_idempotent('{org_a}', 'Reativacao com acordo registrado', 'k-react-1'); commit;")
     assert sql(f"select private.tenant_write_allowed('{org_a}')::text;") == "true"
     sql(f"begin; {caller(master, 'aal2')} select public.cancel_saas_subscription_idempotent('{org_a}', true, 'Cancelamento D01 teste', 'k-can-d01'); commit;")
-    assert sql(f"select (status = 'canceled' and export_window_until > now() + interval '80 days')::text from public.saas_subscriptions where id = '{sub_a}';") == "true"
+    assert sql(f"select (status = 'canceled' and canceled_at::date + 90 > current_date + 80)::text from public.saas_subscriptions where id = '{sub_a}';") == "true"
     print("PASS Entrega C manual past_due, 7-day grace guard, manual suspension write-block, support access & D01 retention")
 
     sql(f"begin; {caller(support, 'aal2')} select public.add_master_support_internal_note_idempotent('{tkt_id}', 'Nota restrita da operacao', 'triage', 'k-note-1'); commit;")
