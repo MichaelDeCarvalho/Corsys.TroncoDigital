@@ -634,13 +634,13 @@ def main() -> None:
           ('{org_b}', 'Loja Sintetica B', 'active');
 
         insert into public.user_roles(organization_id, user_id, role_id)
-        select '{org_a}', '{actor_a1}', id from public.roles where organization_id = '{org_a}' and code = 'ADMIN'
+        select '{org_a}'::uuid, '{actor_a1}'::uuid, id from public.roles where organization_id = '{org_a}' and code = 'ADMIN'
         union all
-        select '{org_a}', '{actor_a2}', id from public.roles where organization_id = '{org_a}' and code = 'TREASURER'
+        select '{org_a}'::uuid, '{actor_a2}'::uuid, id from public.roles where organization_id = '{org_a}' and code = 'TREASURER'
         union all
-        select '{org_a}', '{viewer_a}', id from public.roles where organization_id = '{org_a}' and code = 'VIEWER'
+        select '{org_a}'::uuid, '{viewer_a}'::uuid, id from public.roles where organization_id = '{org_a}' and code = 'VIEWER'
         union all
-        select '{org_b}', '{actor_b}', id from public.roles where organization_id = '{org_b}' and code = 'ADMIN';
+        select '{org_b}'::uuid, '{actor_b}'::uuid, id from public.roles where organization_id = '{org_b}' and code = 'ADMIN';
 
         insert into public.financial_categories(id, organization_id, name, domain, active, allow_installments) values
           ('{cat_a}', '{org_a}', 'Mensalidade Sintetica', 'member_receivable', true, true),
@@ -721,7 +721,7 @@ def main() -> None:
     create_member(m1, org_a, "Integrante T1 FIFO Primeiro Parcial")
     c1 = make_charge(actor_a1, org_a, m1, cat_a, due_earliest, "100.00", "t1-c1")
     c2 = make_charge(actor_a1, org_a, m1, cat_a, due_middle, "50.00", "t1-c2")
-    fp_t1 = preview_fingerprint(actor_a1, org_a, m1, f"array['{c2}'::uuid, '{c1}'::uuid]", "120.00", 2)
+    fp_t1 = preview_fingerprint(actor_a1, org_a, m1, f"array['{c2}'::uuid, '{c1}'::uuid]", "80.00", 2)
     p1 = make_payment(actor_a1, org_a, m1, method_a, acct_a, "60.00", "t1-p1")
 
     r1, r2, det_t1 = run_concurrent_pair(
@@ -730,7 +730,7 @@ def main() -> None:
         actor_a1,
         f"select public.allocate_payment_fifo('{org_a}', '{p1}', '{period}');",
         actor_a2,
-        f"select public.create_member_debt_agreement('{org_a}', '{m1}', array['{c2}'::uuid, '{c1}'::uuid], 120.00, 2, '{today}', '{first_due}', '{fp_t1}', 'Acordo concorrente T1', 'k-t1-agr');",
+        f"select public.create_member_debt_agreement('{org_a}', '{m1}', array['{c2}'::uuid, '{c1}'::uuid], 80.00, 2, '{today}', '{first_due}', '{fp_t1}', 'Acordo concorrente T1', 'k-t1-agr');",
     )
     assert r1.returncode == 0 and r1.stdout.splitlines()[0] == "0.00", (r1.stdout, r1.stderr)
     assert r2.returncode != 0 and r2.sqlstate == "PT409", (r2.sqlstate, r2.stderr)
