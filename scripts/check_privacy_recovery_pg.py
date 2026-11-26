@@ -74,64 +74,31 @@ def run_pg_gate() -> None:
     pg.assert_disposable_target()
     assert pg.sql("select current_database()") == "privacy_recovery_gate"
 
-    foundation = pg.source("202609040001")
-    core = pg.source("202609040002")
-    inst = pg.source("202609080009")
-    ops = pg.source("202609080010")
-    saas = pg.source("202609080006")
-    v33 = pg.source("202609090014")
-    rls = pg.source("202609040004")
-
-    pg.sql(
-        """
+    # Model Supabase-managed primitives only. Replay the product migrations in order.
+    pg.sql("""
         DO $$ BEGIN
-         IF NOT EXISTS(SELECT FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon; END IF;
-         IF NOT EXISTS(SELECT FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated; END IF;
+          IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'anon') THEN CREATE ROLE anon; END IF;
+          IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'authenticated') THEN CREATE ROLE authenticated; END IF;
+          IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'service_role') THEN CREATE ROLE service_role BYPASSRLS; END IF;
         END $$;
-        create schema if not exists auth;
-        create schema if not exists private;
-        create table auth.users(id uuid primary key);
+        create schema auth;
+        create table auth.users (
+          id uuid primary key, aud text, role text, email text,
+          invited_at timestamptz, email_confirmed_at timestamptz, raw_user_meta_data jsonb
+        );
         create function auth.jwt() returns jsonb language sql stable as
           $$select nullif(current_setting('request.jwt.claims',true),'')::jsonb$$;
         create function auth.uid() returns uuid language sql stable as
           $$select (auth.jwt()->>'sub')::uuid$$;
-        """
-    )
-
-    pg.sql(
-        "\n".join([
-            pg.function(foundation, "private", "set_updated_at"),
-            pg.table(foundation, "organizations"),
-            pg.table(foundation, "organization_settings"),
-            pg.table(foundation, "members"),
-            pg.table(foundation, "member_user_links"),
-            pg.table(foundation, "roles"),
-            pg.table(foundation, "permissions"),
-            pg.table(foundation, "role_permissions"),
-            pg.table(foundation, "user_roles"),
-            pg.table(foundation, "financial_categories"),
-            pg.table(foundation, "financial_accounts"),
-            pg.table(foundation, "payment_methods"),
-            pg.function(core, "private", "prevent_financial_mutation"),
-            pg.table(core, "audit_logs"),
-            pg.table(core, "charges"),
-            pg.table(core, "payments"),
-            pg.table(core, "receivable_allocations"),
-            pg.table(inst, "institutional_receivables"),
-            pg.table(inst, "institutional_payables"),
-            pg.table(ops, "documents"),
-            pg.table(saas, "platform_staff"),
-            pg.table(saas, "saas_plans"),
-            pg.table(saas, "saas_subscriptions"),
-            pg.table(saas, "saas_master_audit_logs"),
-            pg.table(v33, "saas_tenant_accounts"),
-            pg.table(v33, "saas_jobs"),
-            pg.function(rls, "private", "has_permission"),
-            pg.function(rls, "private", "is_self_member"),
-            *(pg.function(v33, "private", n) for n in ("has_aal2", "is_platform_staff", "require_platform_staff", "tenant_write_allowed")),
-        ])
-    )
-    pg.sql("grant usage on schema public, auth, private to authenticated, anon;")
+        grant usage on schema auth to authenticated, anon;
+    """)
+    for migration in sorted(MIGRATION_FILE.parent.glob("*.sql")):
+        if migration.name >= MIGRATION_FILE.name:
+            break
+        sql = migration.read_text(encoding="utf-8").replace(
+            "revoke execute on function public.rls_auto_enable() from authenticated;", ""
+        )
+        pg.sql(sql, app=f"m05-bootstrap-{migration.name[:14]}")
 
     body = extract_migration_body()
     exists_check = "select to_regprocedure('public.create_tenant_portability_export_idempotent(uuid,text,uuid,text,text)') is not null;"
@@ -155,20 +122,22 @@ def run_pg_gate() -> None:
 
     pg.sql(
         f"""
-        insert into auth.users values
+        insert into auth.users(id) values
           ('{master1}'),('{master2}'),('{support}'),('{admin_a}'),('{member_a_user}');
         insert into public.platform_staff(user_id,role) values
           ('{master1}','MASTER'),('{master2}','MASTER'),('{support}','SUPPORT');
         insert into public.organizations(id, name) values ('{org_a}', 'Loja QA A'), ('{org_b}', 'Loja QA B');
-        insert into public.saas_plans(id, code, name, billing_interval) values ('{plan_id}', 'QA', 'QA Plan', 'monthly');
+        insert into public.saas_plans(id, code, name, billing_interval, price) values ('{plan_id}', 'QA-M05', 'QA Plan', 'monthly', 0);
+        insert into public.saas_plan_versions(plan_id, version_number, status, price, valid_from, published_at, display_name_snapshot, internal_code_snapshot)
+        values ('{plan_id}', 1, 'published', 0, date '2026-01-01', now(), 'QA Plan', 'QA-M05');
         insert into public.saas_tenant_accounts(organization_id) values ('{org_a}'), ('{org_b}');
-        insert into public.saas_subscriptions(organization_id, plan_id, status, canceled_at)
-        values ('{org_a}', '{plan_id}', 'canceled', now() - interval '10 days'),
-               ('{org_b}', '{plan_id}', 'active', null);
+        insert into public.saas_subscriptions(organization_id, plan_id, status, canceled_at, plan_version_id)
+        values ('{org_a}', '{plan_id}', 'canceled', now() - interval '10 days', (select id from public.saas_plan_versions where plan_id='{plan_id}')),
+               ('{org_b}', '{plan_id}', 'active', null, (select id from public.saas_plan_versions where plan_id='{plan_id}'));
         insert into public.permissions(code, description) values
           ('settings.manage', 'settings'), ('reports.export', 'export'), ('members.read', 'read'), ('users.manage', 'users')
         on conflict do nothing;
-        insert into public.roles(id, organization_id, code, name) values ('{role_a}', '{org_a}', 'ADMIN', 'Admin');
+        insert into public.roles(id, organization_id, code, name) values ('{role_a}', '{org_a}', 'M05_TEST_ADMIN', 'QA Admin');
         insert into public.role_permissions(role_id, permission_code) values
           ('{role_a}', 'settings.manage'), ('{role_a}', 'reports.export'), ('{role_a}', 'members.read'), ('{role_a}', 'users.manage');
         insert into public.user_roles(organization_id, user_id, role_id) values ('{org_a}', '{admin_a}', '{role_a}');
@@ -177,7 +146,7 @@ def run_pg_gate() -> None:
           ('{member_b}', '{org_b}', 'Titular QA B', 'qa-b@example.invalid');
         insert into public.member_user_links(organization_id, member_id, user_id) values ('{org_a}', '{member_a}', '{member_a_user}');
         insert into public.financial_categories(id, organization_id, name, domain) values ('{cat_a}', '{org_a}', 'Mensalidade', 'member_receivable');
-        insert into public.payment_methods(id, organization_id, name, kind) values ('{pm_a}', '{org_a}', 'PIX', 'pix');
+        insert into public.payment_methods(id, organization_id, name) values ('{pm_a}', '{org_a}', 'PIX');
         insert into public.financial_accounts(id, organization_id, name, account_type) values ('{fa_a}', '{org_a}', 'Caixa QA', 'cash');
         insert into public.charges(organization_id, member_id, category_id, source_kind, description, competence, issue_date, due_date, accounting_period, unit_amount, original_amount)
         values ('{org_a}', '{member_a}', '{cat_a}', 'manual', 'Mensalidade QA', '2026-11-01', '2026-11-01', '2026-11-10', '2026-11-01', 120.50, 120.50);

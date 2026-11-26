@@ -105,6 +105,7 @@ jobs:
           python3 scripts/check_accounting_books_pg.py
 
       - name: Master SaaS M04 lifecycle, billing and support PostgreSQL gate
+        if: ${{ !cancelled() }}
         env:
           PGHOST: 127.0.0.1
           PGPORT: '55432'

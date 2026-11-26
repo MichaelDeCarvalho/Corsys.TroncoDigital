@@ -318,6 +318,7 @@ def run_pg_gate() -> None:
           organization_id uuid not null,
           charge_id uuid not null,
           payment_id uuid,
+          member_credit_id uuid,
           accounting_period date not null,
           amount numeric(14,2) not null,
           created_at timestamptz not null default now()
