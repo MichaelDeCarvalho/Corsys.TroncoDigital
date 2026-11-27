@@ -1,3 +1,12 @@
+## Aceites DEV M03/M05 — 27/11/2026
+
+- Cloudflare DEV: versão `9a36652b`, 100% do tráfego, vinculada a `96dac501dbabd76dfe676f70a0fbb30658a3d7ae` (PR #86).
+- M03 Diário anual 2026, Data do evento, DEV QA INTERFACE B 20261014: 9 partidas, R$ 34,00 a débito e a crédito, 1 sem mapeamento. Selo Integral bloqueado, XLSX e PDF desabilitados. Logs DEV HTTP 200 para summary (82 ms upstream) e diary (74 ms upstream).
+- M05 arquivos integrais recebidos em Downloads e auditados, um evento `privacy.portability_export_downloaded` por pacote. JSON 34.198 bytes, SHA-256 do arquivo `a46927a4a31960c1f04f9b60dca342881d9d8535a49570a49613f96ec3bec535`; SHA-256 independente de payload_text coincide com o banco. CSV 9.398 bytes, SHA-256 do arquivo `62bb08bb3ae28cdc0a17d19adeea84b73f427e613e010da88fe0c51fff241805`; digest persistido refere-se ao payload anterior à formatação CSV. Comparação independente do conteúdo CSV com a origem fica aberta.
+- Anexo privado bloqueado: payload da fixture contém zero anexos elegíveis. Próximo aceite exige fixture com binário elegível e sessões A/B. Reexecução LGPD, operações MASTER/AAL2, S3/S4 e contabilidade positiva ainda pendentes dos respectivos dados ou perfis. Sem reaplicar migrations, repetir CI, publicar, acessar PROD ou conceder vínculos.
+
+---
+
 ## Homologação DEV — tráfego ativo, LGPD e portabilidade (27/11/2026)
 
 - Cloudflare DEV confirmado no painel: versão `0288a7e1` (prefixo exibido), 100% do tráfego, commit `7d921dcbe1b0cf3d6647f9fe1cf8893fa439a77b`, merge #83. GitHub compare com `4396c406` contém só sete arquivos Markdown. A versão histórica `8a7b7302` está no histórico. Nenhum deploy manual, mudança de tráfego ou acesso PROD.
