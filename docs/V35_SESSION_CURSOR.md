@@ -1,3 +1,15 @@
+## Homologação operacional consolidada — preflight DEV (27/11/2026)
+
+- **Git confirmado:** `main` em `b709af084563ddd1153aaf9f121d333323128a84`. O diff desde a revisão funcional `4396c406e6c7fb181e7c251d9ad925a8fa0c5952` contém somente sete arquivos Markdown.
+- **PASS — infraestrutura Supabase DEV:** migration `20261127033450` no histórico; catálogo confirmou registro LGPD, mapeamentos, portabilidade e consulta comercial. Bucket `tenant-documents` privado, Edge Function `portability-attachment` ativa v1 com `verify_jwt=true`. Conteúdo binário ainda não testado.
+- **BLOCKED — preflight Cloudflare:** aplicação respondeu com `index-BnfLhXQo.js` e `index-CsCalASr.css`. Versão ativa e commit do Workers Builds exigem sessão no painel; GitHub não retornou status externo para os dois SHAs. Nenhum deploy disparado.
+- **PASS parcial — M05.01 visual:** na fixture `DEV QA INTERFACE B 20261014`, Configurações mostrou a confirmação de identidade desmarcada sob perfil Administração da Loja. O envio, request_id, prazo, persistência, auditoria e replay ficaram pendentes do preflight. Uma falha transitória de validação da sessão após recarga resolveu com “Tentar novamente”; sem HTTP/SQLSTATE observado e sem submissão LGPD. Causa da falha histórica permanece indeterminada.
+- **BLOCKED:** S3 exige dois aprovadores distintos na fixture; S4 exige interceptação controlada, recurso ausente na sessão de navegador; M04 e recuperação privilegiada exigem MASTER/AAL2 e segundo operador onde aplicável. **NOT EVALUATED:** M03 positivo, demais operações M05 e paridade residual M06/Grupo B. Sem falha funcional reproduzida. S1/S2, M06.02 e PG17 descartável preservados; issue #43 e comprovação operacional de RPO/RTO continuam pendentes.
+- **Limpeza:** nenhuma gravação de homologação, concessão temporária ou alteração de dados/configuração/PROD nesta rodada. M07 segue bloqueada.
+- **Retomada:** proprietário autentica o painel Cloudflare pelo fluxo normal; Work confere o deploy ativo e retoma aceites agrupados na fixture, sem repetir CI/backup. Chat integra este registro e trata eventuais dependências; Gemini recebe somente defeitos de implementação reproduzidos.
+
+---
+
 ## M05.01 — Hardening LGPD integrado e publicado no Supabase DEV (27/11/2026)
 
 - **Revisão:** PR #81 integrado em `4396c406e6c7fb181e7c251d9ad925a8fa0c5952`. Sync anterior `cf1182a0` preservou seis blobs da entrega; limpeza restaurou modos dos scripts, removeu patch de transferência da árvore ativa e reforçou ignore de patches na raiz. Não reaplicar a entrega nem fazer novo Sync/Push.
