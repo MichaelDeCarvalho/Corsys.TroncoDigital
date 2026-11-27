@@ -35,7 +35,8 @@ describe('member agreement',()=>{
   expect(()=>agreementCents('NaN')).toThrow()
  })
  it('previews a cent-balanced schedule then confirms once and refreshes the history',async()=>{
-  const f=fixture();render(<MemberAgreements client={f.client} organizationId={org}/>);await review()
+  const f=fixture();render(<MemberAgreements client={f.client} organizationId={org}/>);
+  expect(screen.getByLabelText('Data do acordo')).toHaveValue('');await review()
   expect(f.rpc).toHaveBeenCalledWith('preview_member_debt_agreement',input)
   expect(screen.getByRole('button',{name:'Confirmar acordo'})).toBeDisabled()
   confirm();await screen.findByText('Acordo confirmado. Cobranças e parcelas atualizadas.')
