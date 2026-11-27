@@ -46,4 +46,28 @@ describe('Application Supabase transport (no live service)', () => {
     expect(transport).toHaveBeenCalledTimes(1)
     await client.auth.stopAutoRefresh()
   })
+
+  it('captures sanitized RPC request identifier metadata without enabling global retries', async () => {
+    const transport = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'x-request-id': 'req-m03-20261126-abc',
+      },
+    }))
+    vi.stubGlobal('fetch', transport)
+    const { getSupabaseClient, getLastRpcTransportMeta, clearRpcTransportMeta } = await import('./supabase')
+    clearRpcTransportMeta()
+    const client = getSupabaseClient()
+    const started = Date.now()
+    await client.rpc('read_tenant_accounting_diary_summary', { p_organization_id: 'org-1' })
+    const meta = getLastRpcTransportMeta('read_tenant_accounting_diary_summary', started)
+    expect(meta).toMatchObject({
+      rpcName: 'read_tenant_accounting_diary_summary',
+      requestId: 'req-m03-20261126-abc',
+      httpStatus: 200,
+    })
+    expect(transport).toHaveBeenCalledTimes(1)
+    await client.auth.stopAutoRefresh()
+  })
 })

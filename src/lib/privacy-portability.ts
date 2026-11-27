@@ -114,11 +114,15 @@ export interface DownloadedPortabilityPackage {
   subject_member_id: string | null
   package_format: PortabilityFormat
   payload_sha256: string
+  payload_text?: string
+  payload_text_format?: string
   expires_at: string
   downloaded_at: string
   manifest: PortabilityExportRecord['manifest']
   data_dictionary: Record<string, unknown>
   payload: Record<string, unknown>
+  integrity_verified?: boolean
+  integrity_mode?: 'server_canonical_text' | 'legacy_pg_jsonb_text' | 'legacy_json_stringify'
 }
 
 export interface PrivacyRequestRecord {
@@ -153,6 +157,7 @@ export type PrivacyErrorKind =
   | 'auth'
   | 'validation'
   | 'conflict'
+  | 'integrity'
   | 'uncertain'
   | 'unexpected'
 
@@ -211,6 +216,42 @@ export function classifyPrivacyError(
   const cleanMsg = sanitizePrivacyMessage(message)
   const lower = cleanMsg.toLowerCase()
 
+  if (
+    code === 'INTEGRITY_MISMATCH' ||
+    /integrity mismatch|digest mismatch|payload integrity metadata missing|sha-256|sha256.*diverg|digest.*diverg/.test(lower)
+  ) {
+    return {
+      kind: 'integrity',
+      code: code ?? 'INTEGRITY_MISMATCH',
+      message:
+        cleanMsg ||
+        'Download bloqueado: falha na verificação de integridade SHA-256 do pacote de portabilidade.',
+      retryableWithSameKey: false,
+    }
+  }
+
+  if (code === 'EXPORT_EXPIRED' || /export.*expired|pacote.*expirado/.test(lower)) {
+    return {
+      kind: 'validation',
+      code: code ?? 'EXPORT_EXPIRED',
+      message:
+        cleanMsg ||
+        'Pacote de portabilidade expirado (validade de 24 horas encerrada). Gere um novo pacote.',
+      retryableWithSameKey: false,
+    }
+  }
+
+  if (code === 'BROWSER_DELIVERY_FAILED') {
+    return {
+      kind: 'unexpected',
+      code,
+      message:
+        cleanMsg ||
+        'O servidor confirmou a operação, mas não foi possível entregar o arquivo ao navegador.',
+      retryableWithSameKey: false,
+    }
+  }
+
   if (code === 'INVALID_RPC_RESPONSE') {
     return {
       kind: 'uncertain',
@@ -224,6 +265,7 @@ export function classifyPrivacyError(
 
   if (
     name === 'AbortError' ||
+    name === 'TimeoutError' ||
     code === 'ETIMEDOUT' ||
     code === 'ECONNABORTED' ||
     code === 'UND_ERR_CONNECT_TIMEOUT' ||
@@ -473,17 +515,65 @@ function computeSha256HexFallback(bytes: Uint8Array): string {
   return [h0, h1, h2, h3, h4, h5, h6, h7].map(v => v.toString(16).padStart(8, '0')).join('')
 }
 
-export async function verifySha256Integrity(text: string, expectedHex: string): Promise<boolean> {
-  if (!/^[0-9a-f]{64}$/i.test(expectedHex)) return false
-  const bytes = new TextEncoder().encode(text)
+const utf8Encoder = new TextEncoder()
+
+function comparePgJsonbKeys(a: string, b: string): number {
+  const aBytes = utf8Encoder.encode(a)
+  const bBytes = utf8Encoder.encode(b)
+  if (aBytes.length !== bBytes.length) return aBytes.length - bBytes.length
+  for (let i = 0; i < aBytes.length; i += 1) {
+    if (aBytes[i] !== bBytes[i]) return aBytes[i] - bBytes[i]
+  }
+  return 0
+}
+
+/**
+ * Deterministic serializer matching PostgreSQL `jsonb::text` formatting
+ * (keys ordered by UTF-8 byte length then unsigned byte order, `": "` and `", "` separators).
+ * Used as compatibility fallback for pre-migration responses without `payload_text`
+ * and for canonical equivalence comparison between `payload_text` and `payload`.
+ */
+export function serializePgJsonbText(value: unknown): string {
+  if (value === null || value === undefined) return 'null'
+  if (typeof value === 'boolean' || typeof value === 'string') {
+    return JSON.stringify(value)
+  }
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? JSON.stringify(value) : 'null'
+  }
+  if (Array.isArray(value)) {
+    if (value.length === 0) return '[]'
+    return `[${value.map(item => serializePgJsonbText(item)).join(', ')}]`
+  }
+  if (typeof value === 'object') {
+    const rec = value as Record<string, unknown>
+    const keys = Object.keys(rec)
+      .filter(k => rec[k] !== undefined)
+      .sort(comparePgJsonbKeys)
+    if (keys.length === 0) return '{}'
+    return `{${keys.map(k => `${JSON.stringify(k)}: ${serializePgJsonbText(rec[k])}`).join(', ')}}`
+  }
+  return 'null'
+}
+
+export async function computeBytesSha256Hex(bytes: Uint8Array): Promise<string> {
   if (typeof crypto !== 'undefined' && crypto.subtle) {
-    const digest = await crypto.subtle.digest('SHA-256', bytes)
-    const hex = Array.from(new Uint8Array(digest))
+    const digest = await crypto.subtle.digest('SHA-256', bytes as BufferSource)
+    return Array.from(new Uint8Array(digest))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('')
-    return hex.toLowerCase() === expectedHex.toLowerCase()
   }
-  return computeSha256HexFallback(bytes) === expectedHex.toLowerCase()
+  return computeSha256HexFallback(bytes)
+}
+
+export async function computeTextSha256Hex(text: string): Promise<string> {
+  return computeBytesSha256Hex(utf8Encoder.encode(text))
+}
+
+export async function verifySha256Integrity(text: string, expectedHex: string): Promise<boolean> {
+  if (!/^[0-9a-f]{64}$/i.test(expectedHex)) return false
+  const hex = await computeTextSha256Hex(text)
+  return hex.toLowerCase() === expectedHex.toLowerCase()
 }
 
 export async function readTenantRetentionPosture(
@@ -618,27 +708,155 @@ export async function createTenantPortabilityExport(
   return data as PortabilityExportRecord
 }
 
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
 export async function downloadTenantPortabilityExport(
   client: SupabaseClient,
   params: {
     organizationId: string
     exportId: string
     requestedFormat: PortabilityFormat
+    expectedScope?: PortabilityScope
+    nowMs?: number
   },
 ): Promise<DownloadedPortabilityPackage> {
   const orgId = assertM05Uuid(params.organizationId, 'Organização')
   const exportId = assertM05Uuid(params.exportId, 'Pacote de exportação')
+  if (params.requestedFormat !== 'json' && params.requestedFormat !== 'csv') {
+    throw createPrivacyClientError('Formato de exportação inválido.', 'CLIENT_VALIDATION')
+  }
+  // Never auto-retry: download_tenant_portability_export writes audit/download records server-side.
   const { data, error } = await client.rpc('download_tenant_portability_export', {
     p_organization_id: orgId,
     p_export_id: exportId,
     p_requested_format: params.requestedFormat,
   })
   if (error) throw error
-  const pkg = data as DownloadedPortabilityPackage
-  if (!pkg || !pkg.payload || !/^[0-9a-f]{64}$/i.test(pkg.payload_sha256)) {
-    throw new Error('Pacote de exportação inválido ou sem digest SHA-256.')
+  if (!isPlainRecord(data)) {
+    throw createPrivacyClientError(
+      'Pacote de exportação inválido ou sem digest SHA-256.',
+      'INTEGRITY_MISMATCH',
+    )
   }
-  return pkg
+
+  const pkg = data as unknown as DownloadedPortabilityPackage
+  if (!isPlainRecord(pkg.payload) || typeof pkg.payload_sha256 !== 'string' || !/^[0-9a-f]{64}$/i.test(pkg.payload_sha256)) {
+    throw createPrivacyClientError(
+      'Pacote de exportação inválido ou sem digest SHA-256.',
+      'INTEGRITY_MISMATCH',
+    )
+  }
+  if (!isM05Uuid(pkg.export_id) || pkg.export_id.trim().toLowerCase() !== exportId.toLowerCase()) {
+    throw createPrivacyClientError(
+      'Download bloqueado: identificador export_id divergente do pacote solicitado.',
+      'INTEGRITY_MISMATCH',
+    )
+  }
+  if (!isM05Uuid(pkg.organization_id) || pkg.organization_id.trim().toLowerCase() !== orgId.toLowerCase()) {
+    throw createPrivacyClientError(
+      'Download bloqueado: pacote pertence a outra organização (violação multi-tenant).',
+      'INTEGRITY_MISMATCH',
+    )
+  }
+  if (pkg.export_scope !== 'organization_full' && pkg.export_scope !== 'data_subject_package') {
+    throw createPrivacyClientError(
+      'Download bloqueado: escopo de portabilidade inválido no pacote recebido.',
+      'INTEGRITY_MISMATCH',
+    )
+  }
+  if (params.expectedScope && pkg.export_scope !== params.expectedScope) {
+    throw createPrivacyClientError(
+      'Download bloqueado: escopo retornado pelo servidor diverge do pacote selecionado.',
+      'INTEGRITY_MISMATCH',
+    )
+  }
+  if (pkg.package_format !== params.requestedFormat) {
+    throw createPrivacyClientError(
+      'Download bloqueado: formato do pacote retornado diverge do formato solicitado.',
+      'INTEGRITY_MISMATCH',
+    )
+  }
+  if (!isPlainRecord(pkg.manifest) || !isPlainRecord(pkg.data_dictionary)) {
+    throw createPrivacyClientError(
+      'Download bloqueado: manifesto ou dicionário de dados ausente no pacote de portabilidade.',
+      'INTEGRITY_MISMATCH',
+    )
+  }
+
+  const expiresAtMs = typeof pkg.expires_at === 'string' ? Date.parse(pkg.expires_at) : Number.NaN
+  if (!Number.isFinite(expiresAtMs)) {
+    throw createPrivacyClientError(
+      'Download bloqueado: data de expiração inválida no pacote de portabilidade.',
+      'INTEGRITY_MISMATCH',
+    )
+  }
+  const nowMs = params.nowMs ?? Date.now()
+  const downloadedAtMs = typeof pkg.downloaded_at === 'string' ? Date.parse(pkg.downloaded_at) : Number.NaN
+  if (expiresAtMs <= nowMs || (Number.isFinite(downloadedAtMs) && expiresAtMs <= downloadedAtMs)) {
+    throw createPrivacyClientError(
+      'Download bloqueado: o pacote de portabilidade expirou (prazo de 24 horas encerrado). Gere um novo pacote.',
+      'EXPORT_EXPIRED',
+    )
+  }
+
+  let integrityMode: DownloadedPortabilityPackage['integrity_mode']
+  if (typeof pkg.payload_text === 'string') {
+    if (!pkg.payload_text.trim()) {
+      throw createPrivacyClientError(
+        'Download bloqueado: representação textual canônica do pacote está vazia.',
+        'INTEGRITY_MISMATCH',
+      )
+    }
+    const textMatchesDigest = await verifySha256Integrity(pkg.payload_text, pkg.payload_sha256)
+    if (!textMatchesDigest) {
+      throw createPrivacyClientError(
+        'Download bloqueado: integridade SHA-256 divergente entre payload_text e payload_sha256.',
+        'INTEGRITY_MISMATCH',
+      )
+    }
+    let parsedCanonical: unknown
+    try {
+      parsedCanonical = JSON.parse(pkg.payload_text)
+    } catch {
+      throw createPrivacyClientError(
+        'Download bloqueado: representação textual canônica do pacote não é JSON válido.',
+        'INTEGRITY_MISMATCH',
+      )
+    }
+    if (
+      !isPlainRecord(parsedCanonical) ||
+      serializePgJsonbText(parsedCanonical) !== serializePgJsonbText(pkg.payload)
+    ) {
+      throw createPrivacyClientError(
+        'Download bloqueado: conteúdo estruturado diverge da representação canônica verificada por SHA-256.',
+        'INTEGRITY_MISMATCH',
+      )
+    }
+    integrityMode = 'server_canonical_text'
+  } else {
+    // Compatibility path for pre-migration server responses without payload_text
+    const pgCanonicalOk = await verifySha256Integrity(serializePgJsonbText(pkg.payload), pkg.payload_sha256)
+    if (pgCanonicalOk) {
+      integrityMode = 'legacy_pg_jsonb_text'
+    } else {
+      const compactJsonOk = await verifySha256Integrity(JSON.stringify(pkg.payload), pkg.payload_sha256)
+      if (!compactJsonOk) {
+        throw createPrivacyClientError(
+          'Download bloqueado: integridade SHA-256 divergente do digest registrado para este pacote.',
+          'INTEGRITY_MISMATCH',
+        )
+      }
+      integrityMode = 'legacy_json_stringify'
+    }
+  }
+
+  return {
+    ...pkg,
+    integrity_verified: true,
+    integrity_mode: integrityMode,
+  }
 }
 
 export async function listTenantPrivacyRequests(
@@ -808,16 +1026,27 @@ export async function reviewTenantPrivacyRequest(
 }
 
 export async function verifyBytesSha256Integrity(bytes: Uint8Array, expectedHex: string | null): Promise<boolean> {
-  if (!expectedHex) return true
-  if (!/^[0-9a-f]{64}$/i.test(expectedHex)) return false
-  if (typeof crypto !== 'undefined' && crypto.subtle) {
-    const digest = await crypto.subtle.digest('SHA-256', bytes)
-    const hex = Array.from(new Uint8Array(digest))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('')
-    return hex.toLowerCase() === expectedHex.toLowerCase()
+  if (!expectedHex || !/^[0-9a-f]{64}$/i.test(expectedHex)) return false
+  const hex = await computeBytesSha256Hex(bytes)
+  return hex.toLowerCase() === expectedHex.toLowerCase()
+}
+
+async function readBlobBytes(blob: Blob): Promise<Uint8Array> {
+  if (typeof blob.arrayBuffer === 'function') {
+    return new Uint8Array(await blob.arrayBuffer())
   }
-  return computeSha256HexFallback(bytes) === expectedHex.toLowerCase()
+  if (typeof FileReader !== 'undefined') {
+    return new Promise<Uint8Array>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(new Uint8Array(reader.result as ArrayBuffer))
+      reader.onerror = () => reject(new Error('Falha ao ler bytes do anexo baixado.'))
+      reader.readAsArrayBuffer(blob)
+    })
+  }
+  if (typeof Response !== 'undefined') {
+    return new Uint8Array(await new Response(blob).arrayBuffer())
+  }
+  throw new Error('Ambiente sem suporte para leitura binária de anexo.')
 }
 
 export async function downloadPortabilityAttachmentBinary(
@@ -826,17 +1055,53 @@ export async function downloadPortabilityAttachmentBinary(
     organizationId: string
     exportId: string
     documentId: string
+    expectedSha256?: string | null
+    expectedSizeBytes?: number | null
+    requireSha256?: boolean
   },
 ): Promise<Blob> {
+  const orgId = assertM05Uuid(params.organizationId, 'Organização')
+  const exportId = assertM05Uuid(params.exportId, 'Pacote de exportação')
+  const documentId = assertM05Uuid(params.documentId, 'Anexo elegível')
+
+  if (params.requireSha256 && (!params.expectedSha256 || !/^[0-9a-f]{64}$/i.test(params.expectedSha256))) {
+    throw createPrivacyClientError(
+      'Download do anexo bloqueado: metadado sem digest SHA-256 válido para conferência.',
+      'INTEGRITY_MISMATCH',
+    )
+  }
+
+  // Never auto-retry: portability-attachment writes audit/download records server-side.
   const { data, error } = await client.functions.invoke<Blob>('portability-attachment', {
     body: {
-      p_organization_id: assertM05Uuid(params.organizationId, 'Organização'),
-      p_export_id: assertM05Uuid(params.exportId, 'Pacote de exportação'),
-      p_document_id: assertM05Uuid(params.documentId, 'Anexo elegível'),
+      p_organization_id: orgId,
+      p_export_id: exportId,
+      p_document_id: documentId,
     },
   })
   if (error || !(data instanceof Blob)) {
     throw new Error('Não foi possível baixar o binário autorizado do anexo.')
   }
+
+  if (params.expectedSizeBytes !== undefined && params.expectedSizeBytes !== null) {
+    if (!Number.isInteger(params.expectedSizeBytes) || params.expectedSizeBytes < 0 || data.size !== params.expectedSizeBytes) {
+      throw createPrivacyClientError(
+        'Download do anexo bloqueado: tamanho do binário recebido diverge do metadado auditado.',
+        'INTEGRITY_MISMATCH',
+      )
+    }
+  }
+
+  if (params.expectedSha256 !== undefined && params.expectedSha256 !== null) {
+    const bytes = await readBlobBytes(data)
+    const ok = await verifyBytesSha256Integrity(bytes, params.expectedSha256)
+    if (!ok) {
+      throw createPrivacyClientError(
+        'Download do anexo bloqueado: integridade SHA-256 do binário diverge do digest registrado.',
+        'INTEGRITY_MISMATCH',
+      )
+    }
+  }
+
   return data
 }

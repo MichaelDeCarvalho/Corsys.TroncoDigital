@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { getLastRpcTransportMeta } from './supabase'
 
 export type AccountingRoleCode =
   | 'member_receivable_control'
@@ -93,6 +94,58 @@ export type DiarySummary = {
   incomplete_reasons: string[]
   plans: AccountingPlanRef[]
   report_classification: string
+}
+
+export type DiaryRpcName =
+  | 'read_tenant_accounting_diary_summary'
+  | 'read_tenant_accounting_diary'
+
+export type DiaryFailureCategory =
+  | 'ok'
+  | 'timeout'
+  | 'network'
+  | 'server_transient'
+  | 'aborted'
+  | 'auth'
+  | 'validation'
+  | 'inconsistent_response'
+  | 'unexpected'
+
+export type DiaryRpcDiagnostic = {
+  rpc: DiaryRpcName
+  ok: boolean
+  category: DiaryFailureCategory
+  durationMs: number
+  attempts: number
+  retried: boolean
+  requestId: string | null
+  httpStatus: number | null
+  errorCode: string | null
+  message: string | null
+}
+
+export type DiaryReadOptions = {
+  signal?: AbortSignal
+  retryDelayMs?: number
+  onDiagnostic?: (diagnostic: DiaryRpcDiagnostic) => void
+}
+
+export type DiaryQueryWithDiagnosticsResult = {
+  summary: DiarySummary
+  entries: DiaryEntry[]
+  diagnostics: {
+    summary: DiaryRpcDiagnostic
+    page: DiaryRpcDiagnostic
+  }
+}
+
+export type ClassifiedDiaryError = {
+  category: DiaryFailureCategory
+  retryable: boolean
+  code: string | null
+  httpStatus: number | null
+  requestId: string | null
+  userMessage: string
 }
 
 export type LedgerEntry = {
@@ -269,55 +322,650 @@ export async function saveAccountingPlanRoleMapping(
   return data
 }
 
-function validateDiaryEntryRow(row: unknown, organizationId: string): DiaryEntry {
-  if (!row || typeof row !== 'object') throw new Error('Lançamento do Diário inválido.')
+const MAX_DIARY_READ_TRANSIENT_RETRIES = 1
+const DEFAULT_DIARY_RETRY_DELAY_MS = 250
+const SAFE_REQUEST_ID = /^[A-Za-z0-9._:-]{4,128}$/
+
+type DiaryCodedError = Error & {
+  code: string
+  category: DiaryFailureCategory
+  diagnostic?: DiaryRpcDiagnostic
+  diagnostics?: DiaryRpcDiagnostic[]
+}
+
+function createDiaryCodedError(
+  message: string,
+  code: string,
+  category: DiaryFailureCategory,
+  diagnostic?: DiaryRpcDiagnostic,
+): DiaryCodedError {
+  const err = new Error(message) as DiaryCodedError
+  err.code = code
+  err.category = category
+  if (diagnostic) err.diagnostic = diagnostic
+  return err
+}
+
+export function sanitizeDiaryDiagnosticText(raw: string): string {
+  return raw
+    .replace(/\b(password|passwd|secret|token|apikey|api_key|authorization)\s*[:=]\s*\S+/gi, '[redigido]')
+    .replace(/postgres(?:ql)?:\/\/\S+/gi, '[redigido]')
+    .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, 'Bearer [redigido]')
+    .replace(/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g, '[redigido]')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 240)
+}
+
+function sanitizeRequestId(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null
+  const trimmed = raw.trim()
+  return SAFE_REQUEST_ID.test(trimmed) ? trimmed : null
+}
+
+function extractDiaryErrorFields(cause: unknown): {
+  name: string | null
+  code: string | null
+  status: number | null
+  requestId: string | null
+  message: string
+  details: string
+  categoryHint: DiaryFailureCategory | null
+} {
+  if (cause instanceof Error) {
+    const extra = cause as Error & {
+      code?: unknown
+      status?: unknown
+      details?: unknown
+      requestId?: unknown
+      request_id?: unknown
+      category?: unknown
+    }
+    return {
+      name: cause.name || null,
+      code: typeof extra.code === 'string' && extra.code ? extra.code : null,
+      status: typeof extra.status === 'number' ? extra.status : null,
+      requestId: sanitizeRequestId(extra.requestId ?? extra.request_id),
+      message: cause.message || '',
+      details: typeof extra.details === 'string' ? extra.details : '',
+      categoryHint: typeof extra.category === 'string' ? (extra.category as DiaryFailureCategory) : null,
+    }
+  }
+  if (cause && typeof cause === 'object') {
+    const rec = cause as Record<string, unknown>
+    return {
+      name: typeof rec.name === 'string' && rec.name ? rec.name : null,
+      code: typeof rec.code === 'string' && rec.code ? rec.code : null,
+      status: typeof rec.status === 'number' ? rec.status : null,
+      requestId: sanitizeRequestId(rec.requestId ?? rec.request_id),
+      message: typeof rec.message === 'string' ? rec.message : '',
+      details: typeof rec.details === 'string' ? rec.details : '',
+      categoryHint: typeof rec.category === 'string' ? (rec.category as DiaryFailureCategory) : null,
+    }
+  }
+  if (typeof cause === 'string') {
+    return {
+      name: null,
+      code: null,
+      status: null,
+      requestId: null,
+      message: cause,
+      details: '',
+      categoryHint: null,
+    }
+  }
+  return {
+    name: null,
+    code: null,
+    status: null,
+    requestId: null,
+    message: '',
+    details: '',
+    categoryHint: null,
+  }
+}
+
+export function classifyDiaryReadError(
+  cause: unknown,
+  signal?: AbortSignal,
+  fallbackStatus?: number | null,
+  fallbackRequestId?: string | null,
+): ClassifiedDiaryError {
+  const fields = extractDiaryErrorFields(cause)
+  const status = fields.status ?? fallbackStatus ?? null
+  const requestId = fields.requestId ?? fallbackRequestId ?? null
+  const cleanMessage = sanitizeDiaryDiagnosticText(fields.message)
+  const combinedLower = `${cleanMessage} ${sanitizeDiaryDiagnosticText(fields.details)}`.toLowerCase()
+
+  if (
+    signal?.aborted ||
+    fields.code === 'ABORTED' ||
+    fields.categoryHint === 'aborted' ||
+    (fields.name === 'AbortError' && !/timeout|timed out/.test(combinedLower))
+  ) {
+    return {
+      category: 'aborted',
+      retryable: false,
+      code: fields.code ?? 'ABORTED',
+      httpStatus: status,
+      requestId,
+      userMessage: 'Consulta do Diário cancelada por nova solicitação ou troca de Loja.',
+    }
+  }
+
+  if (fields.categoryHint === 'inconsistent_response' || fields.code === 'INCONSISTENT_DIARY_RESPONSE') {
+    return {
+      category: 'inconsistent_response',
+      retryable: false,
+      code: 'INCONSISTENT_DIARY_RESPONSE',
+      httpStatus: status,
+      requestId,
+      userMessage:
+        cleanMessage ||
+        'Os dados retornados pelo servidor para o Diário Contábil estão inconsistentes e foram bloqueados.',
+    }
+  }
+
+  if (
+    fields.code === '42501' ||
+    fields.code === '28000' ||
+    status === 401 ||
+    status === 403 ||
+    /permission denied|access denied|authentication required|jwt expired/.test(combinedLower)
+  ) {
+    return {
+      category: 'auth',
+      retryable: false,
+      code: fields.code ?? (status === 401 ? '28000' : '42501'),
+      httpStatus: status,
+      requestId,
+      userMessage:
+        fields.code === '28000' || status === 401
+          ? 'Sessão autenticada expirada ou ausente para consultar o Diário Contábil.'
+          : 'Seu perfil não possui permissão para consultar o Diário Contábil desta Loja.',
+    }
+  }
+
+  if (
+    fields.name === 'TimeoutError' ||
+    fields.code === 'ETIMEDOUT' ||
+    fields.code === 'ECONNABORTED' ||
+    status === 408 ||
+    status === 504 ||
+    /timeouterror|signal timed out|timed out|timeout|gateway timeout/.test(combinedLower)
+  ) {
+    return {
+      category: 'timeout',
+      retryable: true,
+      code: fields.code ?? 'TIMEOUT',
+      httpStatus: status,
+      requestId,
+      userMessage:
+        'A consulta do Diário Contábil excedeu o tempo limite de resposta do servidor. Tente novamente ou reduza o período consultado.',
+    }
+  }
+
+  if (
+    (cause instanceof TypeError && /fetch|network|load failed/i.test(combinedLower)) ||
+    fields.code === 'ECONNRESET' ||
+    fields.code === 'ENOTFOUND' ||
+    /failed to fetch|networkerror|load failed|fetch failed|network request failed|err_network|econnreset|enotfound/.test(
+      combinedLower,
+    )
+  ) {
+    return {
+      category: 'network',
+      retryable: true,
+      code: fields.code ?? 'NETWORK_ERROR',
+      httpStatus: status,
+      requestId,
+      userMessage:
+        'Falha temporária de rede ao consultar o Diário Contábil. Verifique a conexão e tente novamente.',
+    }
+  }
+
+  if (
+    status === 502 ||
+    status === 503 ||
+    status === 429 ||
+    /bad gateway|service unavailable|too many requests|502|503/.test(combinedLower)
+  ) {
+    return {
+      category: 'server_transient',
+      retryable: true,
+      code: fields.code ?? (status ? `HTTP_${status}` : 'SERVER_TRANSIENT'),
+      httpStatus: status,
+      requestId,
+      userMessage:
+        'Serviço temporariamente indisponível ao consultar o Diário Contábil. Tente novamente em instantes.',
+    }
+  }
+
+  if (
+    fields.code === '22023' ||
+    fields.code === '23503' ||
+    fields.code === 'PT409' ||
+    fields.code === '55000' ||
+    (status !== null && status >= 400 && status < 500)
+  ) {
+    return {
+      category: 'validation',
+      retryable: false,
+      code: fields.code ?? (status ? `HTTP_${status}` : 'VALIDATION_ERROR'),
+      httpStatus: status,
+      requestId,
+      userMessage: cleanMessage || 'Parâmetros ou período inválidos para consulta do Diário Contábil.',
+    }
+  }
+
+  return {
+    category: 'unexpected',
+    retryable: false,
+    code: fields.code,
+    httpStatus: status,
+    requestId,
+    userMessage: cleanMessage || 'Não foi possível consultar o Diário Contábil.',
+  }
+}
+
+function waitAbortable(delayMs: number, signal?: AbortSignal): Promise<void> {
+  if (delayMs <= 0) {
+    if (signal?.aborted) {
+      return Promise.reject(createDiaryCodedError('Consulta cancelada.', 'ABORTED', 'aborted'))
+    }
+    return Promise.resolve()
+  }
+  return new Promise<void>((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(createDiaryCodedError('Consulta cancelada.', 'ABORTED', 'aborted'))
+      return
+    }
+    const onAbort = () => {
+      clearTimeout(timer)
+      reject(createDiaryCodedError('Consulta cancelada.', 'ABORTED', 'aborted'))
+    }
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort)
+      resolve()
+    }, delayMs)
+    signal?.addEventListener('abort', onAbort, { once: true })
+  })
+}
+
+async function executeDiaryReadRpc<T>(params: {
+  client: SupabaseClient
+  rpcName: DiaryRpcName
+  rpcArgs: Record<string, unknown>
+  validate: (data: unknown) => T
+  options?: DiaryReadOptions
+}): Promise<T> {
+  const { client, rpcName, rpcArgs, validate, options } = params
+  const signal = options?.signal
+  const retryDelayMs = options?.retryDelayMs ?? DEFAULT_DIARY_RETRY_DELAY_MS
+  const startedWallMs = Date.now()
+  let attempts = 0
+
+  while (attempts <= MAX_DIARY_READ_TRANSIENT_RETRIES) {
+    if (signal?.aborted) {
+      const diag: DiaryRpcDiagnostic = {
+        rpc: rpcName,
+        ok: false,
+        category: 'aborted',
+        durationMs: Math.max(0, Date.now() - startedWallMs),
+        attempts,
+        retried: attempts > 1,
+        requestId: null,
+        httpStatus: null,
+        errorCode: 'ABORTED',
+        message: 'Consulta cancelada.',
+      }
+      options?.onDiagnostic?.(diag)
+      throw createDiaryCodedError('Consulta cancelada.', 'ABORTED', 'aborted', diag)
+    }
+
+    attempts += 1
+    const attemptStartMs = Date.now()
+
+    try {
+      const builder = client.rpc(rpcName, rpcArgs) as unknown as PromiseLike<{
+        data: unknown
+        error: unknown
+        status?: number
+      }> & { abortSignal?: (s: AbortSignal) => PromiseLike<{ data: unknown; error: unknown; status?: number }> }
+
+      const response =
+        signal && builder && typeof builder.abortSignal === 'function'
+          ? await builder.abortSignal(signal)
+          : await builder
+
+      if (signal?.aborted) {
+        throw createDiaryCodedError('Consulta cancelada.', 'ABORTED', 'aborted')
+      }
+
+      const transportMeta = getLastRpcTransportMeta(rpcName, attemptStartMs)
+      const responseStatus = typeof response?.status === 'number' ? response.status : (transportMeta?.httpStatus ?? null)
+      const requestId = transportMeta?.requestId ?? null
+
+      if (response?.error) {
+        const errWithMeta =
+          response.error && typeof response.error === 'object'
+            ? { ...(response.error as Record<string, unknown>), status: (response.error as Record<string, unknown>).status ?? responseStatus, requestId: (response.error as Record<string, unknown>).requestId ?? requestId }
+            : response.error
+        throw errWithMeta
+      }
+
+      const validated = validate(response?.data)
+      const diag: DiaryRpcDiagnostic = {
+        rpc: rpcName,
+        ok: true,
+        category: 'ok',
+        durationMs: Math.max(0, Date.now() - startedWallMs),
+        attempts,
+        retried: attempts > 1,
+        requestId,
+        httpStatus: responseStatus ?? 200,
+        errorCode: null,
+        message: null,
+      }
+      options?.onDiagnostic?.(diag)
+      return validated
+    } catch (cause) {
+      const transportMeta = getLastRpcTransportMeta(rpcName, attemptStartMs)
+      const classified = classifyDiaryReadError(
+        cause,
+        signal,
+        transportMeta?.httpStatus ?? null,
+        transportMeta?.requestId ?? null,
+      )
+
+      const canRetry =
+        classified.retryable &&
+        !signal?.aborted &&
+        attempts <= MAX_DIARY_READ_TRANSIENT_RETRIES
+
+      if (canRetry) {
+        await waitAbortable(retryDelayMs, signal)
+        continue
+      }
+
+      const diag: DiaryRpcDiagnostic = {
+        rpc: rpcName,
+        ok: false,
+        category: classified.category,
+        durationMs: Math.max(0, Date.now() - startedWallMs),
+        attempts,
+        retried: attempts > 1,
+        requestId: classified.requestId,
+        httpStatus: classified.httpStatus,
+        errorCode: classified.code,
+        message: classified.userMessage,
+      }
+      options?.onDiagnostic?.(diag)
+      throw createDiaryCodedError(
+        classified.userMessage,
+        classified.code ?? classified.category.toUpperCase(),
+        classified.category,
+        diag,
+      )
+    }
+  }
+
+  throw createDiaryCodedError('Não foi possível consultar o Diário Contábil.', 'UNEXPECTED', 'unexpected')
+}
+
+export function serializeDiaryFilter(filter: DiaryFilter): string {
+  return JSON.stringify({
+    fromDate: filter.fromDate,
+    toDate: filter.toDate,
+    dateBasis: filter.dateBasis,
+    eventType: filter.eventType || null,
+    accountId: filter.accountId || null,
+    onlyReversals: Boolean(filter.onlyReversals),
+  })
+}
+
+function validateDiaryEntryRow(row: unknown, organizationId: string, filter?: DiaryFilter): DiaryEntry {
+  if (!row || typeof row !== 'object') {
+    throw createDiaryCodedError('Lançamento do Diário inválido.', 'INCONSISTENT_DIARY_RESPONSE', 'inconsistent_response')
+  }
   const r = row as DiaryEntry
   if (
     r.organization_id !== organizationId ||
     typeof r.entry_id !== 'string' ||
+    !r.entry_id ||
     !ISO_DATE.test(String(r.event_date)) ||
     !ISO_DATE.test(String(r.accounting_period)) ||
     typeof r.event_type !== 'string' ||
     typeof r.source_table !== 'string' ||
     typeof r.source_id !== 'string'
   ) {
-    throw new Error('Dados inconsistentes ou de outra Loja detectados no Diário.')
+    throw createDiaryCodedError(
+      'Dados inconsistentes ou de outra Loja detectados no Diário.',
+      'INCONSISTENT_DIARY_RESPONSE',
+      'inconsistent_response',
+    )
   }
   const cents = toCentsStrict(r.amount, 'Valor do lançamento')
-  if (cents <= 0n) throw new Error('Lançamento com valor nulo ou negativo não permitido no Diário.')
+  if (cents <= 0n) {
+    throw createDiaryCodedError(
+      'Lançamento com valor nulo ou negativo não permitido no Diário.',
+      'INCONSISTENT_DIARY_RESPONSE',
+      'inconsistent_response',
+    )
+  }
+  if (filter) {
+    const basisDate = filter.dateBasis === 'competence' ? r.accounting_period : r.event_date
+    if (basisDate < filter.fromDate || basisDate > filter.toDate) {
+      throw createDiaryCodedError(
+        'Lançamento fora do período consultado detectado no Diário.',
+        'INCONSISTENT_DIARY_RESPONSE',
+        'inconsistent_response',
+      )
+    }
+    if (filter.eventType && r.event_type !== filter.eventType) {
+      throw createDiaryCodedError(
+        'Lançamento divergente do filtro de tipo de evento detectado no Diário.',
+        'INCONSISTENT_DIARY_RESPONSE',
+        'inconsistent_response',
+      )
+    }
+    if (
+      filter.accountId &&
+      r.debit_account_id !== filter.accountId &&
+      r.credit_account_id !== filter.accountId
+    ) {
+      throw createDiaryCodedError(
+        'Lançamento divergente do filtro de conta contábil detectado no Diário.',
+        'INCONSISTENT_DIARY_RESPONSE',
+        'inconsistent_response',
+      )
+    }
+    if (filter.onlyReversals && !r.is_reversal_or_correction) {
+      throw createDiaryCodedError(
+        'Lançamento divergente do filtro de estornos/retificações detectado no Diário.',
+        'INCONSISTENT_DIARY_RESPONSE',
+        'inconsistent_response',
+      )
+    }
+  }
   return r
+}
+
+function validateDiarySummaryPayload(
+  data: unknown,
+  organizationId: string,
+  filter: DiaryFilter,
+): DiarySummary {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw createDiaryCodedError('Resumo do Diário inválido.', 'INCONSISTENT_DIARY_RESPONSE', 'inconsistent_response')
+  }
+  const summary = data as DiarySummary
+  if (summary.organization_id !== organizationId) {
+    throw createDiaryCodedError(
+      'Resumo do Diário pertence a outra Loja.',
+      'INCONSISTENT_DIARY_RESPONSE',
+      'inconsistent_response',
+    )
+  }
+  if (
+    summary.from_date !== filter.fromDate ||
+    summary.to_date !== filter.toDate ||
+    summary.date_basis !== filter.dateBasis
+  ) {
+    throw createDiaryCodedError(
+      'Resumo do Diário diverge do período ou critério consultado.',
+      'INCONSISTENT_DIARY_RESPONSE',
+      'inconsistent_response',
+    )
+  }
+  const debitCents = toCentsStrict(summary.total_debit, 'Total de débitos')
+  const creditCents = toCentsStrict(summary.total_credit, 'Total de créditos')
+  if (debitCents < 0n || creditCents < 0n || debitCents !== creditCents || !summary.balanced) {
+    throw createDiaryCodedError(
+      'Desequilíbrio entre débitos e créditos detectado no Diário.',
+      'INCONSISTENT_DIARY_RESPONSE',
+      'inconsistent_response',
+    )
+  }
+  if (
+    !Number.isInteger(summary.total_count) ||
+    summary.total_count < 0 ||
+    !Number.isInteger(summary.unmapped_count) ||
+    summary.unmapped_count < 0 ||
+    summary.unmapped_count > summary.total_count ||
+    !Number.isInteger(summary.legacy_non_posting_count) ||
+    summary.legacy_non_posting_count < 0 ||
+    !Array.isArray(summary.incomplete_reasons) ||
+    !Array.isArray(summary.plans)
+  ) {
+    throw createDiaryCodedError(
+      'Contagem total do Diário inválida.',
+      'INCONSISTENT_DIARY_RESPONSE',
+      'inconsistent_response',
+    )
+  }
+  if (
+    summary.integral_ok &&
+    (summary.unmapped_count > 0 ||
+      summary.legacy_non_posting_count > 0 ||
+      summary.incomplete_reasons.length > 0)
+  ) {
+    throw createDiaryCodedError(
+      'Selo integral inconsistente com pendências contábeis reportadas no resumo do Diário.',
+      'INCONSISTENT_DIARY_RESPONSE',
+      'inconsistent_response',
+    )
+  }
+  return summary
+}
+
+export function validateDiarySummaryAndPageCoherence(
+  summary: DiarySummary,
+  entries: DiaryEntry[],
+  filter: DiaryFilter,
+  page: number,
+  pageSize: number,
+): void {
+  if (!Number.isInteger(page) || page < 0 || !Number.isInteger(pageSize) || pageSize <= 0) {
+    throw createDiaryCodedError('Parâmetros de paginação do Diário inválidos.', 'INCONSISTENT_DIARY_RESPONSE', 'inconsistent_response')
+  }
+  if (
+    summary.from_date !== filter.fromDate ||
+    summary.to_date !== filter.toDate ||
+    summary.date_basis !== filter.dateBasis
+  ) {
+    throw createDiaryCodedError(
+      'Resumo do Diário diverge dos filtros ativos.',
+      'INCONSISTENT_DIARY_RESPONSE',
+      'inconsistent_response',
+    )
+  }
+  const expectedPageCount = Math.max(0, Math.min(pageSize, summary.total_count - page * pageSize))
+  if (entries.length !== expectedPageCount) {
+    throw createDiaryCodedError(
+      `Inconsistência entre resumo e página do Diário: esperava ${expectedPageCount} partida(s) na página ${page + 1}, mas recebeu ${entries.length}.`,
+      'INCONSISTENT_DIARY_RESPONSE',
+      'inconsistent_response',
+    )
+  }
+  const seenIds = new Set<string>()
+  let pageSumCents = 0n
+  let pageUnmapped = 0
+  for (const row of entries) {
+    if (row.organization_id !== summary.organization_id) {
+      throw createDiaryCodedError(
+        'Divergência de Loja entre resumo e lançamentos do Diário.',
+        'INCONSISTENT_DIARY_RESPONSE',
+        'inconsistent_response',
+      )
+    }
+    if (seenIds.has(row.entry_id)) {
+      throw createDiaryCodedError(
+        'Partida duplicada detectada na página do Diário.',
+        'INCONSISTENT_DIARY_RESPONSE',
+        'inconsistent_response',
+      )
+    }
+    seenIds.add(row.entry_id)
+    pageSumCents += toCentsStrict(row.amount, 'Valor do lançamento')
+    if (!row.is_fully_mapped) pageUnmapped += 1
+  }
+  const summaryDebitCents = toCentsStrict(summary.total_debit, 'Total de débitos')
+  if (page === 0 && summary.total_count === entries.length) {
+    if (pageSumCents !== summaryDebitCents) {
+      throw createDiaryCodedError(
+        'Soma das partidas carregadas diverge do total de débitos/créditos do resumo do Diário.',
+        'INCONSISTENT_DIARY_RESPONSE',
+        'inconsistent_response',
+      )
+    }
+    if (pageUnmapped !== summary.unmapped_count) {
+      throw createDiaryCodedError(
+        'Contagem de partidas sem mapeamento diverge entre o resumo e a página do Diário.',
+        'INCONSISTENT_DIARY_RESPONSE',
+        'inconsistent_response',
+      )
+    }
+  } else {
+    if (pageSumCents > summaryDebitCents) {
+      throw createDiaryCodedError(
+        'Soma da página excede o total consolidado no resumo do Diário.',
+        'INCONSISTENT_DIARY_RESPONSE',
+        'inconsistent_response',
+      )
+    }
+    if (pageUnmapped > summary.unmapped_count) {
+      throw createDiaryCodedError(
+        'Partidas sem mapeamento na página excedem o total reportado no resumo do Diário.',
+        'INCONSISTENT_DIARY_RESPONSE',
+        'inconsistent_response',
+      )
+    }
+  }
 }
 
 export async function loadAccountingDiarySummary(
   client: SupabaseClient,
   organizationId: string,
   filter: DiaryFilter,
+  options?: DiaryReadOptions,
 ): Promise<DiarySummary> {
   validateDateRange(filter.fromDate, filter.toDate)
-  const { data, error } = await client.rpc('read_tenant_accounting_diary_summary', {
-    p_organization_id: organizationId,
-    p_from_date: filter.fromDate,
-    p_to_date: filter.toDate,
-    p_date_basis: filter.dateBasis,
-    p_event_type: filter.eventType || null,
-    p_account_id: filter.accountId || null,
-    p_only_reversals: Boolean(filter.onlyReversals),
+  return executeDiaryReadRpc({
+    client,
+    rpcName: 'read_tenant_accounting_diary_summary',
+    rpcArgs: {
+      p_organization_id: organizationId,
+      p_from_date: filter.fromDate,
+      p_to_date: filter.toDate,
+      p_date_basis: filter.dateBasis,
+      p_event_type: filter.eventType || null,
+      p_account_id: filter.accountId || null,
+      p_only_reversals: Boolean(filter.onlyReversals),
+    },
+    validate: data => validateDiarySummaryPayload(data, organizationId, filter),
+    options,
   })
-  if (error) throw error
-  if (!data || typeof data !== 'object') throw new Error('Resumo do Diário inválido.')
-  const summary = data as DiarySummary
-  if (summary.organization_id !== organizationId) {
-    throw new Error('Resumo do Diário pertence a outra Loja.')
-  }
-  const debitCents = toCentsStrict(summary.total_debit, 'Total de débitos')
-  const creditCents = toCentsStrict(summary.total_credit, 'Total de créditos')
-  if (debitCents !== creditCents || !summary.balanced) {
-    throw new Error('Desequilíbrio entre débitos e créditos detectado no Diário.')
-  }
-  if (!Number.isInteger(summary.total_count) || summary.total_count < 0) {
-    throw new Error('Contagem total do Diário inválida.')
-  }
-  return summary
 }
 
 export async function loadAccountingDiaryPage(
@@ -326,22 +974,146 @@ export async function loadAccountingDiaryPage(
   filter: DiaryFilter,
   page: number,
   pageSize = 100,
+  options?: DiaryReadOptions,
 ): Promise<DiaryEntry[]> {
   validateDateRange(filter.fromDate, filter.toDate)
-  const { data, error } = await client.rpc('read_tenant_accounting_diary', {
-    p_organization_id: organizationId,
-    p_from_date: filter.fromDate,
-    p_to_date: filter.toDate,
-    p_date_basis: filter.dateBasis,
-    p_event_type: filter.eventType || null,
-    p_account_id: filter.accountId || null,
-    p_only_reversals: Boolean(filter.onlyReversals),
-    p_page: page,
-    p_page_size: pageSize,
+  if (!Number.isInteger(page) || page < 0 || !Number.isInteger(pageSize) || pageSize <= 0) {
+    throw createDiaryCodedError('Parâmetros de paginação do Diário inválidos.', 'VALIDATION_ERROR', 'validation')
+  }
+  return executeDiaryReadRpc({
+    client,
+    rpcName: 'read_tenant_accounting_diary',
+    rpcArgs: {
+      p_organization_id: organizationId,
+      p_from_date: filter.fromDate,
+      p_to_date: filter.toDate,
+      p_date_basis: filter.dateBasis,
+      p_event_type: filter.eventType || null,
+      p_account_id: filter.accountId || null,
+      p_only_reversals: Boolean(filter.onlyReversals),
+      p_page: page,
+      p_page_size: pageSize,
+    },
+    validate: data => {
+      if (!Array.isArray(data)) {
+        throw createDiaryCodedError(
+          'Resposta de lançamentos do Diário inválida.',
+          'INCONSISTENT_DIARY_RESPONSE',
+          'inconsistent_response',
+        )
+      }
+      if (data.length > pageSize) {
+        throw createDiaryCodedError(
+          'Página do Diário excedeu o tamanho solicitado.',
+          'INCONSISTENT_DIARY_RESPONSE',
+          'inconsistent_response',
+        )
+      }
+      return data.map(row => validateDiaryEntryRow(row, organizationId, filter))
+    },
+    options,
   })
-  if (error) throw error
-  if (!Array.isArray(data)) throw new Error('Resposta de lançamentos do Diário inválida.')
-  return data.map(row => validateDiaryEntryRow(row, organizationId))
+}
+
+export async function loadAccountingDiaryWithDiagnostics(
+  client: SupabaseClient,
+  organizationId: string,
+  filter: DiaryFilter,
+  page: number,
+  pageSize = 50,
+  options?: Omit<DiaryReadOptions, 'onDiagnostic'>,
+): Promise<DiaryQueryWithDiagnosticsResult> {
+  validateDateRange(filter.fromDate, filter.toDate)
+  let summaryDiag: DiaryRpcDiagnostic | null = null
+  let pageDiag: DiaryRpcDiagnostic | null = null
+
+  const [sumSettled, pageSettled] = await Promise.allSettled([
+    loadAccountingDiarySummary(client, organizationId, filter, {
+      ...options,
+      onDiagnostic: d => {
+        summaryDiag = d
+      },
+    }),
+    loadAccountingDiaryPage(client, organizationId, filter, page, pageSize, {
+      ...options,
+      onDiagnostic: d => {
+        pageDiag = d
+      },
+    }),
+  ])
+
+  const finalizedSummaryDiag: DiaryRpcDiagnostic = summaryDiag ?? {
+    rpc: 'read_tenant_accounting_diary_summary',
+    ok: sumSettled.status === 'fulfilled',
+    category: sumSettled.status === 'fulfilled' ? 'ok' : classifyDiaryReadError(sumSettled.reason, options?.signal).category,
+    durationMs: 0,
+    attempts: 1,
+    retried: false,
+    requestId: null,
+    httpStatus: null,
+    errorCode: null,
+    message: sumSettled.status === 'rejected' ? classifyDiaryReadError(sumSettled.reason, options?.signal).userMessage : null,
+  }
+  const finalizedPageDiag: DiaryRpcDiagnostic = pageDiag ?? {
+    rpc: 'read_tenant_accounting_diary',
+    ok: pageSettled.status === 'fulfilled',
+    category: pageSettled.status === 'fulfilled' ? 'ok' : classifyDiaryReadError(pageSettled.reason, options?.signal).category,
+    durationMs: 0,
+    attempts: 1,
+    retried: false,
+    requestId: null,
+    httpStatus: null,
+    errorCode: null,
+    message: pageSettled.status === 'rejected' ? classifyDiaryReadError(pageSettled.reason, options?.signal).userMessage : null,
+  }
+
+  if (sumSettled.status === 'rejected' || pageSettled.status === 'rejected') {
+    const primaryReason =
+      sumSettled.status === 'rejected'
+        ? sumSettled.reason
+        : pageSettled.status === 'rejected'
+          ? pageSettled.reason
+          : null
+    const classified = classifyDiaryReadError(primaryReason, options?.signal)
+    const err = createDiaryCodedError(
+      classified.userMessage,
+      classified.code ?? classified.category.toUpperCase(),
+      classified.category,
+    )
+    err.diagnostics = [finalizedSummaryDiag, finalizedPageDiag]
+    throw err
+  }
+
+  try {
+    validateDiarySummaryAndPageCoherence(sumSettled.value, pageSettled.value, filter, page, pageSize)
+  } catch (coherenceErr) {
+    const classified = classifyDiaryReadError(coherenceErr, options?.signal)
+    const err = createDiaryCodedError(
+      classified.userMessage,
+      'INCONSISTENT_DIARY_RESPONSE',
+      'inconsistent_response',
+    )
+    err.diagnostics = [
+      finalizedSummaryDiag,
+      {
+        ...finalizedPageDiag,
+        ok: false,
+        category: 'inconsistent_response',
+        errorCode: 'INCONSISTENT_DIARY_RESPONSE',
+        message: classified.userMessage,
+      },
+    ]
+    throw err
+  }
+
+  return {
+    summary: sumSettled.value,
+    entries: pageSettled.value,
+    diagnostics: {
+      summary: finalizedSummaryDiag,
+      page: finalizedPageDiag,
+    },
+  }
 }
 
 export async function loadAllAccountingDiaryPages(
@@ -349,8 +1121,10 @@ export async function loadAllAccountingDiaryPages(
   organizationId: string,
   filter: DiaryFilter,
   signal?: AbortSignal,
+  options?: { retryDelayMs?: number },
 ): Promise<{ summary: DiarySummary; entries: DiaryEntry[] }> {
-  const summary = await loadAccountingDiarySummary(client, organizationId, filter)
+  const readOptions: DiaryReadOptions = { signal, retryDelayMs: options?.retryDelayMs }
+  const summary = await loadAccountingDiarySummary(client, organizationId, filter, readOptions)
   if (!summary.integral_ok) {
     throw new Error('Exportação integral do Diário bloqueada: o período possui pendências contábeis ou lançamentos não mapeados.')
   }
@@ -362,7 +1136,7 @@ export async function loadAllAccountingDiaryPages(
   while (entries.length < summary.total_count) {
     if (signal?.aborted) throw new Error('Consulta cancelada.')
     if (page >= MAX_INTEGRAL_PAGES) throw new Error('Paginação do Diário excedeu o limite seguro.')
-    const batch = await loadAccountingDiaryPage(client, organizationId, filter, page, PAGE_SIZE_EXPORT)
+    const batch = await loadAccountingDiaryPage(client, organizationId, filter, page, PAGE_SIZE_EXPORT, readOptions)
     if (!batch.length) {
       throw new Error('Exportação bloqueada: resposta paginada do Diário foi truncada pelo servidor.')
     }

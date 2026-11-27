@@ -2,14 +2,18 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { vi } from 'vitest'
 import {
+  classifyDiaryReadError,
   loadAccountingDiaryPage,
   loadAccountingDiarySummary,
+  loadAccountingDiaryWithDiagnostics,
   loadAccountingLedgerPage,
   loadAllAccountingDiaryPages,
   loadAllAccountingLedgerPages,
   reconcileDiaryAndLedger,
+  sanitizeDiaryDiagnosticText,
   toCentsStrict,
   type DiaryEntry,
+  type DiaryRpcDiagnostic,
   type DiarySummary,
   type LedgerReport,
 } from './accounting-books'
@@ -137,7 +141,6 @@ describe('accounting-books service & integrity checks', () => {
       }
       return Promise.resolve({ data: [e1], error: null })
     })
-    // Second page returns [e1] only once or wait — if server keeps returning 1 row, length grows on second call unless empty; test empty truncation:
     const rpcEmpty = vi.fn().mockImplementation((fnName: string, params: { p_page?: number }) => {
       if (fnName === 'read_tenant_accounting_diary_summary') {
         return Promise.resolve({ data: makeSummary({ total_count: 3, total_debit: '300.00', total_credit: '300.00' }), error: null })
@@ -149,6 +152,251 @@ describe('accounting-books service & integrity checks', () => {
     ).rejects.toThrow(/truncada/i)
 
     expect(rpcTruncated).toBeDefined()
+  })
+
+  it('recovers automatically after at most 1 retry on TimeoutError and TypeError: Failed to fetch with individualized diagnostics', async () => {
+    const e1 = makeDiaryEntry({ entry_seq: 1, entry_id: 'e-1', amount: '150.00' })
+    const e2 = makeDiaryEntry({ entry_seq: 2, entry_id: 'e-2', amount: '150.00' })
+    let summaryCalls = 0
+    let pageCalls = 0
+
+    const rpc = vi.fn().mockImplementation((fnName: string) => {
+      if (fnName === 'read_tenant_accounting_diary_summary') {
+        summaryCalls += 1
+        if (summaryCalls === 1) {
+          const timeoutErr = new Error('The operation was aborted due to timeout')
+          timeoutErr.name = 'TimeoutError'
+          return Promise.reject(timeoutErr)
+        }
+        return Promise.resolve({ data: makeSummary(), error: null, status: 200 })
+      }
+      if (fnName === 'read_tenant_accounting_diary') {
+        pageCalls += 1
+        if (pageCalls === 1) {
+          return Promise.reject(new TypeError('Failed to fetch'))
+        }
+        return Promise.resolve({ data: [e1, e2], error: null, status: 200 })
+      }
+      return Promise.resolve({ data: null, error: null })
+    })
+
+    const result = await loadAccountingDiaryWithDiagnostics(
+      { rpc } as unknown as SupabaseClient,
+      'org-1',
+      filter,
+      0,
+      50,
+      { retryDelayMs: 0 },
+    )
+
+    expect(summaryCalls).toBe(2)
+    expect(pageCalls).toBe(2)
+    expect(result.entries).toHaveLength(2)
+    expect(result.diagnostics.summary).toMatchObject({
+      rpc: 'read_tenant_accounting_diary_summary',
+      ok: true,
+      category: 'ok',
+      attempts: 2,
+      retried: true,
+    })
+    expect(result.diagnostics.page).toMatchObject({
+      rpc: 'read_tenant_accounting_diary',
+      ok: true,
+      category: 'ok',
+      attempts: 2,
+      retried: true,
+    })
+    expect(result.diagnostics.summary.durationMs).toBeGreaterThanOrEqual(0)
+    expect(result.diagnostics.page.durationMs).toBeGreaterThanOrEqual(0)
+  })
+
+  it('caps transient retries at 1 (2 attempts max) and never retries definitive failures (42501/22023/inconsistent)', async () => {
+    const rpcDoubleTimeout = vi.fn().mockRejectedValue(Object.assign(new Error('signal timed out'), { name: 'TimeoutError' }))
+    const capturedDiags: DiaryRpcDiagnostic[] = []
+    await expect(
+      loadAccountingDiarySummary({ rpc: rpcDoubleTimeout } as unknown as SupabaseClient, 'org-1', filter, {
+        retryDelayMs: 0,
+        onDiagnostic: d => capturedDiags.push(d),
+      }),
+    ).rejects.toThrow(/tempo limite/)
+    expect(rpcDoubleTimeout).toHaveBeenCalledTimes(2)
+    expect(capturedDiags[0]).toMatchObject({
+      rpc: 'read_tenant_accounting_diary_summary',
+      ok: false,
+      category: 'timeout',
+      attempts: 2,
+      retried: true,
+    })
+
+    const rpcAuthDenied = vi.fn().mockResolvedValue({
+      data: null,
+      error: { code: '42501', message: 'permission denied', requestId: 'req-42501-abc' },
+      status: 403,
+    })
+    await expect(
+      loadAccountingDiarySummary({ rpc: rpcAuthDenied } as unknown as SupabaseClient, 'org-1', filter, {
+        retryDelayMs: 0,
+      }),
+    ).rejects.toThrow(/não possui permissão/)
+    expect(rpcAuthDenied).toHaveBeenCalledTimes(1)
+
+    const rpcInvalidParam = vi.fn().mockResolvedValue({
+      data: null,
+      error: { code: '22023', message: 'invalid parameter' },
+      status: 400,
+    })
+    await expect(
+      loadAccountingDiaryPage({ rpc: rpcInvalidParam } as unknown as SupabaseClient, 'org-1', filter, 0, 50, {
+        retryDelayMs: 0,
+      }),
+    ).rejects.toThrow(/invalid parameter/)
+    expect(rpcInvalidParam).toHaveBeenCalledTimes(1)
+  })
+
+  it('aborts obsolete queries immediately via AbortSignal with zero retries', async () => {
+    const controller = new AbortController()
+    const abortSignalSpy = vi.fn().mockImplementation((sig: AbortSignal) => {
+      return new Promise((_, reject) => {
+        sig.addEventListener('abort', () => reject(Object.assign(new Error('Aborted'), { name: 'AbortError' })))
+      })
+    })
+    const rpc = vi.fn().mockReturnValue({ abortSignal: abortSignalSpy })
+
+    const promise = loadAccountingDiarySummary({ rpc } as unknown as SupabaseClient, 'org-1', filter, {
+      signal: controller.signal,
+      retryDelayMs: 0,
+    })
+    controller.abort()
+
+    await expect(promise).rejects.toMatchObject({ category: 'aborted' })
+    expect(rpc).toHaveBeenCalledTimes(1)
+    expect(abortSignalSpy).toHaveBeenCalledWith(controller.signal)
+  })
+
+  it('validates coherence between summary, period, filters, page count, totals, and unmapped count', async () => {
+    const e1 = makeDiaryEntry({ entry_seq: 1, entry_id: 'e-1', amount: '150.00' })
+    const e2 = makeDiaryEntry({ entry_seq: 2, entry_id: 'e-2', amount: '100.00' })
+
+    // Summary claims 2 entries totaling 300.00, page sums to 250.00
+    const rpcSumDrift = vi.fn().mockImplementation((fnName: string) => {
+      if (fnName === 'read_tenant_accounting_diary_summary') {
+        return Promise.resolve({ data: makeSummary({ total_count: 2, total_debit: '300.00', total_credit: '300.00' }), error: null })
+      }
+      return Promise.resolve({ data: [e1, e2], error: null })
+    })
+    await expect(
+      loadAccountingDiaryWithDiagnostics({ rpc: rpcSumDrift } as unknown as SupabaseClient, 'org-1', filter, 0, 50, {
+        retryDelayMs: 0,
+      }),
+    ).rejects.toThrow(/diverge do total de débitos/)
+
+    // Summary period does not match requested filter
+    const rpcPeriodMismatch = vi.fn().mockResolvedValue({
+      data: makeSummary({ from_date: '2026-01-01', to_date: '2026-12-31' }),
+      error: null,
+    })
+    await expect(
+      loadAccountingDiarySummary({ rpc: rpcPeriodMismatch } as unknown as SupabaseClient, 'org-1', filter, {
+        retryDelayMs: 0,
+      }),
+    ).rejects.toThrow(/diverge do período/)
+
+    // Entry violates active event_type filter
+    const rpcWrongEvent = vi.fn().mockResolvedValue({
+      data: [makeDiaryEntry({ event_type: 'member_payment' })],
+      error: null,
+    })
+    await expect(
+      loadAccountingDiaryPage(
+        { rpc: rpcWrongEvent } as unknown as SupabaseClient,
+        'org-1',
+        { ...filter, eventType: 'member_charge' },
+        0,
+        50,
+        { retryDelayMs: 0 },
+      ),
+    ).rejects.toThrow(/divergente do filtro de tipo de evento/)
+
+    // Entry falls outside requested period
+    const rpcOutOfRange = vi.fn().mockResolvedValue({
+      data: [makeDiaryEntry({ event_date: '2026-09-15' })],
+      error: null,
+    })
+    await expect(
+      loadAccountingDiaryPage({ rpc: rpcOutOfRange } as unknown as SupabaseClient, 'org-1', filter, 0, 50, {
+        retryDelayMs: 0,
+      }),
+    ).rejects.toThrow(/fora do período/)
+  })
+
+  it('handles annual diary (9 entries, R$34.00 per side, 1 unmapped) and multi-page pagination coherently', async () => {
+    const annualFilter = { fromDate: '2026-01-01', toDate: '2026-12-31', dateBasis: 'event_date' as const }
+    const nineEntries: DiaryEntry[] = Array.from({ length: 9 }, (_, i) =>
+      makeDiaryEntry({
+        entry_seq: i + 1,
+        entry_id: `e-yr-${i + 1}`,
+        event_date: `2026-0${Math.min(9, i + 1)}-10`,
+        accounting_period: `2026-0${Math.min(9, i + 1)}-01`,
+        competence: `2026-0${Math.min(9, i + 1)}-01`,
+        amount: i === 8 ? '2.00' : '4.00',
+        is_fully_mapped: i !== 8,
+        credit_account_id: i === 8 ? null : 'acc-rev',
+        credit_account_code: i === 8 ? null : '3.1.01.01',
+        credit_account_description: i === 8 ? null : 'Mensalidades',
+        mapping_gap_reason: i === 8 ? 'Conta sem vínculo contábil' : null,
+      }),
+    )
+    const annualSummary = makeSummary({
+      from_date: '2026-01-01',
+      to_date: '2026-12-31',
+      total_count: 9,
+      total_debit: '34.00',
+      total_credit: '34.00',
+      unmapped_count: 1,
+      integral_ok: false,
+      incomplete_reasons: ['unmapped_entries_in_period'],
+    })
+
+    const rpc = vi.fn().mockImplementation((fnName: string, params: { p_page?: number; p_page_size?: number }) => {
+      if (fnName === 'read_tenant_accounting_diary_summary') {
+        return Promise.resolve({ data: annualSummary, error: null })
+      }
+      const start = (params.p_page ?? 0) * (params.p_page_size ?? 50)
+      return Promise.resolve({ data: nineEntries.slice(start, start + (params.p_page_size ?? 50)), error: null })
+    })
+
+    const fullAnnual = await loadAccountingDiaryWithDiagnostics(
+      { rpc } as unknown as SupabaseClient,
+      'org-1',
+      annualFilter,
+      0,
+      50,
+    )
+    expect(fullAnnual.summary.total_count).toBe(9)
+    expect(fullAnnual.summary.total_debit).toBe('34.00')
+    expect(fullAnnual.summary.unmapped_count).toBe(1)
+    expect(fullAnnual.entries).toHaveLength(9)
+
+    // Multi-page (pageSize 5 -> page 0 has 5, page 1 has 4)
+    const page0 = await loadAccountingDiaryWithDiagnostics({ rpc } as unknown as SupabaseClient, 'org-1', annualFilter, 0, 5)
+    const page1 = await loadAccountingDiaryWithDiagnostics({ rpc } as unknown as SupabaseClient, 'org-1', annualFilter, 1, 5)
+    expect(page0.entries).toHaveLength(5)
+    expect(page1.entries).toHaveLength(4)
+  })
+
+  it('sanitizes diagnostic error text and classifies transient vs definitive errors', () => {
+    const clean = sanitizeDiaryDiagnosticText('Falha Bearer eyJhbGciOiJIUzI1NiJ9.aaa.bbb password=123 postgres://u:p@host/db')
+    expect(clean).not.toContain('eyJhbGci')
+    expect(clean).not.toContain('password=123')
+    expect(clean).not.toContain('postgres://')
+    expect(classifyDiaryReadError(new TypeError('Failed to fetch'))).toMatchObject({
+      category: 'network',
+      retryable: true,
+    })
+    expect(classifyDiaryReadError({ status: 503, message: 'Service Unavailable' })).toMatchObject({
+      category: 'server_transient',
+      retryable: true,
+    })
   })
 
   it('verifies running balance continuity and diary reconciliation in Razão Contábil', async () => {

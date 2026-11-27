@@ -18,7 +18,6 @@ import {
   releaseTenantLegalHold,
   RETENTION_PHASE_LABELS,
   reviewTenantPrivacyRequest,
-  verifySha256Integrity,
   type EligibleAttachmentMetadata,
   type PortabilityExportRecord,
   type PortabilityFormat,
@@ -34,29 +33,65 @@ import {
   type TenantRetentionPosture,
 } from '../lib/privacy-portability'
 
-function triggerBlobDownload(filename: string, blob: Blob) {
-  if (typeof URL === 'undefined' || typeof URL.createObjectURL !== 'function') return
-  const href = URL.createObjectURL(blob)
-  const anchor = document.createElement('a')
-  anchor.href = href
-  anchor.download = filename
-  document.body.appendChild(anchor)
-  anchor.click()
-  document.body.removeChild(anchor)
-  setTimeout(() => URL.revokeObjectURL(href), 1500)
+interface BrowserDownloadResult {
+  delivered: boolean
+  reason?: string
 }
 
-function triggerLocalDownload(filename: string, content: string, mimeType: string) {
-  if (typeof URL === 'undefined' || typeof URL.createObjectURL !== 'function') return
-  const blob = new Blob([content], { type: mimeType })
-  const href = URL.createObjectURL(blob)
-  const anchor = document.createElement('a')
-  anchor.href = href
-  anchor.download = filename
-  document.body.appendChild(anchor)
-  anchor.click()
-  document.body.removeChild(anchor)
-  setTimeout(() => URL.revokeObjectURL(href), 1500)
+function triggerBlobDownload(filename: string, blob: Blob): BrowserDownloadResult {
+  if (
+    typeof URL === 'undefined' ||
+    typeof URL.createObjectURL !== 'function' ||
+    typeof document === 'undefined' ||
+    !document.body
+  ) {
+    return {
+      delivered: false,
+      reason: 'API de download local do navegador indisponível neste ambiente.',
+    }
+  }
+  let href: string | null = null
+  let anchor: HTMLAnchorElement | null = null
+  try {
+    href = URL.createObjectURL(blob)
+    if (!href) {
+      return {
+        delivered: false,
+        reason: 'Não foi possível gerar URL local para entrega do arquivo.',
+      }
+    }
+    anchor = document.createElement('a')
+    anchor.href = href
+    anchor.download = filename
+    document.body.appendChild(anchor)
+    anchor.click()
+    return { delivered: true }
+  } catch (err) {
+    return {
+      delivered: false,
+      reason: err instanceof Error && err.message ? err.message : 'Falha ao iniciar o download no navegador.',
+    }
+  } finally {
+    if (anchor && anchor.parentNode) {
+      anchor.parentNode.removeChild(anchor)
+    }
+    if (href && typeof URL.revokeObjectURL === 'function') {
+      const urlToRevoke = href
+      setTimeout(() => URL.revokeObjectURL(urlToRevoke), 1500)
+    }
+  }
+}
+
+function triggerLocalDownload(filename: string, content: string, mimeType: string): BrowserDownloadResult {
+  try {
+    const blob = new Blob([content], { type: mimeType })
+    return triggerBlobDownload(filename, blob)
+  } catch (err) {
+    return {
+      delivered: false,
+      reason: err instanceof Error && err.message ? err.message : 'Falha ao preparar o arquivo local para download.',
+    }
+  }
 }
 
 type SectionLoadStatus =
@@ -322,47 +357,84 @@ export function TenantPrivacyPortabilityPanel({
 
   async function handleDownloadExport(record: PortabilityExportRecord) {
     if (busyAction) return
+    const targetOrg = organizationId
+    const recordExpiresMs = Date.parse(record.expires_at)
+    if (record.status !== 'ready' || (Number.isFinite(recordExpiresMs) && recordExpiresMs <= Date.now())) {
+      setFeedback('')
+      setError('Download bloqueado: o pacote de portabilidade expirou ou não está pronto. Gere um novo pacote.')
+      return
+    }
     setBusyAction(`download-${record.export_id}`)
     setError('')
     setFeedback('')
     setPostRegisterRefreshWarning('')
     try {
       const pkg = await downloadTenantPortabilityExport(client, {
-        organizationId,
+        organizationId: targetOrg,
         exportId: record.export_id,
         requestedFormat: record.package_format,
+        expectedScope: record.export_scope,
       })
-      const serializedPayload = JSON.stringify(pkg.payload)
-      await verifySha256Integrity(serializedPayload, pkg.payload_sha256)
-
-      if (record.package_format === 'csv') {
-        const csvFiles = buildPortabilityCsvBundle(pkg.payload)
-        const combinedCsv = Object.entries(csvFiles)
-          .map(([name, body]) => `### ${name}\n${body}`)
-          .join('\n\n')
-        triggerLocalDownload(`corsys-portabilidade-${record.export_id.slice(0, 8)}.csv`, combinedCsv, 'text/csv;charset=utf-8')
-      } else {
-        triggerLocalDownload(
-          `corsys-portabilidade-${record.export_id.slice(0, 8)}.json`,
-          JSON.stringify(
-            {
-              manifest: pkg.manifest,
-              data_dictionary: pkg.data_dictionary,
-              payload: pkg.payload,
-              payload_sha256: pkg.payload_sha256,
-            },
-            null,
-            2,
-          ),
-          'application/json;charset=utf-8',
-        )
+      if (activeOrgRef.current !== targetOrg) return
+      if (!pkg.integrity_verified) {
+        setError('Download bloqueado: integridade SHA-256 do pacote não confirmada.')
+        return
       }
+
+      const filename =
+        record.package_format === 'csv'
+          ? `corsys-portabilidade-${record.export_id.slice(0, 8)}.csv`
+          : `corsys-portabilidade-${record.export_id.slice(0, 8)}.json`
+
+      const delivery =
+        record.package_format === 'csv'
+          ? (() => {
+              const csvFiles = buildPortabilityCsvBundle(pkg.payload)
+              const combinedCsv = Object.entries(csvFiles)
+                .map(([name, body]) => `### ${name}\n${body}`)
+                .join('\n\n')
+              return triggerLocalDownload(filename, combinedCsv, 'text/csv;charset=utf-8')
+            })()
+          : triggerLocalDownload(
+              filename,
+              JSON.stringify(
+                {
+                  manifest: pkg.manifest,
+                  data_dictionary: pkg.data_dictionary,
+                  payload: pkg.payload,
+                  payload_sha256: pkg.payload_sha256,
+                  ...(typeof pkg.payload_text === 'string'
+                    ? {
+                        payload_text: pkg.payload_text,
+                        payload_text_format: pkg.payload_text_format ?? 'pg_jsonb_text_v1',
+                      }
+                    : {}),
+                },
+                null,
+                2,
+              ),
+              'application/json;charset=utf-8',
+            )
+
       const rawAtt = Array.isArray((pkg.payload as Record<string, unknown>)?.eligible_attachments)
         ? ((pkg.payload as Record<string, unknown>).eligible_attachments as EligibleAttachmentMetadata[])
         : []
       setActiveExportAttachments({ exportId: record.export_id, items: rawAtt })
-      setFeedback(`Download autenticado registrado na trilha de auditoria (SHA-256 ${pkg.payload_sha256.slice(0, 12)}…).`)
+
+      if (!delivery.delivered) {
+        setFeedback('')
+        setError(
+          `Servidor confirmou o pacote e registrou a auditoria (SHA-256 ${pkg.payload_sha256.slice(0, 12)}… verificado), mas o navegador não conseguiu entregar o arquivo "${filename}": ${delivery.reason ?? 'falha local de download'}.`,
+        )
+        return
+      }
+
+      setFeedback(
+        `Servidor confirmou o pacote, registrou a auditoria, validou SHA-256 ${pkg.payload_sha256.slice(0, 12)}… e iniciou a entrega do arquivo "${filename}" no navegador.`,
+      )
     } catch (err) {
+      if (activeOrgRef.current !== targetOrg) return
+      setFeedback('')
       setError(classifyPrivacyError(err, 'Não foi possível baixar o pacote de exportação.').message)
     } finally {
       setBusyAction('')
@@ -371,19 +443,36 @@ export function TenantPrivacyPortabilityPanel({
 
   async function handleDownloadAttachmentBinary(exportId: string, att: EligibleAttachmentMetadata) {
     if (busyAction) return
+    const targetOrg = organizationId
     setBusyAction(`att-${att.id}`)
     setError('')
     setFeedback('')
     setPostRegisterRefreshWarning('')
     try {
       const blob = await downloadPortabilityAttachmentBinary(client, {
-        organizationId,
+        organizationId: targetOrg,
         exportId,
         documentId: att.id,
+        expectedSha256: att.sha256,
+        expectedSizeBytes: att.size_bytes,
+        requireSha256: true,
       })
-      triggerBlobDownload(att.original_filename || `anexo-${att.id.slice(0, 8)}`, blob)
-      setFeedback(`Arquivo binário "${att.original_filename}" baixado do Storage privado com verificação SHA-256.`)
+      if (activeOrgRef.current !== targetOrg) return
+      const filename = att.original_filename || `anexo-${att.id.slice(0, 8)}`
+      const delivery = triggerBlobDownload(filename, blob)
+      if (!delivery.delivered) {
+        setFeedback('')
+        setError(
+          `Servidor autorizou o anexo privado e registrou a auditoria (SHA-256 conferido), mas o navegador não conseguiu entregar o arquivo "${filename}": ${delivery.reason ?? 'falha local de download'}.`,
+        )
+        return
+      }
+      setFeedback(
+        `Servidor autorizou e auditou o anexo privado "${filename}"; integridade SHA-256 conferida e entrega iniciada no navegador.`,
+      )
     } catch (err) {
+      if (activeOrgRef.current !== targetOrg) return
+      setFeedback('')
       setError(classifyPrivacyError(err, 'Não foi possível baixar o arquivo binário do anexo.').message)
     } finally {
       setBusyAction('')

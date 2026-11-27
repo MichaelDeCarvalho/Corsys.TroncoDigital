@@ -8,6 +8,7 @@ Never connects to Supabase DEV or PROD.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -15,6 +16,7 @@ import check_commercial_concurrency_pg as pg
 
 MIGRATION_FILE = Path(__file__).resolve().parents[1] / "supabase/migrations/20261126180000_v35_m05_privacy_retention_recovery.sql"
 HARDENING_MIGRATION_FILE = Path(__file__).resolve().parents[1] / "supabase/migrations/20261126190000_v35_m0501_privacy_request_hardening.sql"
+PORTABILITY_INTEGRITY_MIGRATION_FILE = Path(__file__).resolve().parents[1] / "supabase/migrations/20261126200000_v35_m05_portability_integrity_canonical_text.sql"
 
 
 def _extract_begin_commit_body(path: Path, label: str) -> str:
@@ -30,6 +32,13 @@ def extract_migration_body() -> str:
 
 def extract_hardening_migration_body() -> str:
     return _extract_begin_commit_body(HARDENING_MIGRATION_FILE, "M05.01 hardening migration")
+
+
+def extract_portability_integrity_migration_body() -> str:
+    return _extract_begin_commit_body(
+        PORTABILITY_INTEGRITY_MIGRATION_FILE,
+        "M05 portability canonical payload_text integrity migration",
+    )
 
 
 def self_test_extract() -> None:
@@ -85,9 +94,20 @@ def self_test_extract() -> None:
     missing_hardening = [tok for tok in hardening_tokens if tok not in hardening_body]
     if missing_hardening:
         raise AssertionError(f"Missing required M05.01 hardening rules in migration: {missing_hardening}")
+    integrity_body = extract_portability_integrity_migration_body()
+    integrity_tokens = [
+        "create or replace function public.download_tenant_portability_export",
+        "v_payload_text := v_exp.payload_json::text;",
+        "private.m05_sha256_hex(v_payload_text) <> lower(v_exp.payload_sha256)",
+        "'payload_text_format', 'pg_jsonb_text_v1'",
+        "'payload_text', v_payload_text",
+    ]
+    missing_integrity = [tok for tok in integrity_tokens if tok not in integrity_body]
+    if missing_integrity:
+        raise AssertionError(f"Missing required M05 portability integrity rules in migration: {missing_integrity}")
     selective_sql = Path(__file__).resolve().parents[1] / "scripts/v35_m05_single_tenant_recovery_check.sql"
     assert selective_sql.is_file() and "ANTI-REINTRODUCTION FAILED" in selective_sql.read_text(encoding="utf-8")
-    print(f"M05_SELF_TEST_EXTRACT_PASS: {len(required_objects)} objects + M05.01 hardening verified cleanly")
+    print(f"M05_SELF_TEST_EXTRACT_PASS: {len(required_objects)} objects + M05.01 + portability integrity verified cleanly")
 
 
 def bootstrap_product_history(until: Path, execute) -> None:
@@ -138,6 +158,10 @@ def run_pg_gate() -> None:
     hardening_check = "select coalesce(pg_get_functiondef('public.register_tenant_privacy_request_idempotent(uuid,uuid,text,text,text,boolean,text,text,text)'::regprocedure) like '%authenticated_member_link requires member_id%', false);"
     assert pg.sql("begin;" + hardening_body + hardening_check + "rollback;" + hardening_check) == "t\nf"
     pg.sql(hardening_body)
+    integrity_body = extract_portability_integrity_migration_body()
+    integrity_check = "select coalesce(pg_get_functiondef('public.download_tenant_portability_export(uuid,uuid,text)'::regprocedure) like '%pg_jsonb_text_v1%', false);"
+    assert pg.sql("begin;" + integrity_body + integrity_check + "rollback;" + integrity_check) == "t\nf"
+    pg.sql(integrity_body)
 
     org_a = "00000000-0000-4000-8000-000000000001"
     org_b = "00000000-0000-4000-8000-000000000002"
@@ -214,9 +238,21 @@ def run_pg_gate() -> None:
     dl_raw = pg.sql(actor(admin_a) + f"select public.download_tenant_portability_export('{org_a}', '{exp_id}', 'json');")
     dl_pkg = json.loads(dl_raw.splitlines()[-1])
     assert dl_pkg["manifest"]["binary_files_included"] is False
+    assert dl_pkg["payload_text_format"] == "pg_jsonb_text_v1"
+    assert isinstance(dl_pkg["payload_text"], str) and len(dl_pkg["payload_text"]) > 2
+    assert hashlib.sha256(dl_pkg["payload_text"].encode("utf-8")).hexdigest() == dl_pkg["payload_sha256"].lower()
+    assert json.loads(dl_pkg["payload_text"]) == dl_pkg["payload"]
     assert "accounting_plan_role_mappings" in dl_pkg["payload"]
     assert "saas_subscription_price_terms" in dl_pkg["payload"]
     assert "customer_support_messages" in dl_pkg["payload"]
+    # Cross-tenant download denied
+    pg.sql(actor(admin_a) + f"select public.download_tenant_portability_export('{org_b}', '{exp_id}', 'json');", succeeds=False, error_code="23503")
+    # Tampered digest fails closed BEFORE inserting download/audit record
+    dl_count_before = pg.sql(f"select count(*) from public.tenant_portability_downloads where export_id='{exp_id}'")
+    pg.sql(f"update public.tenant_portability_exports set payload_sha256 = repeat('f', 64) where id = '{exp_id}';")
+    pg.sql(actor(admin_a) + f"select public.download_tenant_portability_export('{org_a}', '{exp_id}', 'json');", succeeds=False, error_code="55000")
+    assert pg.sql(f"select count(*) from public.tenant_portability_downloads where export_id='{exp_id}'") == dl_count_before
+    pg.sql(f"update public.tenant_portability_exports set payload_sha256 = '{dl_pkg['payload_sha256']}' where id = '{exp_id}';")
     att_auth_raw = pg.sql(actor(admin_a) + f"select public.authorize_tenant_portability_attachment_download('{org_a}', '{exp_id}', '00000000-0000-4000-8000-000000000801');")
     att_auth = json.loads(att_auth_raw.splitlines()[-1])
     assert att_auth["storage_bucket"] == "tenant-documents"

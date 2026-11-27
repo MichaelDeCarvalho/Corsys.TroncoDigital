@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { TenantPrivacyPortabilityPanel } from './TenantPrivacyPortabilityPanel'
+import { computeBytesSha256Hex, computeTextSha256Hex, serializePgJsonbText } from '../lib/privacy-portability'
 
 const ORG_ID = '11111111-1111-4111-8111-111111111111'
 const ORG_B_ID = '99999999-9999-4999-8999-999999999999'
@@ -9,12 +10,66 @@ const EXPORT_ID = '22222222-2222-4222-8222-222222222222'
 const REQ_ID = '33333333-3333-4333-8333-333333333333'
 const NEW_REQ_ID = '66666666-6666-4666-8666-666666666666'
 const HOLD_ID = '44444444-4444-4444-8444-444444444444'
+const ATT_ID = '55555555-5555-4555-8555-555555555555'
+
+const ATT_BYTES = new TextEncoder().encode('%PDF-1.4-mock-ata-content')
 
 describe('TenantPrivacyPortabilityPanel (M05 Entregas A-C)', () => {
   let rpcMock: ReturnType<typeof vi.fn>
+  let invokeMock: ReturnType<typeof vi.fn>
   let client: SupabaseClient
+  let validPayload: Record<string, unknown>
+  let validPayloadText: string
+  let validPayloadSha: string
+  let validAttSha: string
+  let futureExpiresAt: string
+  let originalCreateObjectURL: typeof URL.createObjectURL | undefined
+  let originalRevokeObjectURL: typeof URL.revokeObjectURL | undefined
+  let createObjectURLMock: ReturnType<typeof vi.fn>
+  let revokeObjectURLMock: ReturnType<typeof vi.fn>
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    originalCreateObjectURL = URL.createObjectURL
+    originalRevokeObjectURL = URL.revokeObjectURL
+    createObjectURLMock = vi.fn(() => 'blob:corsys-local-download')
+    revokeObjectURLMock = vi.fn()
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: createObjectURLMock,
+    })
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: revokeObjectURLMock,
+    })
+
+    futureExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+    validAttSha = await computeBytesSha256Hex(ATT_BYTES)
+    validPayload = {
+      organization: { id: ORG_ID, name: 'Loja QA' },
+      eligible_attachments: [
+        {
+          id: ATT_ID,
+          storage_path: `tenant-documents/${ORG_ID}/ata.pdf`,
+          original_filename: 'ata.pdf',
+          mime_type: 'application/pdf',
+          size_bytes: ATT_BYTES.length,
+          sha256: validAttSha,
+          classification: 'confidential',
+          binary_embedded: false,
+          created_at: '2026-11-26T10:00:00Z',
+        },
+      ],
+    }
+    validPayloadText = serializePgJsonbText(validPayload)
+    validPayloadSha = await computeTextSha256Hex(validPayloadText)
+
+    invokeMock = vi.fn(async () => ({
+      data: new Blob([ATT_BYTES], { type: 'application/pdf' }),
+      error: null,
+    }))
+
     rpcMock = vi.fn(async (fn: string, params?: Record<string, unknown>) => {
       if (fn === 'read_tenant_retention_posture') {
         return {
@@ -65,8 +120,8 @@ describe('TenantPrivacyPortabilityPanel (M05 Entregas A-C)', () => {
               package_format: 'json',
               status: 'ready',
               retention_posture: 'post_cancel_export_window',
-              payload_sha256: 'a'.repeat(64),
-              expires_at: '2026-11-28T00:00:00Z',
+              payload_sha256: validPayloadSha,
+              expires_at: futureExpiresAt,
               created_at: '2026-11-26T00:00:00Z',
               manifest: {
                 export_scope: 'organization_full',
@@ -123,7 +178,7 @@ describe('TenantPrivacyPortabilityPanel (M05 Entregas A-C)', () => {
         return {
           data: {
             export_id: EXPORT_ID,
-            payload_sha256: 'b'.repeat(64),
+            payload_sha256: validPayloadSha,
           },
           error: null,
         }
@@ -136,37 +191,37 @@ describe('TenantPrivacyPortabilityPanel (M05 Entregas A-C)', () => {
             export_scope: 'organization_full',
             subject_member_id: null,
             package_format: 'json',
-            payload_sha256: 'a'.repeat(64),
-            expires_at: '2026-11-28T00:00:00Z',
-            downloaded_at: '2026-11-26T11:00:00Z',
+            payload_sha256: validPayloadSha,
+            payload_text_format: 'pg_jsonb_text_v1',
+            payload_text: validPayloadText,
+            expires_at: futureExpiresAt,
+            downloaded_at: new Date().toISOString(),
             manifest: { counts: {}, totals_cents: {} },
             data_dictionary: { version: '2026.11-m05' },
-            payload: {
-              organization: { id: ORG_ID, name: 'Loja QA' },
-              eligible_attachments: [
-                {
-                  id: '55555555-5555-4555-8555-555555555555',
-                  storage_path: 'tenant-documents/org-1/ata.pdf',
-                  original_filename: 'ata.pdf',
-                  mime_type: 'application/pdf',
-                  size_bytes: 512,
-                  sha256: null,
-                  classification: 'confidential',
-                  binary_embedded: false,
-                  created_at: '2026-11-26T10:00:00Z',
-                },
-              ],
-            },
+            payload: validPayload,
           },
           error: null,
         }
       }
       return { data: { ok: true }, error: null }
     })
-    client = { rpc: rpcMock } as unknown as SupabaseClient
+    client = { rpc: rpcMock, functions: { invoke: invokeMock } } as unknown as SupabaseClient
   })
 
-  it('allows portability export during post-cancellation 90d window and logs download', async () => {
+  afterEach(() => {
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: originalCreateObjectURL,
+    })
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: originalRevokeObjectURL,
+    })
+  })
+
+  it('allows portability export during post-cancellation 90d window, verifies SHA-256, and confirms browser delivery', async () => {
     render(<TenantPrivacyPortabilityPanel client={client} organizationId={ORG_ID} />)
 
     expect(await screen.findByText(/Janela pós-cancelamento de 90 dias/)).toBeInTheDocument()
@@ -196,6 +251,74 @@ describe('TenantPrivacyPortabilityPanel (M05 Entregas A-C)', () => {
         p_requested_format: 'json',
       })
     })
+    expect(createObjectURLMock).toHaveBeenCalledTimes(1)
+    expect(
+      await screen.findByText(/Servidor confirmou o pacote, registrou a auditoria, validou SHA-256/),
+    ).toBeInTheDocument()
+  })
+
+  it('strictly blocks portability download when SHA-256 diverges and never triggers browser delivery or success', async () => {
+    const baseImpl = rpcMock.getMockImplementation() as (
+      fn: string,
+      params?: Record<string, unknown>,
+    ) => Promise<{ data: unknown; error: unknown }>
+    rpcMock.mockImplementation(async (fn: string, params?: Record<string, unknown>) => {
+      if (fn === 'download_tenant_portability_export') {
+        const res = await baseImpl(fn, params)
+        return {
+          data: { ...(res.data as Record<string, unknown>), payload_sha256: 'f'.repeat(64) },
+          error: null,
+        }
+      }
+      return baseImpl(fn, params)
+    })
+
+    render(<TenantPrivacyPortabilityPanel client={client} organizationId={ORG_ID} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Baixar pacote' }))
+
+    expect(await screen.findByText(/Download bloqueado: integridade SHA-256 divergente/)).toBeInTheDocument()
+    expect(createObjectURLMock).not.toHaveBeenCalled()
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+
+  it('differentiates server confirmation and audit from failed browser file delivery without declaring success', async () => {
+    createObjectURLMock.mockImplementation(() => {
+      throw new Error('Permissão de download bloqueada pelo navegador')
+    })
+
+    render(<TenantPrivacyPortabilityPanel client={client} organizationId={ORG_ID} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Baixar pacote' }))
+
+    expect(
+      await screen.findByText(
+        /Servidor confirmou o pacote e registrou a auditoria .* mas o navegador não conseguiu entregar o arquivo/,
+      ),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+
+  it('verifies private attachment binary SHA-256 and blocks tampered binaries without false success', async () => {
+    render(<TenantPrivacyPortabilityPanel client={client} organizationId={ORG_ID} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Baixar pacote' }))
+    const downloadAttBtn = await screen.findByRole('button', { name: 'Baixar binário do anexo' })
+
+    // 1. Valid binary download passes SHA-256 + size + browser delivery
+    fireEvent.click(downloadAttBtn)
+    expect(
+      await screen.findByText(/Servidor autorizou e auditou o anexo privado "ata.pdf"; integridade SHA-256 conferida/),
+    ).toBeInTheDocument()
+
+    // 2. Tampered binary content fails closed before browser delivery
+    const tamperedBytes = new TextEncoder().encode('%PDF-1.4-TAMPERED-CONTENT')
+    invokeMock.mockResolvedValueOnce({
+      data: new Blob([tamperedBytes], { type: 'application/pdf' }),
+      error: null,
+    })
+    const callsBeforeTamper = createObjectURLMock.mock.calls.length
+    fireEvent.click(downloadAttBtn)
+    expect(await screen.findByText(/Download do anexo bloqueado: integridade SHA-256/)).toBeInTheDocument()
+    expect(createObjectURLMock).toHaveBeenCalledTimes(callsBeforeTamper)
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
 
   it('submits controller privacy decision while highlighting pseudonymization vs anonymization and ledger immutability', async () => {
@@ -288,11 +411,9 @@ describe('TenantPrivacyPortabilityPanel (M05 Entregas A-C)', () => {
         attempt += 1
         capturedKeys.push(String(params?.p_idempotency_key))
         if (attempt === 1) {
-          // Simulate malformed/missing RPC payload on attempt 1
           return { data: { ok: true }, error: null }
         }
         if (attempt === 2) {
-          // Simulate gateway timeout on attempt 2
           throw new Error('504 Gateway Timeout')
         }
         return {
@@ -321,12 +442,10 @@ describe('TenantPrivacyPortabilityPanel (M05 Entregas A-C)', () => {
     expect(reconcileBanner).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Registrar solicitação' })).toBeDisabled()
 
-    // Retry #1 (reconciliation hits timeout)
     fireEvent.click(screen.getByRole('button', { name: 'Reconciliar envio' }))
     await waitFor(() => expect(attempt).toBe(2))
     expect(screen.getByTestId('privacy-reconcile-banner')).toBeInTheDocument()
 
-    // Retry #2 (reconciliation confirms persisted request_id)
     fireEvent.click(screen.getByRole('button', { name: 'Reconciliar envio' }))
     expect(await screen.findByText(new RegExp(`Solicitação LGPD ${NEW_REQ_ID} confirmada`))).toBeInTheDocument()
     expect(screen.queryByTestId('privacy-reconcile-banner')).not.toBeInTheDocument()
@@ -335,7 +454,6 @@ describe('TenantPrivacyPortabilityPanel (M05 Entregas A-C)', () => {
     expect(capturedKeys[0]).toBe(capturedKeys[1])
     expect(capturedKeys[1]).toBe(capturedKeys[2])
 
-    // Subsequent NEW intention generates a NEW idempotency key
     fireEvent.change(screen.getByLabelText('Observações sanitizadas'), {
       target: { value: 'Segunda solicitação distinta' },
     })
@@ -374,7 +492,6 @@ describe('TenantPrivacyPortabilityPanel (M05 Entregas A-C)', () => {
     expect(
       await screen.findByText(new RegExp(`Solicitação ${NEW_REQ_ID} foi confirmada e salva no servidor, porém a atualização da listagem falhou`)),
     ).toBeInTheDocument()
-    // Stale previously cached request row must NOT remain rendered after list refresh failed
     expect(screen.queryByText(/Decidir solicitação/)).not.toBeInTheDocument()
   })
 
@@ -400,14 +517,12 @@ describe('TenantPrivacyPortabilityPanel (M05 Entregas A-C)', () => {
     expect(await screen.findByText('PAR-2026-01', { exact: false })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Baixar pacote' })).toBeInTheDocument()
 
-    // Switch to Org B where requests RPC is denied (42501) and exports list has 0 rows
     rerender(<TenantPrivacyPortabilityPanel client={client} organizationId={ORG_B_ID} />)
 
     expect(await screen.findByText('Nenhum pacote portátil gerado nesta Loja.')).toBeInTheDocument()
     expect(
       await screen.findAllByText(/Acesso negado: seu perfil não possui autorização para esta operação LGPD nesta Loja/),
     ).not.toHaveLength(0)
-    // Stale data from Org A must be completely cleared
     expect(screen.queryByRole('button', { name: 'Baixar pacote' })).not.toBeInTheDocument()
     expect(screen.queryByText(/Decidir solicitação/)).not.toBeInTheDocument()
   })

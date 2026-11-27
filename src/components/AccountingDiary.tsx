@@ -4,15 +4,19 @@ import { Download, Printer, ShieldAlert } from 'lucide-react'
 import { formatDate, formatMoney, formatCompetence } from '../lib/finance-data'
 import { loadAccountingCatalog, loadAccountingDetail, type Account, type Plan } from '../lib/accounting-plans'
 import {
+  classifyDiaryReadError,
   DIARY_EVENT_LABELS,
   INCOMPLETE_REASON_LABELS,
-  loadAccountingDiaryPage,
-  loadAccountingDiarySummary,
+  loadAccountingDiaryWithDiagnostics,
   loadAllAccountingDiaryPages,
+  serializeDiaryFilter,
   toCentsStrict,
   type DiaryDateBasis,
   type DiaryEntry,
+  type DiaryFailureCategory,
   type DiaryFilter,
+  type DiaryRpcDiagnostic,
+  type DiaryRpcName,
   type DiarySummary,
 } from '../lib/accounting-books'
 import {
@@ -24,6 +28,29 @@ import {
 const UI_PAGE_SIZE = 50
 const NON_FISCAL_DIARY_NOTICE =
   'Diário Gerencial auxiliar por partidas dobradas. Não substitui livro diário fiscal autenticado nem escrituração oficial assinada pelo contador.'
+
+const DIARY_RPC_LABELS: Record<DiaryRpcName, string> = {
+  read_tenant_accounting_diary_summary: 'Resumo do Diário (read_tenant_accounting_diary_summary)',
+  read_tenant_accounting_diary: 'Página do Diário (read_tenant_accounting_diary)',
+}
+
+const DIARY_CATEGORY_LABELS: Record<DiaryFailureCategory, string> = {
+  ok: 'OK',
+  timeout: 'Tempo limite (timeout)',
+  network: 'Falha transitória de rede',
+  server_transient: 'Indisponibilidade transitória do servidor',
+  aborted: 'Consulta cancelada',
+  auth: 'Autorização / sessão',
+  validation: 'Validação de parâmetros',
+  inconsistent_response: 'Resposta inconsistente',
+  unexpected: 'Erro inesperado',
+}
+
+interface LoadedDiarySnapshot {
+  organizationId: string
+  filterKey: string
+  page: number
+}
 
 function defaultDateRange() {
   const now = new Date()
@@ -48,6 +75,9 @@ export function AccountingDiary({ client, organizationId }: { client: SupabaseCl
   const [accounts, setAccounts] = useState<Account[]>([])
   const [summary, setSummary] = useState<DiarySummary | null>(null)
   const [entries, setEntries] = useState<DiaryEntry[] | null>(null)
+  const [loadedSnapshot, setLoadedSnapshot] = useState<LoadedDiarySnapshot | null>(null)
+  const [diagnostics, setDiagnostics] = useState<DiaryRpcDiagnostic[]>([])
+  const [retryNotice, setRetryNotice] = useState('')
   const [page, setPage] = useState(0)
   const [loading, setLoading] = useState(false)
   const [exporting, setExporting] = useState(false)
@@ -55,27 +85,39 @@ export function AccountingDiary({ client, organizationId }: { client: SupabaseCl
   const [exportError, setExportError] = useState('')
 
   const requestSeq = useRef(0)
+  const activeOrgRef = useRef(organizationId)
+  const queryAbort = useRef<AbortController | null>(null)
   const exportAbort = useRef<AbortController | null>(null)
 
   useEffect(() => {
+    activeOrgRef.current = organizationId
     const abort = new AbortController()
     let live = true
     setAccounts([])
     setAccountId('')
     setSummary(null)
     setEntries(null)
+    setLoadedSnapshot(null)
+    setDiagnostics([])
+    setRetryNotice('')
+    setPage(0)
+    setLoading(false)
+    setExporting(false)
     setError('')
     setExportError('')
     requestSeq.current += 1
+    queryAbort.current?.abort()
+    queryAbort.current = null
     exportAbort.current?.abort()
+    exportAbort.current = null
 
     loadAccountingCatalog(client, organizationId, abort.signal)
       .then(async cat => {
-        if (!live) return
+        if (!live || activeOrgRef.current !== organizationId) return
         const published = cat.plans.find((p: Plan) => p.status === 'published') ?? cat.plans[0]
         if (!published) return
         const detail = await loadAccountingDetail(client, organizationId, published.id, abort.signal)
-        if (!live) return
+        if (!live || activeOrgRef.current !== organizationId) return
         setAccounts(detail.accounts.filter(a => a.row_type === 'analytic'))
       })
       .catch(() => {
@@ -85,14 +127,10 @@ export function AccountingDiary({ client, organizationId }: { client: SupabaseCl
     return () => {
       live = false
       abort.abort()
-    }
-  }, [client, organizationId])
-
-  useEffect(() => {
-    return () => {
+      queryAbort.current?.abort()
       exportAbort.current?.abort()
     }
-  }, [organizationId])
+  }, [client, organizationId])
 
   function currentFilter(): DiaryFilter {
     return {
@@ -106,30 +144,67 @@ export function AccountingDiary({ client, organizationId }: { client: SupabaseCl
   }
 
   async function runQuery(targetPage: number) {
+    queryAbort.current?.abort()
+    const controller = new AbortController()
+    queryAbort.current = controller
+    const targetOrg = organizationId
     const seq = ++requestSeq.current
+    const filter = currentFilter()
+    const filterKey = serializeDiaryFilter(filter)
+
     setLoading(true)
     setError('')
     setExportError('')
+    setRetryNotice('')
+    setDiagnostics([])
+
     try {
-      const filter = currentFilter()
-      const [sumRes, pageRows] = await Promise.all([
-        loadAccountingDiarySummary(client, organizationId, filter),
-        loadAccountingDiaryPage(client, organizationId, filter, targetPage, UI_PAGE_SIZE),
-      ])
-      if (seq !== requestSeq.current) return
-      setSummary(sumRes)
-      setEntries(pageRows)
+      const result = await loadAccountingDiaryWithDiagnostics(
+        client,
+        targetOrg,
+        filter,
+        targetPage,
+        UI_PAGE_SIZE,
+        { signal: controller.signal },
+      )
+      if (seq !== requestSeq.current || activeOrgRef.current !== targetOrg || controller.signal.aborted) {
+        return
+      }
+      const diagList = [result.diagnostics.summary, result.diagnostics.page]
+      setSummary(result.summary)
+      setEntries(result.entries)
+      setLoadedSnapshot({ organizationId: targetOrg, filterKey, page: targetPage })
+      setDiagnostics(diagList)
       setPage(targetPage)
+      if (diagList.some(d => d.retried)) {
+        setRetryNotice(
+          'Falha transitória detectada na primeira tentativa; a consulta de leitura foi recuperada automaticamente após 1 nova tentativa.',
+        )
+      }
     } catch (cause) {
-      if (seq !== requestSeq.current) return
-      const code = (cause as { code?: string } | null)?.code
+      const classified = classifyDiaryReadError(cause, controller.signal)
+      if (
+        seq !== requestSeq.current ||
+        activeOrgRef.current !== targetOrg ||
+        controller.signal.aborted ||
+        classified.category === 'aborted'
+      ) {
+        return
+      }
+      const causeExtra = cause as {
+        diagnostics?: DiaryRpcDiagnostic[]
+        diagnostic?: DiaryRpcDiagnostic
+      } | null
+      const capturedDiagnostics = Array.isArray(causeExtra?.diagnostics)
+        ? causeExtra.diagnostics
+        : causeExtra?.diagnostic
+          ? [causeExtra.diagnostic]
+          : []
       setSummary(null)
       setEntries(null)
-      setError(
-        code === '42501' || code === '28000'
-          ? 'Seu perfil não possui permissão para consultar o Diário Contábil desta Loja.'
-          : (cause as Error)?.message || 'Não foi possível consultar o Diário Contábil.',
-      )
+      setLoadedSnapshot(null)
+      setDiagnostics(capturedDiagnostics)
+      setError(classified.userMessage)
     } finally {
       if (seq === requestSeq.current) setLoading(false)
     }
@@ -141,18 +216,39 @@ export function AccountingDiary({ client, organizationId }: { client: SupabaseCl
     void runQuery(0)
   }
 
+  const activeFilterKey = serializeDiaryFilter(currentFilter())
+  const isFilterDirty = Boolean(
+    summary &&
+      loadedSnapshot &&
+      (loadedSnapshot.organizationId !== organizationId || loadedSnapshot.filterKey !== activeFilterKey),
+  )
+  const canExport = Boolean(
+    summary &&
+      entries &&
+      loadedSnapshot &&
+      loadedSnapshot.organizationId === organizationId &&
+      loadedSnapshot.filterKey === activeFilterKey &&
+      summary.integral_ok &&
+      !error &&
+      !loading &&
+      !exporting,
+  )
+
   async function handleIntegralExport(format: 'XLSX' | 'PDF') {
-    if (!summary || exporting) return
+    if (!canExport || !summary) return
     exportAbort.current?.abort()
     const controller = new AbortController()
     exportAbort.current = controller
+    const targetOrg = organizationId
     const seq = requestSeq.current
     setExporting(true)
     setExportError('')
     try {
       const filter = currentFilter()
-      const full = await loadAllAccountingDiaryPages(client, organizationId, filter, controller.signal)
-      if (seq !== requestSeq.current) return
+      const full = await loadAllAccountingDiaryPages(client, targetOrg, filter, controller.signal)
+      if (seq !== requestSeq.current || activeOrgRef.current !== targetOrg || controller.signal.aborted) {
+        return
+      }
 
       const planLabel = full.summary.plans.length
         ? full.summary.plans.map(p => `${p.name} (${p.valid_from.slice(0, 7)} a ${p.valid_to.slice(0, 7)})`).join('; ')
@@ -172,7 +268,7 @@ export function AccountingDiary({ client, organizationId }: { client: SupabaseCl
       const book = {
         title: 'Diário Contábil Auxiliar (Partidas Dobradas)',
         bookType: 'DIARIO' as const,
-        organizationId,
+        organizationId: targetOrg,
         periodLabel: `${formatDate(filter.fromDate)} a ${formatDate(filter.toDate)}`,
         planMetadata: planLabel,
         filters: filterText,
@@ -214,20 +310,22 @@ export function AccountingDiary({ client, organizationId }: { client: SupabaseCl
 
       if (format === 'XLSX') {
         const blob = await createIntegralBookWorkbook(book)
-        if (seq !== requestSeq.current) return
-        downloadReport(blob, `diario-contabil-${organizationId.slice(0, 8)}-${filter.fromDate}-a-${filter.toDate}.xlsx`)
+        if (seq !== requestSeq.current || activeOrgRef.current !== targetOrg || controller.signal.aborted) return
+        downloadReport(blob, `diario-contabil-${targetOrg.slice(0, 8)}-${filter.fromDate}-a-${filter.toDate}.xlsx`)
       } else {
         printIntegralBookReport(book)
       }
     } catch (cause) {
-      if (seq !== requestSeq.current) return
-      setExportError((cause as Error)?.message || 'Não foi possível gerar a exportação integral do Diário.')
+      if (seq !== requestSeq.current || activeOrgRef.current !== targetOrg || controller.signal.aborted) return
+      const classified = classifyDiaryReadError(cause, controller.signal)
+      setExportError(classified.userMessage || 'Não foi possível gerar a exportação integral do Diário.')
     } finally {
       if (seq === requestSeq.current) setExporting(false)
     }
   }
 
   const totalPages = summary ? Math.max(1, Math.ceil(summary.total_count / UI_PAGE_SIZE)) : 1
+  const showDiagnostics = diagnostics.length > 0 && (Boolean(error) || diagnostics.some(d => d.retried))
 
   return (
     <section className="panel" aria-label="Diário Contábil por Partidas Dobradas">
@@ -240,7 +338,7 @@ export function AccountingDiary({ client, organizationId }: { client: SupabaseCl
           <button
             type="button"
             className="secondary"
-            disabled={!summary || !summary.integral_ok || exporting || loading}
+            disabled={!canExport}
             onClick={() => void handleIntegralExport('XLSX')}
           >
             <Download size={16} aria-hidden="true" style={{ marginRight: '0.25rem' }} />
@@ -249,7 +347,7 @@ export function AccountingDiary({ client, organizationId }: { client: SupabaseCl
           <button
             type="button"
             className="quiet"
-            disabled={!summary || !summary.integral_ok || exporting || loading}
+            disabled={!canExport}
             onClick={() => void handleIntegralExport('PDF')}
           >
             <Printer size={16} aria-hidden="true" style={{ marginRight: '0.25rem' }} />
@@ -315,6 +413,31 @@ export function AccountingDiary({ client, organizationId }: { client: SupabaseCl
       </form>
 
       {error && <p role="alert" className="message error">{error}</p>}
+      {retryNotice && <p role="status" className="message">{retryNotice}</p>}
+      {isFilterDirty && (
+        <p role="status" className="message warning">
+          Os filtros foram alterados após a última consulta. Clique em &ldquo;Consultar Diário&rdquo; para atualizar os dados antes de exportar.
+        </p>
+      )}
+      {showDiagnostics && (
+        <div
+          data-testid="diary-rpc-diagnostics"
+          className="panel"
+          style={{ marginTop: '0.5rem', marginBottom: '0.75rem', fontSize: '0.82rem' }}
+        >
+          <strong>Diagnóstico sanitizado das consultas RPC:</strong>
+          <ul style={{ margin: '0.35rem 0 0 1.25rem' }}>
+            {diagnostics.map(diag => (
+              <li key={diag.rpc}>
+                <code>{DIARY_RPC_LABELS[diag.rpc]}</code> — {DIARY_CATEGORY_LABELS[diag.category]} · {diag.durationMs} ms ·{' '}
+                {diag.attempts} tentativa(s){diag.retried ? ' (recuperação automática em 1 retry)' : ''}
+                {diag.httpStatus ? ` · HTTP ${diag.httpStatus}` : ''}
+                {diag.requestId ? ` · req_id=${diag.requestId}` : ''}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {exportError && <p role="alert" className="message error">{exportError}</p>}
       {exporting && <p role="status">Carregando universo completo para exportação integral do Diário…</p>}
 
@@ -450,3 +573,4 @@ export function AccountingDiary({ client, organizationId }: { client: SupabaseCl
     </section>
   )
 }
+
