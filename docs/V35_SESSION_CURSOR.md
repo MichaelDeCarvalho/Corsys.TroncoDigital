@@ -1,3 +1,13 @@
+## Homologação DEV — tráfego ativo, LGPD e portabilidade (27/11/2026)
+
+- Cloudflare DEV confirmado no painel: versão `0288a7e1` (prefixo exibido), 100% do tráfego, commit `7d921dcbe1b0cf3d6647f9fe1cf8893fa439a77b`, merge #83. GitHub compare com `4396c406` contém só sete arquivos Markdown. A versão histórica `8a7b7302` está no histórico. Nenhum deploy manual, mudança de tráfego ou acesso PROD.
+- M05.01 PASS parcial em `DEV QA INTERFACE B 20261014`: confirmação inicialmente desmarcada; protocolo fictício `f63b0874-4a18-4170-855f-bdf7e89fd521` em triagem até 01/12/2026 01:08:21 BRT. Banco confirmou identidade verificada, decisão `retained_by_law`, `ledger_preserved=true`; auditoria com um registro e uma revisão. Replay com a mesma chave, negativas, isolamento e comparação independente de fatos financeiros pendentes.
+- M05 portabilidade integral: JSON `5c703eb0-56e0-4e7a-86b1-2bfe30bfe91b` e CSV `1e16bc2c-0f34-4ffe-888a-fb56c06e1104` gerados na UI, persistidos como ready com manifesto de 49 entradas, hash de 64 caracteres, 24h de validade, sem binários embutidos. Dois eventos de criação confirmados. Download, digest independente, pacote individual e anexo privado pendentes.
+- M03: plano QA publicado, somente leitura. Diário anual 2026 retornou `TimeoutError: signal timed out`; novembro/2026 respondeu Equilibrado e Integral com zero partidas. Diagnóstico a cargo do Chat: identificar a RPC/tempo no DEV e reproduzir com intervalo e volume controlados; exigir consulta anual concluída com totais coerentes e sem timeout. Work retoma despesa fictícia, mapeamentos, Diário/Razão/DRE com movimento e exportações. Issue #43 independente.
+- Nenhum vínculo temporário criado. Solicitação, decisão e pacotes fictícios permanecem como evidência auditável. Work retoma aceites de Loja, MASTER/AAL2 e S3 conforme perfis; S4 segue dependente de interceptação. M06 residual permanece aberto; M06.02, S1/S2 e PG17 descartável preservados. M07 e liberação Beta/PROD seguem bloqueados.
+
+---
+
 ## Homologação operacional consolidada — preflight DEV (27/11/2026)
 
 - **Git confirmado:** `main` em `b709af084563ddd1153aaf9f121d333323128a84`. O diff desde a revisão funcional `4396c406e6c7fb181e7c251d9ad925a8fa0c5952` contém somente sete arquivos Markdown.
