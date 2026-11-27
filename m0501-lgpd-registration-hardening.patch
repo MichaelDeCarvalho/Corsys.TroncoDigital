@@ -1,0 +1,1819 @@
+diff --git a/scripts/check_privacy_recovery_pg.py b/scripts/check_privacy_recovery_pg.py
+index 10f34fa..5dcf75c 100644
+--- a/scripts/check_privacy_recovery_pg.py
++++ b/scripts/check_privacy_recovery_pg.py
+@@ -14,15 +14,24 @@ from pathlib import Path
+ import check_commercial_concurrency_pg as pg
+ 
+ MIGRATION_FILE = Path(__file__).resolve().parents[1] / "supabase/migrations/20261126180000_v35_m05_privacy_retention_recovery.sql"
++HARDENING_MIGRATION_FILE = Path(__file__).resolve().parents[1] / "supabase/migrations/20261126190000_v35_m0501_privacy_request_hardening.sql"
+ 
+ 
+-def extract_migration_body() -> str:
+-    raw = MIGRATION_FILE.read_text(encoding="utf-8").strip().splitlines()
++def _extract_begin_commit_body(path: Path, label: str) -> str:
++    raw = path.read_text(encoding="utf-8").strip().splitlines()
+     if len(raw) < 3 or raw[0].strip().lower() != "begin;" or raw[-1].strip().lower() != "commit;":
+-        raise AssertionError("M05 migration must be wrapped in explicit begin; ... commit;")
++        raise AssertionError(f"{label} must be wrapped in explicit begin; ... commit;")
+     return "\n".join(raw[1:-1])
+ 
+ 
++def extract_migration_body() -> str:
++    return _extract_begin_commit_body(MIGRATION_FILE, "M05 migration")
++
++
++def extract_hardening_migration_body() -> str:
++    return _extract_begin_commit_body(HARDENING_MIGRATION_FILE, "M05.01 hardening migration")
++
++
+ def self_test_extract() -> None:
+     body = extract_migration_body()
+     required_objects = [
+@@ -64,9 +73,21 @@ def self_test_extract() -> None:
+     missing = [obj for obj in (required_objects + required_portability_datasets) if obj not in body]
+     if missing:
+         raise AssertionError(f"Missing required M05/M06 consolidated objects in migration: {missing}")
++    hardening_body = extract_hardening_migration_body()
++    hardening_tokens = [
++        "create or replace function public.register_tenant_privacy_request_idempotent",
++        "controller permission required for controller verification method",
++        "authenticated_member_link requires member_id",
++        "authenticated_member_link verification can only be confirmed by the linked member session",
++        "'notes', coalesce(v_notes, '')",
++        "'requester_verified', v_verified",
++    ]
++    missing_hardening = [tok for tok in hardening_tokens if tok not in hardening_body]
++    if missing_hardening:
++        raise AssertionError(f"Missing required M05.01 hardening rules in migration: {missing_hardening}")
+     selective_sql = Path(__file__).resolve().parents[1] / "scripts/v35_m05_single_tenant_recovery_check.sql"
+     assert selective_sql.is_file() and "ANTI-REINTRODUCTION FAILED" in selective_sql.read_text(encoding="utf-8")
+-    print(f"M05_SELF_TEST_EXTRACT_PASS: {len(required_objects)} objects verified cleanly")
++    print(f"M05_SELF_TEST_EXTRACT_PASS: {len(required_objects)} objects + M05.01 hardening verified cleanly")
+ 
+ 
+ def bootstrap_product_history(until: Path, execute) -> None:
+@@ -113,6 +134,10 @@ def run_pg_gate() -> None:
+     exists_check = "select to_regprocedure('public.create_tenant_portability_export_idempotent(uuid,text,uuid,text,text)') is not null;"
+     assert pg.sql("begin;" + body + exists_check + "rollback;" + exists_check) == "t\nf"
+     pg.sql(body)
++    hardening_body = extract_hardening_migration_body()
++    hardening_check = "select coalesce(pg_get_functiondef('public.register_tenant_privacy_request_idempotent(uuid,uuid,text,text,text,boolean,text,text,text)'::regprocedure) like '%authenticated_member_link requires member_id%', false);"
++    assert pg.sql("begin;" + hardening_body + hardening_check + "rollback;" + hardening_check) == "t\nf"
++    pg.sql(hardening_body)
+ 
+     org_a = "00000000-0000-4000-8000-000000000001"
+     org_b = "00000000-0000-4000-8000-000000000002"
+@@ -207,9 +232,26 @@ def run_pg_gate() -> None:
+ 
+     pg.sql(actor(admin_a) + f"select public.authorize_tenant_portability_attachment_download('{org_a}', '{exp_id}', '00000000-0000-4000-8000-000000000801');", succeeds=False, error_code="55000")
+ 
+-    # 4. Privacy request + immutability of financial ledger + anonymization vs pseudonymization
++    # 4. Privacy request hardening (M05.01) + immutability of financial ledger + anonymization vs pseudonymization
++    pg.sql(actor(member_a_user) + f"select public.register_tenant_privacy_request_idempotent('{org_a}', '{member_a}', 'access', 'cadastral', 'in_person_controller_check', true, 'exercise_of_rights', 'Titular tentando verificar como controlador', 'k-m0501-deny-ctrl');", succeeds=False, error_code="42501")
++    pg.sql(actor(member_a_user) + f"select public.register_tenant_privacy_request_idempotent('{org_a}', '{member_a}', 'access', 'cadastral', 'signed_document_verified', true, 'exercise_of_rights', 'Titular tentando documento verificado', 'k-m0501-deny-doc');", succeeds=False, error_code="42501")
++    pg.sql(actor(admin_a) + f"select public.register_tenant_privacy_request_idempotent('{org_a}', null, 'access', 'cadastral', 'authenticated_member_link', false, 'exercise_of_rights', 'Sem member_id', 'k-m0501-nomem');", succeeds=False, error_code="22023")
++    pg.sql(actor(admin_a) + f"select public.register_tenant_privacy_request_idempotent('{org_a}', '{member_a}', 'access', 'cadastral', 'authenticated_member_link', true, 'exercise_of_rights', 'Operador forjando sessao de titular', 'k-m0501-forge-self');", succeeds=False, error_code="42501")
++    pg.sql(actor(admin_a) + f"select public.register_tenant_privacy_request_idempotent('{org_b}', '{member_b}', 'access', 'cadastral', 'in_person_controller_check', false, 'exercise_of_rights', 'Cross tenant negado', 'k-m0501-xtenant');", succeeds=False, error_code="42501")
++
++    self_req_json = pg.sql(actor(member_a_user) + f"select public.register_tenant_privacy_request_idempotent('{org_a}', '{member_a}', 'access', 'cadastral', 'authenticated_member_link', true, 'exercise_of_rights', 'Pedido autenticado do proprio titular', 'k-m0501-self-ok');")
++    self_req = json.loads(self_req_json)
++    assert self_req["organization_id"] == org_a and self_req["decision_outcome"] == "pending_triage"
++
+     req_json = pg.sql(actor(admin_a) + f"select public.register_tenant_privacy_request_idempotent('{org_a}', '{member_a}', 'deletion', 'financial_ledger', 'in_person_controller_check', true, 'legal_obligation_accounting', 'Solicitacao QA', 'k-req-1');")
+-    req_id = json.loads(req_json)["request_id"]
++    req_payload = json.loads(req_json)
++    req_id = req_payload["request_id"]
++    req_replay_json = pg.sql(actor(admin_a) + f"select public.register_tenant_privacy_request_idempotent('{org_a}', '{member_a}', 'deletion', 'financial_ledger', 'in_person_controller_check', true, 'legal_obligation_accounting', 'Solicitacao QA', 'k-req-1');")
++    assert json.loads(req_replay_json)["request_id"] == req_id
++    pg.sql(actor(admin_a) + f"select public.register_tenant_privacy_request_idempotent('{org_a}', '{member_a}', 'deletion', 'financial_ledger', 'in_person_controller_check', true, 'legal_obligation_accounting', 'Nota adulterada', 'k-req-1');", succeeds=False, error_code="PT409")
++    assert pg.sql(f"select count(*) from public.tenant_privacy_requests where organization_id='{org_a}'") == "2"
++    assert pg.sql(f"select count(*) from public.audit_logs where organization_id='{org_a}' and action='privacy.subject_request_registered'") == "2"
++
+     pg.sql(actor(admin_a) + f"select public.review_tenant_privacy_request_idempotent('{org_a}', '{req_id}', 'anonymized_verified', 'legal_obligation_accounting', true, false, 'Tentativa indevida apagar ledger', 'k-rev-fail');", succeeds=False, error_code="55000")
+     pg.sql(actor(admin_a) + f"select public.review_tenant_privacy_request_idempotent('{org_a}', '{req_id}', 'retained_by_law', 'legal_obligation_accounting', true, true, 'Fatos financeiros retidos por 5 anos conforme D01', 'k-rev-ok');")
+ 
+diff --git a/src/components/TenantPrivacyPortabilityPanel.test.tsx b/src/components/TenantPrivacyPortabilityPanel.test.tsx
+index 3bb3263..e32c6dc 100644
+--- a/src/components/TenantPrivacyPortabilityPanel.test.tsx
++++ b/src/components/TenantPrivacyPortabilityPanel.test.tsx
+@@ -4,8 +4,10 @@ import type { SupabaseClient } from '@supabase/supabase-js'
+ import { TenantPrivacyPortabilityPanel } from './TenantPrivacyPortabilityPanel'
+ 
+ const ORG_ID = '11111111-1111-4111-8111-111111111111'
++const ORG_B_ID = '99999999-9999-4999-8999-999999999999'
+ const EXPORT_ID = '22222222-2222-4222-8222-222222222222'
+ const REQ_ID = '33333333-3333-4333-8333-333333333333'
++const NEW_REQ_ID = '66666666-6666-4666-8666-666666666666'
+ const HOLD_ID = '44444444-4444-4444-8444-444444444444'
+ 
+ describe('TenantPrivacyPortabilityPanel (M05 Entregas A-C)', () => {
+@@ -13,11 +15,11 @@ describe('TenantPrivacyPortabilityPanel (M05 Entregas A-C)', () => {
+   let client: SupabaseClient
+ 
+   beforeEach(() => {
+-    rpcMock = vi.fn(async (fn: string) => {
++    rpcMock = vi.fn(async (fn: string, params?: Record<string, unknown>) => {
+       if (fn === 'read_tenant_retention_posture') {
+         return {
+           data: {
+-            organization_id: ORG_ID,
++            organization_id: (params?.p_organization_id as string) ?? ORG_ID,
+             subscription_status: 'canceled',
+             canceled_at: '2026-11-10T00:00:00Z',
+             current_period_end: '2026-11-30',
+@@ -57,7 +59,7 @@ describe('TenantPrivacyPortabilityPanel (M05 Entregas A-C)', () => {
+           data: [
+             {
+               export_id: EXPORT_ID,
+-              organization_id: ORG_ID,
++              organization_id: (params?.p_organization_id as string) ?? ORG_ID,
+               export_scope: 'organization_full',
+               subject_member_id: null,
+               package_format: 'json',
+@@ -84,7 +86,7 @@ describe('TenantPrivacyPortabilityPanel (M05 Entregas A-C)', () => {
+           data: [
+             {
+               request_id: REQ_ID,
+-              organization_id: ORG_ID,
++              organization_id: (params?.p_organization_id as string) ?? ORG_ID,
+               member_id: null,
+               request_type: 'anonymization',
+               data_category: 'cadastral',
+@@ -103,6 +105,20 @@ describe('TenantPrivacyPortabilityPanel (M05 Entregas A-C)', () => {
+           error: null,
+         }
+       }
++      if (fn === 'register_tenant_privacy_request_idempotent') {
++        return {
++          data: {
++            request_id: NEW_REQ_ID,
++            organization_id: (params?.p_organization_id as string) ?? ORG_ID,
++            decision_outcome: 'pending_triage',
++            triage_due_at: '2026-12-02T12:00:00Z',
++            ledger_preserved: true,
++            requester_verified: Boolean(params?.p_requester_verified),
++            requester_verification_method: String(params?.p_verification_method ?? 'in_person_controller_check'),
++          },
++          error: null,
++        }
++      }
+       if (fn === 'create_tenant_portability_export_idempotent') {
+         return {
+           data: {
+@@ -202,4 +218,197 @@ describe('TenantPrivacyPortabilityPanel (M05 Entregas A-C)', () => {
+       )
+     })
+   })
++
++  it('starts requester identity verification unchecked and submits authorized privacy request cleanly', async () => {
++    render(<TenantPrivacyPortabilityPanel client={client} organizationId={ORG_ID} />)
++    await screen.findByText(/Janela pós-cancelamento de 90 dias/)
++
++    const identityCheckbox = screen.getByLabelText('Identidade do solicitante validada') as HTMLInputElement
++    expect(identityCheckbox.checked).toBe(false)
++
++    fireEvent.change(screen.getByLabelText('Observações sanitizadas'), {
++      target: { value: 'Solicitação presencial registrada sem pré-aprovação automática' },
++    })
++    fireEvent.click(screen.getByRole('button', { name: 'Registrar solicitação' }))
++
++    await waitFor(() => {
++      expect(rpcMock).toHaveBeenCalledWith(
++        'register_tenant_privacy_request_idempotent',
++        expect.objectContaining({
++          p_organization_id: ORG_ID,
++          p_verification_method: 'in_person_controller_check',
++          p_requester_verified: false,
++          p_notes: 'Solicitação presencial registrada sem pré-aprovação automática',
++        }),
++      )
++    })
++
++    expect(await screen.findByText(new RegExp(`Solicitação LGPD ${NEW_REQ_ID} confirmada`))).toBeInTheDocument()
++    expect(identityCheckbox.checked).toBe(false)
++  })
++
++  it('displays sanitized authorization rejection when register is denied with 42501', async () => {
++    const baseImpl = rpcMock.getMockImplementation() as (
++      fn: string,
++      params?: Record<string, unknown>,
++    ) => Promise<{ data: unknown; error: unknown }>
++    rpcMock.mockImplementation(async (fn: string, params?: Record<string, unknown>) => {
++      if (fn === 'register_tenant_privacy_request_idempotent') {
++        return {
++          data: null,
++          error: {
++            code: '42501',
++            message: 'controller permission required for controller verification method',
++          },
++        }
++      }
++      return baseImpl(fn, params)
++    })
++
++    render(<TenantPrivacyPortabilityPanel client={client} organizationId={ORG_ID} />)
++    await screen.findByText(/Janela pós-cancelamento de 90 dias/)
++
++    fireEvent.click(screen.getByRole('button', { name: 'Registrar solicitação' }))
++
++    expect(
++      await screen.findByText(/reservado ao controlador autorizado/),
++    ).toBeInTheDocument()
++    expect(screen.queryByTestId('privacy-reconcile-banner')).not.toBeInTheDocument()
++  })
++
++  it('locks duplicate submission, enters reconciliation on invalid RPC response or timeout, and reuses exact idempotencyKey', async () => {
++    const capturedKeys: string[] = []
++    let attempt = 0
++    const baseImpl = rpcMock.getMockImplementation() as (
++      fn: string,
++      params?: Record<string, unknown>,
++    ) => Promise<{ data: unknown; error: unknown }>
++    rpcMock.mockImplementation(async (fn: string, params?: Record<string, unknown>) => {
++      if (fn === 'register_tenant_privacy_request_idempotent') {
++        attempt += 1
++        capturedKeys.push(String(params?.p_idempotency_key))
++        if (attempt === 1) {
++          // Simulate malformed/missing RPC payload on attempt 1
++          return { data: { ok: true }, error: null }
++        }
++        if (attempt === 2) {
++          // Simulate gateway timeout on attempt 2
++          throw new Error('504 Gateway Timeout')
++        }
++        return {
++          data: {
++            request_id: NEW_REQ_ID,
++            organization_id: ORG_ID,
++            decision_outcome: 'pending_triage',
++            triage_due_at: '2026-12-02T12:00:00Z',
++            ledger_preserved: true,
++          },
++          error: null,
++        }
++      }
++      return baseImpl(fn, params)
++    })
++
++    render(<TenantPrivacyPortabilityPanel client={client} organizationId={ORG_ID} />)
++    await screen.findByText(/Janela pós-cancelamento de 90 dias/)
++
++    fireEvent.change(screen.getByLabelText('Observações sanitizadas'), {
++      target: { value: 'Pedido sujeito a resposta inválida e timeout' },
++    })
++    fireEvent.click(screen.getByRole('button', { name: 'Registrar solicitação' }))
++
++    const reconcileBanner = await screen.findByTestId('privacy-reconcile-banner')
++    expect(reconcileBanner).toBeInTheDocument()
++    expect(screen.getByRole('button', { name: 'Registrar solicitação' })).toBeDisabled()
++
++    // Retry #1 (reconciliation hits timeout)
++    fireEvent.click(screen.getByRole('button', { name: 'Reconciliar envio' }))
++    await waitFor(() => expect(attempt).toBe(2))
++    expect(screen.getByTestId('privacy-reconcile-banner')).toBeInTheDocument()
++
++    // Retry #2 (reconciliation confirms persisted request_id)
++    fireEvent.click(screen.getByRole('button', { name: 'Reconciliar envio' }))
++    expect(await screen.findByText(new RegExp(`Solicitação LGPD ${NEW_REQ_ID} confirmada`))).toBeInTheDocument()
++    expect(screen.queryByTestId('privacy-reconcile-banner')).not.toBeInTheDocument()
++
++    expect(capturedKeys).toHaveLength(3)
++    expect(capturedKeys[0]).toBe(capturedKeys[1])
++    expect(capturedKeys[1]).toBe(capturedKeys[2])
++
++    // Subsequent NEW intention generates a NEW idempotency key
++    fireEvent.change(screen.getByLabelText('Observações sanitizadas'), {
++      target: { value: 'Segunda solicitação distinta' },
++    })
++    fireEvent.click(screen.getByRole('button', { name: 'Registrar solicitação' }))
++    await waitFor(() => expect(capturedKeys).toHaveLength(4))
++    expect(capturedKeys[3]).not.toBe(capturedKeys[0])
++  })
++
++  it('keeps confirmed registration when post-registration listing refresh fails and distinguishes list failure from registration failure', async () => {
++    let listCalls = 0
++    const baseImpl = rpcMock.getMockImplementation() as (
++      fn: string,
++      params?: Record<string, unknown>,
++    ) => Promise<{ data: unknown; error: unknown }>
++    rpcMock.mockImplementation(async (fn: string, params?: Record<string, unknown>) => {
++      if (fn === 'list_tenant_privacy_requests') {
++        listCalls += 1
++        if (listCalls >= 2) {
++          return {
++            data: null,
++            error: { code: '503', status: 503, message: 'service unavailable during refresh' },
++          }
++        }
++      }
++      return baseImpl(fn, params)
++    })
++
++    render(<TenantPrivacyPortabilityPanel client={client} organizationId={ORG_ID} />)
++    await screen.findByText(/Triagem até:/)
++
++    fireEvent.click(screen.getByRole('button', { name: 'Registrar solicitação' }))
++
++    expect(
++      await screen.findByText(new RegExp(`Solicitação LGPD ${NEW_REQ_ID} confirmada`)),
++    ).toBeInTheDocument()
++    expect(
++      await screen.findByText(new RegExp(`Solicitação ${NEW_REQ_ID} foi confirmada e salva no servidor, porém a atualização da listagem falhou`)),
++    ).toBeInTheDocument()
++    // Stale previously cached request row must NOT remain rendered after list refresh failed
++    expect(screen.queryByText(/Decidir solicitação/)).not.toBeInTheDocument()
++  })
++
++  it('differentiates empty rows from Promise.allSettled auth/query rejections and clears stale tenant data on org switch', async () => {
++    const baseImpl = rpcMock.getMockImplementation() as (
++      fn: string,
++      params?: Record<string, unknown>,
++    ) => Promise<{ data: unknown; error: unknown }>
++    rpcMock.mockImplementation(async (fn: string, params?: Record<string, unknown>) => {
++      const org = String(params?.p_organization_id ?? ORG_ID)
++      if (org === ORG_B_ID) {
++        if (fn === 'list_tenant_privacy_requests') {
++          return { data: null, error: { code: '42501', message: 'access denied' } }
++        }
++        if (fn === 'list_tenant_portability_exports') {
++          return { data: [], error: null }
++        }
++      }
++      return baseImpl(fn, params)
++    })
++
++    const { rerender } = render(<TenantPrivacyPortabilityPanel client={client} organizationId={ORG_ID} />)
++    expect(await screen.findByText('PAR-2026-01', { exact: false })).toBeInTheDocument()
++    expect(screen.getByRole('button', { name: 'Baixar pacote' })).toBeInTheDocument()
++
++    // Switch to Org B where requests RPC is denied (42501) and exports list has 0 rows
++    rerender(<TenantPrivacyPortabilityPanel client={client} organizationId={ORG_B_ID} />)
++
++    expect(await screen.findByText('Nenhum pacote portátil gerado nesta Loja.')).toBeInTheDocument()
++    expect(
++      await screen.findAllByText(/Acesso negado: seu perfil não possui autorização para esta operação LGPD nesta Loja/),
++    ).not.toHaveLength(0)
++    // Stale data from Org A must be completely cleared
++    expect(screen.queryByRole('button', { name: 'Baixar pacote' })).not.toBeInTheDocument()
++    expect(screen.queryByText(/Decidir solicitação/)).not.toBeInTheDocument()
++  })
+ })
+diff --git a/src/components/TenantPrivacyPortabilityPanel.tsx b/src/components/TenantPrivacyPortabilityPanel.tsx
+index a5851ab..6a5f1cd 100644
+--- a/src/components/TenantPrivacyPortabilityPanel.tsx
++++ b/src/components/TenantPrivacyPortabilityPanel.tsx
+@@ -1,11 +1,13 @@
+-import { useCallback, useEffect, useState, type FormEvent } from 'react'
++import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
+ import type { SupabaseClient } from '@supabase/supabase-js'
+ import { Download, ShieldAlert, Clock, FileText, Lock, RefreshCw } from 'lucide-react'
+ import {
+   buildPortabilityCsvBundle,
++  classifyPrivacyError,
+   createTenantPortabilityExport,
+   downloadPortabilityAttachmentBinary,
+   downloadTenantPortabilityExport,
++  generateM05IdempotencyKey,
+   listTenantPortabilityExports,
+   listTenantPrivacyRequests,
+   placeTenantLegalHold,
+@@ -27,6 +29,7 @@ import {
+   type PrivacyRequestRecord,
+   type PrivacyRequestType,
+   type PrivacyVerificationMethod,
++  type RegisteredPrivacyRequestResult,
+   type RetentionCategory,
+   type TenantRetentionPosture,
+ } from '../lib/privacy-portability'
+@@ -56,6 +59,42 @@ function triggerLocalDownload(filename: string, content: string, mimeType: strin
+   setTimeout(() => URL.revokeObjectURL(href), 1500)
+ }
+ 
++type SectionLoadStatus =
++  | 'idle'
++  | 'loaded'
++  | 'empty'
++  | 'error'
++  | 'forbidden'
++  | 'unauthenticated'
++
++interface SectionLoadState {
++  status: SectionLoadStatus
++  message: string
++}
++
++interface PendingPrivacyRegistration {
++  idempotencyKey: string
++  organizationId: string
++  memberId: string | null
++  requestType: PrivacyRequestType
++  dataCategory: PrivacyDataCategory
++  verificationMethod: PrivacyVerificationMethod
++  requesterVerified: boolean
++  legalBasis: PrivacyLegalBasis
++  notes: string
++}
++
++function toSectionFailureState(err: unknown, fallback: string): SectionLoadState {
++  const classified = classifyPrivacyError(err, fallback)
++  if (classified.code === '28000') {
++    return { status: 'unauthenticated', message: classified.message }
++  }
++  if (classified.kind === 'auth') {
++    return { status: 'forbidden', message: classified.message }
++  }
++  return { status: 'error', message: classified.message }
++}
++
+ export function TenantPrivacyPortabilityPanel({
+   client,
+   organizationId,
+@@ -67,6 +106,7 @@ export function TenantPrivacyPortabilityPanel({
+   const [busyAction, setBusyAction] = useState('')
+   const [error, setError] = useState('')
+   const [feedback, setFeedback] = useState('')
++  const [postRegisterRefreshWarning, setPostRegisterRefreshWarning] = useState('')
+ 
+   const [posture, setPosture] = useState<TenantRetentionPosture | null>(null)
+   const [exportsList, setExportsList] = useState<PortabilityExportRecord[]>([])
+@@ -76,20 +116,33 @@ export function TenantPrivacyPortabilityPanel({
+   } | null>(null)
+   const [requestsList, setRequestsList] = useState<PrivacyRequestRecord[]>([])
+ 
++  const [postureState, setPostureState] = useState<SectionLoadState>({ status: 'idle', message: '' })
++  const [exportsState, setExportsState] = useState<SectionLoadState>({ status: 'idle', message: '' })
++  const [requestsState, setRequestsState] = useState<SectionLoadState>({ status: 'idle', message: '' })
++
+   // Export form state
+   const [exportScope, setExportScope] = useState<PortabilityScope>('organization_full')
+   const [exportMemberId, setExportMemberId] = useState('')
+   const [exportFormat, setExportFormat] = useState<PortabilityFormat>('json')
+ 
+-  // Privacy request form state
++  // Privacy request form state — identity validation NEVER starts pre-checked
+   const [reqMemberId, setReqMemberId] = useState('')
+   const [reqType, setReqType] = useState<PrivacyRequestType>('access')
+   const [reqCategory, setReqCategory] = useState<PrivacyDataCategory>('cadastral')
+-  const [reqVerMethod, setReqVerMethod] = useState<PrivacyVerificationMethod>('authenticated_member_link')
+-  const [reqVerified, setReqVerified] = useState(true)
++  const [reqVerMethod, setReqVerMethod] = useState<PrivacyVerificationMethod>('in_person_controller_check')
++  const [reqVerified, setReqVerified] = useState(false)
+   const [reqBasis, setReqBasis] = useState<PrivacyLegalBasis>('exercise_of_rights')
+   const [reqNotes, setReqNotes] = useState('')
+ 
++  const privacySubmitLockRef = useRef(false)
++  const activeOrgRef = useRef(organizationId)
++  const loadSeqRef = useRef(0)
++  const [uncertainPrivacyCmd, setUncertainPrivacyCmd] = useState<{
++    command: PendingPrivacyRegistration
++    reason: string
++  } | null>(null)
++  const [lastConfirmedReq, setLastConfirmedReq] = useState<RegisteredPrivacyRequestResult | null>(null)
++
+   // Review state
+   const [reviewOutcome, setReviewOutcome] = useState<Record<string, Exclude<PrivacyDecisionOutcome, 'pending_triage'>>>({})
+   const [reviewRisk, setReviewRisk] = useState<Record<string, boolean>>({})
+@@ -100,29 +153,149 @@ export function TenantPrivacyPortabilityPanel({
+   const [holdReason, setHoldReason] = useState('')
+   const [holdRef, setHoldRef] = useState('')
+ 
+-  const loadAll = useCallback(async () => {
+-    if (!organizationId || typeof client?.rpc !== 'function') return
++  const isPrivacyFormLocked = busyAction !== '' || uncertainPrivacyCmd !== null
++
++  const loadAll = useCallback(async (options?: { preserveActionBanner?: boolean }) => {
++    if (!organizationId || typeof client?.rpc !== 'function') {
++      return { ok: false, requestsOk: false, requestsError: '', summaryError: '' }
++    }
++    const seq = ++loadSeqRef.current
++    const targetOrg = organizationId
+     setLoading(true)
+-    setError('')
++    if (!options?.preserveActionBanner) {
++      setError('')
++    }
++
+     try {
+       const [postureRes, exportsRes, requestsRes] = await Promise.allSettled([
+-        readTenantRetentionPosture(client, organizationId),
+-        listTenantPortabilityExports(client, organizationId),
+-        listTenantPrivacyRequests(client, organizationId),
++        readTenantRetentionPosture(client, targetOrg),
++        listTenantPortabilityExports(client, targetOrg),
++        listTenantPrivacyRequests(client, targetOrg),
+       ])
+-      if (postureRes.status === 'fulfilled') setPosture(postureRes.value)
+-      if (exportsRes.status === 'fulfilled') setExportsList(exportsRes.value)
+-      if (requestsRes.status === 'fulfilled') setRequestsList(requestsRes.value)
++
++      if (loadSeqRef.current !== seq || activeOrgRef.current !== targetOrg) {
++        return { ok: false, requestsOk: false, requestsError: '', summaryError: '' }
++      }
++
++      const sectionErrors: string[] = []
++      let requestsOk = false
++      let requestsError = ''
++
++      if (postureRes.status === 'fulfilled') {
++        setPosture(postureRes.value)
++        setPostureState({ status: 'loaded', message: '' })
++      } else {
++        setPosture(null)
++        const fail = toSectionFailureState(
++          postureRes.reason,
++          'Não foi possível carregar a postura de retenção da Loja.',
++        )
++        setPostureState(fail)
++        sectionErrors.push(fail.message)
++      }
++
++      if (exportsRes.status === 'fulfilled') {
++        setExportsList(exportsRes.value)
++        setExportsState({
++          status: exportsRes.value.length === 0 ? 'empty' : 'loaded',
++          message: '',
++        })
++      } else {
++        setExportsList([])
++        setActiveExportAttachments(null)
++        const fail = toSectionFailureState(
++          exportsRes.reason,
++          'Não foi possível carregar as exportações de portabilidade.',
++        )
++        setExportsState(fail)
++        sectionErrors.push(fail.message)
++      }
++
++      if (requestsRes.status === 'fulfilled') {
++        requestsOk = true
++        setRequestsList(requestsRes.value)
++        setRequestsState({
++          status: requestsRes.value.length === 0 ? 'empty' : 'loaded',
++          message: '',
++        })
++        setPostRegisterRefreshWarning('')
++      } else {
++        setRequestsList([])
++        const fail = toSectionFailureState(
++          requestsRes.reason,
++          'Não foi possível carregar as solicitações LGPD desta Loja.',
++        )
++        requestsError = fail.message
++        setRequestsState(fail)
++        sectionErrors.push(fail.message)
++      }
++
++      const summaryError =
++        sectionErrors.length === 0
++          ? ''
++          : sectionErrors.length === 3
++            ? sectionErrors[0]
++            : `Consulta parcial LGPD (${sectionErrors.length} falha(s)): ${sectionErrors.join(' · ')}`
++
++      if (summaryError && !options?.preserveActionBanner) {
++        setError(summaryError)
++      }
++
++      return {
++        ok: sectionErrors.length === 0,
++        requestsOk,
++        requestsError,
++        summaryError,
++      }
+     } catch (err) {
+-      setError(err instanceof Error ? err.message : 'Não foi possível carregar dados de privacidade e portabilidade.')
++      if (loadSeqRef.current !== seq || activeOrgRef.current !== targetOrg) {
++        return { ok: false, requestsOk: false, requestsError: '', summaryError: '' }
++      }
++      setPosture(null)
++      setExportsList([])
++      setActiveExportAttachments(null)
++      setRequestsList([])
++      const fail = toSectionFailureState(err, 'Não foi possível carregar dados de privacidade e portabilidade.')
++      setPostureState(fail)
++      setExportsState(fail)
++      setRequestsState(fail)
++      if (!options?.preserveActionBanner) {
++        setError(fail.message)
++      }
++      return {
++        ok: false,
++        requestsOk: false,
++        requestsError: fail.message,
++        summaryError: fail.message,
++      }
+     } finally {
+-      setLoading(false)
++      if (loadSeqRef.current === seq) {
++        setLoading(false)
++      }
+     }
+   }, [client, organizationId])
+ 
+   useEffect(() => {
++    activeOrgRef.current = organizationId
++    privacySubmitLockRef.current = false
++    setBusyAction('')
++    setError('')
++    setFeedback('')
++    setPostRegisterRefreshWarning('')
++    setPosture(null)
++    setExportsList([])
++    setActiveExportAttachments(null)
++    setRequestsList([])
++    setPostureState({ status: 'idle', message: '' })
++    setExportsState({ status: 'idle', message: '' })
++    setRequestsState({ status: 'idle', message: '' })
++    setUncertainPrivacyCmd(null)
++    setLastConfirmedReq(null)
++    setReqVerified(false)
++    setReqMemberId('')
++    setReqNotes('')
+     void loadAll()
+-  }, [loadAll])
++  }, [organizationId, loadAll])
+ 
+   async function handleCreateExport(event: FormEvent) {
+     event.preventDefault()
+@@ -130,6 +303,7 @@ export function TenantPrivacyPortabilityPanel({
+     setBusyAction('export-create')
+     setError('')
+     setFeedback('')
++    setPostRegisterRefreshWarning('')
+     try {
+       const created = await createTenantPortabilityExport(client, {
+         organizationId,
+@@ -138,9 +312,9 @@ export function TenantPrivacyPortabilityPanel({
+         packageFormat: exportFormat,
+       })
+       setFeedback(`Pacote ${created.export_id} gerado com SHA-256 ${created.payload_sha256.slice(0, 12)}… e validade de 24 horas.`)
+-      await loadAll()
++      await loadAll({ preserveActionBanner: true })
+     } catch (err) {
+-      setError(err instanceof Error ? err.message : 'Não foi possível gerar o pacote de portabilidade.')
++      setError(classifyPrivacyError(err, 'Não foi possível gerar o pacote de portabilidade.').message)
+     } finally {
+       setBusyAction('')
+     }
+@@ -151,6 +325,7 @@ export function TenantPrivacyPortabilityPanel({
+     setBusyAction(`download-${record.export_id}`)
+     setError('')
+     setFeedback('')
++    setPostRegisterRefreshWarning('')
+     try {
+       const pkg = await downloadTenantPortabilityExport(client, {
+         organizationId,
+@@ -188,7 +363,7 @@ export function TenantPrivacyPortabilityPanel({
+       setActiveExportAttachments({ exportId: record.export_id, items: rawAtt })
+       setFeedback(`Download autenticado registrado na trilha de auditoria (SHA-256 ${pkg.payload_sha256.slice(0, 12)}…).`)
+     } catch (err) {
+-      setError(err instanceof Error ? err.message : 'Não foi possível baixar o pacote de exportação.')
++      setError(classifyPrivacyError(err, 'Não foi possível baixar o pacote de exportação.').message)
+     } finally {
+       setBusyAction('')
+     }
+@@ -199,6 +374,7 @@ export function TenantPrivacyPortabilityPanel({
+     setBusyAction(`att-${att.id}`)
+     setError('')
+     setFeedback('')
++    setPostRegisterRefreshWarning('')
+     try {
+       const blob = await downloadPortabilityAttachmentBinary(client, {
+         organizationId,
+@@ -208,39 +384,91 @@ export function TenantPrivacyPortabilityPanel({
+       triggerBlobDownload(att.original_filename || `anexo-${att.id.slice(0, 8)}`, blob)
+       setFeedback(`Arquivo binário "${att.original_filename}" baixado do Storage privado com verificação SHA-256.`)
+     } catch (err) {
+-      setError(err instanceof Error ? err.message : 'Não foi possível baixar o arquivo binário do anexo.')
++      setError(classifyPrivacyError(err, 'Não foi possível baixar o arquivo binário do anexo.').message)
+     } finally {
+       setBusyAction('')
+     }
+   }
+ 
+-  async function handleRegisterPrivacyRequest(event: FormEvent) {
+-    event.preventDefault()
+-    if (busyAction) return
++  async function executePrivacyRegistration(command: PendingPrivacyRegistration) {
++    if (privacySubmitLockRef.current || busyAction !== '') return
++    privacySubmitLockRef.current = true
+     setBusyAction('req-register')
+     setError('')
+     setFeedback('')
++    setPostRegisterRefreshWarning('')
++
+     try {
+-      await registerTenantPrivacyRequest(client, {
+-        organizationId,
+-        memberId: reqMemberId.trim() || null,
+-        requestType: reqType,
+-        dataCategory: reqCategory,
+-        verificationMethod: reqVerMethod,
+-        requesterVerified: reqVerified,
+-        legalBasis: reqBasis,
+-        notes: reqNotes.trim() || 'Solicitação formal registrada pelo painel LGPD.',
++      const confirmed = await registerTenantPrivacyRequest(client, {
++        organizationId: command.organizationId,
++        memberId: command.memberId,
++        requestType: command.requestType,
++        dataCategory: command.dataCategory,
++        verificationMethod: command.verificationMethod,
++        requesterVerified: command.requesterVerified,
++        legalBasis: command.legalBasis,
++        notes: command.notes,
++        idempotencyKey: command.idempotencyKey,
+       })
++
++      if (activeOrgRef.current !== command.organizationId) return
++
++      setUncertainPrivacyCmd(null)
++      setLastConfirmedReq(confirmed)
+       setReqNotes('')
+-      setFeedback('Solicitação de titular registrada com prazo de triagem interna de 2 dias úteis.')
+-      await loadAll()
++      setReqVerified(false)
++      setFeedback(
++        `Solicitação LGPD ${confirmed.request_id} confirmada em triagem (prazo interno até ${new Date(confirmed.triage_due_at).toLocaleString('pt-BR')}).`,
++      )
++
++      const refresh = await loadAll({ preserveActionBanner: true })
++      if (!refresh.ok && activeOrgRef.current === command.organizationId) {
++        const detail = refresh.requestsError || refresh.summaryError || 'falha ao recarregar os dados.'
++        setPostRegisterRefreshWarning(
++          `Solicitação ${confirmed.request_id} foi confirmada e salva no servidor, porém a atualização da listagem falhou: ${detail}`,
++        )
++      }
+     } catch (err) {
+-      setError(err instanceof Error ? err.message : 'Não foi possível registrar a solicitação LGPD.')
++      if (activeOrgRef.current !== command.organizationId) return
++      const classified = classifyPrivacyError(err, 'Não foi possível registrar a solicitação LGPD.')
++      setLastConfirmedReq(null)
++      if (classified.retryableWithSameKey) {
++        setUncertainPrivacyCmd({
++          command,
++          reason: classified.message,
++        })
++      } else {
++        setUncertainPrivacyCmd(null)
++      }
++      setError(classified.message)
+     } finally {
++      privacySubmitLockRef.current = false
+       setBusyAction('')
+     }
+   }
+ 
++  async function handleRegisterPrivacyRequest(event: FormEvent) {
++    event.preventDefault()
++    if (privacySubmitLockRef.current || busyAction !== '' || uncertainPrivacyCmd !== null) return
++    const command: PendingPrivacyRegistration = {
++      idempotencyKey: generateM05IdempotencyKey('priv-req'),
++      organizationId,
++      memberId: reqMemberId.trim() || null,
++      requestType: reqType,
++      dataCategory: reqCategory,
++      verificationMethod: reqVerMethod,
++      requesterVerified: reqVerified,
++      legalBasis: reqBasis,
++      notes: reqNotes.trim() || 'Solicitação formal registrada pelo painel LGPD.',
++    }
++    await executePrivacyRegistration(command)
++  }
++
++  async function handleReconcilePrivacyRequest() {
++    if (!uncertainPrivacyCmd) return
++    await executePrivacyRegistration(uncertainPrivacyCmd.command)
++  }
++
+   async function handleReviewRequest(req: PrivacyRequestRecord) {
+     if (busyAction) return
+     const outcome = reviewOutcome[req.request_id] ?? 'retained_by_law'
+@@ -249,6 +477,7 @@ export function TenantPrivacyPortabilityPanel({
+     setBusyAction(`review-${req.request_id}`)
+     setError('')
+     setFeedback('')
++    setPostRegisterRefreshWarning('')
+     try {
+       await reviewTenantPrivacyRequest(client, {
+         organizationId,
+@@ -260,9 +489,9 @@ export function TenantPrivacyPortabilityPanel({
+         controllerJustification: justification,
+       })
+       setFeedback('Decisão do controlador registrada sem mutação de fatos contábeis imutáveis.')
+-      await loadAll()
++      await loadAll({ preserveActionBanner: true })
+     } catch (err) {
+-      setError(err instanceof Error ? err.message : 'Não foi possível concluir a análise do controlador.')
++      setError(classifyPrivacyError(err, 'Não foi possível concluir a análise do controlador.').message)
+     } finally {
+       setBusyAction('')
+     }
+@@ -274,6 +503,7 @@ export function TenantPrivacyPortabilityPanel({
+     setBusyAction('hold-place')
+     setError('')
+     setFeedback('')
++    setPostRegisterRefreshWarning('')
+     try {
+       await placeTenantLegalHold(client, {
+         organizationId,
+@@ -284,9 +514,9 @@ export function TenantPrivacyPortabilityPanel({
+       setHoldReason('')
+       setHoldRef('')
+       setFeedback('Preservação legal registrada para bloquear qualquer descarte futuro.')
+-      await loadAll()
++      await loadAll({ preserveActionBanner: true })
+     } catch (err) {
+-      setError(err instanceof Error ? err.message : 'Não foi possível registrar preservação legal.')
++      setError(classifyPrivacyError(err, 'Não foi possível registrar preservação legal.').message)
+     } finally {
+       setBusyAction('')
+     }
+@@ -297,6 +527,7 @@ export function TenantPrivacyPortabilityPanel({
+     setBusyAction(`hold-rel-${holdId}`)
+     setError('')
+     setFeedback('')
++    setPostRegisterRefreshWarning('')
+     try {
+       await releaseTenantLegalHold(client, {
+         organizationId,
+@@ -304,9 +535,9 @@ export function TenantPrivacyPortabilityPanel({
+         releaseReason: 'Encerramento formal autorizado pelo controlador',
+       })
+       setFeedback('Preservação legal liberada com registro em auditoria.')
+-      await loadAll()
++      await loadAll({ preserveActionBanner: true })
+     } catch (err) {
+-      setError(err instanceof Error ? err.message : 'Não foi possível liberar a preservação legal.')
++      setError(classifyPrivacyError(err, 'Não foi possível liberar a preservação legal.').message)
+     } finally {
+       setBusyAction('')
+     }
+@@ -340,6 +571,19 @@ export function TenantPrivacyPortabilityPanel({
+       {feedback && (
+         <div role="status" className="message" style={{ borderLeft: '3px solid var(--gold, #C5A880)' }}>
+           {feedback}
++          {lastConfirmedReq && (
++            <div className="subtle" style={{ fontSize: '0.8rem', marginTop: '4px' }}>
++              Protocolo: <code>{lastConfirmedReq.request_id}</code> · Razão financeira preservada:{' '}
++              {lastConfirmedReq.ledger_preserved ? 'Sim' : 'Não'}
++            </div>
++          )}
++        </div>
++      )}
++
++      {postRegisterRefreshWarning && (
++        <div role="alert" className="message error" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
++          <ShieldAlert size={16} aria-hidden="true" />
++          <span>{postRegisterRefreshWarning}</span>
+         </div>
+       )}
+ 
+@@ -399,6 +643,20 @@ export function TenantPrivacyPortabilityPanel({
+           </button>
+         </form>
+ 
++        {(exportsState.status === 'forbidden' ||
++          exportsState.status === 'unauthenticated' ||
++          exportsState.status === 'error') && (
++          <div role="alert" className="message error" style={{ marginTop: '12px' }}>
++            {exportsState.message}
++          </div>
++        )}
++
++        {exportsState.status === 'empty' && (
++          <p className="subtle" style={{ marginTop: '12px', fontSize: '0.84rem' }}>
++            Nenhum pacote portátil gerado nesta Loja.
++          </p>
++        )}
++
+         {exportsList.length > 0 && (
+           <div style={{ marginTop: '14px', overflowX: 'auto' }}>
+             <table style={{ width: '100%', fontSize: '0.85rem', fontVariantNumeric: 'tabular-nums' }}>
+@@ -492,10 +750,46 @@ export function TenantPrivacyPortabilityPanel({
+           Trocar nome por identificador UUID é pseudonimização e não equivale à anonimização enquanto houver reidentificação. Fatos do razão financeiro não são excluídos nem reescritos.
+         </p>
+ 
++        {uncertainPrivacyCmd && (
++          <div
++            role="alert"
++            className="message error"
++            data-testid="privacy-reconcile-banner"
++            style={{
++              marginBottom: '12px',
++              display: 'flex',
++              justifyContent: 'space-between',
++              alignItems: 'center',
++              flexWrap: 'wrap',
++              gap: '10px',
++            }}
++          >
++            <div>
++              <strong>Resultado incerto pendente de reconciliação:</strong> {uncertainPrivacyCmd.reason}{' '}
++              <span className="subtle">
++                (Chave preservada: <code>{uncertainPrivacyCmd.command.idempotencyKey}</code>)
++              </span>
++            </div>
++            <button
++              type="button"
++              className="secondary"
++              disabled={busyAction !== ''}
++              onClick={() => void handleReconcilePrivacyRequest()}
++            >
++              {busyAction === 'req-register' ? 'Reconciliando…' : 'Reconciliar envio'}
++            </button>
++          </div>
++        )}
++
+         <form onSubmit={handleRegisterPrivacyRequest} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', alignItems: 'end' }}>
+           <div>
+             <label htmlFor="m05-req-type">Tipo de direito</label>
+-            <select id="m05-req-type" value={reqType} onChange={e => setReqType(e.target.value as PrivacyRequestType)}>
++            <select
++              id="m05-req-type"
++              value={reqType}
++              disabled={isPrivacyFormLocked}
++              onChange={e => setReqType(e.target.value as PrivacyRequestType)}
++            >
+               <option value="access">Acesso</option>
+               <option value="correction">Correção</option>
+               <option value="portability">Portabilidade</option>
+@@ -505,7 +799,12 @@ export function TenantPrivacyPortabilityPanel({
+           </div>
+           <div>
+             <label htmlFor="m05-req-cat">Categoria de dados</label>
+-            <select id="m05-req-cat" value={reqCategory} onChange={e => setReqCategory(e.target.value as PrivacyDataCategory)}>
++            <select
++              id="m05-req-cat"
++              value={reqCategory}
++              disabled={isPrivacyFormLocked}
++              onChange={e => setReqCategory(e.target.value as PrivacyDataCategory)}
++            >
+               {Object.entries(PRIVACY_CATEGORY_LABELS).map(([k, label]) => (
+                 <option key={k} value={k}>{label}</option>
+               ))}
+@@ -513,15 +812,25 @@ export function TenantPrivacyPortabilityPanel({
+           </div>
+           <div>
+             <label htmlFor="m05-req-ver">Verificação de identidade</label>
+-            <select id="m05-req-ver" value={reqVerMethod} onChange={e => setReqVerMethod(e.target.value as PrivacyVerificationMethod)}>
+-              <option value="authenticated_member_link">Sessão autenticada do titular</option>
+-              <option value="signed_document_verified">Documento assinado verificado</option>
++            <select
++              id="m05-req-ver"
++              value={reqVerMethod}
++              disabled={isPrivacyFormLocked}
++              onChange={e => setReqVerMethod(e.target.value as PrivacyVerificationMethod)}
++            >
+               <option value="in_person_controller_check">Conferência presencial pelo controlador</option>
++              <option value="signed_document_verified">Documento assinado verificado</option>
++              <option value="authenticated_member_link">Sessão autenticada do titular</option>
+             </select>
+           </div>
+           <div>
+             <label htmlFor="m05-req-basis">Base legal</label>
+-            <select id="m05-req-basis" value={reqBasis} onChange={e => setReqBasis(e.target.value as PrivacyLegalBasis)}>
++            <select
++              id="m05-req-basis"
++              value={reqBasis}
++              disabled={isPrivacyFormLocked}
++              onChange={e => setReqBasis(e.target.value as PrivacyLegalBasis)}
++            >
+               <option value="exercise_of_rights">Exercício regular de direitos</option>
+               <option value="legal_obligation_accounting">Obrigação legal / contábil</option>
+               <option value="contract_execution">Execução de contrato</option>
+@@ -530,22 +839,56 @@ export function TenantPrivacyPortabilityPanel({
+             </select>
+           </div>
+           <div>
+-            <label htmlFor="m05-req-member">UUID do integrante (opcional)</label>
+-            <input id="m05-req-member" value={reqMemberId} onChange={e => setReqMemberId(e.target.value)} placeholder="Opcional" />
++            <label htmlFor="m05-req-member">
++              UUID do integrante {reqVerMethod === 'authenticated_member_link' ? '(obrigatório)' : '(opcional)'}
++            </label>
++            <input
++              id="m05-req-member"
++              value={reqMemberId}
++              disabled={isPrivacyFormLocked}
++              required={reqVerMethod === 'authenticated_member_link'}
++              onChange={e => setReqMemberId(e.target.value)}
++              placeholder={reqVerMethod === 'authenticated_member_link' ? 'UUID obrigatório do titular' : 'Opcional'}
++            />
+           </div>
+           <div>
+             <label htmlFor="m05-req-notes">Observações sanitizadas</label>
+-            <input id="m05-req-notes" value={reqNotes} onChange={e => setReqNotes(e.target.value)} placeholder="Resumo objetivo do pedido" />
++            <input
++              id="m05-req-notes"
++              value={reqNotes}
++              disabled={isPrivacyFormLocked}
++              onChange={e => setReqNotes(e.target.value)}
++              placeholder="Resumo objetivo do pedido"
++            />
+           </div>
+           <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}>
+-            <input type="checkbox" checked={reqVerified} onChange={e => setReqVerified(e.target.checked)} />
++            <input
++              type="checkbox"
++              checked={reqVerified}
++              disabled={isPrivacyFormLocked}
++              onChange={e => setReqVerified(e.target.checked)}
++            />
+             Identidade do solicitante validada
+           </label>
+-          <button type="submit" className="secondary" disabled={busyAction !== ''}>
++          <button type="submit" className="secondary" disabled={isPrivacyFormLocked}>
+             {busyAction === 'req-register' ? 'Registrando…' : 'Registrar solicitação'}
+           </button>
+         </form>
+ 
++        {(requestsState.status === 'forbidden' ||
++          requestsState.status === 'unauthenticated' ||
++          requestsState.status === 'error') && (
++          <div role="alert" className="message error" style={{ marginTop: '14px' }}>
++            {requestsState.message}
++          </div>
++        )}
++
++        {requestsState.status === 'empty' && (
++          <p className="subtle" style={{ marginTop: '14px', fontSize: '0.84rem' }}>
++            Nenhuma solicitação de titular registrada nesta Loja.
++          </p>
++        )}
++
+         {requestsList.length > 0 && (
+           <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+             {requestsList.map(req => (
+@@ -622,6 +965,14 @@ export function TenantPrivacyPortabilityPanel({
+           <span className="subtle">Eliminação automática desativada</span>
+         </div>
+ 
++        {(postureState.status === 'forbidden' ||
++          postureState.status === 'unauthenticated' ||
++          postureState.status === 'error') && (
++          <div role="alert" className="message error" style={{ marginBottom: '12px' }}>
++            {postureState.message}
++          </div>
++        )}
++
+         {posture && (
+           <div style={{ marginBottom: '12px', fontSize: '0.88rem' }}>
+             <div>
+diff --git a/src/lib/privacy-portability.test.ts b/src/lib/privacy-portability.test.ts
+index b1eca09..c9de5ce 100644
+--- a/src/lib/privacy-portability.test.ts
++++ b/src/lib/privacy-portability.test.ts
+@@ -7,12 +7,16 @@ import {
+   createTenantPortabilityExport,
+   downloadPortabilityAttachmentBinary,
+   downloadTenantPortabilityExport,
++  listTenantPrivacyRequests,
+   registerTenantPrivacyRequest,
+   reviewTenantPrivacyRequest,
+   readTenantRetentionPosture,
++  classifyPrivacyError,
++  sanitizePrivacyMessage,
+ } from './privacy-portability'
+ 
+ const ORG_ID = '11111111-1111-4111-8111-111111111111'
++const OTHER_ORG_ID = '99999999-9999-4999-8999-999999999999'
+ const MEMBER_ID = '22222222-2222-4222-8222-222222222222'
+ const EXPORT_ID = '33333333-3333-4333-8333-333333333333'
+ const REQ_ID = '44444444-4444-4444-8444-444444444444'
+@@ -92,10 +96,29 @@ describe('privacy-portability library (M05 Entregas A-C)', () => {
+   })
+ 
+   it('calls privacy request registration, controller review, and retention posture RPCs cleanly', async () => {
+-    const rpc = vi.fn().mockResolvedValue({ data: { ok: true }, error: null })
++    const rpc = vi
++      .fn()
++      .mockResolvedValueOnce({
++        data: {
++          request_id: REQ_ID,
++          organization_id: ORG_ID,
++          decision_outcome: 'pending_triage',
++          triage_due_at: '2026-11-30T12:00:00Z',
++          ledger_preserved: true,
++        },
++        error: null,
++      })
++      .mockResolvedValueOnce({ data: { ok: true }, error: null })
++      .mockResolvedValueOnce({
++        data: {
++          organization_id: ORG_ID,
++          schedule: [],
++        },
++        error: null,
++      })
+     const client = { rpc } as unknown as SupabaseClient
+ 
+-    await registerTenantPrivacyRequest(client, {
++    const registered = await registerTenantPrivacyRequest(client, {
+       organizationId: ORG_ID,
+       memberId: MEMBER_ID,
+       requestType: 'anonymization',
+@@ -106,6 +129,8 @@ describe('privacy-portability library (M05 Entregas A-C)', () => {
+       notes: 'Solicitação de revisão do titular',
+       idempotencyKey: 'req-1',
+     })
++    expect(registered.request_id).toBe(REQ_ID)
++    expect(registered.decision_outcome).toBe('pending_triage')
+ 
+     await reviewTenantPrivacyRequest(client, {
+       organizationId: ORG_ID,
+@@ -122,6 +147,105 @@ describe('privacy-portability library (M05 Entregas A-C)', () => {
+     expect(rpc).toHaveBeenCalledTimes(3)
+   })
+ 
++  it('rejects incomplete, invalid or cross-tenant RPC responses on register and list', async () => {
++    const rpc = vi
++      .fn()
++      .mockResolvedValueOnce({ data: { ok: true }, error: null })
++      .mockResolvedValueOnce({
++        data: {
++          request_id: REQ_ID,
++          organization_id: OTHER_ORG_ID,
++          decision_outcome: 'pending_triage',
++          triage_due_at: '2026-11-30T12:00:00Z',
++          ledger_preserved: true,
++        },
++        error: null,
++      })
++      .mockResolvedValueOnce({
++        data: { not_an_array: true },
++        error: null,
++      })
++      .mockResolvedValueOnce({
++        data: [{ request_id: REQ_ID, organization_id: OTHER_ORG_ID }],
++        error: null,
++      })
++    const client = { rpc } as unknown as SupabaseClient
++
++    await expect(
++      registerTenantPrivacyRequest(client, {
++        organizationId: ORG_ID,
++        requestType: 'access',
++        dataCategory: 'cadastral',
++        verificationMethod: 'in_person_controller_check',
++        requesterVerified: false,
++        legalBasis: 'exercise_of_rights',
++        notes: 'Sem id válido',
++      }),
++    ).rejects.toMatchObject({ code: 'INVALID_RPC_RESPONSE' })
++
++    await expect(
++      registerTenantPrivacyRequest(client, {
++        organizationId: ORG_ID,
++        requestType: 'access',
++        dataCategory: 'cadastral',
++        verificationMethod: 'in_person_controller_check',
++        requesterVerified: false,
++        legalBasis: 'exercise_of_rights',
++        notes: 'Tenant divergente',
++      }),
++    ).rejects.toMatchObject({ code: 'INVALID_RPC_RESPONSE' })
++
++    await expect(listTenantPrivacyRequests(client, ORG_ID)).rejects.toMatchObject({
++      code: 'INVALID_RPC_RESPONSE',
++    })
++    await expect(listTenantPrivacyRequests(client, ORG_ID)).rejects.toMatchObject({
++      code: 'INVALID_RPC_RESPONSE',
++    })
++  })
++
++  it('requires member_id for authenticated_member_link before calling RPC', async () => {
++    const rpc = vi.fn()
++    const client = { rpc } as unknown as SupabaseClient
++
++    await expect(
++      registerTenantPrivacyRequest(client, {
++        organizationId: ORG_ID,
++        memberId: '',
++        requestType: 'access',
++        dataCategory: 'cadastral',
++        verificationMethod: 'authenticated_member_link',
++        requesterVerified: false,
++        legalBasis: 'exercise_of_rights',
++        notes: 'Falta UUID',
++      }),
++    ).rejects.toMatchObject({ code: 'CLIENT_VALIDATION' })
++    expect(rpc).not.toHaveBeenCalled()
++  })
++
++  it('classifies auth, conflict, timeout/uncertain errors safely and redacts secrets', () => {
++    expect(
++      classifyPrivacyError({ code: '42501', message: 'controller permission required' }),
++    ).toMatchObject({ kind: 'auth', retryableWithSameKey: false })
++
++    expect(classifyPrivacyError({ code: '28000', message: 'authentication required' })).toMatchObject({
++      kind: 'auth',
++      retryableWithSameKey: false,
++    })
++
++    expect(
++      classifyPrivacyError({ code: 'PT409', message: 'idempotency key already used with different payload' }),
++    ).toMatchObject({ kind: 'conflict', retryableWithSameKey: false })
++
++    expect(classifyPrivacyError(new Error('504 Gateway Timeout'))).toMatchObject({
++      kind: 'uncertain',
++      retryableWithSameKey: true,
++    })
++
++    expect(sanitizePrivacyMessage('erro password=supersecret Bearer tok123 postgres://user:pw@db')).not.toContain(
++      'supersecret',
++    )
++  })
++
+   it('downloads only through the server-side attachment authorization and rejects missing binaries', async () => {
+     const documentId = '44444444-4444-4444-8444-444444444444'
+     const payload = { organizationId: ORG_ID, exportId: EXPORT_ID, documentId }
+diff --git a/src/lib/privacy-portability.ts b/src/lib/privacy-portability.ts
+index 37c2b44..839f048 100644
+--- a/src/lib/privacy-portability.ts
++++ b/src/lib/privacy-portability.ts
+@@ -2,14 +2,27 @@ import type { SupabaseClient } from '@supabase/supabase-js'
+ 
+ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+ 
++export function createPrivacyClientError(
++  message: string,
++  code: string,
++): Error & { code: string } {
++  const err = new Error(message) as Error & { code: string }
++  err.code = code
++  return err
++}
++
+ export function assertM05Uuid(value: string, label: string): string {
+   const trimmed = value.trim()
+   if (!UUID_REGEX.test(trimmed)) {
+-    throw new Error(`${label} inválido`)
++    throw createPrivacyClientError(`${label} inválido`, 'CLIENT_VALIDATION')
+   }
+   return trimmed
+ }
+ 
++export function isM05Uuid(value: unknown): value is string {
++  return typeof value === 'string' && UUID_REGEX.test(value.trim())
++}
++
+ export function generateM05IdempotencyKey(prefix: string): string {
+   const cleanPrefix = prefix.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 40) || 'm05'
+   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+@@ -126,6 +139,188 @@ export interface PrivacyRequestRecord {
+   created_at: string
+ }
+ 
++export interface RegisteredPrivacyRequestResult {
++  request_id: string
++  organization_id: string
++  decision_outcome: PrivacyDecisionOutcome
++  triage_due_at: string
++  ledger_preserved: boolean
++  requester_verified?: boolean
++  requester_verification_method?: PrivacyVerificationMethod
++}
++
++export type PrivacyErrorKind =
++  | 'auth'
++  | 'validation'
++  | 'conflict'
++  | 'uncertain'
++  | 'unexpected'
++
++export interface ClassifiedPrivacyError {
++  kind: PrivacyErrorKind
++  code: string | null
++  message: string
++  retryableWithSameKey: boolean
++}
++
++export function sanitizePrivacyMessage(raw: string): string {
++  return raw
++    .replace(/\b(password|passwd|secret|token|apikey|api_key|authorization)\s*[:=]\s*\S+/gi, '[redigido]')
++    .replace(/postgres(?:ql)?:\/\/\S+/gi, '[redigido]')
++    .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, 'Bearer [redigido]')
++    .replace(/\s+/g, ' ')
++    .trim()
++    .slice(0, 260)
++}
++
++function extractRawPrivacyError(err: unknown): {
++  code: string | null
++  status: number | null
++  name: string | null
++  message: string
++} {
++  if (err instanceof Error) {
++    const extra = err as Error & { code?: unknown; status?: unknown; details?: unknown }
++    return {
++      code: typeof extra.code === 'string' ? extra.code : null,
++      status: typeof extra.status === 'number' ? extra.status : null,
++      name: err.name || null,
++      message: err.message || '',
++    }
++  }
++  if (err && typeof err === 'object') {
++    const rec = err as Record<string, unknown>
++    return {
++      code: typeof rec.code === 'string' ? rec.code : null,
++      status: typeof rec.status === 'number' ? rec.status : null,
++      name: typeof rec.name === 'string' ? rec.name : null,
++      message: typeof rec.message === 'string' ? rec.message : '',
++    }
++  }
++  if (typeof err === 'string') {
++    return { code: null, status: null, name: null, message: err }
++  }
++  return { code: null, status: null, name: null, message: '' }
++}
++
++export function classifyPrivacyError(
++  err: unknown,
++  fallbackMessage = 'Não foi possível concluir a operação LGPD.',
++): ClassifiedPrivacyError {
++  const { code, status, name, message } = extractRawPrivacyError(err)
++  const cleanMsg = sanitizePrivacyMessage(message)
++  const lower = cleanMsg.toLowerCase()
++
++  if (code === 'INVALID_RPC_RESPONSE') {
++    return {
++      kind: 'uncertain',
++      code,
++      message:
++        cleanMsg ||
++        'Resposta do servidor incompleta ou inválida. Reconcilie utilizando a mesma chave idempotente antes de enviar outra solicitação.',
++      retryableWithSameKey: true,
++    }
++  }
++
++  if (
++    name === 'AbortError' ||
++    code === 'ETIMEDOUT' ||
++    code === 'ECONNABORTED' ||
++    code === 'UND_ERR_CONNECT_TIMEOUT' ||
++    status === 408 ||
++    status === 502 ||
++    status === 503 ||
++    status === 504 ||
++    (status !== null && status >= 500) ||
++    /timeout|timed out|abort|network|failed to fetch|fetcherror|connection|gateway|service unavailable|504|502|503|408/.test(
++      lower,
++    )
++  ) {
++    return {
++      kind: 'uncertain',
++      code,
++      message:
++        'Não foi possível confirmar se o servidor concluiu o registro (tempo limite ou falha de comunicação). Reconcilie utilizando a mesma chave idempotente.',
++      retryableWithSameKey: true,
++    }
++  }
++
++  if (code === '28000' || status === 401 || /authentication required|not authenticated|jwt expired/.test(lower)) {
++    return {
++      kind: 'auth',
++      code: code ?? '28000',
++      message: 'Sessão autenticada expirada ou ausente para operar dados LGPD desta Loja.',
++      retryableWithSameKey: false,
++    }
++  }
++
++  if (
++    code === '42501' ||
++    status === 403 ||
++    /controller permission required/.test(lower) ||
++    /authenticated_member_link verification can only be confirmed/.test(lower) ||
++    /access denied|permission denied|row-level security/.test(lower)
++  ) {
++    let friendly = 'Acesso negado: seu perfil não possui autorização para esta operação LGPD nesta Loja.'
++    if (/controller permission required/.test(lower)) {
++      friendly =
++        'O método de verificação selecionado é reservado ao controlador autorizado (settings.manage ou members.write).'
++    } else if (/authenticated_member_link verification can only be confirmed/.test(lower)) {
++      friendly =
++        'A validação por sessão autenticada do titular só pode ser confirmada pela própria sessão vinculada do titular.'
++    }
++    return {
++      kind: 'auth',
++      code: code ?? '42501',
++      message: friendly,
++      retryableWithSameKey: false,
++    }
++  }
++
++  if (code === 'PT409' || /idempotency key already used with different payload/.test(lower)) {
++    return {
++      kind: 'conflict',
++      code: code ?? 'PT409',
++      message:
++        'A chave idempotente já foi utilizada com outro conteúdo. Confirme ou inicie uma nova intenção para outro pedido.',
++      retryableWithSameKey: false,
++    }
++  }
++
++  if (
++    code === 'CLIENT_VALIDATION' ||
++    code === '22023' ||
++    code === '23503' ||
++    code === '23505'
++  ) {
++    let friendly = cleanMsg || fallbackMessage
++    if (/authenticated_member_link requires member_id/.test(lower)) {
++      friendly = 'O método "Sessão autenticada do titular" exige informar o UUID do integrante.'
++    } else if (/member does not have an authenticated user link/.test(lower)) {
++      friendly = 'O integrante informado não possui conta de usuário autenticada vinculada nesta Loja.'
++    } else if (/member not found in organization/.test(lower)) {
++      friendly = 'Integrante não encontrado na Loja selecionada.'
++    } else if (/notes cannot exceed 1000 characters/.test(lower)) {
++      friendly = 'As observações sanitizadas não podem ultrapassar 1000 caracteres.'
++    } else if (/notes cannot contain secrets/.test(lower)) {
++      friendly = 'Observações não podem conter credenciais, tokens ou segredos.'
++    }
++    return {
++      kind: 'validation',
++      code,
++      message: friendly,
++      retryableWithSameKey: false,
++    }
++  }
++
++  return {
++    kind: 'unexpected',
++    code,
++    message: cleanMsg || fallbackMessage,
++    retryableWithSameKey: false,
++  }
++}
++
+ export interface RetentionScheduleItem {
+   category: string
+   retention_label: string
+@@ -294,16 +489,34 @@ export async function verifySha256Integrity(text: string, expectedHex: string):
+ export async function readTenantRetentionPosture(
+   client: SupabaseClient,
+   organizationId: string,
+-): Promise<TenantRetentionPosture | null> {
++): Promise<TenantRetentionPosture> {
+   const orgId = assertM05Uuid(organizationId, 'Organização')
+   const { data, error } = await client.rpc('read_tenant_retention_posture', {
+     p_organization_id: orgId,
+   })
+   if (error) throw error
+-  if (!data || typeof data !== 'object' || !Array.isArray((data as TenantRetentionPosture).schedule)) {
+-    return null
++  if (
++    !data ||
++    typeof data !== 'object' ||
++    Array.isArray(data) ||
++    !Array.isArray((data as TenantRetentionPosture).schedule)
++  ) {
++    throw createPrivacyClientError(
++      'Resposta inválida ao consultar a postura de retenção da Loja.',
++      'INVALID_RPC_RESPONSE',
++    )
++  }
++  const posture = data as TenantRetentionPosture
++  if (
++    typeof posture.organization_id === 'string' &&
++    posture.organization_id.toLowerCase() !== orgId.toLowerCase()
++  ) {
++    throw createPrivacyClientError(
++      'Inconsistência de isolamento multi-tenant na postura de retenção.',
++      'INVALID_RPC_RESPONSE',
++    )
+   }
+-  return data as TenantRetentionPosture
++  return posture
+ }
+ 
+ export async function placeTenantLegalHold(
+@@ -358,7 +571,26 @@ export async function listTenantPortabilityExports(
+     p_organization_id: orgId,
+   })
+   if (error) throw error
+-  return Array.isArray(data) ? (data as PortabilityExportRecord[]) : []
++  if (!Array.isArray(data)) {
++    throw createPrivacyClientError(
++      'Resposta inválida ao listar pacotes de portabilidade da Loja.',
++      'INVALID_RPC_RESPONSE',
++    )
++  }
++  const rows = data as PortabilityExportRecord[]
++  if (
++    rows.some(
++      row =>
++        typeof row?.organization_id === 'string' &&
++        row.organization_id.toLowerCase() !== orgId.toLowerCase(),
++    )
++  ) {
++    throw createPrivacyClientError(
++      'Inconsistência de isolamento multi-tenant na listagem de exportações.',
++      'INVALID_RPC_RESPONSE',
++    )
++  }
++  return rows
+ }
+ 
+ export async function createTenantPortabilityExport(
+@@ -418,7 +650,85 @@ export async function listTenantPrivacyRequests(
+     p_organization_id: orgId,
+   })
+   if (error) throw error
+-  return Array.isArray(data) ? (data as PrivacyRequestRecord[]) : []
++  if (!Array.isArray(data)) {
++    throw createPrivacyClientError(
++      'Resposta inválida ao listar solicitações LGPD da Loja.',
++      'INVALID_RPC_RESPONSE',
++    )
++  }
++  const rows = data as PrivacyRequestRecord[]
++  if (
++    rows.some(
++      row =>
++        typeof row?.organization_id === 'string' &&
++        row.organization_id.toLowerCase() !== orgId.toLowerCase(),
++    )
++  ) {
++    throw createPrivacyClientError(
++      'Inconsistência de isolamento multi-tenant na listagem de solicitações LGPD.',
++      'INVALID_RPC_RESPONSE',
++    )
++  }
++  return rows
++}
++
++export function validateRegisteredPrivacyRequestResult(
++  data: unknown,
++  expectedOrganizationId: string,
++): RegisteredPrivacyRequestResult {
++  if (!data || typeof data !== 'object' || Array.isArray(data)) {
++    throw createPrivacyClientError(
++      'Resposta do servidor ausente ou inválida após o envio da solicitação LGPD.',
++      'INVALID_RPC_RESPONSE',
++    )
++  }
++  const rec = data as Record<string, unknown>
++  if (!isM05Uuid(rec.request_id) || !isM05Uuid(rec.organization_id)) {
++    throw createPrivacyClientError(
++      'Resposta do servidor sem request_id ou organization_id válido após o registro LGPD.',
++      'INVALID_RPC_RESPONSE',
++    )
++  }
++  if (rec.organization_id.trim().toLowerCase() !== expectedOrganizationId.trim().toLowerCase()) {
++    throw createPrivacyClientError(
++      'Resposta do servidor retornou organização divergente no registro LGPD.',
++      'INVALID_RPC_RESPONSE',
++    )
++  }
++  if (rec.decision_outcome !== 'pending_triage') {
++    throw createPrivacyClientError(
++      'Resposta do servidor retornou desfecho inicial inválido para a solicitação LGPD.',
++      'INVALID_RPC_RESPONSE',
++    )
++  }
++  if (typeof rec.triage_due_at !== 'string' || !Number.isFinite(Date.parse(rec.triage_due_at))) {
++    throw createPrivacyClientError(
++      'Resposta do servidor sem prazo de triagem válido após o registro LGPD.',
++      'INVALID_RPC_RESPONSE',
++    )
++  }
++  if (typeof rec.ledger_preserved !== 'boolean') {
++    throw createPrivacyClientError(
++      'Resposta do servidor sem confirmação de preservação contábil após o registro LGPD.',
++      'INVALID_RPC_RESPONSE',
++    )
++  }
++  return {
++    request_id: rec.request_id.trim(),
++    organization_id: rec.organization_id.trim(),
++    decision_outcome: 'pending_triage',
++    triage_due_at: rec.triage_due_at,
++    ledger_preserved: rec.ledger_preserved,
++    ...(typeof rec.requester_verified === 'boolean'
++      ? { requester_verified: rec.requester_verified }
++      : {}),
++    ...(typeof rec.requester_verification_method === 'string'
++      ? {
++          requester_verification_method:
++            rec.requester_verification_method as PrivacyVerificationMethod,
++        }
++      : {}),
++  }
+ }
+ 
+ export async function registerTenantPrivacyRequest(
+@@ -434,9 +744,25 @@ export async function registerTenantPrivacyRequest(
+     notes: string
+     idempotencyKey?: string
+   },
+-) {
++): Promise<RegisteredPrivacyRequestResult> {
+   const orgId = assertM05Uuid(params.organizationId, 'Organização')
+-  const memberId = params.memberId && params.memberId.trim() ? assertM05Uuid(params.memberId, 'Integrante') : null
++  const memberId =
++    params.memberId && params.memberId.trim()
++      ? assertM05Uuid(params.memberId, 'Integrante')
++      : null
++  if (params.verificationMethod === 'authenticated_member_link' && !memberId) {
++    throw createPrivacyClientError(
++      'O método "Sessão autenticada do titular" exige informar o UUID do integrante.',
++      'CLIENT_VALIDATION',
++    )
++  }
++  const trimmedNotes = params.notes.trim()
++  if (trimmedNotes.length > 1000) {
++    throw createPrivacyClientError(
++      'As observações sanitizadas não podem ultrapassar 1000 caracteres.',
++      'CLIENT_VALIDATION',
++    )
++  }
+   const { data, error } = await client.rpc('register_tenant_privacy_request_idempotent', {
+     p_organization_id: orgId,
+     p_member_id: memberId,
+@@ -445,11 +771,11 @@ export async function registerTenantPrivacyRequest(
+     p_verification_method: params.verificationMethod,
+     p_requester_verified: params.requesterVerified,
+     p_legal_basis: params.legalBasis,
+-    p_notes: params.notes,
++    p_notes: trimmedNotes,
+     p_idempotency_key: params.idempotencyKey ?? generateM05IdempotencyKey('priv-req'),
+   })
+   if (error) throw error
+-  return data
++  return validateRegisteredPrivacyRequestResult(data, orgId)
+ }
+ 
+ export async function reviewTenantPrivacyRequest(
+diff --git a/supabase/migrations/20261126190000_v35_m0501_privacy_request_hardening.sql b/supabase/migrations/20261126190000_v35_m0501_privacy_request_hardening.sql
+new file mode 100644
+index 0000000..20a7dd3
+--- /dev/null
++++ b/supabase/migrations/20261126190000_v35_m0501_privacy_request_hardening.sql
+@@ -0,0 +1,166 @@
++begin;
++
++create or replace function public.register_tenant_privacy_request_idempotent(
++  p_organization_id uuid,
++  p_member_id uuid,
++  p_request_type text,
++  p_data_category text,
++  p_verification_method text,
++  p_requester_verified boolean,
++  p_legal_basis text,
++  p_notes text,
++  p_idempotency_key text
++)
++returns jsonb
++language plpgsql
++security definer
++set search_path = ''
++as $$
++declare
++  v_user uuid := (select auth.uid());
++  v_is_controller boolean := false;
++  v_is_self_member boolean := false;
++  v_existing jsonb;
++  v_req_id uuid;
++  v_now timestamptz := clock_timestamp();
++  v_due timestamptz;
++  v_verified boolean := coalesce(p_requester_verified, false);
++  v_notes text := nullif(btrim(coalesce(p_notes, '')), '');
++  v_result jsonb;
++begin
++  if v_user is null then
++    raise exception 'authentication required' using errcode = '28000';
++  end if;
++  if p_organization_id is null or not exists (select 1 from public.organizations where id = p_organization_id) then
++    raise exception 'organization not found' using errcode = '23503';
++  end if;
++  if p_member_id is not null and not exists (
++    select 1 from public.members where organization_id = p_organization_id and id = p_member_id
++  ) then
++    raise exception 'member not found in organization' using errcode = '23503';
++  end if;
++
++  v_is_controller := private.has_permission(p_organization_id, 'settings.manage')
++    or private.has_permission(p_organization_id, 'members.write');
++  v_is_self_member := p_member_id is not null
++    and private.is_self_member(p_organization_id, p_member_id);
++
++  if not (v_is_controller or v_is_self_member) then
++    raise exception 'access denied' using errcode = '42501';
++  end if;
++
++  if p_request_type not in ('access', 'correction', 'portability', 'anonymization', 'deletion') then
++    raise exception 'invalid privacy request type' using errcode = '22023';
++  end if;
++  if p_data_category not in ('cadastral', 'financial_ledger', 'sensitive_philosophical', 'access_logs', 'operational_logs', 'attachments') then
++    raise exception 'invalid data category' using errcode = '22023';
++  end if;
++  if p_verification_method not in ('authenticated_member_link', 'signed_document_verified', 'in_person_controller_check') then
++    raise exception 'invalid verification method' using errcode = '22023';
++  end if;
++  if p_legal_basis not in ('legal_obligation_accounting', 'contract_execution', 'legitimate_interest', 'consent', 'exercise_of_rights') then
++    raise exception 'invalid legal basis' using errcode = '22023';
++  end if;
++  if v_notes is not null and length(v_notes) > 1000 then
++    raise exception 'notes cannot exceed 1000 characters' using errcode = '22023';
++  end if;
++  if p_notes is not null and private.m05_has_secret_pattern(p_notes) then
++    raise exception 'notes cannot contain secrets or credentials' using errcode = '22023';
++  end if;
++
++  if p_verification_method in ('signed_document_verified', 'in_person_controller_check')
++     and not v_is_controller then
++    raise exception 'controller permission required for controller verification method' using errcode = '42501';
++  end if;
++
++  if p_verification_method = 'authenticated_member_link' then
++    if p_member_id is null then
++      raise exception 'authenticated_member_link requires member_id' using errcode = '22023';
++    end if;
++    if not exists (
++      select 1
++      from public.member_user_links l
++      where l.organization_id = p_organization_id
++        and l.member_id = p_member_id
++    ) then
++      raise exception 'member does not have an authenticated user link' using errcode = '22023';
++    end if;
++    if v_verified and not v_is_self_member then
++      raise exception 'authenticated_member_link verification can only be confirmed by the linked member session' using errcode = '42501';
++    end if;
++  end if;
++
++  v_existing := private.m05_idempotency_begin(
++    p_organization_id::text,
++    'register_tenant_privacy_request',
++    p_idempotency_key,
++    jsonb_build_object(
++      'organization_id', p_organization_id,
++      'member_id', p_member_id,
++      'request_type', p_request_type,
++      'data_category', p_data_category,
++      'verification_method', p_verification_method,
++      'requester_verified', v_verified,
++      'legal_basis', p_legal_basis,
++      'notes', coalesce(v_notes, '')
++    )
++  );
++  if v_existing is not null then
++    return v_existing;
++  end if;
++
++  v_due := private.add_business_days(v_now, 2);
++
++  insert into public.tenant_privacy_requests (
++    organization_id, member_id, requested_by_user_id, request_type,
++    requester_verification_method, requester_verified, data_category,
++    legal_basis, decision_outcome, triage_due_at, controller_justification
++  ) values (
++    p_organization_id, p_member_id, v_user, p_request_type,
++    p_verification_method, v_verified, p_data_category,
++    p_legal_basis, 'pending_triage', v_due, v_notes
++  )
++  returning id into v_req_id;
++
++  insert into public.tenant_privacy_request_events (
++    organization_id, request_id, actor_user_id, event_type, from_outcome, to_outcome, notes
++  ) values (
++    p_organization_id, v_req_id, v_user, 'registered', null, 'pending_triage', v_notes
++  );
++
++  insert into public.audit_logs (
++    organization_id, actor_user_id, action, entity_type, entity_id, after_data, reason
++  ) values (
++    p_organization_id,
++    v_user,
++    'privacy.subject_request_registered',
++    'tenant_privacy_requests',
++    v_req_id,
++    jsonb_build_object(
++      'request_type', p_request_type,
++      'data_category', p_data_category,
++      'verification_method', p_verification_method,
++      'requester_verified', v_verified,
++      'triage_due_at', v_due
++    ),
++    'Registro de direito de titular LGPD D02/D03'
++  );
++
++  v_result := jsonb_build_object(
++    'request_id', v_req_id,
++    'organization_id', p_organization_id,
++    'decision_outcome', 'pending_triage',
++    'triage_due_at', v_due,
++    'ledger_preserved', true,
++    'requester_verified', v_verified,
++    'requester_verification_method', p_verification_method
++  );
++  perform private.m05_idempotency_complete(p_organization_id::text, p_idempotency_key, v_result);
++  return v_result;
++end;
++$$;
++
++revoke all on function public.register_tenant_privacy_request_idempotent(uuid, uuid, text, text, text, boolean, text, text, text) from public, anon;
++grant execute on function public.register_tenant_privacy_request_idempotent(uuid, uuid, text, text, text, boolean, text, text, text) to authenticated;
++
++commit;

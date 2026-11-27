@@ -2,12 +2,25 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+export function createPrivacyClientError(
+  message: string,
+  code: string,
+): Error & { code: string } {
+  const err = new Error(message) as Error & { code: string }
+  err.code = code
+  return err
+}
+
 export function assertM05Uuid(value: string, label: string): string {
   const trimmed = value.trim()
   if (!UUID_REGEX.test(trimmed)) {
-    throw new Error(`${label} inválido`)
+    throw createPrivacyClientError(`${label} inválido`, 'CLIENT_VALIDATION')
   }
   return trimmed
+}
+
+export function isM05Uuid(value: unknown): value is string {
+  return typeof value === 'string' && UUID_REGEX.test(value.trim())
 }
 
 export function generateM05IdempotencyKey(prefix: string): string {
@@ -124,6 +137,188 @@ export interface PrivacyRequestRecord {
   anonymization_assessment: Record<string, unknown>
   ledger_preserved: boolean
   created_at: string
+}
+
+export interface RegisteredPrivacyRequestResult {
+  request_id: string
+  organization_id: string
+  decision_outcome: PrivacyDecisionOutcome
+  triage_due_at: string
+  ledger_preserved: boolean
+  requester_verified?: boolean
+  requester_verification_method?: PrivacyVerificationMethod
+}
+
+export type PrivacyErrorKind =
+  | 'auth'
+  | 'validation'
+  | 'conflict'
+  | 'uncertain'
+  | 'unexpected'
+
+export interface ClassifiedPrivacyError {
+  kind: PrivacyErrorKind
+  code: string | null
+  message: string
+  retryableWithSameKey: boolean
+}
+
+export function sanitizePrivacyMessage(raw: string): string {
+  return raw
+    .replace(/\b(password|passwd|secret|token|apikey|api_key|authorization)\s*[:=]\s*\S+/gi, '[redigido]')
+    .replace(/postgres(?:ql)?:\/\/\S+/gi, '[redigido]')
+    .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, 'Bearer [redigido]')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 260)
+}
+
+function extractRawPrivacyError(err: unknown): {
+  code: string | null
+  status: number | null
+  name: string | null
+  message: string
+} {
+  if (err instanceof Error) {
+    const extra = err as Error & { code?: unknown; status?: unknown; details?: unknown }
+    return {
+      code: typeof extra.code === 'string' ? extra.code : null,
+      status: typeof extra.status === 'number' ? extra.status : null,
+      name: err.name || null,
+      message: err.message || '',
+    }
+  }
+  if (err && typeof err === 'object') {
+    const rec = err as Record<string, unknown>
+    return {
+      code: typeof rec.code === 'string' ? rec.code : null,
+      status: typeof rec.status === 'number' ? rec.status : null,
+      name: typeof rec.name === 'string' ? rec.name : null,
+      message: typeof rec.message === 'string' ? rec.message : '',
+    }
+  }
+  if (typeof err === 'string') {
+    return { code: null, status: null, name: null, message: err }
+  }
+  return { code: null, status: null, name: null, message: '' }
+}
+
+export function classifyPrivacyError(
+  err: unknown,
+  fallbackMessage = 'Não foi possível concluir a operação LGPD.',
+): ClassifiedPrivacyError {
+  const { code, status, name, message } = extractRawPrivacyError(err)
+  const cleanMsg = sanitizePrivacyMessage(message)
+  const lower = cleanMsg.toLowerCase()
+
+  if (code === 'INVALID_RPC_RESPONSE') {
+    return {
+      kind: 'uncertain',
+      code,
+      message:
+        cleanMsg ||
+        'Resposta do servidor incompleta ou inválida. Reconcilie utilizando a mesma chave idempotente antes de enviar outra solicitação.',
+      retryableWithSameKey: true,
+    }
+  }
+
+  if (
+    name === 'AbortError' ||
+    code === 'ETIMEDOUT' ||
+    code === 'ECONNABORTED' ||
+    code === 'UND_ERR_CONNECT_TIMEOUT' ||
+    status === 408 ||
+    status === 502 ||
+    status === 503 ||
+    status === 504 ||
+    (status !== null && status >= 500) ||
+    /timeout|timed out|abort|network|failed to fetch|fetcherror|connection|gateway|service unavailable|504|502|503|408/.test(
+      lower,
+    )
+  ) {
+    return {
+      kind: 'uncertain',
+      code,
+      message:
+        'Não foi possível confirmar se o servidor concluiu o registro (tempo limite ou falha de comunicação). Reconcilie utilizando a mesma chave idempotente.',
+      retryableWithSameKey: true,
+    }
+  }
+
+  if (code === '28000' || status === 401 || /authentication required|not authenticated|jwt expired/.test(lower)) {
+    return {
+      kind: 'auth',
+      code: code ?? '28000',
+      message: 'Sessão autenticada expirada ou ausente para operar dados LGPD desta Loja.',
+      retryableWithSameKey: false,
+    }
+  }
+
+  if (
+    code === '42501' ||
+    status === 403 ||
+    /controller permission required/.test(lower) ||
+    /authenticated_member_link verification can only be confirmed/.test(lower) ||
+    /access denied|permission denied|row-level security/.test(lower)
+  ) {
+    let friendly = 'Acesso negado: seu perfil não possui autorização para esta operação LGPD nesta Loja.'
+    if (/controller permission required/.test(lower)) {
+      friendly =
+        'O método de verificação selecionado é reservado ao controlador autorizado (settings.manage ou members.write).'
+    } else if (/authenticated_member_link verification can only be confirmed/.test(lower)) {
+      friendly =
+        'A validação por sessão autenticada do titular só pode ser confirmada pela própria sessão vinculada do titular.'
+    }
+    return {
+      kind: 'auth',
+      code: code ?? '42501',
+      message: friendly,
+      retryableWithSameKey: false,
+    }
+  }
+
+  if (code === 'PT409' || /idempotency key already used with different payload/.test(lower)) {
+    return {
+      kind: 'conflict',
+      code: code ?? 'PT409',
+      message:
+        'A chave idempotente já foi utilizada com outro conteúdo. Confirme ou inicie uma nova intenção para outro pedido.',
+      retryableWithSameKey: false,
+    }
+  }
+
+  if (
+    code === 'CLIENT_VALIDATION' ||
+    code === '22023' ||
+    code === '23503' ||
+    code === '23505'
+  ) {
+    let friendly = cleanMsg || fallbackMessage
+    if (/authenticated_member_link requires member_id/.test(lower)) {
+      friendly = 'O método "Sessão autenticada do titular" exige informar o UUID do integrante.'
+    } else if (/member does not have an authenticated user link/.test(lower)) {
+      friendly = 'O integrante informado não possui conta de usuário autenticada vinculada nesta Loja.'
+    } else if (/member not found in organization/.test(lower)) {
+      friendly = 'Integrante não encontrado na Loja selecionada.'
+    } else if (/notes cannot exceed 1000 characters/.test(lower)) {
+      friendly = 'As observações sanitizadas não podem ultrapassar 1000 caracteres.'
+    } else if (/notes cannot contain secrets/.test(lower)) {
+      friendly = 'Observações não podem conter credenciais, tokens ou segredos.'
+    }
+    return {
+      kind: 'validation',
+      code,
+      message: friendly,
+      retryableWithSameKey: false,
+    }
+  }
+
+  return {
+    kind: 'unexpected',
+    code,
+    message: cleanMsg || fallbackMessage,
+    retryableWithSameKey: false,
+  }
 }
 
 export interface RetentionScheduleItem {
@@ -294,16 +489,34 @@ export async function verifySha256Integrity(text: string, expectedHex: string): 
 export async function readTenantRetentionPosture(
   client: SupabaseClient,
   organizationId: string,
-): Promise<TenantRetentionPosture | null> {
+): Promise<TenantRetentionPosture> {
   const orgId = assertM05Uuid(organizationId, 'Organização')
   const { data, error } = await client.rpc('read_tenant_retention_posture', {
     p_organization_id: orgId,
   })
   if (error) throw error
-  if (!data || typeof data !== 'object' || !Array.isArray((data as TenantRetentionPosture).schedule)) {
-    return null
+  if (
+    !data ||
+    typeof data !== 'object' ||
+    Array.isArray(data) ||
+    !Array.isArray((data as TenantRetentionPosture).schedule)
+  ) {
+    throw createPrivacyClientError(
+      'Resposta inválida ao consultar a postura de retenção da Loja.',
+      'INVALID_RPC_RESPONSE',
+    )
   }
-  return data as TenantRetentionPosture
+  const posture = data as TenantRetentionPosture
+  if (
+    typeof posture.organization_id === 'string' &&
+    posture.organization_id.toLowerCase() !== orgId.toLowerCase()
+  ) {
+    throw createPrivacyClientError(
+      'Inconsistência de isolamento multi-tenant na postura de retenção.',
+      'INVALID_RPC_RESPONSE',
+    )
+  }
+  return posture
 }
 
 export async function placeTenantLegalHold(
@@ -358,7 +571,26 @@ export async function listTenantPortabilityExports(
     p_organization_id: orgId,
   })
   if (error) throw error
-  return Array.isArray(data) ? (data as PortabilityExportRecord[]) : []
+  if (!Array.isArray(data)) {
+    throw createPrivacyClientError(
+      'Resposta inválida ao listar pacotes de portabilidade da Loja.',
+      'INVALID_RPC_RESPONSE',
+    )
+  }
+  const rows = data as PortabilityExportRecord[]
+  if (
+    rows.some(
+      row =>
+        typeof row?.organization_id === 'string' &&
+        row.organization_id.toLowerCase() !== orgId.toLowerCase(),
+    )
+  ) {
+    throw createPrivacyClientError(
+      'Inconsistência de isolamento multi-tenant na listagem de exportações.',
+      'INVALID_RPC_RESPONSE',
+    )
+  }
+  return rows
 }
 
 export async function createTenantPortabilityExport(
@@ -418,7 +650,85 @@ export async function listTenantPrivacyRequests(
     p_organization_id: orgId,
   })
   if (error) throw error
-  return Array.isArray(data) ? (data as PrivacyRequestRecord[]) : []
+  if (!Array.isArray(data)) {
+    throw createPrivacyClientError(
+      'Resposta inválida ao listar solicitações LGPD da Loja.',
+      'INVALID_RPC_RESPONSE',
+    )
+  }
+  const rows = data as PrivacyRequestRecord[]
+  if (
+    rows.some(
+      row =>
+        typeof row?.organization_id === 'string' &&
+        row.organization_id.toLowerCase() !== orgId.toLowerCase(),
+    )
+  ) {
+    throw createPrivacyClientError(
+      'Inconsistência de isolamento multi-tenant na listagem de solicitações LGPD.',
+      'INVALID_RPC_RESPONSE',
+    )
+  }
+  return rows
+}
+
+export function validateRegisteredPrivacyRequestResult(
+  data: unknown,
+  expectedOrganizationId: string,
+): RegisteredPrivacyRequestResult {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw createPrivacyClientError(
+      'Resposta do servidor ausente ou inválida após o envio da solicitação LGPD.',
+      'INVALID_RPC_RESPONSE',
+    )
+  }
+  const rec = data as Record<string, unknown>
+  if (!isM05Uuid(rec.request_id) || !isM05Uuid(rec.organization_id)) {
+    throw createPrivacyClientError(
+      'Resposta do servidor sem request_id ou organization_id válido após o registro LGPD.',
+      'INVALID_RPC_RESPONSE',
+    )
+  }
+  if (rec.organization_id.trim().toLowerCase() !== expectedOrganizationId.trim().toLowerCase()) {
+    throw createPrivacyClientError(
+      'Resposta do servidor retornou organização divergente no registro LGPD.',
+      'INVALID_RPC_RESPONSE',
+    )
+  }
+  if (rec.decision_outcome !== 'pending_triage') {
+    throw createPrivacyClientError(
+      'Resposta do servidor retornou desfecho inicial inválido para a solicitação LGPD.',
+      'INVALID_RPC_RESPONSE',
+    )
+  }
+  if (typeof rec.triage_due_at !== 'string' || !Number.isFinite(Date.parse(rec.triage_due_at))) {
+    throw createPrivacyClientError(
+      'Resposta do servidor sem prazo de triagem válido após o registro LGPD.',
+      'INVALID_RPC_RESPONSE',
+    )
+  }
+  if (typeof rec.ledger_preserved !== 'boolean') {
+    throw createPrivacyClientError(
+      'Resposta do servidor sem confirmação de preservação contábil após o registro LGPD.',
+      'INVALID_RPC_RESPONSE',
+    )
+  }
+  return {
+    request_id: rec.request_id.trim(),
+    organization_id: rec.organization_id.trim(),
+    decision_outcome: 'pending_triage',
+    triage_due_at: rec.triage_due_at,
+    ledger_preserved: rec.ledger_preserved,
+    ...(typeof rec.requester_verified === 'boolean'
+      ? { requester_verified: rec.requester_verified }
+      : {}),
+    ...(typeof rec.requester_verification_method === 'string'
+      ? {
+          requester_verification_method:
+            rec.requester_verification_method as PrivacyVerificationMethod,
+        }
+      : {}),
+  }
 }
 
 export async function registerTenantPrivacyRequest(
@@ -434,9 +744,25 @@ export async function registerTenantPrivacyRequest(
     notes: string
     idempotencyKey?: string
   },
-) {
+): Promise<RegisteredPrivacyRequestResult> {
   const orgId = assertM05Uuid(params.organizationId, 'Organização')
-  const memberId = params.memberId && params.memberId.trim() ? assertM05Uuid(params.memberId, 'Integrante') : null
+  const memberId =
+    params.memberId && params.memberId.trim()
+      ? assertM05Uuid(params.memberId, 'Integrante')
+      : null
+  if (params.verificationMethod === 'authenticated_member_link' && !memberId) {
+    throw createPrivacyClientError(
+      'O método "Sessão autenticada do titular" exige informar o UUID do integrante.',
+      'CLIENT_VALIDATION',
+    )
+  }
+  const trimmedNotes = params.notes.trim()
+  if (trimmedNotes.length > 1000) {
+    throw createPrivacyClientError(
+      'As observações sanitizadas não podem ultrapassar 1000 caracteres.',
+      'CLIENT_VALIDATION',
+    )
+  }
   const { data, error } = await client.rpc('register_tenant_privacy_request_idempotent', {
     p_organization_id: orgId,
     p_member_id: memberId,
@@ -445,11 +771,11 @@ export async function registerTenantPrivacyRequest(
     p_verification_method: params.verificationMethod,
     p_requester_verified: params.requesterVerified,
     p_legal_basis: params.legalBasis,
-    p_notes: params.notes,
+    p_notes: trimmedNotes,
     p_idempotency_key: params.idempotencyKey ?? generateM05IdempotencyKey('priv-req'),
   })
   if (error) throw error
-  return data
+  return validateRegisteredPrivacyRequestResult(data, orgId)
 }
 
 export async function reviewTenantPrivacyRequest(

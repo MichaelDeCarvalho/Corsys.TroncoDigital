@@ -7,12 +7,16 @@ import {
   createTenantPortabilityExport,
   downloadPortabilityAttachmentBinary,
   downloadTenantPortabilityExport,
+  listTenantPrivacyRequests,
   registerTenantPrivacyRequest,
   reviewTenantPrivacyRequest,
   readTenantRetentionPosture,
+  classifyPrivacyError,
+  sanitizePrivacyMessage,
 } from './privacy-portability'
 
 const ORG_ID = '11111111-1111-4111-8111-111111111111'
+const OTHER_ORG_ID = '99999999-9999-4999-8999-999999999999'
 const MEMBER_ID = '22222222-2222-4222-8222-222222222222'
 const EXPORT_ID = '33333333-3333-4333-8333-333333333333'
 const REQ_ID = '44444444-4444-4444-8444-444444444444'
@@ -92,10 +96,29 @@ describe('privacy-portability library (M05 Entregas A-C)', () => {
   })
 
   it('calls privacy request registration, controller review, and retention posture RPCs cleanly', async () => {
-    const rpc = vi.fn().mockResolvedValue({ data: { ok: true }, error: null })
+    const rpc = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: {
+          request_id: REQ_ID,
+          organization_id: ORG_ID,
+          decision_outcome: 'pending_triage',
+          triage_due_at: '2026-11-30T12:00:00Z',
+          ledger_preserved: true,
+        },
+        error: null,
+      })
+      .mockResolvedValueOnce({ data: { ok: true }, error: null })
+      .mockResolvedValueOnce({
+        data: {
+          organization_id: ORG_ID,
+          schedule: [],
+        },
+        error: null,
+      })
     const client = { rpc } as unknown as SupabaseClient
 
-    await registerTenantPrivacyRequest(client, {
+    const registered = await registerTenantPrivacyRequest(client, {
       organizationId: ORG_ID,
       memberId: MEMBER_ID,
       requestType: 'anonymization',
@@ -106,6 +129,8 @@ describe('privacy-portability library (M05 Entregas A-C)', () => {
       notes: 'Solicitação de revisão do titular',
       idempotencyKey: 'req-1',
     })
+    expect(registered.request_id).toBe(REQ_ID)
+    expect(registered.decision_outcome).toBe('pending_triage')
 
     await reviewTenantPrivacyRequest(client, {
       organizationId: ORG_ID,
@@ -120,6 +145,105 @@ describe('privacy-portability library (M05 Entregas A-C)', () => {
 
     await readTenantRetentionPosture(client, ORG_ID)
     expect(rpc).toHaveBeenCalledTimes(3)
+  })
+
+  it('rejects incomplete, invalid or cross-tenant RPC responses on register and list', async () => {
+    const rpc = vi
+      .fn()
+      .mockResolvedValueOnce({ data: { ok: true }, error: null })
+      .mockResolvedValueOnce({
+        data: {
+          request_id: REQ_ID,
+          organization_id: OTHER_ORG_ID,
+          decision_outcome: 'pending_triage',
+          triage_due_at: '2026-11-30T12:00:00Z',
+          ledger_preserved: true,
+        },
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: { not_an_array: true },
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: [{ request_id: REQ_ID, organization_id: OTHER_ORG_ID }],
+        error: null,
+      })
+    const client = { rpc } as unknown as SupabaseClient
+
+    await expect(
+      registerTenantPrivacyRequest(client, {
+        organizationId: ORG_ID,
+        requestType: 'access',
+        dataCategory: 'cadastral',
+        verificationMethod: 'in_person_controller_check',
+        requesterVerified: false,
+        legalBasis: 'exercise_of_rights',
+        notes: 'Sem id válido',
+      }),
+    ).rejects.toMatchObject({ code: 'INVALID_RPC_RESPONSE' })
+
+    await expect(
+      registerTenantPrivacyRequest(client, {
+        organizationId: ORG_ID,
+        requestType: 'access',
+        dataCategory: 'cadastral',
+        verificationMethod: 'in_person_controller_check',
+        requesterVerified: false,
+        legalBasis: 'exercise_of_rights',
+        notes: 'Tenant divergente',
+      }),
+    ).rejects.toMatchObject({ code: 'INVALID_RPC_RESPONSE' })
+
+    await expect(listTenantPrivacyRequests(client, ORG_ID)).rejects.toMatchObject({
+      code: 'INVALID_RPC_RESPONSE',
+    })
+    await expect(listTenantPrivacyRequests(client, ORG_ID)).rejects.toMatchObject({
+      code: 'INVALID_RPC_RESPONSE',
+    })
+  })
+
+  it('requires member_id for authenticated_member_link before calling RPC', async () => {
+    const rpc = vi.fn()
+    const client = { rpc } as unknown as SupabaseClient
+
+    await expect(
+      registerTenantPrivacyRequest(client, {
+        organizationId: ORG_ID,
+        memberId: '',
+        requestType: 'access',
+        dataCategory: 'cadastral',
+        verificationMethod: 'authenticated_member_link',
+        requesterVerified: false,
+        legalBasis: 'exercise_of_rights',
+        notes: 'Falta UUID',
+      }),
+    ).rejects.toMatchObject({ code: 'CLIENT_VALIDATION' })
+    expect(rpc).not.toHaveBeenCalled()
+  })
+
+  it('classifies auth, conflict, timeout/uncertain errors safely and redacts secrets', () => {
+    expect(
+      classifyPrivacyError({ code: '42501', message: 'controller permission required' }),
+    ).toMatchObject({ kind: 'auth', retryableWithSameKey: false })
+
+    expect(classifyPrivacyError({ code: '28000', message: 'authentication required' })).toMatchObject({
+      kind: 'auth',
+      retryableWithSameKey: false,
+    })
+
+    expect(
+      classifyPrivacyError({ code: 'PT409', message: 'idempotency key already used with different payload' }),
+    ).toMatchObject({ kind: 'conflict', retryableWithSameKey: false })
+
+    expect(classifyPrivacyError(new Error('504 Gateway Timeout'))).toMatchObject({
+      kind: 'uncertain',
+      retryableWithSameKey: true,
+    })
+
+    expect(sanitizePrivacyMessage('erro password=supersecret Bearer tok123 postgres://user:pw@db')).not.toContain(
+      'supersecret',
+    )
   })
 
   it('downloads only through the server-side attachment authorization and rejects missing binaries', async () => {

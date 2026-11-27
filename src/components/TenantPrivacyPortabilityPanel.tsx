@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { Download, ShieldAlert, Clock, FileText, Lock, RefreshCw } from 'lucide-react'
 import {
   buildPortabilityCsvBundle,
+  classifyPrivacyError,
   createTenantPortabilityExport,
   downloadPortabilityAttachmentBinary,
   downloadTenantPortabilityExport,
+  generateM05IdempotencyKey,
   listTenantPortabilityExports,
   listTenantPrivacyRequests,
   placeTenantLegalHold,
@@ -27,6 +29,7 @@ import {
   type PrivacyRequestRecord,
   type PrivacyRequestType,
   type PrivacyVerificationMethod,
+  type RegisteredPrivacyRequestResult,
   type RetentionCategory,
   type TenantRetentionPosture,
 } from '../lib/privacy-portability'
@@ -56,6 +59,42 @@ function triggerLocalDownload(filename: string, content: string, mimeType: strin
   setTimeout(() => URL.revokeObjectURL(href), 1500)
 }
 
+type SectionLoadStatus =
+  | 'idle'
+  | 'loaded'
+  | 'empty'
+  | 'error'
+  | 'forbidden'
+  | 'unauthenticated'
+
+interface SectionLoadState {
+  status: SectionLoadStatus
+  message: string
+}
+
+interface PendingPrivacyRegistration {
+  idempotencyKey: string
+  organizationId: string
+  memberId: string | null
+  requestType: PrivacyRequestType
+  dataCategory: PrivacyDataCategory
+  verificationMethod: PrivacyVerificationMethod
+  requesterVerified: boolean
+  legalBasis: PrivacyLegalBasis
+  notes: string
+}
+
+function toSectionFailureState(err: unknown, fallback: string): SectionLoadState {
+  const classified = classifyPrivacyError(err, fallback)
+  if (classified.code === '28000') {
+    return { status: 'unauthenticated', message: classified.message }
+  }
+  if (classified.kind === 'auth') {
+    return { status: 'forbidden', message: classified.message }
+  }
+  return { status: 'error', message: classified.message }
+}
+
 export function TenantPrivacyPortabilityPanel({
   client,
   organizationId,
@@ -67,6 +106,7 @@ export function TenantPrivacyPortabilityPanel({
   const [busyAction, setBusyAction] = useState('')
   const [error, setError] = useState('')
   const [feedback, setFeedback] = useState('')
+  const [postRegisterRefreshWarning, setPostRegisterRefreshWarning] = useState('')
 
   const [posture, setPosture] = useState<TenantRetentionPosture | null>(null)
   const [exportsList, setExportsList] = useState<PortabilityExportRecord[]>([])
@@ -76,19 +116,32 @@ export function TenantPrivacyPortabilityPanel({
   } | null>(null)
   const [requestsList, setRequestsList] = useState<PrivacyRequestRecord[]>([])
 
+  const [postureState, setPostureState] = useState<SectionLoadState>({ status: 'idle', message: '' })
+  const [exportsState, setExportsState] = useState<SectionLoadState>({ status: 'idle', message: '' })
+  const [requestsState, setRequestsState] = useState<SectionLoadState>({ status: 'idle', message: '' })
+
   // Export form state
   const [exportScope, setExportScope] = useState<PortabilityScope>('organization_full')
   const [exportMemberId, setExportMemberId] = useState('')
   const [exportFormat, setExportFormat] = useState<PortabilityFormat>('json')
 
-  // Privacy request form state
+  // Privacy request form state — identity validation NEVER starts pre-checked
   const [reqMemberId, setReqMemberId] = useState('')
   const [reqType, setReqType] = useState<PrivacyRequestType>('access')
   const [reqCategory, setReqCategory] = useState<PrivacyDataCategory>('cadastral')
-  const [reqVerMethod, setReqVerMethod] = useState<PrivacyVerificationMethod>('authenticated_member_link')
-  const [reqVerified, setReqVerified] = useState(true)
+  const [reqVerMethod, setReqVerMethod] = useState<PrivacyVerificationMethod>('in_person_controller_check')
+  const [reqVerified, setReqVerified] = useState(false)
   const [reqBasis, setReqBasis] = useState<PrivacyLegalBasis>('exercise_of_rights')
   const [reqNotes, setReqNotes] = useState('')
+
+  const privacySubmitLockRef = useRef(false)
+  const activeOrgRef = useRef(organizationId)
+  const loadSeqRef = useRef(0)
+  const [uncertainPrivacyCmd, setUncertainPrivacyCmd] = useState<{
+    command: PendingPrivacyRegistration
+    reason: string
+  } | null>(null)
+  const [lastConfirmedReq, setLastConfirmedReq] = useState<RegisteredPrivacyRequestResult | null>(null)
 
   // Review state
   const [reviewOutcome, setReviewOutcome] = useState<Record<string, Exclude<PrivacyDecisionOutcome, 'pending_triage'>>>({})
@@ -100,29 +153,149 @@ export function TenantPrivacyPortabilityPanel({
   const [holdReason, setHoldReason] = useState('')
   const [holdRef, setHoldRef] = useState('')
 
-  const loadAll = useCallback(async () => {
-    if (!organizationId || typeof client?.rpc !== 'function') return
+  const isPrivacyFormLocked = busyAction !== '' || uncertainPrivacyCmd !== null
+
+  const loadAll = useCallback(async (options?: { preserveActionBanner?: boolean }) => {
+    if (!organizationId || typeof client?.rpc !== 'function') {
+      return { ok: false, requestsOk: false, requestsError: '', summaryError: '' }
+    }
+    const seq = ++loadSeqRef.current
+    const targetOrg = organizationId
     setLoading(true)
-    setError('')
+    if (!options?.preserveActionBanner) {
+      setError('')
+    }
+
     try {
       const [postureRes, exportsRes, requestsRes] = await Promise.allSettled([
-        readTenantRetentionPosture(client, organizationId),
-        listTenantPortabilityExports(client, organizationId),
-        listTenantPrivacyRequests(client, organizationId),
+        readTenantRetentionPosture(client, targetOrg),
+        listTenantPortabilityExports(client, targetOrg),
+        listTenantPrivacyRequests(client, targetOrg),
       ])
-      if (postureRes.status === 'fulfilled') setPosture(postureRes.value)
-      if (exportsRes.status === 'fulfilled') setExportsList(exportsRes.value)
-      if (requestsRes.status === 'fulfilled') setRequestsList(requestsRes.value)
+
+      if (loadSeqRef.current !== seq || activeOrgRef.current !== targetOrg) {
+        return { ok: false, requestsOk: false, requestsError: '', summaryError: '' }
+      }
+
+      const sectionErrors: string[] = []
+      let requestsOk = false
+      let requestsError = ''
+
+      if (postureRes.status === 'fulfilled') {
+        setPosture(postureRes.value)
+        setPostureState({ status: 'loaded', message: '' })
+      } else {
+        setPosture(null)
+        const fail = toSectionFailureState(
+          postureRes.reason,
+          'Não foi possível carregar a postura de retenção da Loja.',
+        )
+        setPostureState(fail)
+        sectionErrors.push(fail.message)
+      }
+
+      if (exportsRes.status === 'fulfilled') {
+        setExportsList(exportsRes.value)
+        setExportsState({
+          status: exportsRes.value.length === 0 ? 'empty' : 'loaded',
+          message: '',
+        })
+      } else {
+        setExportsList([])
+        setActiveExportAttachments(null)
+        const fail = toSectionFailureState(
+          exportsRes.reason,
+          'Não foi possível carregar as exportações de portabilidade.',
+        )
+        setExportsState(fail)
+        sectionErrors.push(fail.message)
+      }
+
+      if (requestsRes.status === 'fulfilled') {
+        requestsOk = true
+        setRequestsList(requestsRes.value)
+        setRequestsState({
+          status: requestsRes.value.length === 0 ? 'empty' : 'loaded',
+          message: '',
+        })
+        setPostRegisterRefreshWarning('')
+      } else {
+        setRequestsList([])
+        const fail = toSectionFailureState(
+          requestsRes.reason,
+          'Não foi possível carregar as solicitações LGPD desta Loja.',
+        )
+        requestsError = fail.message
+        setRequestsState(fail)
+        sectionErrors.push(fail.message)
+      }
+
+      const summaryError =
+        sectionErrors.length === 0
+          ? ''
+          : sectionErrors.length === 3
+            ? sectionErrors[0]
+            : `Consulta parcial LGPD (${sectionErrors.length} falha(s)): ${sectionErrors.join(' · ')}`
+
+      if (summaryError && !options?.preserveActionBanner) {
+        setError(summaryError)
+      }
+
+      return {
+        ok: sectionErrors.length === 0,
+        requestsOk,
+        requestsError,
+        summaryError,
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível carregar dados de privacidade e portabilidade.')
+      if (loadSeqRef.current !== seq || activeOrgRef.current !== targetOrg) {
+        return { ok: false, requestsOk: false, requestsError: '', summaryError: '' }
+      }
+      setPosture(null)
+      setExportsList([])
+      setActiveExportAttachments(null)
+      setRequestsList([])
+      const fail = toSectionFailureState(err, 'Não foi possível carregar dados de privacidade e portabilidade.')
+      setPostureState(fail)
+      setExportsState(fail)
+      setRequestsState(fail)
+      if (!options?.preserveActionBanner) {
+        setError(fail.message)
+      }
+      return {
+        ok: false,
+        requestsOk: false,
+        requestsError: fail.message,
+        summaryError: fail.message,
+      }
     } finally {
-      setLoading(false)
+      if (loadSeqRef.current === seq) {
+        setLoading(false)
+      }
     }
   }, [client, organizationId])
 
   useEffect(() => {
+    activeOrgRef.current = organizationId
+    privacySubmitLockRef.current = false
+    setBusyAction('')
+    setError('')
+    setFeedback('')
+    setPostRegisterRefreshWarning('')
+    setPosture(null)
+    setExportsList([])
+    setActiveExportAttachments(null)
+    setRequestsList([])
+    setPostureState({ status: 'idle', message: '' })
+    setExportsState({ status: 'idle', message: '' })
+    setRequestsState({ status: 'idle', message: '' })
+    setUncertainPrivacyCmd(null)
+    setLastConfirmedReq(null)
+    setReqVerified(false)
+    setReqMemberId('')
+    setReqNotes('')
     void loadAll()
-  }, [loadAll])
+  }, [organizationId, loadAll])
 
   async function handleCreateExport(event: FormEvent) {
     event.preventDefault()
@@ -130,6 +303,7 @@ export function TenantPrivacyPortabilityPanel({
     setBusyAction('export-create')
     setError('')
     setFeedback('')
+    setPostRegisterRefreshWarning('')
     try {
       const created = await createTenantPortabilityExport(client, {
         organizationId,
@@ -138,9 +312,9 @@ export function TenantPrivacyPortabilityPanel({
         packageFormat: exportFormat,
       })
       setFeedback(`Pacote ${created.export_id} gerado com SHA-256 ${created.payload_sha256.slice(0, 12)}… e validade de 24 horas.`)
-      await loadAll()
+      await loadAll({ preserveActionBanner: true })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível gerar o pacote de portabilidade.')
+      setError(classifyPrivacyError(err, 'Não foi possível gerar o pacote de portabilidade.').message)
     } finally {
       setBusyAction('')
     }
@@ -151,6 +325,7 @@ export function TenantPrivacyPortabilityPanel({
     setBusyAction(`download-${record.export_id}`)
     setError('')
     setFeedback('')
+    setPostRegisterRefreshWarning('')
     try {
       const pkg = await downloadTenantPortabilityExport(client, {
         organizationId,
@@ -188,7 +363,7 @@ export function TenantPrivacyPortabilityPanel({
       setActiveExportAttachments({ exportId: record.export_id, items: rawAtt })
       setFeedback(`Download autenticado registrado na trilha de auditoria (SHA-256 ${pkg.payload_sha256.slice(0, 12)}…).`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível baixar o pacote de exportação.')
+      setError(classifyPrivacyError(err, 'Não foi possível baixar o pacote de exportação.').message)
     } finally {
       setBusyAction('')
     }
@@ -199,6 +374,7 @@ export function TenantPrivacyPortabilityPanel({
     setBusyAction(`att-${att.id}`)
     setError('')
     setFeedback('')
+    setPostRegisterRefreshWarning('')
     try {
       const blob = await downloadPortabilityAttachmentBinary(client, {
         organizationId,
@@ -208,37 +384,89 @@ export function TenantPrivacyPortabilityPanel({
       triggerBlobDownload(att.original_filename || `anexo-${att.id.slice(0, 8)}`, blob)
       setFeedback(`Arquivo binário "${att.original_filename}" baixado do Storage privado com verificação SHA-256.`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível baixar o arquivo binário do anexo.')
+      setError(classifyPrivacyError(err, 'Não foi possível baixar o arquivo binário do anexo.').message)
     } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function executePrivacyRegistration(command: PendingPrivacyRegistration) {
+    if (privacySubmitLockRef.current || busyAction !== '') return
+    privacySubmitLockRef.current = true
+    setBusyAction('req-register')
+    setError('')
+    setFeedback('')
+    setPostRegisterRefreshWarning('')
+
+    try {
+      const confirmed = await registerTenantPrivacyRequest(client, {
+        organizationId: command.organizationId,
+        memberId: command.memberId,
+        requestType: command.requestType,
+        dataCategory: command.dataCategory,
+        verificationMethod: command.verificationMethod,
+        requesterVerified: command.requesterVerified,
+        legalBasis: command.legalBasis,
+        notes: command.notes,
+        idempotencyKey: command.idempotencyKey,
+      })
+
+      if (activeOrgRef.current !== command.organizationId) return
+
+      setUncertainPrivacyCmd(null)
+      setLastConfirmedReq(confirmed)
+      setReqNotes('')
+      setReqVerified(false)
+      setFeedback(
+        `Solicitação LGPD ${confirmed.request_id} confirmada em triagem (prazo interno até ${new Date(confirmed.triage_due_at).toLocaleString('pt-BR')}).`,
+      )
+
+      const refresh = await loadAll({ preserveActionBanner: true })
+      if (!refresh.ok && activeOrgRef.current === command.organizationId) {
+        const detail = refresh.requestsError || refresh.summaryError || 'falha ao recarregar os dados.'
+        setPostRegisterRefreshWarning(
+          `Solicitação ${confirmed.request_id} foi confirmada e salva no servidor, porém a atualização da listagem falhou: ${detail}`,
+        )
+      }
+    } catch (err) {
+      if (activeOrgRef.current !== command.organizationId) return
+      const classified = classifyPrivacyError(err, 'Não foi possível registrar a solicitação LGPD.')
+      setLastConfirmedReq(null)
+      if (classified.retryableWithSameKey) {
+        setUncertainPrivacyCmd({
+          command,
+          reason: classified.message,
+        })
+      } else {
+        setUncertainPrivacyCmd(null)
+      }
+      setError(classified.message)
+    } finally {
+      privacySubmitLockRef.current = false
       setBusyAction('')
     }
   }
 
   async function handleRegisterPrivacyRequest(event: FormEvent) {
     event.preventDefault()
-    if (busyAction) return
-    setBusyAction('req-register')
-    setError('')
-    setFeedback('')
-    try {
-      await registerTenantPrivacyRequest(client, {
-        organizationId,
-        memberId: reqMemberId.trim() || null,
-        requestType: reqType,
-        dataCategory: reqCategory,
-        verificationMethod: reqVerMethod,
-        requesterVerified: reqVerified,
-        legalBasis: reqBasis,
-        notes: reqNotes.trim() || 'Solicitação formal registrada pelo painel LGPD.',
-      })
-      setReqNotes('')
-      setFeedback('Solicitação de titular registrada com prazo de triagem interna de 2 dias úteis.')
-      await loadAll()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível registrar a solicitação LGPD.')
-    } finally {
-      setBusyAction('')
+    if (privacySubmitLockRef.current || busyAction !== '' || uncertainPrivacyCmd !== null) return
+    const command: PendingPrivacyRegistration = {
+      idempotencyKey: generateM05IdempotencyKey('priv-req'),
+      organizationId,
+      memberId: reqMemberId.trim() || null,
+      requestType: reqType,
+      dataCategory: reqCategory,
+      verificationMethod: reqVerMethod,
+      requesterVerified: reqVerified,
+      legalBasis: reqBasis,
+      notes: reqNotes.trim() || 'Solicitação formal registrada pelo painel LGPD.',
     }
+    await executePrivacyRegistration(command)
+  }
+
+  async function handleReconcilePrivacyRequest() {
+    if (!uncertainPrivacyCmd) return
+    await executePrivacyRegistration(uncertainPrivacyCmd.command)
   }
 
   async function handleReviewRequest(req: PrivacyRequestRecord) {
@@ -249,6 +477,7 @@ export function TenantPrivacyPortabilityPanel({
     setBusyAction(`review-${req.request_id}`)
     setError('')
     setFeedback('')
+    setPostRegisterRefreshWarning('')
     try {
       await reviewTenantPrivacyRequest(client, {
         organizationId,
@@ -260,9 +489,9 @@ export function TenantPrivacyPortabilityPanel({
         controllerJustification: justification,
       })
       setFeedback('Decisão do controlador registrada sem mutação de fatos contábeis imutáveis.')
-      await loadAll()
+      await loadAll({ preserveActionBanner: true })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível concluir a análise do controlador.')
+      setError(classifyPrivacyError(err, 'Não foi possível concluir a análise do controlador.').message)
     } finally {
       setBusyAction('')
     }
@@ -274,6 +503,7 @@ export function TenantPrivacyPortabilityPanel({
     setBusyAction('hold-place')
     setError('')
     setFeedback('')
+    setPostRegisterRefreshWarning('')
     try {
       await placeTenantLegalHold(client, {
         organizationId,
@@ -284,9 +514,9 @@ export function TenantPrivacyPortabilityPanel({
       setHoldReason('')
       setHoldRef('')
       setFeedback('Preservação legal registrada para bloquear qualquer descarte futuro.')
-      await loadAll()
+      await loadAll({ preserveActionBanner: true })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível registrar preservação legal.')
+      setError(classifyPrivacyError(err, 'Não foi possível registrar preservação legal.').message)
     } finally {
       setBusyAction('')
     }
@@ -297,6 +527,7 @@ export function TenantPrivacyPortabilityPanel({
     setBusyAction(`hold-rel-${holdId}`)
     setError('')
     setFeedback('')
+    setPostRegisterRefreshWarning('')
     try {
       await releaseTenantLegalHold(client, {
         organizationId,
@@ -304,9 +535,9 @@ export function TenantPrivacyPortabilityPanel({
         releaseReason: 'Encerramento formal autorizado pelo controlador',
       })
       setFeedback('Preservação legal liberada com registro em auditoria.')
-      await loadAll()
+      await loadAll({ preserveActionBanner: true })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível liberar a preservação legal.')
+      setError(classifyPrivacyError(err, 'Não foi possível liberar a preservação legal.').message)
     } finally {
       setBusyAction('')
     }
@@ -340,6 +571,19 @@ export function TenantPrivacyPortabilityPanel({
       {feedback && (
         <div role="status" className="message" style={{ borderLeft: '3px solid var(--gold, #C5A880)' }}>
           {feedback}
+          {lastConfirmedReq && (
+            <div className="subtle" style={{ fontSize: '0.8rem', marginTop: '4px' }}>
+              Protocolo: <code>{lastConfirmedReq.request_id}</code> · Razão financeira preservada:{' '}
+              {lastConfirmedReq.ledger_preserved ? 'Sim' : 'Não'}
+            </div>
+          )}
+        </div>
+      )}
+
+      {postRegisterRefreshWarning && (
+        <div role="alert" className="message error" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <ShieldAlert size={16} aria-hidden="true" />
+          <span>{postRegisterRefreshWarning}</span>
         </div>
       )}
 
@@ -398,6 +642,20 @@ export function TenantPrivacyPortabilityPanel({
             {busyAction === 'export-create' ? 'Gerando pacote…' : 'Gerar pacote portátil'}
           </button>
         </form>
+
+        {(exportsState.status === 'forbidden' ||
+          exportsState.status === 'unauthenticated' ||
+          exportsState.status === 'error') && (
+          <div role="alert" className="message error" style={{ marginTop: '12px' }}>
+            {exportsState.message}
+          </div>
+        )}
+
+        {exportsState.status === 'empty' && (
+          <p className="subtle" style={{ marginTop: '12px', fontSize: '0.84rem' }}>
+            Nenhum pacote portátil gerado nesta Loja.
+          </p>
+        )}
 
         {exportsList.length > 0 && (
           <div style={{ marginTop: '14px', overflowX: 'auto' }}>
@@ -492,10 +750,46 @@ export function TenantPrivacyPortabilityPanel({
           Trocar nome por identificador UUID é pseudonimização e não equivale à anonimização enquanto houver reidentificação. Fatos do razão financeiro não são excluídos nem reescritos.
         </p>
 
+        {uncertainPrivacyCmd && (
+          <div
+            role="alert"
+            className="message error"
+            data-testid="privacy-reconcile-banner"
+            style={{
+              marginBottom: '12px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '10px',
+            }}
+          >
+            <div>
+              <strong>Resultado incerto pendente de reconciliação:</strong> {uncertainPrivacyCmd.reason}{' '}
+              <span className="subtle">
+                (Chave preservada: <code>{uncertainPrivacyCmd.command.idempotencyKey}</code>)
+              </span>
+            </div>
+            <button
+              type="button"
+              className="secondary"
+              disabled={busyAction !== ''}
+              onClick={() => void handleReconcilePrivacyRequest()}
+            >
+              {busyAction === 'req-register' ? 'Reconciliando…' : 'Reconciliar envio'}
+            </button>
+          </div>
+        )}
+
         <form onSubmit={handleRegisterPrivacyRequest} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', alignItems: 'end' }}>
           <div>
             <label htmlFor="m05-req-type">Tipo de direito</label>
-            <select id="m05-req-type" value={reqType} onChange={e => setReqType(e.target.value as PrivacyRequestType)}>
+            <select
+              id="m05-req-type"
+              value={reqType}
+              disabled={isPrivacyFormLocked}
+              onChange={e => setReqType(e.target.value as PrivacyRequestType)}
+            >
               <option value="access">Acesso</option>
               <option value="correction">Correção</option>
               <option value="portability">Portabilidade</option>
@@ -505,7 +799,12 @@ export function TenantPrivacyPortabilityPanel({
           </div>
           <div>
             <label htmlFor="m05-req-cat">Categoria de dados</label>
-            <select id="m05-req-cat" value={reqCategory} onChange={e => setReqCategory(e.target.value as PrivacyDataCategory)}>
+            <select
+              id="m05-req-cat"
+              value={reqCategory}
+              disabled={isPrivacyFormLocked}
+              onChange={e => setReqCategory(e.target.value as PrivacyDataCategory)}
+            >
               {Object.entries(PRIVACY_CATEGORY_LABELS).map(([k, label]) => (
                 <option key={k} value={k}>{label}</option>
               ))}
@@ -513,15 +812,25 @@ export function TenantPrivacyPortabilityPanel({
           </div>
           <div>
             <label htmlFor="m05-req-ver">Verificação de identidade</label>
-            <select id="m05-req-ver" value={reqVerMethod} onChange={e => setReqVerMethod(e.target.value as PrivacyVerificationMethod)}>
-              <option value="authenticated_member_link">Sessão autenticada do titular</option>
-              <option value="signed_document_verified">Documento assinado verificado</option>
+            <select
+              id="m05-req-ver"
+              value={reqVerMethod}
+              disabled={isPrivacyFormLocked}
+              onChange={e => setReqVerMethod(e.target.value as PrivacyVerificationMethod)}
+            >
               <option value="in_person_controller_check">Conferência presencial pelo controlador</option>
+              <option value="signed_document_verified">Documento assinado verificado</option>
+              <option value="authenticated_member_link">Sessão autenticada do titular</option>
             </select>
           </div>
           <div>
             <label htmlFor="m05-req-basis">Base legal</label>
-            <select id="m05-req-basis" value={reqBasis} onChange={e => setReqBasis(e.target.value as PrivacyLegalBasis)}>
+            <select
+              id="m05-req-basis"
+              value={reqBasis}
+              disabled={isPrivacyFormLocked}
+              onChange={e => setReqBasis(e.target.value as PrivacyLegalBasis)}
+            >
               <option value="exercise_of_rights">Exercício regular de direitos</option>
               <option value="legal_obligation_accounting">Obrigação legal / contábil</option>
               <option value="contract_execution">Execução de contrato</option>
@@ -530,21 +839,55 @@ export function TenantPrivacyPortabilityPanel({
             </select>
           </div>
           <div>
-            <label htmlFor="m05-req-member">UUID do integrante (opcional)</label>
-            <input id="m05-req-member" value={reqMemberId} onChange={e => setReqMemberId(e.target.value)} placeholder="Opcional" />
+            <label htmlFor="m05-req-member">
+              UUID do integrante {reqVerMethod === 'authenticated_member_link' ? '(obrigatório)' : '(opcional)'}
+            </label>
+            <input
+              id="m05-req-member"
+              value={reqMemberId}
+              disabled={isPrivacyFormLocked}
+              required={reqVerMethod === 'authenticated_member_link'}
+              onChange={e => setReqMemberId(e.target.value)}
+              placeholder={reqVerMethod === 'authenticated_member_link' ? 'UUID obrigatório do titular' : 'Opcional'}
+            />
           </div>
           <div>
             <label htmlFor="m05-req-notes">Observações sanitizadas</label>
-            <input id="m05-req-notes" value={reqNotes} onChange={e => setReqNotes(e.target.value)} placeholder="Resumo objetivo do pedido" />
+            <input
+              id="m05-req-notes"
+              value={reqNotes}
+              disabled={isPrivacyFormLocked}
+              onChange={e => setReqNotes(e.target.value)}
+              placeholder="Resumo objetivo do pedido"
+            />
           </div>
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}>
-            <input type="checkbox" checked={reqVerified} onChange={e => setReqVerified(e.target.checked)} />
+            <input
+              type="checkbox"
+              checked={reqVerified}
+              disabled={isPrivacyFormLocked}
+              onChange={e => setReqVerified(e.target.checked)}
+            />
             Identidade do solicitante validada
           </label>
-          <button type="submit" className="secondary" disabled={busyAction !== ''}>
+          <button type="submit" className="secondary" disabled={isPrivacyFormLocked}>
             {busyAction === 'req-register' ? 'Registrando…' : 'Registrar solicitação'}
           </button>
         </form>
+
+        {(requestsState.status === 'forbidden' ||
+          requestsState.status === 'unauthenticated' ||
+          requestsState.status === 'error') && (
+          <div role="alert" className="message error" style={{ marginTop: '14px' }}>
+            {requestsState.message}
+          </div>
+        )}
+
+        {requestsState.status === 'empty' && (
+          <p className="subtle" style={{ marginTop: '14px', fontSize: '0.84rem' }}>
+            Nenhuma solicitação de titular registrada nesta Loja.
+          </p>
+        )}
 
         {requestsList.length > 0 && (
           <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -621,6 +964,14 @@ export function TenantPrivacyPortabilityPanel({
           </strong>
           <span className="subtle">Eliminação automática desativada</span>
         </div>
+
+        {(postureState.status === 'forbidden' ||
+          postureState.status === 'unauthenticated' ||
+          postureState.status === 'error') && (
+          <div role="alert" className="message error" style={{ marginBottom: '12px' }}>
+            {postureState.message}
+          </div>
+        )}
 
         {posture && (
           <div style={{ marginBottom: '12px', fontSize: '0.88rem' }}>

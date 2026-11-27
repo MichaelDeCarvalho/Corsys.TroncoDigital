@@ -14,13 +14,22 @@ from pathlib import Path
 import check_commercial_concurrency_pg as pg
 
 MIGRATION_FILE = Path(__file__).resolve().parents[1] / "supabase/migrations/20261126180000_v35_m05_privacy_retention_recovery.sql"
+HARDENING_MIGRATION_FILE = Path(__file__).resolve().parents[1] / "supabase/migrations/20261126190000_v35_m0501_privacy_request_hardening.sql"
+
+
+def _extract_begin_commit_body(path: Path, label: str) -> str:
+    raw = path.read_text(encoding="utf-8").strip().splitlines()
+    if len(raw) < 3 or raw[0].strip().lower() != "begin;" or raw[-1].strip().lower() != "commit;":
+        raise AssertionError(f"{label} must be wrapped in explicit begin; ... commit;")
+    return "\n".join(raw[1:-1])
 
 
 def extract_migration_body() -> str:
-    raw = MIGRATION_FILE.read_text(encoding="utf-8").strip().splitlines()
-    if len(raw) < 3 or raw[0].strip().lower() != "begin;" or raw[-1].strip().lower() != "commit;":
-        raise AssertionError("M05 migration must be wrapped in explicit begin; ... commit;")
-    return "\n".join(raw[1:-1])
+    return _extract_begin_commit_body(MIGRATION_FILE, "M05 migration")
+
+
+def extract_hardening_migration_body() -> str:
+    return _extract_begin_commit_body(HARDENING_MIGRATION_FILE, "M05.01 hardening migration")
 
 
 def self_test_extract() -> None:
@@ -64,9 +73,21 @@ def self_test_extract() -> None:
     missing = [obj for obj in (required_objects + required_portability_datasets) if obj not in body]
     if missing:
         raise AssertionError(f"Missing required M05/M06 consolidated objects in migration: {missing}")
+    hardening_body = extract_hardening_migration_body()
+    hardening_tokens = [
+        "create or replace function public.register_tenant_privacy_request_idempotent",
+        "controller permission required for controller verification method",
+        "authenticated_member_link requires member_id",
+        "authenticated_member_link verification can only be confirmed by the linked member session",
+        "'notes', coalesce(v_notes, '')",
+        "'requester_verified', v_verified",
+    ]
+    missing_hardening = [tok for tok in hardening_tokens if tok not in hardening_body]
+    if missing_hardening:
+        raise AssertionError(f"Missing required M05.01 hardening rules in migration: {missing_hardening}")
     selective_sql = Path(__file__).resolve().parents[1] / "scripts/v35_m05_single_tenant_recovery_check.sql"
     assert selective_sql.is_file() and "ANTI-REINTRODUCTION FAILED" in selective_sql.read_text(encoding="utf-8")
-    print(f"M05_SELF_TEST_EXTRACT_PASS: {len(required_objects)} objects verified cleanly")
+    print(f"M05_SELF_TEST_EXTRACT_PASS: {len(required_objects)} objects + M05.01 hardening verified cleanly")
 
 
 def bootstrap_product_history(until: Path, execute) -> None:
@@ -113,6 +134,10 @@ def run_pg_gate() -> None:
     exists_check = "select to_regprocedure('public.create_tenant_portability_export_idempotent(uuid,text,uuid,text,text)') is not null;"
     assert pg.sql("begin;" + body + exists_check + "rollback;" + exists_check) == "t\nf"
     pg.sql(body)
+    hardening_body = extract_hardening_migration_body()
+    hardening_check = "select coalesce(pg_get_functiondef('public.register_tenant_privacy_request_idempotent(uuid,uuid,text,text,text,boolean,text,text,text)'::regprocedure) like '%authenticated_member_link requires member_id%', false);"
+    assert pg.sql("begin;" + hardening_body + hardening_check + "rollback;" + hardening_check) == "t\nf"
+    pg.sql(hardening_body)
 
     org_a = "00000000-0000-4000-8000-000000000001"
     org_b = "00000000-0000-4000-8000-000000000002"
@@ -207,9 +232,26 @@ def run_pg_gate() -> None:
 
     pg.sql(actor(admin_a) + f"select public.authorize_tenant_portability_attachment_download('{org_a}', '{exp_id}', '00000000-0000-4000-8000-000000000801');", succeeds=False, error_code="55000")
 
-    # 4. Privacy request + immutability of financial ledger + anonymization vs pseudonymization
+    # 4. Privacy request hardening (M05.01) + immutability of financial ledger + anonymization vs pseudonymization
+    pg.sql(actor(member_a_user) + f"select public.register_tenant_privacy_request_idempotent('{org_a}', '{member_a}', 'access', 'cadastral', 'in_person_controller_check', true, 'exercise_of_rights', 'Titular tentando verificar como controlador', 'k-m0501-deny-ctrl');", succeeds=False, error_code="42501")
+    pg.sql(actor(member_a_user) + f"select public.register_tenant_privacy_request_idempotent('{org_a}', '{member_a}', 'access', 'cadastral', 'signed_document_verified', true, 'exercise_of_rights', 'Titular tentando documento verificado', 'k-m0501-deny-doc');", succeeds=False, error_code="42501")
+    pg.sql(actor(admin_a) + f"select public.register_tenant_privacy_request_idempotent('{org_a}', null, 'access', 'cadastral', 'authenticated_member_link', false, 'exercise_of_rights', 'Sem member_id', 'k-m0501-nomem');", succeeds=False, error_code="22023")
+    pg.sql(actor(admin_a) + f"select public.register_tenant_privacy_request_idempotent('{org_a}', '{member_a}', 'access', 'cadastral', 'authenticated_member_link', true, 'exercise_of_rights', 'Operador forjando sessao de titular', 'k-m0501-forge-self');", succeeds=False, error_code="42501")
+    pg.sql(actor(admin_a) + f"select public.register_tenant_privacy_request_idempotent('{org_b}', '{member_b}', 'access', 'cadastral', 'in_person_controller_check', false, 'exercise_of_rights', 'Cross tenant negado', 'k-m0501-xtenant');", succeeds=False, error_code="42501")
+
+    self_req_json = pg.sql(actor(member_a_user) + f"select public.register_tenant_privacy_request_idempotent('{org_a}', '{member_a}', 'access', 'cadastral', 'authenticated_member_link', true, 'exercise_of_rights', 'Pedido autenticado do proprio titular', 'k-m0501-self-ok');")
+    self_req = json.loads(self_req_json)
+    assert self_req["organization_id"] == org_a and self_req["decision_outcome"] == "pending_triage"
+
     req_json = pg.sql(actor(admin_a) + f"select public.register_tenant_privacy_request_idempotent('{org_a}', '{member_a}', 'deletion', 'financial_ledger', 'in_person_controller_check', true, 'legal_obligation_accounting', 'Solicitacao QA', 'k-req-1');")
-    req_id = json.loads(req_json)["request_id"]
+    req_payload = json.loads(req_json)
+    req_id = req_payload["request_id"]
+    req_replay_json = pg.sql(actor(admin_a) + f"select public.register_tenant_privacy_request_idempotent('{org_a}', '{member_a}', 'deletion', 'financial_ledger', 'in_person_controller_check', true, 'legal_obligation_accounting', 'Solicitacao QA', 'k-req-1');")
+    assert json.loads(req_replay_json)["request_id"] == req_id
+    pg.sql(actor(admin_a) + f"select public.register_tenant_privacy_request_idempotent('{org_a}', '{member_a}', 'deletion', 'financial_ledger', 'in_person_controller_check', true, 'legal_obligation_accounting', 'Nota adulterada', 'k-req-1');", succeeds=False, error_code="PT409")
+    assert pg.sql(f"select count(*) from public.tenant_privacy_requests where organization_id='{org_a}'") == "2"
+    assert pg.sql(f"select count(*) from public.audit_logs where organization_id='{org_a}' and action='privacy.subject_request_registered'") == "2"
+
     pg.sql(actor(admin_a) + f"select public.review_tenant_privacy_request_idempotent('{org_a}', '{req_id}', 'anonymized_verified', 'legal_obligation_accounting', true, false, 'Tentativa indevida apagar ledger', 'k-rev-fail');", succeeds=False, error_code="55000")
     pg.sql(actor(admin_a) + f"select public.review_tenant_privacy_request_idempotent('{org_a}', '{req_id}', 'retained_by_law', 'legal_obligation_accounting', true, true, 'Fatos financeiros retidos por 5 anos conforme D01', 'k-rev-ok');")
 
