@@ -21,6 +21,7 @@ async function review(){
  fireEvent.click(await screen.findByRole('checkbox'))
  fireEvent.change(screen.getByLabelText('Valor negociado (R$)'),{target:{value:'10,00'}})
  fireEvent.change(screen.getByLabelText('Quantidade de parcelas'),{target:{value:'3'}})
+ expect(screen.getByLabelText('Data do acordo')).toHaveValue('')
  fireEvent.change(screen.getByLabelText('Data do acordo'),{target:{value:input.p_agreement_date}})
  fireEvent.change(screen.getByLabelText('Primeiro vencimento'),{target:{value:input.p_first_due}})
  fireEvent.change(screen.getByLabelText('Motivo e condições'),{target:{value:'Condições fictícias aprovadas'}})
@@ -35,8 +36,7 @@ describe('member agreement',()=>{
   expect(()=>agreementCents('NaN')).toThrow()
  })
  it('previews a cent-balanced schedule then confirms once and refreshes the history',async()=>{
-  const f=fixture();render(<MemberAgreements client={f.client} organizationId={org}/>);
-  expect(screen.getByLabelText('Data do acordo')).toHaveValue('');await review()
+  const f=fixture();render(<MemberAgreements client={f.client} organizationId={org}/>);await review()
   expect(f.rpc).toHaveBeenCalledWith('preview_member_debt_agreement',input)
   expect(screen.getByRole('button',{name:'Confirmar acordo'})).toBeDisabled()
   confirm();await screen.findByText('Acordo confirmado. Cobranças e parcelas atualizadas.')
