@@ -36,3 +36,6 @@ dump_toc.txt
 /m0502-backup-restore-ci*.patch
 /corsys-v35-*.patch
 /app/applet/docs/V35_FINAL_HOMOLOGATION_RUNBOOK.md
+
+# Root-level patch exports are transfer artifacts, not product files.
+/*.patch
