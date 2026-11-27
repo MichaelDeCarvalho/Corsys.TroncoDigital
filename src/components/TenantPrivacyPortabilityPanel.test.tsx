@@ -243,18 +243,20 @@ describe('TenantPrivacyPortabilityPanel (M05 Entregas A-C)', () => {
       )
     })
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Baixar pacote' }))
-    await waitFor(() => {
-      expect(rpcMock).toHaveBeenCalledWith('download_tenant_portability_export', {
-        p_organization_id: ORG_ID,
-        p_export_id: EXPORT_ID,
-        p_requested_format: 'json',
-      })
-    })
-    expect(createObjectURLMock).toHaveBeenCalledTimes(1)
+    const downloadBtn = await screen.findByRole('button', { name: 'Baixar pacote' })
+    await waitFor(() => expect(downloadBtn).not.toBeDisabled())
+    fireEvent.click(downloadBtn)
+    // Wait for the asynchronous digest and delivery to finish before inspecting
+    // the browser mock or allowing the next test to replace the global URL APIs.
     expect(
       await screen.findByText(/Servidor confirmou o pacote, registrou a auditoria, validou SHA-256/),
     ).toBeInTheDocument()
+    expect(rpcMock).toHaveBeenCalledWith('download_tenant_portability_export', {
+      p_organization_id: ORG_ID,
+      p_export_id: EXPORT_ID,
+      p_requested_format: 'json',
+    })
+    expect(createObjectURLMock).toHaveBeenCalledTimes(1)
   })
 
   it('strictly blocks portability download when SHA-256 diverges and never triggers browser delivery or success', async () => {
