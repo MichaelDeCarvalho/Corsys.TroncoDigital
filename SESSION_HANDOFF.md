@@ -1,3 +1,11 @@
+## Aceites residuais DEV — comparação independente do CSV (27/11/2026)
+
+- PASS: CSV de 9.398 bytes já baixado, export_id `1e16bc2c-0f34-4ffe-888a-fb56c06e1104`. Reconstituição independente a partir do payload persistido do mesmo ID produziu o mesmo SHA-256 dos bytes: `62bb08bb3ae28cdc0a17d19adeea84b73f427e613e010da88fe0c51fff241805`. Download integral anterior reaproveitado.
+- Download individual pendente. Pacote `e089f364-eb65-475a-b050-baa5720f8347` estava ready, dentro da validade e sem auditoria de download. Na sessão DEV, a fixture de interface apresentou falha de carregamento da Loja; o botão do pacote ficou indisponível.
+- Aceites positivos de contabilidade, binário privado, replay/negativas LGPD, preservação dos fatos nesta rodada, S3/S4, MASTER/AAL2, recuperação/incidente e Grupo B seguem abertos. Diagnosticar leitura da fixture sem alterações de acesso. Nenhuma gravação DEV, edição de código, alteração histórica, deploy ou acesso PROD.
+
+---
+
 ## Aceites DEV M03/M05 — 27/11/2026
 
 - Cloudflare DEV: versão `9a36652b`, 100% do tráfego, vinculada a `96dac501dbabd76dfe676f70a0fbb30658a3d7ae` (PR #86).
