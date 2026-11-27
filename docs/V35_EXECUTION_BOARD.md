@@ -1,5 +1,16 @@
 ## M07 — Preparação Técnica do Release Candidate e Runbook Único de Homologação (26/11/2026)
 
+## Homologação operacional DEV — 26/11/2026
+
+Base `7f1d9384`, PR #76. Evidências do CI 4/4 e dos oito gates PostgreSQL preservadas.
+
+- **M02.03:** S1 aprovado na interface: duas cobranças de R$ 100 e R$ 60 substituídas por 2 × R$ 80. Recebimento `b4bc3637` alocado à primeira parcela e estornado. A primeira reabriu e a segunda permaneceu aberta. S2 aprovado: lote `4c0ca068`, valor geral R$ 150, individual R$ 73, um isento e zero cobranças adicionais na reconsulta. S3 aberto, exige segundo aprovador autenticado. S4 parcial: extrato normal lido no navegador integrado, sem simulação de leitura incompleta.
+- **M03:** Diário com dez lançamentos. Razão da disponibilidade R$ 80 → R$ 0 após estorno. DRE receita R$ 160; despesa R$ 0. XLSX/PDF integrais bloquearam corretamente por contrapartidas incompletas na fixture. Faltam massa de despesa, plano mapeado e exportações positivas. Issue #43 aberta.
+- **M04–M06:** falta sessão MASTER/AAL2 para fluxos residuais. Pacote LGPD JSON preservado; registro fictício de titular sem persistência. Backup descartável bloqueado pelo acesso TCP local 10013. Relatórios medidos em 1265 e 375 px sem transbordamento horizontal da página. M06.02 concluída; Grupo B HTTP persistente e aceites residuais abertos.
+- **Data do acordo:** prévia recusou a data UTC sugerida pelo formulário (`22023`) enquanto a Loja ainda estava no dia anterior. Data civil informada explicitamente concluiu o fluxo. Correção remove o preenchimento automático UTC e mantém a data obrigatória.
+- **Cleanup DEV:** rodada `M0203-RC-20261126`, dois vínculos temporários revogados. Consulta posterior confirmou zero vínculos e um evento auditado. Movimentos fictícios mantidos conforme roteiro. Próxima sessão multiperfil precisa de fixture autorizada ativa.
+
+
 - **Escopo cumprido sem abrir novo ciclo de desenvolvimento:** criado `docs/V35_FINAL_HOMOLOGATION_RUNBOOK.md` com roteiro único de integração, CI, preflight/read-back de migrations no DEV, rollback, inventário de variáveis/secrets sem valores, aceites `M02.03`–`M06.03` para as 21 telas e estimativa de limites/custos da infraestrutura sem contratação; complementada a portabilidade `D02` com `authorize_tenant_portability_attachment_download` + download binário autenticado via Storage privado e validação SHA-256 (mantendo `binary_files_included: false` nos pacotes JSON/CSV).
 - **Suíte completa verificada sobre a árvore consolidada:** todas as 93 suítes Vitest do repositório aprovadas, além de `typecheck`, `vite build`, `dev-gate`, `check_v35_preservation.py`, hardening de backup/restore e self-tests dos gates SQL. **`M06.02` permanece `CONCLUIDO`** e **`M07` (`M07.01`–`M07.03`) permanece `BLOQUEADO`**.
 
@@ -300,7 +311,7 @@ Cada microentrega tem **um único ID permanente**. Não promover por inferência
 |---|---|---|---|
 | M00 | Controle de execução e continuidade | Plano, cursor e protocolo de revisão incorporados | CONCLUIDO |
 | M01 | Onboarding, identidades e convites | Provisionamento, convite, aceite e vínculo verificáveis | HOMOLOGADO_DEV no fluxo fictício M01.04; documentos oficiais ainda pendentes |
-| M02 | Operações financeiras da Loja | Todos os cenários V35 faltantes reconciliados e homologados; invariantes preservadas | EM_EXECUCAO; PR #74 (T1–T6 PG PASS), PR #75 (baixa FIFO + pagamento) e Grupo A 5/5 PASS; faltam 4 aceites DEV (`npm run test:m0203:homologation`) |
+| M02 | Operações financeiras da Loja | Todos os cenários V35 faltantes reconciliados e homologados; invariantes preservadas | EM_EXECUCAO; PR #74 (T1–T6 PG PASS), PR #75 (baixa FIFO + pagamento) e Grupo A 5/5 PASS; faltam S3 e S4 no DEV (`npm run test:m0203:homologation`) |
 | M03 | Contabilidade, DRE e relatórios completos | Plano publicado com segurança, rubricas validadas, Diário/Razão e exportação integral | EM_EXECUCAO; B01–B05 aprovados com ressalvas, DRE Gerencial integrada; validação profissional e aceites próprios pendentes (#43) |
 | M04 | Operação Master SaaS | Catálogo, contratos, faturamento e suporte nos fluxos aprovados | PARCIAL_HOMOLOGADO_DEV |
 | M05 | Privacidade, recuperação e segurança operacional | Portabilidade, retenção, auditoria, backups e recuperação verificáveis | PENDENTE_CONFIRMADO |

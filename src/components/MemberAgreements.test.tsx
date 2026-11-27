@@ -21,6 +21,7 @@ async function review(){
  fireEvent.click(await screen.findByRole('checkbox'))
  fireEvent.change(screen.getByLabelText('Valor negociado (R$)'),{target:{value:'10,00'}})
  fireEvent.change(screen.getByLabelText('Quantidade de parcelas'),{target:{value:'3'}})
+ expect(screen.getByLabelText('Data do acordo')).toHaveValue('')
  fireEvent.change(screen.getByLabelText('Data do acordo'),{target:{value:input.p_agreement_date}})
  fireEvent.change(screen.getByLabelText('Primeiro vencimento'),{target:{value:input.p_first_due}})
  fireEvent.change(screen.getByLabelText('Motivo e condições'),{target:{value:'Condições fictícias aprovadas'}})
