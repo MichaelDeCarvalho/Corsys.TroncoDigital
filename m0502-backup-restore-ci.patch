@@ -1,0 +1,342 @@
+diff --git a/.github/workflows/m0502-backup-restore-trial.yml b/.github/workflows/m0502-backup-restore-trial.yml
+new file mode 100644
+index 0000000..b39d9fe
+--- /dev/null
++++ b/.github/workflows/m0502-backup-restore-trial.yml
+@@ -0,0 +1,184 @@
++name: M05.02 Backup and Restore Trial
++on:
++  workflow_dispatch:
++permissions:
++  contents: read
++concurrency:
++  group: m0502-backup-restore-${{ github.ref }}
++  cancel-in-progress: true
++jobs:
++  m0502_backup_restore_trial:
++    runs-on: ubuntu-latest
++    timeout-minutes: 10
++    services:
++      postgres:
++        image: postgres:17
++        env:
++          POSTGRES_PASSWORD: disposable-ci-only-password
++          POSTGRES_DB: postgres
++        ports:
++          - 55432:5432
++        options: --health-cmd "pg_isready -U postgres -d postgres" --health-interval 2s --health-timeout 3s --health-retries 15
++    steps:
++      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
++        with:
++          persist-credentials: false
++
++      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
++        with:
++          python-version: '3.12'
++
++      - name: Install PostgreSQL 17 client tools
++        run: |
++          sudo apt-get update -y
++          sudo apt-get install -y postgresql-common
++          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
++          sudo apt-get install -y postgresql-client-17
++          psql --version
++          pg_dump --version
++          pg_restore --version
++
++      - name: Execute M05.02 disposable backup, encryption, restore & selective recovery trial
++        env:
++          PGHOST: 127.0.0.1
++          PGPORT: '55432'
++          PGUSER: postgres
++          PGPASSWORD: disposable-ci-only-password
++          SRC_DB: v35_m05_source_trial
++          DST_DB: v35_m05_restore_trial
++        run: |
++          set -euo pipefail
++          umask 077
++
++          TRIAL_START_MS="$(date +%s%3N)"
++          TRIAL_DIR="$(mktemp -d /tmp/corsys_v35_m0502_ci_XXXXXX)"
++          MANIFEST_OUT="/tmp/v35_m0502_sanitized_manifest.json"
++
++          cleanup_trial_resources() {
++            echo "=== [11/11] Removendo recursos temporários e dumps descartáveis ==="
++            rm -rf "$TRIAL_DIR"
++            psql -X -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d postgres -c "DROP DATABASE IF EXISTS \"$SRC_DB\" WITH (FORCE);" >/dev/null 2>&1 || true
++            psql -X -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d postgres -c "DROP DATABASE IF EXISTS \"$DST_DB\" WITH (FORCE);" >/dev/null 2>&1 || true
++          }
++          trap cleanup_trial_resources EXIT
++
++          chmod +x scripts/run_v35_m05_backup_restore_trial.sh
++          bash scripts/test_v35_m05_runner_hardening.sh
++          python3 scripts/v35_m05_backup_manifest.py --self-test
++
++          echo "=== [1/11] Criando bancos fictícios distintos de origem e destino ==="
++          T0="$(date +%s%3N)"
++          createdb -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" "$SRC_DB"
++          createdb -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" "$DST_DB"
++          CREATE_DBS_MS="$(( $(date +%s%3N) - T0 ))"
++
++          SRC_CONN="postgresql://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/${SRC_DB}"
++          DST_CONN="postgresql://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/${DST_DB}"
++          DUMP_FILE="${TRIAL_DIR}/v35_m05_trial.dump"
++
++          echo "=== [2-7/11] Executando preparação, seed, backup, restore em destino vazio, contagens/centavos/FK e isolamento A/B ==="
++          T0="$(date +%s%3N)"
++          OUTPUT_DIR="$TRIAL_DIR" ./scripts/run_v35_m05_backup_restore_trial.sh "$SRC_CONN" "$DST_CONN" "$DUMP_FILE"
++          RUNNER_TOTAL_MS="$(( $(date +%s%3N) - T0 ))"
++
++          echo "=== [4/11] Verificando criptografia AES-256 e integridade SHA-256 do backup ==="
++          T0="$(date +%s%3N)"
++          DUMP_SHA256="$(sha256sum "$DUMP_FILE" | awk '{print $1}')"
++          DUMP_BYTES="$(stat -c '%s' "$DUMP_FILE")"
++          EPHEMERAL_KEY_FILE="${TRIAL_DIR}/ephemeral.key"
++          ENCRYPTED_DUMP="${TRIAL_DIR}/v35_m05_trial.dump.enc"
++          DECRYPTED_DUMP="${TRIAL_DIR}/v35_m05_trial.dump.dec"
++
++          openssl rand -hex 32 > "$EPHEMERAL_KEY_FILE"
++          openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt \
++            -in "$DUMP_FILE" -out "$ENCRYPTED_DUMP" -pass "file:${EPHEMERAL_KEY_FILE}"
++          ENCRYPTED_SHA256="$(sha256sum "$ENCRYPTED_DUMP" | awk '{print $1}')"
++          ENCRYPTED_BYTES="$(stat -c '%s' "$ENCRYPTED_DUMP")"
++
++          if [[ "$DUMP_SHA256" == "$ENCRYPTED_SHA256" ]]; then
++            echo "ERRO CRÍTICO: Artefato criptografado possui o mesmo hash do dump original!" >&2
++            exit 1
++          fi
++
++          openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 \
++            -in "$ENCRYPTED_DUMP" -out "$DECRYPTED_DUMP" -pass "file:${EPHEMERAL_KEY_FILE}"
++          DECRYPTED_SHA256="$(sha256sum "$DECRYPTED_DUMP" | awk '{print $1}')"
++
++          if [[ "$DUMP_SHA256" != "$DECRYPTED_SHA256" ]]; then
++            echo "ERRO CRÍTICO: Falha de integridade SHA-256 após descriptografia!" >&2
++            exit 1
++          fi
++          CRYPTO_VERIFY_MS="$(( $(date +%s%3N) - T0 ))"
++
++          echo "=== [8/11] Executando recuperação seletiva da Loja A sem sobrescrever Loja B (origem e destino) ==="
++          T0="$(date +%s%3N)"
++          SELECTIVE_SRC_LOG="${TRIAL_DIR}/selective_recovery_source.log"
++          SELECTIVE_DST_LOG="${TRIAL_DIR}/selective_recovery_restore.log"
++          psql "$SRC_CONN" -X -v ON_ERROR_STOP=1 -f scripts/v35_m05_single_tenant_recovery_check.sql > "$SELECTIVE_SRC_LOG" 2>&1
++          psql "$DST_CONN" -X -v ON_ERROR_STOP=1 -f scripts/v35_m05_single_tenant_recovery_check.sql > "$SELECTIVE_DST_LOG" 2>&1
++          grep -q "SELECTIVE_TENANT_RECOVERY_PASS" "$SELECTIVE_SRC_LOG"
++          grep -q "SELECTIVE_TENANT_RECOVERY_PASS" "$SELECTIVE_DST_LOG"
++          SELECTIVE_RECOVERY_MS="$(( $(date +%s%3N) - T0 ))"
++
++          echo "=== [9-10/11] Medindo duração real das etapas e gerando manifesto sanitizado ==="
++          TOTAL_TRIAL_MS="$(( $(date +%s%3N) - TRIAL_START_MS ))"
++          MIGRATIONS_COUNT="$(ls -1 supabase/migrations/*.sql | wc -l | tr -d ' ')"
++          TRIAL_REPORT_JSON="${TRIAL_DIR}/trial_telemetry.json"
++
++          cat <<EOF > "$TRIAL_REPORT_JSON"
++          {
++            "execution_environment": "github_actions_disposable_pg17",
++            "source_db_name": "${SRC_DB}",
++            "restore_db_name": "${DST_DB}",
++            "migrations_applied": ${MIGRATIONS_COUNT},
++            "dump_sha256": "${DUMP_SHA256}",
++            "dump_bytes": ${DUMP_BYTES},
++            "encrypted_dump_sha256": "${ENCRYPTED_SHA256}",
++            "encrypted_dump_bytes": ${ENCRYPTED_BYTES},
++            "encryption_cipher": "AES-256-CBC-PBKDF2",
++            "decrypted_sha256_match": true,
++            "source_vs_restore_diff_zero": true,
++            "verification_checks_pass": true,
++            "selective_recovery_pass": true,
++            "durations_ms": {
++              "create_disposable_dbs_ms": ${CREATE_DBS_MS},
++              "runner_prepare_seed_backup_restore_verify_ms": ${RUNNER_TOTAL_MS},
++              "encryption_and_sha256_verify_ms": ${CRYPTO_VERIFY_MS},
++              "selective_single_tenant_recovery_ms": ${SELECTIVE_RECOVERY_MS},
++              "total_trial_ms": ${TOTAL_TRIAL_MS}
++            }
++          }
++          EOF
++
++          python3 scripts/v35_m05_backup_manifest.py \
++            --trial-report "$TRIAL_REPORT_JSON" \
++            --output "$MANIFEST_OUT"
++
++          cleanup_trial_resources
++          trap - EXIT
++
++          if [[ -d "$TRIAL_DIR" ]]; then
++            echo "ERRO CRÍTICO: Diretório temporário de dumps não foi removido!" >&2
++            exit 1
++          fi
++
++          {
++            echo "## Ensaio M05.02 — Backup & Restore em PostgreSQL 17 Descartável (CI)"
++            echo ""
++            echo "- **Aviso importante:** Este ensaio em container descartável comprova o mecanismo técnico de backup, criptografia, integridade SHA-256, restore limpo, paridade de contagens/centavos/FK, isolamento multi-tenant A/B e recuperação seletiva, mas **não comprova automaticamente o RPO/RTO da infraestrutura produtiva** (\`target_status: target_unproven\`)."
++            echo "- **Dumps brutos publicados:** \`false\` (removidos antes da conclusão do job)."
++            echo "- **SHA-256 do dump original:** \`${DUMP_SHA256}\` (\`${DUMP_BYTES}\` bytes)"
++            echo "- **SHA-256 do dump criptografado (AES-256-CBC-PBKDF2):** \`${ENCRYPTED_SHA256}\` (\`${ENCRYPTED_BYTES}\` bytes)"
++            echo "- **Integridade SHA-256 pós-descriptografia:** \`PASS\`"
++            echo "- **Diff origem vs. destino restaurado:** \`0\` (\`V35_M0502_VERIFICATION_PASS\`)"
++            echo "- **Recuperação seletiva Loja A sem afetar Loja B:** \`PASS\` (\`SELECTIVE_TENANT_RECOVERY_PASS\`)"
++            echo "- **Durações medidas (ms):** criação DBs=\`${CREATE_DBS_MS}\`, runner completo=\`${RUNNER_TOTAL_MS}\`, criptografia/SHA-256=\`${CRYPTO_VERIFY_MS}\`, recuperação seletiva=\`${SELECTIVE_RECOVERY_MS}\`, total=\`${TOTAL_TRIAL_MS}\`."
++          } >> "$GITHUB_STEP_SUMMARY"
++
++      - name: Upload sanitized backup manifest (no dumps or sensitive data)
++        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
++        with:
++          name: v35-m0502-sanitized-backup-manifest
++          path: /tmp/v35_m0502_sanitized_manifest.json
++          if-no-files-found: error
++          retention-days: 30
+diff --git a/scripts/v35_m05_backup_manifest.py b/scripts/v35_m05_backup_manifest.py
+index e43d784..b3c9cb4 100644
+--- a/scripts/v35_m05_backup_manifest.py
++++ b/scripts/v35_m05_backup_manifest.py
+@@ -2,11 +2,13 @@
+ 
+ Generates an auditable, secret-free manifest covering database migrations,
+ private storage buckets, configuration key names (no secret values),
+-35-day max rotation policy, and RPO/RTO readiness targets marked unproven
+-until disposable restore telemetry passes.
++35-day max rotation policy, RPO/RTO readiness targets marked unproven,
++and optional disposable CI trial telemetry (SHA-256 digests, encryption check,
++step durations in milliseconds, and cleanup verification) without exposing raw dumps.
+ """
+ from __future__ import annotations
+ 
++import argparse
+ import hashlib
+ import json
+ import re
+@@ -14,7 +16,10 @@ import sys
+ from pathlib import Path
+ 
+ ROOT = Path(__file__).resolve().parents[1]
+-FORBIDDEN_VALUE_RE = re.compile(r"(sb_secret_|eyJ[a-zA-Z0-9_-]+\.|password=|POSTGRES_PASSWORD=[^\n]+)", re.I)
++FORBIDDEN_VALUE_RE = re.compile(
++    r"(sb_secret_|eyJ[a-zA-Z0-9_-]+\.|password=|POSTGRES_PASSWORD=[^\n]+|szqkdekwhzxsoxorgvaz|supabase\.co)",
++    re.I,
++)
+ 
+ 
+ def parse_env_example_keys(env_path: Path) -> list[str]:
+@@ -31,7 +36,7 @@ def parse_env_example_keys(env_path: Path) -> list[str]:
+     return sorted(set(keys))
+ 
+ 
+-def build_backup_manifest(root: Path = ROOT) -> dict:
++def build_backup_manifest(root: Path = ROOT, trial_report_path: Path | None = None) -> dict:
+     migrations = sorted((root / "supabase/migrations").glob("*.sql"))
+     env_keys = parse_env_example_keys(root / ".env.example")
+     wrangler_dev = root / "wrangler.dev.jsonc"
+@@ -46,7 +51,7 @@ def build_backup_manifest(root: Path = ROOT) -> dict:
+                 "bytes": p.stat().st_size,
+             })
+ 
+-    manifest = {
++    manifest: dict = {
+         "schema_version": "2026.11-m05-d04",
+         "policy": {
+             "encrypted_off_primary_required": True,
+@@ -90,9 +95,32 @@ def build_backup_manifest(root: Path = ROOT) -> dict:
+         },
+     }
+ 
++    if trial_report_path is not None:
++        raw_trial = json.loads(trial_report_path.read_text(encoding="utf-8"))
++        manifest["disposable_trial_evidence"] = {
++            "execution_environment": str(raw_trial.get("execution_environment", "disposable_pg17_ci")),
++            "production_rpo_rto_proven": False,
++            "raw_dump_published": False,
++            "source_db_name": str(raw_trial.get("source_db_name", "v35_m05_source_trial")),
++            "restore_db_name": str(raw_trial.get("restore_db_name", "v35_m05_restore_trial")),
++            "migrations_applied": int(raw_trial.get("migrations_applied", len(migrations))),
++            "dump_sha256": str(raw_trial["dump_sha256"]),
++            "dump_bytes": int(raw_trial["dump_bytes"]),
++            "encrypted_dump_sha256": str(raw_trial["encrypted_dump_sha256"]),
++            "encrypted_dump_bytes": int(raw_trial["encrypted_dump_bytes"]),
++            "encryption_cipher": str(raw_trial.get("encryption_cipher", "AES-256-CBC-PBKDF2")),
++            "decrypted_sha256_match": bool(raw_trial["decrypted_sha256_match"]),
++            "source_vs_restore_diff_zero": bool(raw_trial["source_vs_restore_diff_zero"]),
++            "verification_checks_pass": bool(raw_trial["verification_checks_pass"]),
++            "selective_recovery_pass": bool(raw_trial["selective_recovery_pass"]),
++            "durations_ms": {
++                str(k): int(v) for k, v in dict(raw_trial.get("durations_ms", {})).items()
++            },
++        }
++
+     serialized = json.dumps(manifest, sort_keys=True)
+     if FORBIDDEN_VALUE_RE.search(serialized):
+-        raise ValueError("Sanitization failure: secret pattern detected in backup manifest")
++        raise ValueError("Sanitization failure: secret or forbidden environment pattern detected in backup manifest")
+     manifest["manifest_sha256"] = hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+     return manifest
+ 
+@@ -107,11 +135,63 @@ def self_test() -> None:
+     assert manifest["components"]["configuration_checklist"]["secrets_stored_in_manifest"] is False
+     assert manifest["components"]["database"]["migrations_count"] >= 40
+     assert len(manifest["manifest_sha256"]) == 64
++
++    import tempfile
++    with tempfile.NamedTemporaryFile("w", suffix=".json", encoding="utf-8", delete=True) as tmp:
++        json.dump(
++            {
++                "execution_environment": "github_actions_disposable_pg17",
++                "source_db_name": "v35_m05_source_trial",
++                "restore_db_name": "v35_m05_restore_trial",
++                "migrations_applied": manifest["components"]["database"]["migrations_count"],
++                "dump_sha256": "a" * 64,
++                "dump_bytes": 102400,
++                "encrypted_dump_sha256": "b" * 64,
++                "encrypted_dump_bytes": 102432,
++                "encryption_cipher": "AES-256-CBC-PBKDF2",
++                "decrypted_sha256_match": True,
++                "source_vs_restore_diff_zero": True,
++                "verification_checks_pass": True,
++                "selective_recovery_pass": True,
++                "durations_ms": {
++                    "prepare_and_seed_ms": 1200,
++                    "backup_and_encrypt_ms": 450,
++                    "restore_and_verify_ms": 800,
++                    "selective_recovery_ms": 95,
++                    "total_trial_ms": 2545,
++                },
++            },
++            tmp,
++        )
++        tmp.flush()
++        enriched = build_backup_manifest(trial_report_path=Path(tmp.name))
++        assert enriched["policy"]["target_status"] == "target_unproven"
++        assert enriched["disposable_trial_evidence"]["production_rpo_rto_proven"] is False
++        assert enriched["disposable_trial_evidence"]["raw_dump_published"] is False
++        assert enriched["disposable_trial_evidence"]["decrypted_sha256_match"] is True
++        assert enriched["disposable_trial_evidence"]["selective_recovery_pass"] is True
++
+     print("BACKUP_MANIFEST_SELF_TEST_PASS:", manifest["manifest_sha256"])
+ 
+ 
+-if __name__ == "__main__":
+-    if "--self-test" in sys.argv:
++def main() -> None:
++    parser = argparse.ArgumentParser(description="CorSys V35 M05.02 Sanitized Backup Manifest Generator")
++    parser.add_argument("--self-test", action="store_true", help="Run built-in self-test assertions")
++    parser.add_argument("--trial-report", type=Path, default=None, help="Path to sanitized disposable trial JSON telemetry")
++    parser.add_argument("--output", type=Path, default=None, help="Optional path to write manifest JSON")
++    args = parser.parse_args()
++
++    if args.self_test:
+         self_test()
+-    else:
+-        print(json.dumps(build_backup_manifest(), indent=2, ensure_ascii=False))
++        return
++
++    manifest = build_backup_manifest(trial_report_path=args.trial_report)
++    rendered = json.dumps(manifest, indent=2, ensure_ascii=False)
++    if args.output is not None:
++        args.output.parent.mkdir(parents=True, exist_ok=True)
++        args.output.write_text(rendered + "\n", encoding="utf-8")
++    print(rendered)
++
++
++if __name__ == "__main__":
++    main()
