@@ -79,7 +79,7 @@ export function MemberAgreements({client,organizationId}:{client:SupabaseClient;
     <fieldset disabled={locked}><legend>Condições do acordo</legend>
      <label>Valor negociado (R$)<input name="amount" inputMode="decimal" required placeholder="0,00"/></label>
      <label>Quantidade de parcelas<input name="count" type="number" min="1" max="24" defaultValue="1" required/></label>
-     <label>Data do acordo<input name="date" type="date" defaultValue={new Date().toISOString().slice(0,10)} required/></label>
+     <label>Data do acordo<input name="date" type="date" required/></label>
      <label>Primeiro vencimento<input name="due" type="date" required/></label>
      <label>Motivo e condições<input name="reason" minLength={3} maxLength={500} required/></label>
      <button disabled={!selected.length} type="submit">Conferir negociação</button>
