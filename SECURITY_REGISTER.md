@@ -1,3 +1,9 @@
+## M05.01 — Hardening LGPD integrado e publicado no Supabase DEV (27/11/2026)
+
+Risco residual: RPC pública SECURITY DEFINER executável por authenticated (Supabase advisor WARN `authenticated_security_definer_function_executable`; https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable). A exposição é intencional para o contrato RPC; search_path vazio, anon bloqueado, guardas controlador/titular, escopo A/B e testes negativos PG17 PASS. Não declarar remediação global nem remover grant legítimo. Aceite real de identidade, persistência, replay e isolamento ainda pendente. Causa da falha anterior não reproduzida. Não alterar PROD.
+
+---
+
 ## M01.04 — andamento vigente (25/11/2026)
 
 Fixture não contratual preparada no DEV e Loja fictícia provisionada com Master/MFA real. Convite ainda queued; nenhum envio. Lacuna da ação de envio corrigida em OnboardingInviteSender, com CORS restrito e bloqueio de repetição incerta; evidências, manifesto/expiração da fixture e gates de CI/deploy/envio em SESSION_HANDOFF.md. M01 segue EM_EXECUCAO. Sem migrations adicionais, mudanças em clientes existentes ou PROD. ADR-0052 registra o recorte.

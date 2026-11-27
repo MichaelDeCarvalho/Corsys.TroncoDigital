@@ -1,3 +1,9 @@
+## M05.01 — Hardening LGPD integrado e publicado no Supabase DEV (27/11/2026)
+
+PR #81 integrado em `4396c406e6c7fb181e7c251d9ad925a8fa0c5952`; CI 45934795100 (4/4 jobs, 700/700 Vitest em 98 arquivos, PostgreSQL 17 e dry-run DEV PASS) e 45934794953 (backup/restore descartável PASS). Migration Git `20261126190000_v35_m0501_privacy_request_hardening.sql` → DEV `20261127033450` aplicada e relida. Frontend publicado na revisão correspondente e homologação autenticada ainda NOT EVALUATED. Referência operacional: `docs/V35_SESSION_CURSOR.md` (checkpoint 27/11/2026). M05.01 EM_EXECUCAO; PROD não autorizado.
+
+---
+
 ## Checkpoint operacional — 26/11/2026 (PRs #77–#79)
 
 - Revisão Git de referência: `2733d73969808349b1f50e18d0cb39b40ad77d33` (PR #79 integrado). Release Candidate #76 preservado. PR #77 corrige data civil do acordo (campo obrigatório inicialmente vazio), CI 45924410099 PASS. PR #78 adiciona ensaio descartável M05.02, CI 45928342464 e 45928342571 PASS. PR #79 restaura a árvore aprovada após Sync AI Studio e reforça .gitignore; CI 45929221367 e 45929221315 PASS. Comparação com 88e5aaea confirma apenas .gitignore. Não reaplicar patches históricos.

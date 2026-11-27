@@ -1,3 +1,17 @@
+## M05.01 — Hardening LGPD integrado e publicado no Supabase DEV (27/11/2026)
+
+| Migration Git | Versão remota DEV | Estado |
+|---|---|---|
+| `20261126000000_v35_m03_accounting_books_and_dre.sql` | `20261126213132` | Presente |
+| `20261126120000_v35_m04_master_saas_operations.sql` | `20261126213321` | Presente |
+| `20261126180000_v35_m05_privacy_retention_recovery.sql` | `20261126214035` | Presente |
+| `20261126181500_v35_private_portability_storage.sql` | `20261126214052` | Presente |
+| `20261126190000_v35_m0501_privacy_request_hardening.sql` | `20261127033450` | Aplicada e relida |
+
+Consulta list_migrations antes da aplicação confirmou quatro predecessoras. Nova versão remota relida via catálogo em DEV; assinatura e guardas verificadas. Não reaplicar por diferença de timestamp. CI 45934795100 PASS; aceite autenticado pendente. Nenhum PROD acessado.
+
+---
+
 ## Estado vigente — 25/11/2026, após autorização consolidada
 
 **VERIFIED:** 81 arquivos SQL no Git e 81 versões no DEV. M01.03 deixou de ser migration pendente; a jornada e a função Edge têm gates separados, conforme SESSION_HANDOFF.md. Baseline de 66 arquivos preservada.

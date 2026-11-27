@@ -1,3 +1,9 @@
+## M05.01 — Hardening LGPD integrado e publicado no Supabase DEV (27/11/2026)
+
+PR #81 integrado em `4396c406e6c7fb181e7c251d9ad925a8fa0c5952`; CI 45934795100 (4/4 jobs, 700/700 Vitest em 98 arquivos, PostgreSQL 17 e dry-run DEV PASS) e 45934794953 (backup/restore descartável PASS). Migration Git `20261126190000_v35_m0501_privacy_request_hardening.sql` → DEV `20261127033450` aplicada e relida. Frontend publicado na revisão correspondente e homologação autenticada ainda NOT EVALUATED. Referência operacional: `docs/V35_SESSION_CURSOR.md` (checkpoint 27/11/2026). M05.01 EM_EXECUCAO; PROD não autorizado.
+
+---
+
 ## M04 — Operação Master SaaS: Ciclo Comercial, Faturamento Manual, Inadimplência e Suporte (`ADR-0054`, 26/11/2026)
 
 Sobre `83e362d246c65a118967931c39b87ffae1e4a8f4` (`main`, PR #75), implementadas em pacote isolado (`m04-operacao-master-saas.patch`) as entregas **M04.01–M04.04** (`C01–C07` / `D01`): controle de assentos ativos (`3` / `10` excluindo `MASTER`/`SUPPORT`), contratação expressa e troca prospectiva de plano a partir do dia 1º do mês seguinte com preservação de `saas_subscription_price_terms`, faturamento manual SaaS completo (pagamentos, alocações, estornos compensatórios, anulação bloqueada sob alocação ativa, ajustes, acordos sem encargos automáticos, documentos fiscais externos e `Resumo SaaS` segregado), tolerância de 7 dias e suspensão manual preservando leitura/exportações/suporte + janela `D01` de 90 dias, notas internas RLS, triagem/atribuição, SLA comercial (Seg–Sex 09:00–18:00 `America/Sao_Paulo`), resumo sanitizado de Jobs e aviso tenant de sessão `read_only` ativa. Testes frontend Vitest, `typecheck`, build, preservação e `--self-test-extract` PASS locais; execução `postgres:17`, `pglast`, aplicação DEV e homologação autenticada DEV permanecem `NOT EVALUATED`. **`M02.03` segue `EM_EXECUCAO`** com `m0203-fechamento.patch` preservado intacto e **`M06.02` preservada `CONCLUIDO`**.
