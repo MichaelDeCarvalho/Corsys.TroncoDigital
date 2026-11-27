@@ -25,3 +25,14 @@ source_checks.log
 restore_checks.log
 checks_diff.log
 dump_toc.txt
+
+# npm is the supported package manager; AI Studio exports are local only
+/bun.lock
+/bun.lockb
+/m0203-fechamento*.patch
+/m03-contabilidade-relatorios*.patch
+/m04-operacao-master-saas*.patch
+/m05-privacidade-recuperacao-seguranca*.patch
+/m0502-backup-restore-ci*.patch
+/corsys-v35-*.patch
+/app/applet/docs/V35_FINAL_HOMOLOGATION_RUNBOOK.md
