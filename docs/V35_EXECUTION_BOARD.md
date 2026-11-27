@@ -1,3 +1,18 @@
+## Checkpoint operacional — 26/11/2026 (PRs #77–#79)
+
+- Revisão Git de referência: `2733d73969808349b1f50e18d0cb39b40ad77d33` (PR #79 integrado). Release Candidate #76 preservado. PR #77 corrige data civil do acordo (campo obrigatório inicialmente vazio), CI 45924410099 PASS. PR #78 adiciona ensaio descartável M05.02, CI 45928342464 e 45928342571 PASS. PR #79 restaura a árvore aprovada após Sync AI Studio e reforça .gitignore; CI 45929221367 e 45929221315 PASS. Comparação com 88e5aaea confirma apenas .gitignore. Não reaplicar patches históricos.
+- Governança permanente: [docs/CORSYS_AGENT_GOVERNANCE.md](https://github.com/MichaelDeCarvalho/Corsys.TroncoDigital/blob/main/docs/CORSYS_AGENT_GOVERNANCE.md), v2.0; AI Studio vincula somente repositório, sem seleção de branch pelo Sync/Push. Integração via Chat/PR. Gemini desenvolve; Work somente para capacidade indispensável.
+- M02.03: S1 e S2 PASS conforme relatório de homologação Work (PR #77). S3 e S4 pendentes; preservar evidências anteriores. Cleanup dos dois vínculos ADMIN/TREASURER reportado; consulta somente leitura ao DEV nesta rodada confirmou zero vínculos na fixture 0e378166-0ca7-4bd2-ab95-a575a0998dac.
+- M03: Diário (10 lançamentos), Razão (R$80 → R$0 após estorno), DRE (R$160 receita) e bloqueio de exportação incompleta reportados pelo Work; despesa, mapeamento completo, equilíbrio e exportações positivas pendentes; gate profissional #43 permanece.
+- M04: jornadas MASTER/AAL2 pendentes; preservar contratos/planos reais.
+- M05.02: ensaio real PG17 descartável PASS no CI 45928342571 (job 140274910638): origem e destino com checks idênticos, roundtrip criptografia/SHA-256, verificação seletiva e cleanup; duração total 7492 ms, runner 6205 ms, dump 1851923 bytes. Reexecução CI 45929221315 PASS; manifesto sanitizado artefato 15167865901. Não confundir este ensaio com backup operacional recorrente, restore a partir de armazenamento off-primary ou comprovação de RPO/RTO. Metas operacionais continuam não comprovadas.
+- M05.01/.03: DEV somente leitura confirmou RPC register_tenant_privacy_request_idempotent presente, zero solicitações e eventos em organizações QA_CLOSURE_*, logs consultados sem ocorrência da RPC. Não há causa reproduzida; nenhuma alteração de dados ou permissões efetuada. Próximo aceite: captura de erro/status e persistência via sessão legítima, download binário/isolamento/recuperação ainda pendentes.
+- M06.02 CONCLUIDO preservado; M06.01/.03 residuais (Grupo B HTTP, paridade, responsividade). Relatórios 375/1265 px conforme relato Work.
+- M00 CONCLUIDO; M01 homologação fictícia preservada, documentos oficiais pendentes; M02–M06 EM_EXECUCAO; M07 BLOQUEADO por gates técnicos/profissionais e autorização PROD. Nenhum PROD autorizado.
+- Próxima microentrega: M05.01 diagnóstico e aceite do registro LGPD, em paralelo à preparação de testes residuais para Gemini/CI e futura sessão MASTER/AAL2 no Work. Não repetir backup descartável sem regressão; não solicitar PowerShell ou Sync/Push indiscriminado.
+
+---
+
 ## M07 — Preparação Técnica do Release Candidate e Runbook Único de Homologação (26/11/2026)
 
 ## Homologação operacional DEV — 26/11/2026

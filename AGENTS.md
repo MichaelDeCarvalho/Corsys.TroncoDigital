@@ -12,6 +12,12 @@ Use, nesta ordem:
 7. `docs/engineering/ecc-adoption.md`;
 8. documentação oficial atual quando APIs/SDKs/plataformas puderem ter mudado.
 
+## Governança dos agentes (obrigatória)
+
+- Consultar [docs/CORSYS_AGENT_GOVERNANCE.md](docs/CORSYS_AGENT_GOVERNANCE.md) antes de distribuir tarefas ou retomar execução. A governança v2.0 complementa a hierarquia acima.
+- Google AI Studio vincula apenas o repositório, sem seleção de branch pelo Sync/Push. Não presumir destino a partir de branch local. Integrar alterações incrementais via Chat/PR e validar CI antes de merge.
+- Gemini desenvolve; Chat coordena e integra; GitHub Actions valida; Work somente para atividades que exijam suas capacidades.
+
 ## Retomada rápida V35 (controle vivo)
 
 - O proprietário decidiu **finalizar toda a V35 antes de iniciar Beta**; não reduzir o escopo para MVP sem nova decisão.
