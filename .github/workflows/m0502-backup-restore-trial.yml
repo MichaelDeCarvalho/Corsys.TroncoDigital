@@ -1,0 +1,201 @@
+name: M05.02 Backup and Restore Trial
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/m0502-backup-restore-trial.yml'
+      - 'scripts/v35_m05_backup_manifest.py'
+      - 'scripts/run_v35_m05_backup_restore_trial.sh'
+      - 'scripts/v35_m05_*sql'
+      - 'supabase/migrations/**'
+permissions:
+  contents: read
+concurrency:
+  group: m0502-backup-restore-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  m0502_backup_restore_trial:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: disposable-ci-only-password
+          POSTGRES_DB: postgres
+        ports:
+          - 55432:5432
+        options: --health-cmd "pg_isready -U postgres -d postgres" --health-interval 2s --health-timeout 3s --health-retries 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Install PostgreSQL 17 client tools
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y postgresql-client-17
+          psql --version
+          pg_dump --version
+          pg_restore --version
+
+      - name: Execute M05.02 disposable backup, encryption, restore & selective recovery trial
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '55432'
+          PGUSER: postgres
+          PGPASSWORD: disposable-ci-only-password
+          SRC_DB: v35_m05_source_trial
+          DST_DB: v35_m05_restore_trial
+        run: |
+          set -euo pipefail
+          umask 077
+
+          TRIAL_START_MS="$(date +%s%3N)"
+          TRIAL_DIR="$(mktemp -d /tmp/corsys_v35_m0502_ci_XXXXXX)"
+          MANIFEST_OUT="/tmp/v35_m0502_sanitized_manifest.json"
+
+          cleanup_trial_resources() {
+            echo "=== [11/11] Removendo recursos temporários e dumps descartáveis ==="
+            rm -rf "$TRIAL_DIR"
+            psql -X -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d postgres -c "DROP DATABASE IF EXISTS \"$SRC_DB\" WITH (FORCE);" >/dev/null 2>&1 || true
+            psql -X -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d postgres -c "DROP DATABASE IF EXISTS \"$DST_DB\" WITH (FORCE);" >/dev/null 2>&1 || true
+          }
+          trap cleanup_trial_resources EXIT
+
+          chmod +x scripts/run_v35_m05_backup_restore_trial.sh
+          bash scripts/test_v35_m05_runner_hardening.sh
+          python3 scripts/v35_m05_backup_manifest.py --self-test
+
+          echo "=== [1/11] Criando bancos fictícios distintos de origem e destino ==="
+          T0="$(date +%s%3N)"
+          createdb -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" "$SRC_DB"
+          createdb -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" "$DST_DB"
+          # Minimal managed Storage prerequisites for the real V35 migration, disposable source only.
+          psql -X -v ON_ERROR_STOP=1 -d "$SRC_DB" <<'SQL'
+          create schema storage;
+          create table storage.buckets(id text primary key, name text, public boolean, file_size_limit bigint);
+          create table storage.objects(bucket_id text not null, name text not null);
+          alter table storage.objects enable row level security;
+          SQL
+          CREATE_DBS_MS="$(( $(date +%s%3N) - T0 ))"
+
+          SRC_CONN="postgresql://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/${SRC_DB}"
+          DST_CONN="postgresql://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/${DST_DB}"
+          DUMP_FILE="${TRIAL_DIR}/v35_m05_trial.dump"
+
+          echo "=== [2-7/11] Executando preparação, seed, backup, restore em destino vazio, contagens/centavos/FK e isolamento A/B ==="
+          T0="$(date +%s%3N)"
+          OUTPUT_DIR="$TRIAL_DIR" ./scripts/run_v35_m05_backup_restore_trial.sh "$SRC_CONN" "$DST_CONN" "$DUMP_FILE"
+          RUNNER_TOTAL_MS="$(( $(date +%s%3N) - T0 ))"
+
+          echo "=== [4/11] Verificando criptografia AES-256 e integridade SHA-256 do backup ==="
+          T0="$(date +%s%3N)"
+          DUMP_SHA256="$(sha256sum "$DUMP_FILE" | awk '{print $1}')"
+          DUMP_BYTES="$(stat -c '%s' "$DUMP_FILE")"
+          EPHEMERAL_KEY_FILE="${TRIAL_DIR}/ephemeral.key"
+          ENCRYPTED_DUMP="${TRIAL_DIR}/v35_m05_trial.dump.enc"
+          DECRYPTED_DUMP="${TRIAL_DIR}/v35_m05_trial.dump.dec"
+
+          openssl rand -hex 32 > "$EPHEMERAL_KEY_FILE"
+          openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt \
+            -in "$DUMP_FILE" -out "$ENCRYPTED_DUMP" -pass "file:${EPHEMERAL_KEY_FILE}"
+          ENCRYPTED_SHA256="$(sha256sum "$ENCRYPTED_DUMP" | awk '{print $1}')"
+          ENCRYPTED_BYTES="$(stat -c '%s' "$ENCRYPTED_DUMP")"
+
+          if [[ "$DUMP_SHA256" == "$ENCRYPTED_SHA256" ]]; then
+            echo "ERRO CRÍTICO: Artefato criptografado possui o mesmo hash do dump original!" >&2
+            exit 1
+          fi
+
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 \
+            -in "$ENCRYPTED_DUMP" -out "$DECRYPTED_DUMP" -pass "file:${EPHEMERAL_KEY_FILE}"
+          DECRYPTED_SHA256="$(sha256sum "$DECRYPTED_DUMP" | awk '{print $1}')"
+
+          if [[ "$DUMP_SHA256" != "$DECRYPTED_SHA256" ]]; then
+            echo "ERRO CRÍTICO: Falha de integridade SHA-256 após descriptografia!" >&2
+            exit 1
+          fi
+          CRYPTO_VERIFY_MS="$(( $(date +%s%3N) - T0 ))"
+
+          echo "=== [8/11] Executando recuperação seletiva da Loja A sem sobrescrever Loja B (origem e destino) ==="
+          T0="$(date +%s%3N)"
+          SELECTIVE_SRC_LOG="${TRIAL_DIR}/selective_recovery_source.log"
+          SELECTIVE_DST_LOG="${TRIAL_DIR}/selective_recovery_restore.log"
+          psql "$SRC_CONN" -X -v ON_ERROR_STOP=1 -f scripts/v35_m05_single_tenant_recovery_check.sql > "$SELECTIVE_SRC_LOG" 2>&1
+          psql "$DST_CONN" -X -v ON_ERROR_STOP=1 -f scripts/v35_m05_single_tenant_recovery_check.sql > "$SELECTIVE_DST_LOG" 2>&1
+          grep -q "SELECTIVE_TENANT_RECOVERY_PASS" "$SELECTIVE_SRC_LOG"
+          grep -q "SELECTIVE_TENANT_RECOVERY_PASS" "$SELECTIVE_DST_LOG"
+          SELECTIVE_RECOVERY_MS="$(( $(date +%s%3N) - T0 ))"
+
+          echo "=== [9-10/11] Medindo duração real das etapas e gerando manifesto sanitizado ==="
+          TOTAL_TRIAL_MS="$(( $(date +%s%3N) - TRIAL_START_MS ))"
+          MIGRATIONS_COUNT="$(ls -1 supabase/migrations/*.sql | wc -l | tr -d ' ')"
+          TRIAL_REPORT_JSON="${TRIAL_DIR}/trial_telemetry.json"
+
+          cat <<EOF > "$TRIAL_REPORT_JSON"
+          {
+            "execution_environment": "github_actions_disposable_pg17",
+            "source_db_name": "${SRC_DB}",
+            "restore_db_name": "${DST_DB}",
+            "migrations_applied": ${MIGRATIONS_COUNT},
+            "dump_sha256": "${DUMP_SHA256}",
+            "dump_bytes": ${DUMP_BYTES},
+            "encrypted_dump_sha256": "${ENCRYPTED_SHA256}",
+            "encrypted_dump_bytes": ${ENCRYPTED_BYTES},
+            "encryption_cipher": "AES-256-CBC-PBKDF2",
+            "decrypted_sha256_match": true,
+            "source_vs_restore_diff_zero": true,
+            "verification_checks_pass": true,
+            "selective_recovery_pass": true,
+            "durations_ms": {
+              "create_disposable_dbs_ms": ${CREATE_DBS_MS},
+              "runner_prepare_seed_backup_restore_verify_ms": ${RUNNER_TOTAL_MS},
+              "encryption_and_sha256_verify_ms": ${CRYPTO_VERIFY_MS},
+              "selective_single_tenant_recovery_ms": ${SELECTIVE_RECOVERY_MS},
+              "total_trial_ms": ${TOTAL_TRIAL_MS}
+            }
+          }
+          EOF
+
+          python3 scripts/v35_m05_backup_manifest.py \
+            --trial-report "$TRIAL_REPORT_JSON" \
+            --output "$MANIFEST_OUT"
+
+          cleanup_trial_resources
+          trap - EXIT
+
+          # Confirm actual cleanup, not merely an attempted DROP.
+          REMAINING_DBS="$(psql -X -v ON_ERROR_STOP=1 -At -d postgres -c "SELECT count(*) FROM pg_database WHERE datname IN ('v35_m05_source_trial','v35_m05_restore_trial');")"
+          test "$REMAINING_DBS" = 0
+          if [[ -d "$TRIAL_DIR" ]]; then
+            echo "ERRO CRÍTICO: Diretório temporário de dumps não foi removido!" >&2
+            exit 1
+          fi
+
+          {
+            echo "## Ensaio M05.02 — Backup & Restore em PostgreSQL 17 Descartável (CI)"
+            echo ""
+            echo "- **Aviso importante:** Este ensaio em container descartável comprova o mecanismo técnico de backup, criptografia, integridade SHA-256, restore limpo, paridade de contagens/centavos/FK, isolamento multi-tenant A/B e recuperação seletiva, mas **não comprova automaticamente o RPO/RTO da infraestrutura produtiva** (\`target_status: target_unproven\`)."
+            echo "- **Dumps brutos publicados:** \`false\` (removidos antes da conclusão do job)."
+            echo "- **SHA-256 do dump original:** \`${DUMP_SHA256}\` (\`${DUMP_BYTES}\` bytes)"
+            echo "- **SHA-256 do dump criptografado (AES-256-CBC-PBKDF2):** \`${ENCRYPTED_SHA256}\` (\`${ENCRYPTED_BYTES}\` bytes)"
+            echo "- **Integridade SHA-256 pós-descriptografia:** \`PASS\`"
+            echo "- **Diff origem vs. destino restaurado:** \`0\` (\`V35_M0502_VERIFICATION_PASS\`)"
+            echo "- **Recuperação seletiva Loja A sem afetar Loja B:** \`PASS\` (\`SELECTIVE_TENANT_RECOVERY_PASS\`)"
+            echo "- **Durações medidas (ms):** criação DBs=\`${CREATE_DBS_MS}\`, runner completo=\`${RUNNER_TOTAL_MS}\`, criptografia/SHA-256=\`${CRYPTO_VERIFY_MS}\`, recuperação seletiva=\`${SELECTIVE_RECOVERY_MS}\`, total=\`${TOTAL_TRIAL_MS}\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload sanitized backup manifest (no dumps or sensitive data)
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: v35-m0502-sanitized-backup-manifest
+          path: /tmp/v35_m0502_sanitized_manifest.json
+          if-no-files-found: error
+          retention-days: 30
